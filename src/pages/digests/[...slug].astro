@@ -15,6 +15,8 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+const words = (entry.body ?? '').split(/\s+/).filter(Boolean).length;
+const minutes = Math.max(1, Math.round(words / 220));
 
 // prev/next within the same kind, newest first
 const siblings = (await getCollection('digests'))
@@ -28,18 +30,23 @@ const older = i >= 0 && i < siblings.length - 1 ? siblings[i + 1] : null;
   <a class="back" href={href('/')}>← Front page</a>
   <article class="article measure" style="margin:0 auto;">
     <header class="article__head">
-      <div class="lead__meta">
+      <div class="article__meta">
         <span class="label">{KIND_LABEL[entry.data.kind]}</span>
-        <span class="lead__dot">●</span>
-        <span class="label">{entry.data.period} · {fmt(entry.data.date)}</span>
+        <span class="article__dot" aria-hidden="true">▪</span>
+        <span class="label">{entry.data.period}</span>
+        <span class="article__dot" aria-hidden="true">▪</span>
+        <span class="label">{fmt(entry.data.date)}</span>
+        <span class="article__dot" aria-hidden="true">▪</span>
+        <span class="label">{minutes} min read</span>
       </div>
       <h1 class="article__title">{entry.data.title}</h1>
+      {entry.data.blurb && <p class="article__standfirst">{entry.data.blurb}</p>}
     </header>
     <div class="prose">
       <Content />
     </div>
   </article>
-  <nav style="display:flex; justify-content:space-between; gap:1rem; max-width:var(--measure); margin:0 auto;" aria-label="More digests">
+  <nav class="digest-nav measure" style="margin:0 auto;" aria-label="More digests">
     <span>
       {older && <a class="back" href={href(`/digests/${older.id}/`)}>← {older.data.title}</a>}
     </span>

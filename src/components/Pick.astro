@@ -12,8 +12,8 @@ export interface PickData {
   sources_count: number; first_seen: string | null; curated_at: string;
   model: string | null;
 }
-interface Props { pick: PickData; index?: number; }
-const { pick, index = 0 } = Astro.props;
+interface Props { pick: PickData; index?: number; variant?: 'lead' | 'brief' | 'also'; }
+const { pick, index = 0, variant = 'brief' } = Astro.props;
 const delay = Math.min(index, 8) * 55;
 
 // primary source first, always; backup free link when one exists
@@ -21,50 +21,82 @@ const primary = pick.source_url;
 const free = pick.free_link && pick.free_link !== primary ? pick.free_link : null;
 const date = (pick.curated_at || '').slice(0, 10);
 const signalCount = pick.sources_count ?? pick.surfaces.length;
+
+function hostOf(u: string): string {
+  try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; }
+}
+const host = hostOf(primary);
+const Heading = variant === 'lead' ? 'h2' : 'h3';
 ---
-<article class="pick reveal" style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
-  <div class="pick__meta">
-    {pick.channels.map((c) => <a class="pick__tag" href={href(`/${c}/`)}>{c}</a>)}
-    {date && <span class="pick__date">{date}</span>}
-    <span class="pick__score">{pick.relevance}/10 · score {Number(pick.score ?? 0).toFixed(1)}</span>
-    <span class="pick__votes">
-      <button type="button" data-vote-btn="up" aria-label="More like this">+</button>
-      <button type="button" data-vote-btn="down" aria-label="Less like this">−</button>
-    </span>
-  </div>
-  <h3 class="pick__title">
-    <a href={primary} target="_blank" rel="noopener">{pick.title}</a>
-  </h3>
-  {(pick.paywalled || free) && (
-    <div class="pick__alt">
-      {pick.paywalled && <span class="pick__tag pick__tag--pay">paywalled</span>}
-      {free && <a class="pick__free" href={free} target="_blank" rel="noopener">free read →</a>}
+{variant === 'also' ? (
+  <article class="also__item reveal" style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+    <span class="also__title"><a href={primary} target="_blank" rel="noopener">{pick.title}</a></span>
+    {host && <span class="also__src">{host}</span>}
+  </article>
+) : (
+  <article class={`pick pick--${variant} reveal`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+    <div class="pick__meta">
+      {host && <span class="pick__src">{host}</span>}
+      {date && <span class="pick__date">{date}</span>}
+      {pick.channels.map((c) => <a class="pick__tag" href={href(`/${c}/`)}>{c}</a>)}
+      <span class="pick__score">{pick.relevance}/10 · score {Number(pick.score ?? 0).toFixed(1)}</span>
+      <span class="pick__votes">
+        <button type="button" data-vote-btn="up" aria-label="More like this">+</button>
+        <button type="button" data-vote-btn="down" aria-label="Less like this">−</button>
+      </span>
     </div>
-  )}
-  {pick.why && <p class="pick__why">{pick.why}</p>}
-  {pick.notes.length > 0 && (
-    <ul class="pick__notes">
-      {pick.notes.slice(0, 3).map((n) => <li>{n}</li>)}
-    </ul>
-  )}
-  {pick.summary && (
-    <details>
-      <summary>Summary</summary>
-      <p class="pick__summary">{pick.summary}</p>
-    </details>
-  )}
-  <aside class="pick__signals" aria-label="Curation signals">
-    <span class="lab">Signals</span>
-    <span>{signalCount} source{signalCount === 1 ? '' : 's'}</span>
-    <span>relevance {pick.relevance}/10</span>
-    <span>score {Number(pick.score ?? 0).toFixed(2)}</span>
-    {pick.read_kind && pick.read_kind !== 'primary' && <span>read: {pick.read_kind}</span>}
-    {pick.model && <span>curator: {pick.model}</span>}
-    {date && <span>curated {date}</span>}
-    {pick.surfaces.map((s) => (
-      <a href={s.url} target="_blank" rel="noopener">
-        {s.name}{s.points ? ` · ${s.points}` : ''}{s.comments ? ` · ${s.comments}c` : ''}
-      </a>
-    ))}
-  </aside>
-</article>
+    <Heading class="pick__title">
+      <a href={primary} target="_blank" rel="noopener">{pick.title}</a>
+    </Heading>
+    {(pick.paywalled || free) && (
+      <div class="pick__alt">
+        {pick.paywalled && <span class="pick__tag pick__tag--pay">paywalled</span>}
+        {free && <a class="pick__free" href={free} target="_blank" rel="noopener">free read →</a>}
+      </div>
+    )}
+    {pick.why && <p class="pick__why">{pick.why}</p>}
+
+    {variant === 'lead' ? (
+      <>
+        {pick.notes.length > 0 && (
+          <ul class="pick__notes">
+            {pick.notes.slice(0, 3).map((n) => <li>{n}</li>)}
+          </ul>
+        )}
+        {pick.summary && (
+          <details class="pick__details">
+            <summary>Full summary</summary>
+            <p class="pick__summary">{pick.summary}</p>
+          </details>
+        )}
+      </>
+    ) : (
+      (pick.notes.length > 0 || pick.summary) && (
+        <details class="pick__details">
+          <summary>Details</summary>
+          {pick.notes.length > 0 && (
+            <ul class="pick__notes">
+              {pick.notes.slice(0, 3).map((n) => <li>{n}</li>)}
+            </ul>
+          )}
+          {pick.summary && <p class="pick__summary">{pick.summary}</p>}
+        </details>
+      )
+    )}
+
+    <aside class="pick__signals" aria-label="Curation signals">
+      <span class="lab">Signals</span>
+      <span>{signalCount} source{signalCount === 1 ? '' : 's'}</span>
+      <span>relevance {pick.relevance}/10</span>
+      <span>score {Number(pick.score ?? 0).toFixed(2)}</span>
+      {pick.read_kind && pick.read_kind !== 'primary' && <span>read: {pick.read_kind}</span>}
+      {pick.model && <span>curator: {pick.model}</span>}
+      {date && <span>curated {date}</span>}
+      {pick.surfaces.map((s) => (
+        <a href={s.url} target="_blank" rel="noopener">
+          {s.name}{s.points ? ` · ${s.points}` : ''}{s.comments ? ` · ${s.comments}c` : ''}
+        </a>
+      ))}
+    </aside>
+  </article>
+)}
