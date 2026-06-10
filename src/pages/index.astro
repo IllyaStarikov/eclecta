@@ -1,8 +1,8 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import Pick from '../components/Pick.astro';
-import picks from '../data/picks.json';
+import Pick, { type PickData } from '../components/Pick.astro';
+import picksJson from '../data/picks.json';
 import channels from '../data/channels.json';
 import stats from '../data/stats.json';
 import { site, href, KIND_LABEL } from '../site';
@@ -17,6 +17,9 @@ const latestDaily = digests.find((d) => d.data.kind === 'daily');
 const lead = longform ?? digests[0];
 const daily = latestDaily && latestDaily.id !== lead?.id ? latestDaily : null;
 
+// JSON import inference produces a per-entry union; the zod contract in
+// lib/schema (unit-tested in CI) is the real validator.
+const picks = picksJson as unknown as PickData[];
 const top = picks.slice(0, 12);
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });

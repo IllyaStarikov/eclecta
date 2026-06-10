@@ -1,7 +1,7 @@
 ---
 import Base from '../../layouts/Base.astro';
-import Pick from '../../components/Pick.astro';
-import picks from '../../data/picks.json';
+import Pick, { type PickData } from '../../components/Pick.astro';
+import picksJson from '../../data/picks.json';
 import channels from '../../data/channels.json';
 import { site, href } from '../../site';
 
@@ -9,6 +9,8 @@ export function getStaticPaths() {
   return channels.map((c) => ({ params: { channel: c.slug }, props: { channel: c } }));
 }
 const { channel } = Astro.props;
+// JSON import inference yields a union; lib/schema's zod contract validates.
+const picks = picksJson as unknown as PickData[];
 const list = picks.filter((p) => p.channels.includes(channel.slug));
 ---
 <Base title={`${channel.name} — ${site.name}`} description={channel.blurb}>
