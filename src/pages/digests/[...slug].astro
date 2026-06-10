@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import Base from '../../layouts/Base.astro';
+import { site, href, KIND_LABEL } from '../../site';
 
 export async function getStaticPaths() {
   const digests = await getCollection('digests');
@@ -14,15 +15,23 @@ const { entry } = Astro.props;
 const { Content } = await render(entry);
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+
+// prev/next within the same kind, newest first
+const siblings = (await getCollection('digests'))
+  .filter((d) => d.data.kind === entry.data.kind)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const i = siblings.findIndex((d) => d.id === entry.id);
+const newer = i > 0 ? siblings[i - 1] : null;
+const older = i >= 0 && i < siblings.length - 1 ? siblings[i + 1] : null;
 ---
-<Base title={`${entry.data.title} — Lede`} description={entry.data.blurb} compactHeader>
-  <a class="back" href="/">← Front page</a>
+<Base title={`${entry.data.title} — ${site.name}`} description={entry.data.blurb} compactHeader>
+  <a class="back" href={href('/')}>← Front page</a>
   <article class="article measure" style="margin:0 auto;">
     <header class="article__head">
       <div class="lead__meta">
-        <span class="label">The Digest</span>
+        <span class="label">{KIND_LABEL[entry.data.kind]}</span>
         <span class="lead__dot">●</span>
-        <span class="label">{entry.data.week} · {fmt(entry.data.date)}</span>
+        <span class="label">{entry.data.period} · {fmt(entry.data.date)}</span>
       </div>
       <h1 class="article__title">{entry.data.title}</h1>
     </header>
@@ -30,5 +39,13 @@ const fmt = (d: Date) =>
       <Content />
     </div>
   </article>
-  <a class="back" href="/archive/">← All digests</a>
+  <nav style="display:flex; justify-content:space-between; gap:1rem; max-width:var(--measure); margin:0 auto;" aria-label="More digests">
+    <span>
+      {older && <a class="back" href={href(`/digests/${older.id}/`)}>← {older.data.title}</a>}
+    </span>
+    <span>
+      {newer && <a class="back" href={href(`/digests/${newer.id}/`)}>{newer.data.title} →</a>}
+    </span>
+  </nav>
+  <p style="text-align:center;"><a class="back" href={href('/archive/')}>← All digests</a></p>
 </Base>

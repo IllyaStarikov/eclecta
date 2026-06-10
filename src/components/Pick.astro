@@ -1,46 +1,72 @@
 ---
+import { href } from '../site';
+
 interface Surface { url: string; points: number | null; comments: number | null; name: string; }
-interface PickData {
+export interface PickData {
   id: number; title: string; relevance: number; score: number;
   why: string; notes: string[]; summary: string; channels: string[];
-  novelty?: string; audience?: string; link: string; source_url?: string;
+  novelty?: string; audience?: string;
+  link: string; source_url?: string;
+  read_url?: string | null; read_kind?: string | null;
+  free_link?: string | null;
   paywalled: boolean; surfaces: Surface[];
+  sources_count?: number; first_seen?: string; curated_at?: string;
+  model?: string | null;
 }
 interface Props { pick: PickData; index?: number; }
 const { pick, index = 0 } = Astro.props;
 const delay = Math.min(index, 8) * 55;
+
+// primary link first, always; backup free link when it exists and differs
+const primary = pick.source_url || pick.link;
+const free = pick.free_link
+  || (pick.read_url && pick.read_url !== primary ? pick.read_url : null);
+const date = (pick.curated_at || '').slice(0, 10);
+const signalCount = pick.sources_count ?? pick.surfaces.length;
 ---
-<article class="pick reveal" style={`animation-delay:${delay}ms`}>
-  <div class="pick__rel">{pick.relevance}<small>/ 10</small></div>
-  <div class="pick__body">
-    <div class="pick__tags">
-      {pick.channels.map((c) => <span class="pick__tag">{c}</span>)}
-      {pick.paywalled && <span class="pick__tag pick__tag--pay">paywall · free read linked</span>}
-    </div>
-    <h3 class="pick__title">
-      <a href={pick.link} target="_blank" rel="noopener">{pick.title}</a>
-    </h3>
-    {pick.why && <p class="pick__why">{pick.why}</p>}
-    {pick.notes.length > 0 && (
-      <ul class="pick__notes">
-        {pick.notes.slice(0, 3).map((n) => <li>{n}</li>)}
-      </ul>
-    )}
-    {pick.summary && (
-      <details>
-        <summary>Summary</summary>
-        <p class="pick__summary">{pick.summary}</p>
-      </details>
-    )}
-    {pick.surfaces.length > 0 && (
-      <div class="pick__surfaced">
-        <span class="lab">Surfaced on</span>
-        {pick.surfaces.map((s) => (
-          <a href={s.url} target="_blank" rel="noopener">
-            {s.name}{s.points ? ` · ${s.points}` : ''}
-          </a>
-        ))}
-      </div>
-    )}
+<article class="pick reveal" style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+  <div class="pick__meta">
+    {pick.channels.map((c) => <a class="pick__tag" href={href(`/${c}/`)}>{c}</a>)}
+    {date && <span class="pick__date">{date}</span>}
+    <span class="pick__score">{pick.relevance}/10 · score {Number(pick.score ?? 0).toFixed(1)}</span>
+    <span class="pick__votes">
+      <button type="button" data-vote-btn="up" aria-label="More like this">+</button>
+      <button type="button" data-vote-btn="down" aria-label="Less like this">−</button>
+    </span>
   </div>
+  <h3 class="pick__title">
+    <a href={primary} target="_blank" rel="noopener">{pick.title}</a>
+  </h3>
+  {(pick.paywalled || free) && (
+    <div class="pick__alt">
+      {pick.paywalled && <span class="pick__tag pick__tag--pay">paywalled</span>}
+      {free && <a class="pick__free" href={free} target="_blank" rel="noopener">free read →</a>}
+    </div>
+  )}
+  {pick.why && <p class="pick__why">{pick.why}</p>}
+  {pick.notes.length > 0 && (
+    <ul class="pick__notes">
+      {pick.notes.slice(0, 3).map((n) => <li>{n}</li>)}
+    </ul>
+  )}
+  {pick.summary && (
+    <details>
+      <summary>Summary</summary>
+      <p class="pick__summary">{pick.summary}</p>
+    </details>
+  )}
+  <aside class="pick__signals" aria-label="Curation signals">
+    <span class="lab">Signals</span>
+    <span>{signalCount} source{signalCount === 1 ? '' : 's'}</span>
+    <span>relevance {pick.relevance}/10</span>
+    <span>score {Number(pick.score ?? 0).toFixed(2)}</span>
+    {pick.read_kind && pick.read_kind !== 'primary' && <span>read: {pick.read_kind}</span>}
+    {pick.model && <span>curator: {pick.model}</span>}
+    {date && <span>curated {date}</span>}
+    {pick.surfaces.map((s) => (
+      <a href={s.url} target="_blank" rel="noopener">
+        {s.name}{s.points ? ` · ${s.points}` : ''}{s.comments ? ` · ${s.comments}c` : ''}
+      </a>
+    ))}
+  </aside>
 </article>

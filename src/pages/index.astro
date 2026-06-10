@@ -4,37 +4,72 @@ import Base from '../layouts/Base.astro';
 import Pick from '../components/Pick.astro';
 import picks from '../data/picks.json';
 import channels from '../data/channels.json';
+import stats from '../data/stats.json';
+import { site, href, KIND_LABEL } from '../site';
 
 const digests = (await getCollection('digests')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
-const latest = digests[0];
+// Lead with the most substantial recent edition (weekly+), and surface the
+// latest daily brief as a strip beneath it. If only dailies exist, lead daily.
+const longform = digests.find((d) => d.data.kind !== 'daily');
+const latestDaily = digests.find((d) => d.data.kind === 'daily');
+const lead = longform ?? digests[0];
+const daily = latestDaily && latestDaily.id !== lead?.id ? latestDaily : null;
 
 const top = picks.slice(0, 12);
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+const sourceCount = stats?.sources?.verified ?? stats?.sources?.total ?? null;
+const countLine = sourceCount
+  ? `${picks.length} curated · ${sourceCount.toLocaleString('en-US')} sources read`
+  : `${picks.length} curated`;
 ---
 <Base>
-  {latest && (
+  <p class="standfirst reveal">
+    {site.name} watches the places technology, AI, and the sciences break
+    first, and keeps almost none of it: stories that surface across many
+    independent sources are read closely, scored, and explained — every pick
+    links the primary source, with a free read when the original is walled.
+    <a href={href('/about/')}>How it works →</a>
+    {sourceCount && (
+      <span class="figures">
+        {sourceCount.toLocaleString('en-US')} sources · daily brief on weekday
+        mornings · digests weekly to yearly
+      </span>
+    )}
+  </p>
+
+  {lead && (
     <section class="lead reveal">
       <div>
         <div class="lead__meta">
-          <span class="label">The Digest</span>
+          <span class="label">{KIND_LABEL[lead.data.kind]}</span>
           <span class="lead__dot">●</span>
-          <span class="label">{latest.data.week} · {fmt(latest.data.date)}</span>
+          <span class="label">{lead.data.period} · {fmt(lead.data.date)}</span>
         </div>
-        <h2 class="lead__title">{latest.data.title}</h2>
-        <p class="lead__blurb">{latest.data.blurb}</p>
-        <a class="lead__cta" href={`/digests/${latest.id}/`}>
-          Read the digest <span aria-hidden="true">→</span>
+        <h2 class="lead__title">{lead.data.title}</h2>
+        <p class="lead__blurb">{lead.data.blurb}</p>
+        <a class="lead__cta" href={href(`/digests/${lead.id}/`)}>
+          Read the {lead.data.kind === 'daily' ? 'brief' : 'digest'} <span aria-hidden="true">→</span>
         </a>
       </div>
     </section>
   )}
 
+  {daily && (
+    <div class="today reveal">
+      <span class="label today__kind">Today</span>
+      <h3 class="today__title">
+        <a href={href(`/digests/${daily.id}/`)}>{daily.data.title}</a>
+      </h3>
+      <span class="today__blurb">{daily.data.blurb}</span>
+    </div>
+  )}
+
   <div class="section-head">
-    <h2>This week’s picks</h2>
-    <span class="count">{picks.length} curated · 1,103 sources read</span>
+    <h2>The picks</h2>
+    <span class="count">{countLine}</span>
   </div>
 
   <div class="picks">
@@ -43,19 +78,26 @@ const fmt = (d: Date) =>
 
   {picks.length > top.length && (
     <p style="padding:1.6rem 0; font-family:var(--mono); font-size:0.78rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint);">
-      + {picks.length - top.length} more in the feeds below
+      + {picks.length - top.length} more in the channels and feeds
     </p>
   )}
 
   <section class="subscribe reveal">
     <span class="label" style="color:var(--accent);">Subscribe</span>
     <h2>Read it in your feed reader.</h2>
-    <p>No inbox, no algorithm. Point any RSS reader at a channel and the best of it arrives as it’s curated.</p>
+    <p>
+      No inbox, no algorithm. Point any RSS reader at a feed and the best of
+      it arrives as it’s curated — or take only the digests, or only a channel.
+    </p>
     <div class="feeds">
-      <a class="feed-chip" href="/rss.xml"><span class="dot"></span>Everything</a>
+      <a class="feed-chip" href={href('/rss.xml')}><span class="dot"></span>Everything</a>
+      <a class="feed-chip" href={href('/digests/rss.xml')}><span class="dot"></span>Digests</a>
       {channels.map((c) => (
-        <a class="feed-chip" href={`/${c.slug}/rss.xml`}><span class="dot"></span>{c.name}</a>
+        <a class="feed-chip" href={href(`/${c.slug}/rss.xml`)}><span class="dot"></span>{c.name}</a>
       ))}
     </div>
+    <p style="margin-top:1.2rem;">
+      <a class="lead__cta" href={href('/feeds/')}>All feeds <span aria-hidden="true">→</span></a>
+    </p>
   </section>
 </Base>

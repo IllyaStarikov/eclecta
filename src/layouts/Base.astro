@@ -5,6 +5,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
 import channels from '../data/channels.json';
+import { site, href } from '../site';
 
 interface Props {
   title?: string;
@@ -13,11 +14,16 @@ interface Props {
   compactHeader?: boolean;
 }
 const {
-  title = 'Lede — the best of technology & AI',
-  description = 'Lede reads the firehose so you read the lede: the few things in technology and AI that matter this week, and why.',
+  title = `${site.name} — the best of technology, AI & science`,
+  description = site.description,
   compactHeader = false,
 } = Astro.props;
-const year = 2026;
+const year = new Date().getFullYear();
+// Astro.url.pathname already includes the base path.
+const origin = Astro.site ? String(Astro.site).replace(/\/+$/, '') : '';
+const canonical = origin + Astro.url.pathname;
+const currentPath = Astro.url.pathname;
+const isCurrent = (path: string) => (currentPath === href(path) || currentPath === href(path) + '/') ? 'page' : undefined;
 ---
 <!doctype html>
 <html lang="en">
@@ -26,53 +32,96 @@ const year = 2026;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="alternate" type="application/rss+xml" title="Lede" href="/rss.xml" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} — everything`} href={href('/rss.xml')} />
+    <link rel="alternate" type="application/rss+xml" title={`${site.name} — digests`} href={href('/digests/rss.xml')} />
+    <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <meta name="color-scheme" content="light dark" />
+    <meta name="author" content={site.author} />
+    <meta property="og:site_name" content={site.name} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline define:vars={{ prefix: site.storagePrefix + ':' }}>
+      // Pre-paint preference stamp — keep in sync with src/scripts/prefs.js.
+      (function () {
+        try {
+          var g = function (k) { return localStorage.getItem(prefix + k); };
+          var d = document.documentElement;
+          var t = g('theme');
+          if (t === 'light' || t === 'dark') d.dataset.theme = t;
+          var f = g('fontSize');
+          if (f && f !== 'm') d.dataset.fontsize = f;
+          if (g('density') === 'compact') d.dataset.density = 'compact';
+          if (g('showScores') === '1') d.dataset.showscores = '1';
+          if (g('showSignals') === '1') d.dataset.showsignals = '1';
+          if (g('hideDownvoted') === '1') d.dataset.hidedown = '1';
+        } catch (e) { /* first paint falls back to defaults */ }
+      })();
+    </script>
   </head>
   <body>
+    <a class="skip" href="#main">Skip to content</a>
     {compactHeader ? (
-      <header class="wrap" style="text-align:center; padding-top:1.6rem;">
-        <a href="/" class="masthead__name" style="font-size:2.1rem; display:inline-block; letter-spacing:-0.03em;">Lede</a>
+      <header class="wrap compact-head">
+        <a href={href('/')} class="masthead__name">{site.name}</a>
       </header>
     ) : (
       <header>
         <div class="wrap">
           <div class="masthead">
-            <span class="label masthead__kicker">Technology &amp; Artificial Intelligence</span>
-            <h1 class="masthead__name"><a href="/">Lede</a></h1>
+            <span class="label masthead__kicker">{site.kicker}</span>
+            <h1 class="masthead__name"><a href={href('/')}>{site.name}</a></h1>
             <div class="masthead__rule">
-              <span class="masthead__tag">We read the firehose, so you read the lede.</span>
+              <span class="masthead__tag">{site.tagline}</span>
             </div>
           </div>
         </div>
-        <nav class="wrap channels" aria-label="Channels">
-          <a href="/">Front</a>
-          {channels.map((c) => <a href={`/${c.slug}/`}>{c.name}</a>)}
-          <a href="/archive/">Archive</a>
-          <a href="/about/">About</a>
+        <nav class="wrap channels" aria-label="Sections">
+          <a href={href('/')} aria-current={isCurrent('/')}>Front</a>
+          {channels.map((c) => (
+            <a href={href(`/${c.slug}/`)} aria-current={isCurrent(`/${c.slug}/`)}>{c.name}</a>
+          ))}
+          <a href={href('/archive/')} aria-current={isCurrent('/archive/')}>Archive</a>
+          <a href={href('/feeds/')} aria-current={isCurrent('/feeds/')}>Feeds</a>
+          <a href={href('/about/')} aria-current={isCurrent('/about/')}>About</a>
+          <a href={href('/preferences/')} aria-current={isCurrent('/preferences/')}>Prefs</a>
+          <button class="toggle" type="button" data-theme-toggle>auto</button>
         </nav>
       </header>
     )}
 
-    <main class="wrap">
+    <main class="wrap" id="main">
       <slot />
     </main>
 
     <footer class="wrap foot">
       <div>
-        <span class="foot__name">Lede</span>
-        <p>The best of technology and AI, read closely and distilled. Curated continuously, published weekly.</p>
+        <span class="foot__name">{site.name}</span>
+        <p>
+          The best of technology, AI, and the sciences — read closely,
+          distilled daily to yearly. Curated by machine, edited by rubric,
+          published automatically.
+        </p>
       </div>
       <div class="foot__links">
-        <a href="/rss.xml">RSS</a>
-        <a href="/archive/">Archive</a>
-        <a href="/about/">About</a>
+        <a href={href('/rss.xml')}>RSS</a>
+        <a href={href('/feeds/')}>Feeds</a>
+        <a href={href('/archive/')}>Archive</a>
+        <a href={href('/stats/')}>Stats</a>
+        <a href={href('/about/')}>About</a>
+        <a href={href('/contact/')}>Contact</a>
+        <a href={site.authorUrl}>starikov.co</a>
         <span class="label" style="align-self:center;">© {year}</span>
       </div>
     </footer>
+    <script>
+      import '../scripts/prefs.js';
+    </script>
   </body>
 </html>
