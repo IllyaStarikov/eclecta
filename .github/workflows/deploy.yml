@@ -1,0 +1,99 @@
+name: Test & deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Data-only publishes (the pipeline pushing fresh picks/digests) skip
+      # the e2e suite; anything touching code still runs it.
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            data:
+              - 'src/data/**'
+              - 'src/content/**'
+              - 'kb/**'
+            code:
+              - '**'
+              - '!src/data/**'
+              - '!src/content/**'
+              - '!kb/**'
+
+      - name: Type check
+        run: npm run check
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Build
+        run: npm run build
+        env:
+          # GitHub project pages today. When the custom subdomain lands,
+          # flip these to LEDE_SITE=https://lede.starikov.io LEDE_BASE=/
+          # (and restore public/CNAME).
+          LEDE_SITE: https://illyastarikov.github.io
+          LEDE_BASE: /lede
+
+      - name: Install Playwright browsers
+        if: steps.changes.outputs.code == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E tests
+        if: steps.changes.outputs.code == 'true'
+        run: npm run test:e2e
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          LEDE_SITE: https://illyastarikov.github.io
+          LEDE_BASE: /lede
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

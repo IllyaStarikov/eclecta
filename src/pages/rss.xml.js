@@ -1,44 +1,36 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import picks from '../data/picks.json';
-
-function itemHtml(p) {
-  const notes = p.notes && p.notes.length
-    ? `<p><strong>Notes</strong></p><ul>${p.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`
-    : '';
-  const surf = p.surfaces && p.surfaces.length
-    ? `<p><strong>Surfaced on</strong> ${p.surfaces
-        .map((s) => `<a href="${s.url}">${esc(s.name)}${s.points ? ` (${s.points})` : ''}</a>`)
-        .join(' · ')}</p>`
-    : '';
-  return `${p.why ? `<p><strong>Why it matters:</strong> ${esc(p.why)}</p>` : ''}${notes}${
-    p.summary ? `<p>${esc(p.summary)}</p>` : ''
-  }${surf}`;
-}
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+import { absUrl, KIND_LABEL } from '../site';
+import { getFeed, pickItemHtml, pickPrimaryLink, digestItemHtml } from '../lib/feeds';
 
 export async function GET(context) {
-  const digests = await getCollection('digests');
+  const feed = getFeed('everything');
+  const digests = (await getCollection('digests')).sort(
+    (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+  );
   const items = [
-    ...digests.map((d) => ({
-      title: `Digest · ${d.data.title}`,
-      link: `/digests/${d.id}/`,
-      pubDate: d.data.date,
-      description: d.data.blurb,
-    })),
+    ...digests.map((d) => {
+      const url = absUrl(`/digests/${d.id}/`, context.site);
+      return {
+        title: `${KIND_LABEL[d.data.kind]} · ${d.data.title}`,
+        link: url,
+        pubDate: d.data.date,
+        description: d.data.blurb,
+        content: digestItemHtml(d.data, url),
+      };
+    }),
     ...picks.map((p) => ({
       title: p.title,
-      link: p.link || '#',
-      pubDate: p.curated_at ? new Date(p.curated_at) : new Date('2026-06-09'),
+      link: pickPrimaryLink(p),
+      pubDate: p.curated_at ? new Date(p.curated_at) : undefined,
       description: p.why || '',
-      content: itemHtml(p),
+      content: pickItemHtml(p),
     })),
   ];
   return rss({
-    title: 'Lede — technology & AI',
-    description: 'The best of technology and AI, curated and explained.',
+    title: feed.title,
+    description: feed.description,
     site: context.site,
     items,
     customData: '<language>en-us</language>',

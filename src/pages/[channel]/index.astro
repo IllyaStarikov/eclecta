@@ -3,6 +3,7 @@ import Base from '../../layouts/Base.astro';
 import Pick from '../../components/Pick.astro';
 import picks from '../../data/picks.json';
 import channels from '../../data/channels.json';
+import { site, href } from '../../site';
 
 export function getStaticPaths() {
   return channels.map((c) => ({ params: { channel: c.slug }, props: { channel: c } }));
@@ -10,14 +11,14 @@ export function getStaticPaths() {
 const { channel } = Astro.props;
 const list = picks.filter((p) => p.channels.includes(channel.slug));
 ---
-<Base title={`${channel.name} — Lede`} description={channel.blurb}>
+<Base title={`${channel.name} — ${site.name}`} description={channel.blurb}>
   <div class="section-head" style="padding-top:2.4rem;">
     <h2>{channel.name}</h2>
-    <span class="count">{list.length} picks</span>
+    <span class="count">{list.length} {list.length === 1 ? 'pick' : 'picks'}</span>
   </div>
-  <p class="measure" style="color:var(--ink-soft); font-style:italic; margin:0 0 0.4rem;">{channel.blurb}</p>
+  <p class="measure" style="color:var(--ink-soft); font-style:italic; margin:0 0 0.6rem;">{channel.blurb}</p>
   <p>
-    <a class="feed-chip" href={`/${channel.slug}/rss.xml`}><span class="dot"></span>Subscribe to {channel.name}</a>
+    <a class="feed-chip" href={href(`/${channel.slug}/rss.xml`)}><span class="dot"></span>Subscribe to {channel.name}</a>
   </p>
   {list.length > 0 ? (
     <div class="picks" style="margin-top:1.4rem;">

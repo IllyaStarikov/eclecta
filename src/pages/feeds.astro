@@ -1,0 +1,80 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, absUrl, href } from '../site';
+import { FEEDS, type FeedGroup } from '../lib/feeds';
+
+const GROUPS: { key: FeedGroup; title: string; note: string }[] = [
+  { key: 'everything', title: 'Everything', note: 'The whole publication in one feed.' },
+  { key: 'digests', title: 'Digests', note: 'Editions only — no individual picks.' },
+  { key: 'cadence', title: 'By cadence', note: 'One edition kind at a time.' },
+  { key: 'channel', title: 'By channel', note: 'Picks from a single beat.' },
+];
+const feedsFor = (g: FeedGroup) => FEEDS.filter((f) => f.group === g);
+---
+<Base title={`Feeds — ${site.name}`} description="Every RSS feed Lede publishes: everything, digests only, per cadence, per channel.">
+  <section class="feeds-page">
+    <div class="section-head" style="padding-top:2.4rem;">
+      <h2>Feeds</h2>
+      <span class="count">{FEEDS.length} feeds</span>
+    </div>
+    <p class="measure" style="color:var(--ink-soft); font-style:italic; margin:0 0 0.6rem;">
+      {site.name} lives in your feed reader. Take all of it, or exactly the
+      slice you want — every feed below is plain RSS.
+    </p>
+
+    {GROUPS.map((g) => (
+      <section>
+        <div class="section-head">
+          <h2 style="font-size:1.2rem;">{g.title}</h2>
+          <span class="count">{g.note}</span>
+        </div>
+        <ul class="feed-list">
+          {feedsFor(g.key).map((f) => (
+            <li>
+              <a class="feed-list__title" href={href(f.path)}>{f.title}</a>
+              <p class="feed-list__desc">{f.description}</p>
+              <code>{absUrl(f.path, Astro.site)}</code>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </section>
+
+  <style>
+    .feed-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--rule-bold);
+    }
+    .feed-list li {
+      padding: 1rem 0 1.1rem;
+      border-bottom: 1px solid var(--rule);
+      max-width: 46rem;
+    }
+    .feed-list__title {
+      font-family: var(--serif-display);
+      font-weight: 540;
+      font-size: 1.15rem;
+      letter-spacing: -0.01em;
+    }
+    .feed-list__title:hover { color: var(--accent); }
+    .feed-list__desc {
+      margin: 0.25rem 0 0.5rem;
+      color: var(--ink-soft);
+      font-size: 0.98rem;
+    }
+    .feed-list code {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      letter-spacing: 0.02em;
+      color: var(--ink-faint);
+      border: 1px solid var(--rule);
+      padding: 0.25rem 0.5rem;
+      display: inline-block;
+      user-select: all;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</Base>

@@ -1,37 +1,30 @@
 import rss from '@astrojs/rss';
 import picks from '../../data/picks.json';
 import channels from '../../data/channels.json';
+import { absUrl } from '../../site';
+import { getFeed, pickItemHtml, pickPrimaryLink } from '../../lib/feeds';
 
 export function getStaticPaths() {
   return channels.map((c) => ({ params: { channel: c.slug }, props: { channel: c } }));
 }
 
-function esc(s) {
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-function itemHtml(p) {
-  const notes = p.notes && p.notes.length
-    ? `<p><strong>Notes</strong></p><ul>${p.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`
-    : '';
-  return `${p.why ? `<p><strong>Why it matters:</strong> ${esc(p.why)}</p>` : ''}${notes}${
-    p.summary ? `<p>${esc(p.summary)}</p>` : ''
-  }`;
-}
-
 export function GET(context) {
   const { channel } = context.props;
+  const feed = getFeed(`channel-${channel.slug}`);
   const list = picks.filter((p) => p.channels.includes(channel.slug));
   return rss({
-    title: `Lede · ${channel.name}`,
-    description: channel.blurb,
+    title: feed.title,
+    description: feed.description,
     site: context.site,
     items: list.map((p) => ({
       title: p.title,
-      link: p.link || '#',
-      pubDate: p.curated_at ? new Date(p.curated_at) : new Date('2026-06-09'),
+      link: pickPrimaryLink(p),
+      pubDate: p.curated_at ? new Date(p.curated_at) : undefined,
       description: p.why || '',
-      content: itemHtml(p),
+      content: pickItemHtml(p),
     })),
-    customData: '<language>en-us</language>',
+    customData:
+      '<language>en-us</language>' +
+      `<docs>${absUrl(`/${channel.slug}/`, context.site)}</docs>`,
   });
 }
