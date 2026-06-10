@@ -29,9 +29,7 @@ export interface FeedPick {
   why?: string;
   notes?: string[];
   summary?: string;
-  link?: string;
-  source_url?: string;
-  read_url?: string | null;
+  source_url: string;
   free_link?: string | null;
   paywalled?: boolean;
   surfaces?: FeedSurface[];
@@ -39,15 +37,12 @@ export interface FeedPick {
 
 /** Primary link first, always: the source, not the aggregator. */
 export function pickPrimaryLink(p: FeedPick): string {
-  return p.source_url || p.link || '';
+  return p.source_url;
 }
 
 /** Backup free read, when it exists and differs from the primary. */
 export function pickFreeLink(p: FeedPick): string | null {
-  const primary = pickPrimaryLink(p);
-  if (p.free_link && p.free_link !== primary) return p.free_link;
-  if (p.read_url && p.read_url !== primary) return p.read_url;
-  return null;
+  return p.free_link && p.free_link !== p.source_url ? p.free_link : null;
 }
 
 /** Full item body for a pick — everything the site knows, in the feed. */

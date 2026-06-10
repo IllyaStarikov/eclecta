@@ -15,8 +15,6 @@ const digests = defineCollection({
     date: z.coerce.date(),
     blurb: z.string(),
     items: z.number().optional(),
-    // legacy field from the first mockup digest; superseded by `period`
-    week: z.string().optional(),
   }),
 });
 

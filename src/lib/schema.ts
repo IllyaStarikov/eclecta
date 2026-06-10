@@ -1,49 +1,48 @@
 /**
- * Zod schemas for the pipeline's JSON exports (src/data/*.json).
- * Deliberately tolerant where the pipeline is inconsistent —
- * free_link / read_url / model / sources_count come and go — but strict on
- * the invariants the site depends on: every pick must carry a primary link
- * (source_url or link), and channels/stats must have the fields the pages
- * render. A malformed export fails `npm run test:unit` and the build.
+ * THE canonical contract for the pipeline's JSON exports (src/data/*.json).
+ * The pipeline (signalpipe/publish.py) emits exactly this shape — no legacy
+ * fields, no optional-when-it-feels-like-it. A malformed export fails
+ * `npm run test:unit` and the build.
+ *
+ * Pick contract v1:
+ *   source_url  REQUIRED — the primary link (original source; cluster
+ *               canonical URL pre-fetch)
+ *   free_link   null unless a distinct, legitimate free read exists
+ *   surfaces[]  where the story surfaced: {url, name, points|null,
+ *               comments|null}
  */
 import { z } from 'zod';
 
 /* ── picks.json ────────────────────────────────────────────────────────── */
 
 export const surfaceSchema = z.object({
-  url: z.string(),
-  name: z.string(),
-  points: z.number().nullable().optional(),
-  comments: z.number().nullable().optional(),
+  url: z.string().min(1),
+  name: z.string().min(1),
+  points: z.number().nullable(),
+  comments: z.number().nullable(),
 });
 
-export const pickSchema = z
-  .object({
-    id: z.number(),
-    title: z.string().min(1),
-    relevance: z.number(),
-    score: z.number(),
-    why: z.string(),
-    notes: z.array(z.string()),
-    summary: z.string(),
-    channels: z.array(z.string()),
-    novelty: z.string().optional(),
-    audience: z.string().optional(),
-    link: z.string().optional(),
-    source_url: z.string().optional(),
-    read_url: z.string().nullable().optional(),
-    read_kind: z.string().nullable().optional(),
-    free_link: z.string().nullable().optional(),
-    paywalled: z.boolean(),
-    surfaces: z.array(surfaceSchema),
-    sources_count: z.number().optional(),
-    first_seen: z.string().optional(),
-    curated_at: z.string().optional(),
-    model: z.string().nullable().optional(),
-  })
-  .refine((p) => Boolean(p.source_url || p.link), {
-    message: 'pick must have source_url or link',
-  });
+export const pickSchema = z.object({
+  id: z.number(),
+  title: z.string().min(1),
+  relevance: z.number(),
+  score: z.number(),
+  why: z.string(),
+  notes: z.array(z.string()),
+  summary: z.string(),
+  channels: z.array(z.string()),
+  novelty: z.string().nullable(),
+  audience: z.string().nullable(),
+  source_url: z.string().min(1),
+  read_kind: z.string().nullable(),
+  free_link: z.string().nullable(),
+  paywalled: z.boolean(),
+  surfaces: z.array(surfaceSchema),
+  sources_count: z.number(),
+  first_seen: z.string().nullable(),
+  curated_at: z.string(),
+  model: z.string().nullable(),
+});
 
 export const picksSchema = z.array(pickSchema);
 export type Pick = z.infer<typeof pickSchema>;

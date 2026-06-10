@@ -37,9 +37,9 @@ describe('cross-file invariants', () => {
     expect(JSON.stringify(picksRaw)).not.toContain('archive.');
   });
 
-  it('every pick has a primary link (source_url or link)', () => {
+  it('every pick has a primary source_url', () => {
     for (const p of picks) {
-      expect(Boolean(p.source_url || p.link), `pick #${p.id} has no primary link`).toBe(true);
+      expect(p.source_url.length > 0, `pick #${p.id} has no primary link`).toBe(true);
     }
   });
 });

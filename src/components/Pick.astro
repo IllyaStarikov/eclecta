@@ -2,25 +2,23 @@
 import { href } from '../site';
 
 interface Surface { url: string; points: number | null; comments: number | null; name: string; }
+/** The canonical pick contract — mirrors lib/schema.ts pickSchema exactly. */
 export interface PickData {
   id: number; title: string; relevance: number; score: number;
   why: string; notes: string[]; summary: string; channels: string[];
-  novelty?: string; audience?: string;
-  link: string; source_url?: string;
-  read_url?: string | null; read_kind?: string | null;
-  free_link?: string | null;
+  novelty: string | null; audience: string | null;
+  source_url: string; read_kind: string | null; free_link: string | null;
   paywalled: boolean; surfaces: Surface[];
-  sources_count?: number; first_seen?: string; curated_at?: string;
-  model?: string | null;
+  sources_count: number; first_seen: string | null; curated_at: string;
+  model: string | null;
 }
 interface Props { pick: PickData; index?: number; }
 const { pick, index = 0 } = Astro.props;
 const delay = Math.min(index, 8) * 55;
 
-// primary link first, always; backup free link when it exists and differs
-const primary = pick.source_url || pick.link;
-const free = pick.free_link
-  || (pick.read_url && pick.read_url !== primary ? pick.read_url : null);
+// primary source first, always; backup free link when one exists
+const primary = pick.source_url;
+const free = pick.free_link && pick.free_link !== primary ? pick.free_link : null;
 const date = (pick.curated_at || '').slice(0, 10);
 const signalCount = pick.sources_count ?? pick.surfaces.length;
 ---

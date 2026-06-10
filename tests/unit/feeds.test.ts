@@ -21,7 +21,6 @@ describe('pickItemHtml()', () => {
     notes: ['note <one>'],
     summary: 'A summary.',
     source_url: 'https://example.com/primary?a=1&b=2',
-    link: 'https://news.ycombinator.com/item?id=1',
     free_link: 'https://example.org/free',
     paywalled: true,
     surfaces: [{ url: 'https://news.ycombinator.com/item?id=1', name: 'Hacker News', points: 100, comments: 42 }],
