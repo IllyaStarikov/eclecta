@@ -1,0 +1,29 @@
+---
+import Base from '../../layouts/Base.astro';
+import Pick from '../../components/Pick.astro';
+import picks from '../../data/picks.json';
+import channels from '../../data/channels.json';
+
+export function getStaticPaths() {
+  return channels.map((c) => ({ params: { channel: c.slug }, props: { channel: c } }));
+}
+const { channel } = Astro.props;
+const list = picks.filter((p) => p.channels.includes(channel.slug));
+---
+<Base title={`${channel.name} — Lede`} description={channel.blurb}>
+  <div class="section-head" style="padding-top:2.4rem;">
+    <h2>{channel.name}</h2>
+    <span class="count">{list.length} picks</span>
+  </div>
+  <p class="measure" style="color:var(--ink-soft); font-style:italic; margin:0 0 0.4rem;">{channel.blurb}</p>
+  <p>
+    <a class="feed-chip" href={`/${channel.slug}/rss.xml`}><span class="dot"></span>Subscribe to {channel.name}</a>
+  </p>
+  {list.length > 0 ? (
+    <div class="picks" style="margin-top:1.4rem;">
+      {list.map((p, i) => <Pick pick={p} index={i} />)}
+    </div>
+  ) : (
+    <p style="padding:2rem 0; color:var(--ink-faint); font-style:italic;">Nothing curated in this channel yet this week.</p>
+  )}
+</Base>

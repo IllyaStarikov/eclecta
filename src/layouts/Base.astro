@@ -1,0 +1,78 @@
+---
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/newsreader';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import '../styles/global.css';
+import channels from '../data/channels.json';
+
+interface Props {
+  title?: string;
+  description?: string;
+  /** hide the big masthead (e.g. on article pages, use a compact one) */
+  compactHeader?: boolean;
+}
+const {
+  title = 'Lede — the best of technology & AI',
+  description = 'Lede reads the firehose so you read the lede: the few things in technology and AI that matter this week, and why.',
+  compactHeader = false,
+} = Astro.props;
+const year = 2026;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="alternate" type="application/rss+xml" title="Lede" href="/rss.xml" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    {compactHeader ? (
+      <header class="wrap" style="text-align:center; padding-top:1.6rem;">
+        <a href="/" class="masthead__name" style="font-size:2.1rem; display:inline-block; letter-spacing:-0.03em;">Lede</a>
+      </header>
+    ) : (
+      <header>
+        <div class="wrap">
+          <div class="masthead">
+            <span class="label masthead__kicker">Technology &amp; Artificial Intelligence</span>
+            <h1 class="masthead__name"><a href="/">Lede</a></h1>
+            <div class="masthead__rule">
+              <span class="masthead__tag">We read the firehose, so you read the lede.</span>
+            </div>
+          </div>
+        </div>
+        <nav class="wrap channels" aria-label="Channels">
+          <a href="/">Front</a>
+          {channels.map((c) => <a href={`/${c.slug}/`}>{c.name}</a>)}
+          <a href="/archive/">Archive</a>
+          <a href="/about/">About</a>
+        </nav>
+      </header>
+    )}
+
+    <main class="wrap">
+      <slot />
+    </main>
+
+    <footer class="wrap foot">
+      <div>
+        <span class="foot__name">Lede</span>
+        <p>The best of technology and AI, read closely and distilled. Curated continuously, published weekly.</p>
+      </div>
+      <div class="foot__links">
+        <a href="/rss.xml">RSS</a>
+        <a href="/archive/">Archive</a>
+        <a href="/about/">About</a>
+        <span class="label" style="align-self:center;">© {year}</span>
+      </div>
+    </footer>
+  </body>
+</html>

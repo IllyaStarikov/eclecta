@@ -1,0 +1,46 @@
+---
+interface Surface { url: string; points: number | null; comments: number | null; name: string; }
+interface PickData {
+  id: number; title: string; relevance: number; score: number;
+  why: string; notes: string[]; summary: string; channels: string[];
+  novelty?: string; audience?: string; link: string; source_url?: string;
+  paywalled: boolean; surfaces: Surface[];
+}
+interface Props { pick: PickData; index?: number; }
+const { pick, index = 0 } = Astro.props;
+const delay = Math.min(index, 8) * 55;
+---
+<article class="pick reveal" style={`animation-delay:${delay}ms`}>
+  <div class="pick__rel">{pick.relevance}<small>/ 10</small></div>
+  <div class="pick__body">
+    <div class="pick__tags">
+      {pick.channels.map((c) => <span class="pick__tag">{c}</span>)}
+      {pick.paywalled && <span class="pick__tag pick__tag--pay">paywall · free read linked</span>}
+    </div>
+    <h3 class="pick__title">
+      <a href={pick.link} target="_blank" rel="noopener">{pick.title}</a>
+    </h3>
+    {pick.why && <p class="pick__why">{pick.why}</p>}
+    {pick.notes.length > 0 && (
+      <ul class="pick__notes">
+        {pick.notes.slice(0, 3).map((n) => <li>{n}</li>)}
+      </ul>
+    )}
+    {pick.summary && (
+      <details>
+        <summary>Summary</summary>
+        <p class="pick__summary">{pick.summary}</p>
+      </details>
+    )}
+    {pick.surfaces.length > 0 && (
+      <div class="pick__surfaced">
+        <span class="lab">Surfaced on</span>
+        {pick.surfaces.map((s) => (
+          <a href={s.url} target="_blank" rel="noopener">
+            {s.name}{s.points ? ` · ${s.points}` : ''}
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</article>

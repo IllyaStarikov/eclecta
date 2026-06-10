@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import Pick from '../components/Pick.astro';
+import picks from '../data/picks.json';
+import channels from '../data/channels.json';
+
+const digests = (await getCollection('digests')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const latest = digests[0];
+
+const top = picks.slice(0, 12);
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+---
+<Base>
+  {latest && (
+    <section class="lead reveal">
+      <div>
+        <div class="lead__meta">
+          <span class="label">The Digest</span>
+          <span class="lead__dot">●</span>
+          <span class="label">{latest.data.week} · {fmt(latest.data.date)}</span>
+        </div>
+        <h2 class="lead__title">{latest.data.title}</h2>
+        <p class="lead__blurb">{latest.data.blurb}</p>
+        <a class="lead__cta" href={`/digests/${latest.id}/`}>
+          Read the digest <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </section>
+  )}
+
+  <div class="section-head">
+    <h2>This week’s picks</h2>
+    <span class="count">{picks.length} curated · 1,103 sources read</span>
+  </div>
+
+  <div class="picks">
+    {top.map((p, i) => <Pick pick={p} index={i} />)}
+  </div>
+
+  {picks.length > top.length && (
+    <p style="padding:1.6rem 0; font-family:var(--mono); font-size:0.78rem; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint);">
+      + {picks.length - top.length} more in the feeds below
+    </p>
+  )}
+
+  <section class="subscribe reveal">
+    <span class="label" style="color:var(--accent);">Subscribe</span>
+    <h2>Read it in your feed reader.</h2>
+    <p>No inbox, no algorithm. Point any RSS reader at a channel and the best of it arrives as it’s curated.</p>
+    <div class="feeds">
+      <a class="feed-chip" href="/rss.xml"><span class="dot"></span>Everything</a>
+      {channels.map((c) => (
+        <a class="feed-chip" href={`/${c.slug}/rss.xml`}><span class="dot"></span>{c.name}</a>
+      ))}
+    </div>
+  </section>
+</Base>

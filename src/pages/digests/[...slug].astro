@@ -1,0 +1,34 @@
+---
+import { getCollection, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+
+export async function getStaticPaths() {
+  const digests = await getCollection('digests');
+  return digests.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+---
+<Base title={`${entry.data.title} — Lede`} description={entry.data.blurb} compactHeader>
+  <a class="back" href="/">← Front page</a>
+  <article class="article measure" style="margin:0 auto;">
+    <header class="article__head">
+      <div class="lead__meta">
+        <span class="label">The Digest</span>
+        <span class="lead__dot">●</span>
+        <span class="label">{entry.data.week} · {fmt(entry.data.date)}</span>
+      </div>
+      <h1 class="article__title">{entry.data.title}</h1>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+  <a class="back" href="/archive/">← All digests</a>
+</Base>

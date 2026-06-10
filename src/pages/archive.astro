@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+
+const digests = (await getCollection('digests')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+---
+<Base title="Archive — Lede" description="Every weekly digest of the best in technology and AI.">
+  <div class="section-head" style="padding-top:2.4rem;">
+    <h2>The archive</h2>
+    <span class="count">{digests.length} {digests.length === 1 ? 'issue' : 'issues'}</span>
+  </div>
+  <div class="picks" style="margin-top:1rem;">
+    {digests.map((d, i) => (
+      <article class="pick reveal" style={`grid-template-columns: 7rem 1fr; animation-delay:${i * 50}ms`}>
+        <div class="label" style="padding-top:0.5rem;">{d.data.week}</div>
+        <div>
+          <h3 class="pick__title" style="margin-bottom:0.4rem;">
+            <a href={`/digests/${d.id}/`}>{d.data.title}</a>
+          </h3>
+          <p class="pick__why" style="font-style:italic; color:var(--ink-soft);">{d.data.blurb}</p>
+          <div class="pick__surfaced"><span class="lab">{fmt(d.data.date)}</span></div>
+        </div>
+      </article>
+    ))}
+  </div>
+</Base>
