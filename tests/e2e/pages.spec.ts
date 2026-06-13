@@ -49,13 +49,26 @@ for (const route of feedRoutes) {
   });
 }
 
-test('front page loads without console errors', async ({ page }) => {
-  const errors: string[] = [];
-  page.on('console', (msg) => {
-    if (msg.type() === 'error') errors.push(msg.text());
+const consoleRoutes = [
+  '/',
+  '/ai/',
+  '/ai/agents/',
+  '/coverage/',
+  '/sources/',
+  '/preferences/',
+  '/archive/',
+  '/feeds/',
+];
+
+for (const route of consoleRoutes) {
+  test(`page ${route} loads without console errors`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') errors.push(msg.text());
+    });
+    page.on('pageerror', (err) => errors.push(String(err)));
+    await page.goto(u(route));
+    await page.waitForLoadState('networkidle');
+    expect(errors, `console errors on ${route}`).toEqual([]);
   });
-  page.on('pageerror', (err) => errors.push(String(err)));
-  await page.goto(u('/'));
-  await page.waitForLoadState('networkidle');
-  expect(errors).toEqual([]);
-});
+}
