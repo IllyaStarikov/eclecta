@@ -10,7 +10,7 @@
  * / and /preferences/ only. Every URL includes the /lede base.
  */
 import { spawn } from 'node:child_process';
-import { mkdirSync, readFileSync, readdirSync } from 'node:fs';
+import { mkdirSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
@@ -27,7 +27,8 @@ const SCHEMES = ['light', 'dark'];
 const FORCED_DARK_ROUTES = ['/', '/preferences/'];
 
 /* ── routes ────────────────────────────────────────────────────────────── */
-const channels = JSON.parse(readFileSync(join(ROOT, 'src/data/channels.json'), 'utf8'));
+const CATEGORY_SLUGS = ['ai', 'research', 'software', 'security', 'hardware', 'industry'];
+const SAMPLE_SUBS = ['/ai/models/', '/research/science/'];
 const digestDir = join(ROOT, 'src/content/digests');
 const digestIds = readdirSync(digestDir, { recursive: true, withFileTypes: true })
   .filter((e) => e.isFile() && e.name.endsWith('.md'))
@@ -36,8 +37,11 @@ const digestIds = readdirSync(digestDir, { recursive: true, withFileTypes: true 
 
 const routes = [
   '/',
-  ...channels.map((c) => `/${c.slug}/`),
+  ...CATEGORY_SLUGS.map((s) => `/${s}/`),
+  ...SAMPLE_SUBS,
   ...digestIds.map((id) => `/digests/${id}/`),
+  '/coverage/',
+  '/sources/',
   '/archive/',
   '/feeds/',
   '/preferences/',
