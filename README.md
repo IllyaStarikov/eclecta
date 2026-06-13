@@ -37,14 +37,19 @@ repo) that:
 
 ## Reader features
 
+- Front page is a dated **today's edition**: a lead story, a daily-brief panel,
+  picks grouped into category sections, an editions index.
 - Reading-first picks: headline → why → notes → summary. Primary source
   linked first, always; a free read linked when the original is paywalled.
-- `/preferences/` — theme (auto/light/dark), type size, density, relevance
-  scores, the curation-signals panel, thumbs. All device-local
-  (localStorage); nothing leaves the browser.
-- Thumbs up/down per pick; optionally hide thumbed-down stories.
+- Six-section taxonomy (AI, Research, Software, Security, Hardware, Industry)
+  with subcategories — pages at `/<category>/` and `/<category>/<sub>/`.
+- `/coverage/` — transparency dashboard (sources by category/tier, loudest
+  surfaces). `/sources/` — the full feed roll.
+- `/preferences/` — theme (auto/light/dark), type size, density, the
+  curation-signals panel, inline scores, and muting whole sections. All
+  device-local (localStorage); nothing leaves the browser.
 - Feeds for everything: `/rss.xml`, `/digests/rss.xml`, per-kind
-  `/digests/<kind>/rss.xml`, per-channel `/<channel>/rss.xml`. Directory at
+  `/digests/<kind>/rss.xml`, per-category `/<category>/rss.xml`. Directory at
   `/feeds/`.
 
 ## Develop
@@ -55,7 +60,7 @@ npm run dev        # http://localhost:4321/lede/
 npm run build      # -> dist/
 npm run check      # astro check
 npm run test:unit  # vitest (data contracts, feed lib)
-npm run test:e2e   # Playwright (pages, prefs, votes, feeds)
+npm run test:e2e   # Playwright (pages, prefs, feeds)
 npm run capture    # screenshot every page × light/dark × 3 viewports
 ```
 
@@ -79,13 +84,16 @@ src/
   site.ts              identity + base-aware href helpers (THE config spot)
   content/digests/     <kind>/<period>.md   (pipeline-written)
   data/                picks.json, stats.json (pipeline-written); channels.json
-  layouts/Base.astro   masthead/nav/footer, pre-paint prefs stamp, meta
+  layouts/Base.astro   masthead/dateline/nav/footer, pre-paint prefs stamp, meta
   components/Pick.astro reading-first pick + hidden signals panel
-  scripts/prefs.js     device-local preferences + thumbs runtime
-  lib/                 feeds.ts (feed registry + item HTML), schema.ts (zod)
-  pages/               index, digests/[...slug], [channel]/, archive, about,
-                       feeds, preferences, stats, contact, 404, rss endpoints
+  scripts/prefs.js     device-local preferences runtime
+  lib/                 taxonomy.ts (categories + derive), feeds.ts (registry +
+                       item HTML), schema.ts (zod)
+  pages/               index (today's edition), digests/[...slug],
+                       [category]/ + [category]/[sub]/, coverage, sources,
+                       archive, about, feeds, preferences, stats, contact, 404
   styles/global.css    the editorial stylesheet (light+dark, print, a11y)
+docs/                  design-language.md, decisions.md
 kb/                    unpublished knowledge base (pipeline-written)
 scripts/capture.mjs    screenshot harness
 tests/                 unit (vitest) + e2e (Playwright)
@@ -93,6 +101,8 @@ tests/                 unit (vitest) + e2e (Playwright)
 
 ## Design
 
-Editorial broadsheet: Fraunces (display) · Newsreader (reading) · IBM Plex
-Mono (technical labels). Warm paper, vermilion accent, hairline rules, sharp
-corners, light + dark, print-friendly. Lines and type, nothing else.
+A wire service for the frontier: **Schibsted Grotesk** (headlines), **Source
+Serif 4** (reading), **IBM Plex Mono** (datelines, source tags, furniture).
+Cool oat-grey ground, one signal-orange accent, hairline rules, sharp corners,
+light + dark + print. Type and rules do all the work — no images. The full
+system is written down in [`docs/design-language.md`](docs/design-language.md).
