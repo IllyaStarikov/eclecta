@@ -12,6 +12,9 @@ const { channel } = Astro.props;
 // JSON import inference yields a union; lib/schema's zod contract validates.
 const picks = picksJson as unknown as PickData[];
 const list = picks.filter((p) => p.channels.includes(channel.slug));
+// Give the channel a top, a body, and a tail instead of one flat ribbon:
+// promote the strongest pick to the lede, the rest are briefing rows.
+const [channelLead, ...channelRest] = list;
 ---
 <Base title={`${channel.name} — ${site.name}`} description={channel.blurb}>
   <div class="section-head" style="padding-top:2.4rem;">
@@ -23,10 +26,18 @@ const list = picks.filter((p) => p.channels.includes(channel.slug));
     <a class="feed-chip" href={href(`/${channel.slug}/rss.xml`)}><span class="dot"></span>Subscribe to {channel.name}</a>
   </p>
   {list.length > 0 ? (
-    <div class="picks" style="margin-top:1.4rem;">
-      {list.map((p, i) => <Pick pick={p} index={i} />)}
+    <div class="briefing" style="margin-top:1.4rem; border-top:1px solid var(--hairline-bold);">
+      {channelLead && <Pick pick={channelLead} index={0} variant="lead" />}
+      {channelRest.length > 0 && (
+        <div class="rail">
+          <span class="rail__label">More in {channel.name}</span>
+          <span class="rail__rule"></span>
+          <span class="rail__count">{channelRest.length}</span>
+        </div>
+      )}
+      {channelRest.map((p, i) => <Pick pick={p} index={i + 1} variant="brief" />)}
     </div>
   ) : (
-    <p style="padding:2rem 0; color:var(--ink-faint); font-style:italic;">Nothing curated in this channel yet this week.</p>
+    <p style="padding:2rem 0; color:var(--ink-soft); font-style:italic;">Nothing curated in this channel yet this week.</p>
   )}
 </Base>

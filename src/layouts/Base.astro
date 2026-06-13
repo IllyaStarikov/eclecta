@@ -6,6 +6,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
 import channels from '../data/channels.json';
+import rawStats from '../data/stats.json';
 import { site, href } from '../site';
 
 interface Props {
@@ -13,13 +14,26 @@ interface Props {
   description?: string;
   /** hide the big masthead (e.g. on article pages, use a compact one) */
   compactHeader?: boolean;
+  /** wire edition stamp shown in the compact header (e.g. "Weekly · 2026-W24") */
+  edition?: string;
 }
 const {
   title = `${site.name} — the best of technology, AI & science`,
   description = site.description,
   compactHeader = false,
+  edition,
 } = Astro.props;
 const year = new Date().getFullYear();
+
+// Dateline / colophon — the wire's "as of". Prefer the pipeline's last run.
+const generatedAt = (rawStats as { generated_at?: string }).generated_at;
+const asOf = generatedAt ? new Date(generatedAt) : new Date();
+const wireDate = asOf.toLocaleDateString('en-US', {
+  weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+});
+const verified = (rawStats as { sources?: { verified?: number } }).sources?.verified ?? null;
+const sourceLine = verified ? `${verified.toLocaleString('en-US')} sources` : 'automated wire';
+const asOfStamp = asOf.toISOString().slice(0, 16).replace('T', ' ');
 // Astro.url.pathname already includes the base path.
 const origin = Astro.site ? String(Astro.site).replace(/\/+$/, '') : '';
 const canonical = origin + Astro.url.pathname;
@@ -72,6 +86,7 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
       <header class="wrap compact-head">
         <a href={href('/')} class="masthead__wordmark">{site.name}<span class="period" aria-hidden="true"></span></a>
         <span class="compact-head__tag">{site.kicker}</span>
+        {edition && <span class="compact-head__edition">{edition}</span>}
       </header>
     ) : (
       <header>
@@ -82,6 +97,12 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
               <span class="label">{site.kicker}</span>
               <span class="masthead__tag">{site.tagline}</span>
             </div>
+          </div>
+        </div>
+        <div class="wrap">
+          <div class="dateline">
+            <span class="dateline__date">{wireDate}</span>
+            <span class="dateline__edition">Automated edition · {sourceLine} read</span>
           </div>
         </div>
         <div class="wrap">
@@ -112,6 +133,7 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
           distilled daily to yearly. Curated by machine, edited by rubric,
           published automatically.
         </p>
+        <span class="foot__colophon">Automated edition · {sourceLine} · {asOfStamp} UTC</span>
       </div>
       <div class="foot__links">
         <a href={href('/rss.xml')}>RSS</a>
