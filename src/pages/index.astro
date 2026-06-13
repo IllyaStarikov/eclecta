@@ -30,7 +30,9 @@ const lead = picks[0] ?? null;
 const rest = lead ? picks.slice(1) : picks;
 
 // Group the remainder by primary category; busiest sections lead the edition.
-const PER_SECTION = 4;
+// Each section is a teaser: a couple of full briefs, then a compact tail.
+const FEATURED = 2;
+const ALSO_MAX = 4;
 const sections = CATEGORIES.map((cat) => ({
   cat,
   items: rest.filter((p) => p.category === cat.slug),
@@ -70,13 +72,16 @@ const fmt = (d: Date) =>
           <div class="rail">
             <span class="rail__label">{s.cat.name}</span>
             <span class="rail__rule"></span>
-            <a class="rail__more" href={href(`/${s.cat.slug}/`)}>
-              {s.items.length} {s.items.length === 1 ? 'story' : 'stories'} <span aria-hidden="true">→</span>
-            </a>
+            <a class="rail__more" href={href(`/${s.cat.slug}/`)}>More <span aria-hidden="true">→</span></a>
           </div>
           <div class="briefing">
-            {s.items.slice(0, PER_SECTION).map((p, i) => <Pick pick={p} index={i} variant="brief" />)}
+            {s.items.slice(0, FEATURED).map((p, i) => <Pick pick={p} index={i} variant="brief" />)}
           </div>
+          {s.items.length > FEATURED && (
+            <div class="also">
+              {s.items.slice(FEATURED, FEATURED + ALSO_MAX).map((p, i) => <Pick pick={p} index={FEATURED + i} variant="also" />)}
+            </div>
+          )}
         </section>
       ))}
     </div>
@@ -87,12 +92,10 @@ const fmt = (d: Date) =>
         items: sections.map((s) => ({
           label: s.cat.name,
           href: `#s-${s.cat.slug}`,
-          meta: s.items.length,
           category: s.cat.slug,
         })),
       }}
       brief={latestDaily ? {
-        kind: KIND_LABEL[latestDaily.data.kind],
         title: latestDaily.data.title,
         href: href(`/digests/${latestDaily.id}/`),
       } : null}

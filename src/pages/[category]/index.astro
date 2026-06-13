@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Pick, { type PickData } from '../../components/Pick.astro';
 import Rail from '../../components/Rail.astro';
@@ -26,21 +27,17 @@ const subCounts = category.subcategories
   .map((s) => ({ sub: s, n: list.filter((p) => (p.subcategories ?? []).includes(s.slug)).length }))
   .filter((x) => x.n > 0);
 
-// sibling-section nav for the rail, with live counts
-const sectionNav = CATEGORIES.map((c) => ({
-  label: c.name,
-  href: href(`/${c.slug}/`),
-  category: c.slug,
-  current: c.slug === category.slug,
-  meta: picks.filter((p) => p.category === c.slug).length || null,
-}));
+// the edition's latest daily brief, for the rail
+const digests = (await getCollection('digests')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
 ---
 <Base wide={true} title={`${category.name} — ${site.name}`} description={category.blurb}>
   <div class="broadsheet">
     <div class="broadsheet__main">
       <div class="section-head">
         <h1>{category.name}</h1>
-        <span class="count">{list.length} {list.length === 1 ? 'pick' : 'picks'}</span>
       </div>
       <p class="cat-blurb">{category.blurb}</p>
 
@@ -63,7 +60,6 @@ const sectionNav = CATEGORIES.map((c) => ({
               <div class="rail">
                 <span class="rail__label">More in {category.name}</span>
                 <span class="rail__rule"></span>
-                <span class="rail__count">{alsoRows.length}</span>
               </div>
               <div class="also">
                 {alsoRows.map((p, i) => <Pick pick={p} index={i} variant="also" />)}
@@ -77,7 +73,10 @@ const sectionNav = CATEGORIES.map((c) => ({
     </div>
 
     <Rail
-      nav={{ title: 'Sections', items: sectionNav }}
+      brief={latestDaily ? {
+        title: latestDaily.data.title,
+        href: href(`/digests/${latestDaily.id}/`),
+      } : null}
       feeds={{
         title: 'Subscribe',
         items: [

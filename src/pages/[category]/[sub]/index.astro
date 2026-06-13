@@ -1,4 +1,5 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../../../layouts/Base.astro';
 import Pick, { type PickData } from '../../../components/Pick.astro';
 import Rail from '../../../components/Rail.astro';
@@ -26,15 +27,21 @@ const lead = list[0] ?? null;
 const briefRows = list.slice(1, 7);
 const alsoRows = list.slice(7);
 
-// sibling subcategories (within this category) that carry picks, for the rail
+// sibling subcategories (within this category) that carry picks
 const siblingSubs = category.subcategories
-  .map((s) => ({
-    label: s.name,
-    href: href(`/${category.slug}/${s.slug}/`),
-    current: s.slug === sub.slug,
-    meta: catList.filter((p) => (p.subcategories ?? []).includes(s.slug)).length || null,
-  }))
-  .filter((x) => x.meta);
+  .map((s) => ({ s, n: catList.filter((p) => (p.subcategories ?? []).includes(s.slug)).length }))
+  .filter((x) => x.n > 0)
+  .map((x) => ({
+    label: x.s.name,
+    href: href(`/${category.slug}/${x.s.slug}/`),
+    current: x.s.slug === sub.slug,
+  }));
+
+// the edition's latest daily brief, for the rail
+const digests = (await getCollection('digests')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
 ---
 <Base wide={true} title={`${sub.name} — ${category.name} — ${site.name}`} description={sub.blurb}>
   <div class="broadsheet">
@@ -42,7 +49,6 @@ const siblingSubs = category.subcategories
       <p class="crumb"><a href={href(`/${category.slug}/`)}>← {category.name}</a></p>
       <div class="section-head" style="margin-top:0.4rem;">
         <h1>{sub.name}</h1>
-        <span class="count">{list.length} {list.length === 1 ? 'pick' : 'picks'}</span>
       </div>
       <p class="cat-blurb">{sub.blurb}</p>
 
@@ -59,12 +65,24 @@ const siblingSubs = category.subcategories
           )}
         </Fragment>
       ) : (
-        <p class="empty-state">Nothing under {sub.name} in {category.name} right now.</p>
+        <div class="empty-state">
+          <p style="margin:0 0 0.8rem;">Nothing under {sub.name} in {category.name} right now.</p>
+          {siblingSubs.length > 0 && (
+            <p style="margin:0 0 0.8rem;">Meanwhile in {category.name}: {siblingSubs.map((s, i) => (
+              <Fragment>{i > 0 ? ', ' : ''}<a href={s.href}>{s.label}</a></Fragment>
+            ))}.</p>
+          )}
+          <p style="margin:0;"><a href={href(`/${category.slug}/`)}>Browse all of {category.name} →</a></p>
+        </div>
       )}
     </div>
 
     <Rail
       index={{ title: `More in ${category.name}`, items: siblingSubs }}
+      brief={latestDaily ? {
+        title: latestDaily.data.title,
+        href: href(`/digests/${latestDaily.id}/`),
+      } : null}
       feeds={{
         title: 'Subscribe',
         items: [
