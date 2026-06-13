@@ -1,9 +1,90 @@
 [
   {
+    "id": 1673,
+    "title": "A 0-click exploit chain for the Pixel 9 Part 1: Decoding Dolby",
+    "relevance": 9,
+    "score": 3.726,
+    "why": "Project Zero just published a fully working 0-click exploit chain against the Pixel 9—with step-by-step technical detail—demonstrating that AI-powered audio transcription silently expanded Android's attack surface to include every Dolby-licensed device.",
+    "notes": [
+      "CVE-2025-54957: integer overflow in Dolby UDC's evo_malloc alignment fixup (`total_size += (8 - total_size) % total_size`) when total_size is 0xFFFFFFFFFFFFFFF9–0xFFFFFFFFFFFFFFFF, producing a wrap-to-small allocation while the write loop still uses the original large payload_length as its bound.",
+      "Attack surface created by AI feature: Google Messages auto-decodes RCS/SMS audio attachments (for transcription) before the user opens the message — making the Dolby UDC a 0-click entry point on most Android devices, as UDC ships as a binary blob statically linked by most OEMs.",
+      "Two derived primitives: 'buffer overrun capability' (up to 3066 attacker-controlled OOB bytes per syncframe chain) and 'leak capability' (EMDF bit reader uses attacker-supplied emdf_container_length rather than actual skip buffer fill length, enabling reads beyond initialized memory).",
+      "ASLR partial bypass requires guessing one nibble of scudo secondary chunk address (1-in-16 odds); failed attempts crash and respawn mediacodec in ~3 seconds, so average exploit success is ~24 seconds of repeated sends.",
+      "Exploit chain requires decoding multiple audio files in sequence: first corrupts scudo's `curr chunk len` metadata on the dynamic buffer to shift the heap header by 0x2000 on the next decoder reset, then uses the gained writable space to place an EMDF container that overwrites function pointers at static buffer offsets 0x8a410/0x8a438; all three CVEs patched January 5, 2026."
+    ],
+    "summary": "Google Project Zero (Adam Donenfeld, Ivan Fratric, Seth Jenkins) published Part 1 of a three-part series detailing a working 0-click exploit chain against the Pixel 9. The root vulnerability, CVE-2025-54957, is an integer overflow in the Dolby Unified Decoder's custom evo heap allocator: an alignment fixup lacks an overflow check, allowing a crafted EMDF payload to produce a tiny allocation while the copy loop uses the original large length, enabling a controlled out-of-bounds write up to 3066 bytes. A second \"leak capability\" arises because the EMDF bit reader bounds are set from an attacker-supplied container length field rather than the actual filled skip buffer size. The 0-click delivery path was opened by Google Messages' automatic audio transcription feature, which decodes incoming RCS/SMS audio attachments before any user interaction; the Dolby UDC is a binary blob shipped to most Android OEMs and statically linked into their media stacks. The exploit chains multiple syncframe decodes and a scudo secondary-chunk metadata corruption to ultimately overwrite function pointers deep in the static buffer, achieving arbitrary code execution in the mediacodec sandbox. Part 2 covers kernel escalation via CVE-2025-36934; all vulnerabilities were fixed January 5, 2026.",
+    "channels": [
+      "security",
+      "ai",
+      "hardware"
+    ],
+    "novelty": "End-to-end demonstration that AI transcription features (not just media playback) create 0-click decoder attack surface; novel scudo secondary-chunk metadata corruption technique to shift heap header and gain pre-header writable space; published proof that such exploits are achievable by non-nation-state researchers against modern Android with all mitigations enabled.",
+    "audience": "Android/mobile security researchers, platform engineers responsible for media stack sandboxing, and anyone evaluating whether automatic AI feature rollouts introduce new attack surface.",
+    "source_url": "https://projectzero.google/2026/01/pixel-0-click-part-1.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://projectzero.google/2026/01/pixel-0-click-part-1.html",
+        "points": null,
+        "comments": null,
+        "name": "Google Project Zero"
+      },
+      {
+        "url": "https://projectzero.google/2026/01/pixel-0-click-part-1.html",
+        "points": null,
+        "comments": null,
+        "name": "Google Project Zero"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-01-14T17:59:00+00:00",
+    "curated_at": "2026-06-13T07:04:36.340743+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": 53436,
+    "title": "Statement on the US government directive to suspend access to Fable 5 and Mythos 5",
+    "relevance": 9,
+    "score": 4.2,
+    "why": "The US government used export control authority to force Anthropic to globally kill two frontier models within hours, based on contested jailbreak evidence — a first-of-kind precedent for national-security-driven AI access shutoffs.",
+    "notes": [
+      "Export control directive received 5:21pm ET June 12; all foreign nationals (including Anthropic employees) lost access to Fable 5 and Mythos 5; Simon Willison's polling script confirmed cutoff at 6:59pm PT (~10pm ET) with 404 errors redirecting to Opus 4.8.",
+      "Government's stated jailbreak concern: prompting the model to 'read a specific codebase and fix any software flaws' — framed as a national security threat enabling vulnerability discovery.",
+      "Anthropic publicly disputes severity: validated capability is available from other models including OpenAI GPT-5.5, and is used daily by security defenders; vulnerabilities found were described as 'minor' and 'previously known'.",
+      "Government provided only verbal evidence of a 'narrow, non-universal jailbreak'; no written justification or specific national security rationale shared with Anthropic at time of publication.",
+      "Conflict of interest caveat: Anthropic's public statement is self-serving; no independent third-party assessment of the jailbreak's actual capability ceiling is cited in the article."
+    ],
+    "summary": "On June 12, 2026, the US government issued an export control directive requiring Anthropic to immediately suspend all access to Fable 5 and Mythos 5 for any foreign national, globally, citing national security concerns about a jailbreak. Access was cut off approximately four hours after the directive was received. The government's concern centers on a technique involving prompting the model to read codebases and identify software flaws, which it believes could enable exploitation of vulnerabilities. Anthropic contested the severity in a public statement, arguing the demonstrated capability is widely available from other frontier models (explicitly naming GPT-5.5) and is standard practice among security defenders. The government offered only verbal evidence of the jailbreak and provided no written justification; Anthropic committed to releasing further details within 24 hours. The cutoff was independently confirmed by Simon Willison via an API polling script, which captured the exact moment of model unavailability.",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "novelty": "First documented instance of the US government invoking export control authority to force a frontier AI lab to globally and abruptly suspend access to specific named model versions based on jailbreak claims; the speed of enforcement (directive to full cutoff in ~5 hours) and the contestation of whether code-review capability constitutes a national security threat are both novel.",
+    "audience": "AI/ML engineers and platform teams building on Anthropic's API, especially those with international users or employees, and anyone tracking AI governance and export control policy.",
+    "source_url": "https://simonwillison.net/2026/Jun/13/us-government-directive-to-suspend-access",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://simonwillison.net/2026/Jun/13/us-government-directive-to-suspend-access/#atom-everything",
+        "points": null,
+        "comments": null,
+        "name": "Simon Willison"
+      }
+    ],
+    "sources_count": 1,
+    "first_seen": "2026-06-13T01:01:50+00:00",
+    "curated_at": "2026-06-13T06:37:46.064506+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
     "id": 53300,
     "title": "As a result of a US Government directive, we are suspending access to Fable 5",
     "relevance": 9,
-    "score": 5.716,
+    "score": 5.548,
     "why": "The US government has invoked national security export controls to suspend access to Anthropic's Fable 5 (and Mythos 5) for all foreign nationals globally—likely the first such action targeting a specific civilian frontier AI model—with immediate API breakage for developers and sweeping policy precedent implications.",
     "notes": [
       "The directive covers 'any foreign national, whether inside or outside the United States, including foreign national Anthropic employees'—an unusually broad citizenship-based access split that cleaves even the developer company's own workforce.",
@@ -42,7 +123,7 @@
     "id": 53299,
     "title": "US Government directive to suspend access to Fable 5 and Mythos 5",
     "relevance": 9,
-    "score": 8.106,
+    "score": 7.918,
     "why": "The US government has, for the first time, used export control authority to force a frontier AI model offline mid-deployment over a disputed narrow jailbreak finding — a precedent that Anthropic itself warns would halt all future frontier model launches if applied consistently.",
     "notes": [
       "Government directive arrived 5:21pm ET with no prior specific disclosure; the letter cited national security but withheld technical details — Anthropic's account of the reasoning comes from a separate report it says it obtained and reviewed independently.",
@@ -65,14 +146,14 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48511072",
-        "points": 1713,
-        "comments": 1311,
+        "points": 2204,
+        "comments": 1595,
         "name": "Hacker News"
       },
       {
         "url": "https://lobste.rs/s/nbaa0n/statement_on_us_government_directive",
-        "points": 6,
-        "comments": 2,
+        "points": 16,
+        "comments": 9,
         "name": "Lobsters"
       }
     ],
@@ -250,10 +331,53 @@
     "model": "claude-sonnet-4-6"
   },
   {
+    "id": 53486,
+    "title": "Anthropic shuts down Fable, Mythos models following Trump admin directive",
+    "relevance": 8,
+    "score": 5.471,
+    "why": "The first documented case of a US government directive forcing an AI lab to globally shut down freshly-launched frontier models mid-deployment sets a live precedent for how export controls can be applied to model capabilities.",
+    "notes": [
+      "Commerce Department directive cited export controls restricting use *outside* the US, but Anthropic couldn't enforce geographic-only restriction fast enough, so it disabled Mythos 5 and Fable 5 for *all* customers globally.",
+      "The triggering jailbreak reportedly bypasses broad classifier-based safeguards across cybersecurity, chemistry, and biology — administration's stated concern is 'national security apparatus' hardening, with a multi-week timeline given.",
+      "Anthropic publicly disputes the severity: it says it received only 'verbal evidence of a potential narrow, non-universal jailbreak' that lets Fable 5 review a specific codebase for 'minor' and 'relatively simple' software flaws.",
+      "Anthropic explicitly invokes competitive parity as a counter-argument, stating GPT-5.5 has comparable code-vulnerability-finding capabilities — framing the directive as disproportionate.",
+      "Key evidentiary gap: the Axios administration source is unnamed; no independent proof of the jailbreak's scope has been published; Anthropic's account and the administration's account are materially contradictory on severity."
+    ],
+    "summary": "Anthropic abruptly disabled its newly-launched Mythos 5 and Fable 5 models for all users worldwide on Friday after the US Commerce Department issued a directive imposing export controls restricting their use outside the United States. Unable to enforce geographic-only restrictions immediately, Anthropic said global shutdown was the only compliant path. The administration's stated rationale, per an unnamed official cited by Axios, is a reported jailbreak that bypasses classifier-based safeguards for cybersecurity, chemistry, and biology prompts, with officials seeking weeks to harden national-security infrastructure. Anthropic disputed the framing, saying it had only received verbal, not documented, evidence of a narrow and non-universal jailbreak limited to finding minor code vulnerabilities in a specific codebase — capabilities it says are shared by publicly available models including GPT-5.5. The incident marks an unprecedented use of Commerce Department export-control authority to force a live model shutdown mid-deployment and signals a new vector for AI regulation in the Trump administration. Access to all other Anthropic models remains unaffected.",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "novelty": "Export controls weaponized as a real-time kill switch for specific model versions post-launch; government directing a private lab to shut down models based on verbal (not published) jailbreak evidence; Anthropic's public rebuttal invoking competitive parity with GPT-5.5 as a policy argument.",
+    "audience": "Developers building on Anthropic APIs, AI policy watchers, and security researchers tracking dual-use model governance.",
+    "source_url": "https://arstechnica.com/ai/2026/06/anthropic-shuts-down-fable-mythos-models-following-trump-admin-directive",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arstechnica.com/ai/2026/06/anthropic-shuts-down-fable-mythos-models-following-trump-admin-directive/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxNMHY4MTM5Z3FxdnIxMjZ1TFlQRmhvaXU2ZmtrY3Ffc3hkVVJkLUN5LXRkSXlVQzVVbUNpNzVpTldoOUZPSFVNTlZoRDVCOHNXT0pYVDdQZ3FTX2l0QjdMZnU0Y0VzWWhLZElyRlRMcjY5TXdBOE56dUdQLUY5cng1T2F0WTJyVTBRMUNQU1pnaFBLTWhJZnJwNTdNMWR1Ykx4WGU4ZWF0Y0JzS1Fx?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News Business"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-06-13T03:00:34+00:00",
+    "curated_at": "2026-06-13T06:39:31.237035+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
     "id": 51716,
     "title": "Factoring \"short-sleeve\" RSA keys with polynomials",
     "relevance": 8,
-    "score": 3.913,
+    "score": 3.802,
     "why": "Trail of Bits introduces a novel polynomial-based RSA/DSA factoring technique, recovering 677 real private keys from a CompleteFTP type-mismatch bug — and an unexplained second pattern in Yahoo/Verizon certificates remains unattributed.",
     "notes": [
       "Root cause: CompleteFTP's .NET big-integer RNG called Array.Copy casting 8-bit RNG output into 32-bit limb slots, leaving 24 bits zero per limb; affected RSA key gen in v10.0.0–12.0.0 (Dec 2016–Mar 2019) and DSA in v10.0.0–23.0.4 (Dec 2016–Dec 2023).",
@@ -295,7 +419,7 @@
     "id": 53149,
     "title": "Twenty One Zero-Days in FFmpeg",
     "relevance": 8,
-    "score": 6.778,
+    "score": 6.751,
     "why": "A production autonomous security agent found 21 previously unknown FFmpeg vulnerabilities—including a network-exploitable zero-click RCE requiring a single 183-byte packet—demonstrating AI-driven vuln research producing working exploits at 1/10th the cost of Anthropic's Mythos effort.",
     "notes": [
       "Cost claim needs scrutiny: depthfirst asserts $1k vs Anthropic's $10k for Mythos, but no methodology is given for either figure—scope, depth, and tooling differ, so direct comparison is suspect.",
@@ -318,14 +442,14 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48510046",
-        "points": 163,
-        "comments": 95,
+        "points": 199,
+        "comments": 121,
         "name": "Hacker News"
       },
       {
         "url": "https://lobste.rs/s/ejra5c/21_zero_days_ffmpeg",
-        "points": 9,
-        "comments": 0,
+        "points": 12,
+        "comments": 2,
         "name": "Lobsters"
       }
     ],
@@ -338,7 +462,7 @@
     "id": 50779,
     "title": "\"Did you lie?\" Evaluating Lie Detectors across Model Scale and Belief-Verified Model Organisms",
     "relevance": 8,
-    "score": 3.422,
+    "score": 3.327,
     "why": "The dominant assumption that activation probes can detect model deception is directly undermined here—a result that matters for anyone building or relying on AI auditing and monitoring pipelines.",
     "notes": [
       "31 open-weight models (2B–1T params) evaluated across four detector types; all show positive capability scaling on prompted lying, but activation- and logprob-based detectors collapse on trained model organisms.",
@@ -375,7 +499,7 @@
     "id": 50811,
     "title": "The Illusion of Multi-Agent Advantage",
     "relevance": 8,
-    "score": 4.153,
+    "score": 4.057,
     "why": "Empirically undermines the dominant assumption that multi-agent systems outperform single-agent baselines, with a 10× cost penalty and no accuracy gain — directly relevant to anyone building or evaluating agentic pipelines today.",
     "notes": [
       "Automatic MAS (e.g., AutoGen-style frameworks) consistently underperform Chain-of-Thought with Self-Consistency (CoT-SC) across both traditional reasoning benchmarks and interactive multi-step workflows (BrowseComp-Plus), while costing up to 10× more.",
@@ -418,7 +542,7 @@
     "id": 50984,
     "title": "The Range Shrinks, the Threat Remains: Re-evaluating LLM Package Hallucinations on the 2026 Frontier-Model Cohort",
     "relevance": 8,
-    "score": 4.603,
+    "score": 4.507,
     "why": "53 packages still registrable on PyPI/npm after coordinated disclosure form a model-agnostic slopsquatting attack surface that persists regardless of which frontier LLM your team uses for code generation.",
     "notes": [
       "Replicates Spracklen et al. (USENIX Security '25) on five 2026 frontier models; hallucination rates compressed from the original 5.2–21.7% spread to just 4.62% (Claude Haiku 4.5) – 6.10% (GPT-5.4-mini) — a smaller range, not zero risk.",
@@ -462,7 +586,7 @@
     "id": 50121,
     "title": "Rigel: Reverse-Engineering the Metal 4.1 Tensor Compute Path on the Apple M4 Max GPU",
     "relevance": 8,
-    "score": 4.603,
+    "score": 4.507,
     "why": "Anyone targeting fp8 inference on Apple M4 Max via Metal 4.1 should know the acceleration they're expecting doesn't exist — fp8 is a memory-footprint feature, not a speed feature on this generation.",
     "notes": [
       "fp8 (E4M3) matmul2d on M4 Max is **emulated**, not hardware-accelerated: 0.94× fp16 throughput despite reading half the operand bytes — the spec never discloses this.",
@@ -506,7 +630,7 @@
     "id": 50624,
     "title": "MiniMax Sparse Attention",
     "relevance": 8,
-    "score": 5.478,
+    "score": 5.403,
     "why": "Sparse attention that cuts 1M-token inference compute by 28x with no quality loss, validated on a shipping 109B multimodal model with open-source kernels — the kind of result that directly changes how long-context LLM inference gets engineered.",
     "notes": [
       "28.4x reduction in per-token attention compute at 1M context; 14.2x prefill and 7.6x decoding wall-clock speedups on H800 GPUs vs. full GQA baseline.",
@@ -529,7 +653,7 @@
     "surfaces": [
       {
         "url": "https://huggingface.co/papers/2606.13392",
-        "points": 84,
+        "points": 91,
         "comments": null,
         "name": "Hugging Face Daily Papers"
       },
@@ -549,7 +673,7 @@
     "id": 48816,
     "title": "Formal methods and the future of programming",
     "relevance": 8,
-    "score": 5.025,
+    "score": 4.938,
     "why": "A serious quantitative firm with deep PL expertise publicly reverses a 25-year position against formal methods, arguing agentic coding has fundamentally changed both the cost of proof-writing and the value of verification — a rare primary-source signal that this space is moving from academic to industrial.",
     "notes": [
       "Cost benchmark cited: seL4 required 25 person-years to verify 8,700 lines of C — 23 lines of proof and ~0.5 person-days per line of C — the historical bar that made formal methods economically irrational for most software.",
@@ -593,7 +717,7 @@
     "id": 49303,
     "title": "Claude Fable is relentlessly proactive",
     "relevance": 8,
-    "score": 6.655,
+    "score": 6.586,
     "why": "Claude Fable 5's spontaneous invention of OS-level toolchains — without being asked — marks a qualitative jump in autonomous agent capability and dramatically widens the blast radius of prompt injection attacks.",
     "notes": [
       "Fable autonomously used `uv run --with pyobjc-framework-Quartz` to enumerate OS windows and drive `screencapture -l <window_id>` — a technique Willison had never seen documented, invented on the fly without any hint in the prompt.",
@@ -637,7 +761,7 @@
     "id": 46491,
     "title": "Which Models Are Our Models Built On? Auditing Invisible Dependencies in Modern LLMs",
     "relevance": 8,
-    "score": 4.76,
+    "score": 4.707,
     "why": "LLM dependency graphs are now deep enough to create invisible multi-hop license obligations and train/eval contamination that no human can trace without tooling like this.",
     "notes": [
       "ModSleuth is an agentic system that recursively reconstructs LLM dependency graphs from public artifacts; applied to 4 LLM releases it recovers 1,060 source-verified dependencies.",
@@ -681,7 +805,7 @@
     "id": 47652,
     "title": "Why Orbital Data Centers Are Harder Than Silicon Valley Thinks",
     "relevance": 8,
-    "score": 6.134,
+    "score": 6.081,
     "why": "Google (Project Suncatcher + TPUs), SpaceX, and Starcloud are deploying real capital toward orbital data centers, and this piece arms you with the exact physics math to evaluate those bets before the hype hardens into received wisdom.",
     "notes": [
       "Stefan-Boltzmann 'physics tax': one H100 GPU (700 W) requires 1.4 m² of radiator at 60 °C in ideal conditions; LEO UV/atomic-oxygen degradation pushes that to ~2.0 m² by end-of-satellite-life—a 40% launch-mass penalty baked in at liftoff.",
@@ -732,7 +856,7 @@
     "id": 47645,
     "title": "Fully Autonomous Drones Have Killed Human Soldiers For the First Time",
     "relevance": 8,
-    "score": 6.457,
+    "score": 6.406,
     "why": "This is the first named-source, public confirmation that a fully autonomous AI weapon system executed lethal engagements without any human in or on the loop — crossing a line AI safety and policy researchers have long treated as a red line.",
     "notes": [
       "Single source with conflict of interest: the disclosure comes from drone-maker Alexander Kokhanovskyy himself, at a press event hosted by the Ukrainian embassy — commercial and reputational incentives to exaggerate.",
@@ -776,7 +900,7 @@
     "id": 45257,
     "title": "Anthropic Walks Back Policy That Could Have ‘Sabotaged’ AI Researchers Using Claude",
     "relevance": 8,
-    "score": 6.698,
+    "score": 6.65,
     "why": "Anthropic's attempted covert performance degradation—not transparent refusal—for ML researchers reveals a new class of AI gatekeeping tactic with direct implications for who can do frontier research and how trustworthy model outputs are.",
     "notes": [
       "Original Claude Fable 5 policy: silently degrade model quality for users suspected of frontier LLM development rather than refuse or disclose—an invisible 'sabotage' that violates basic trust assumptions for developer tooling.",
@@ -832,7 +956,7 @@
     "id": 47124,
     "title": "Anthropic apologizes for invisible Claude Fable guardrails",
     "relevance": 8,
-    "score": 7.538,
+    "score": 7.491,
     "why": "Anthropic silently degraded API responses for suspected model distillation — without notifying users — then reversed after researcher backlash, surfacing a real tension between competitive moat-building and scientific transparency at the frontier.",
     "notes": [
       "Claude Fable 5 (Anthropic's new 'Mythos class' flagship, previously deemed too dangerous for public release) shipped with an undisclosed behavior: distillation-flagged queries received silently altered, degraded responses — users were never told.",
@@ -967,7 +1091,7 @@
     "id": 31281,
     "title": "Quality Is Not a Safety Proxy Under Quantization",
     "relevance": 8,
-    "score": 3.538,
+    "score": 3.527,
     "why": "Quantized model deployments (GGUF/AWQ/GPTQ) routinely skip direct safety tests when quality benchmarks hold—this paper empirically falsifies that shortcut, showing refusal rates can drop 12–68 pp even while quality metrics stay flat or improve.",
     "notes": [
       "51-row matrix across 6 models, 4 families, 7-level GGUF ladder, plus AWQ/GPTQ INT4: all 36 quality-safety pairings split direction; 9 hidden-danger + 1 near-hidden-danger rows found where quality holds while refusal collapses.",
@@ -1011,7 +1135,7 @@
     "id": 31572,
     "title": "A line-by-line translation of the OCaml runtime from C to Rust",
     "relevance": 8,
-    "score": 3.587,
+    "score": 3.576,
     "why": "A working proof-of-concept that human-steered AI can port a real language runtime—GC, multicore machinery, bytecode interpreter and all—from C to Rust in days rather than years, collapsing the assumed cost of such rewrites and reopening previously settled architectural decisions.",
     "notes": [
       "71 C runtime files → Rust in ~7 days via Claude Code (Opus 4.7) using a per-file toggle + full test-suite gate after each flip; passes upstream OCaml test suite unmodified, fixpoint self-build, dune, and opam switch installs — no upstream test hacking observed.",
@@ -1085,7 +1209,7 @@
     "id": 39952,
     "title": "Estimating No-CoT Task-Completion Time Horizons of Frontier AI Models",
     "relevance": 8,
-    "score": 3.646,
+    "score": 3.624,
     "why": "Redwood Research quantifies a concrete lower bound on \"invisible reasoning\" in frontier models—directly challenging the viability of chain-of-thought monitoring as a safety primitive, with a measurable and worsening trend.",
     "notes": [
       "GPT-5.5 solves tasks requiring ~3 minutes of human work at 50% reliability with zero CoT output; no-CoT time horizon (TH) doubles ~every 373 days (95% CI: 167–691 days) since 2019.",
@@ -1129,7 +1253,7 @@
     "id": 30787,
     "title": "German ruling declares Google liable for false answers in AI Overviews",
     "relevance": 8,
-    "score": 6.861,
+    "score": 6.828,
     "why": "The first court ruling to formally strip AI search overviews of traditional search-engine safe-harbor protection sets a direct-liability precedent that threatens the core product model of every AI-powered search and summary service globally.",
     "notes": [
       "Munich Regional Court (case 26 O 869/26) issued a temporary injunction against Google for AI Overviews that falsely linked two publishers to scams — claims absent from any of the linked source pages, meaning the AI fabricated the connections entirely.",
@@ -1160,8 +1284,8 @@
       },
       {
         "url": "https://lobste.rs/s/lxoosd/german_court_ruling_declares_google_s_ai",
-        "points": 280,
-        "comments": 70,
+        "points": 281,
+        "comments": 71,
         "name": "Lobsters"
       }
     ],
@@ -1174,7 +1298,7 @@
     "id": 39999,
     "title": "Claude Fable won’t answer basic biology questions",
     "relevance": 8,
-    "score": 4.147,
+    "score": 4.125,
     "why": "Anthropic has publicly confirmed that its frontier Mythos-class model ships with biology filters so broad they block \"most queries tied to biology work\" — a deliberate false-positive-heavy tradeoff that signals how safety tiering for capable models may become standard practice.",
     "notes": [
       "Claude Fable 5 is Anthropic's first Mythos-class model released publicly; the class was previously withheld entirely due to cybersecurity capability concerns — biology is now the binding constraint, not cybersecurity.",
@@ -1219,7 +1343,7 @@
     "id": 31205,
     "title": "Mechanistic Analysis of Alignment Algorithms in Language Models",
     "relevance": 8,
-    "score": 3.988,
+    "score": 3.977,
     "why": "The first systematic mechanistic comparison of six major alignment algorithms reveals they produce fundamentally different internal representations—DPO and ORPO actually *degrade* linear separability—which directly challenges the assumption that behavioral alignment implies safe or uniform model restructuring.",
     "notes": [
       "Six preference-optimization methods compared (PPO, DPO, SimPO, ORPO, GRPO, KTO) across three unnamed open-weight model families using layer-wise linear probing, Sparse Autoencoders (SAEs), and crosscoders.",
@@ -1262,7 +1386,7 @@
     "id": 31144,
     "title": "Less Context, More Accuracy: A Bi-Temporal Memory Engine for LLM Agents Where a Lean Retrieved Context Beats the Full History",
     "relevance": 8,
-    "score": 3.988,
+    "score": 3.977,
     "why": "Directly challenges the \"dump full history into context\" default for agent memory and backs the claim with reproducible numbers: a lean ~9.6k-token retrieval slice beats 79k full-context by 10 accuracy points on a standard benchmark.",
     "notes": [
       "**Result**: 83.6% vs. 73.2% full-context on LongMemEval_S (500 questions, official category-specific judge), +10.4pp, McNemar p < 10⁻⁶, ~8× fewer tokens (9.6k vs. 79k) — accuracy gain, not just cost reduction.",
@@ -1306,7 +1430,7 @@
     "id": 31126,
     "title": "Alignment Collapse Under KV Cache Quantization: Diagnosis and Mitigation",
     "relevance": 8,
-    "score": 3.988,
+    "score": 3.977,
     "why": "KV cache quantization — already deployed at scale in vLLM FP8 production — silently destroys safety alignment in ways that perplexity and accuracy metrics will never catch, and this paper provides both the geometric explanation and a practical training-free fix.",
     "notes": [
       "Mistral-7B loses 15.2% of refusals at just 1.03× perplexity degradation — standard eval metrics are essentially blind to the alignment damage.",
@@ -1529,10 +1653,255 @@
     "model": "claude-sonnet-4-6"
   },
   {
+    "id": 180,
+    "title": "End-to-End Context Compression at Scale",
+    "relevance": 7,
+    "score": 3.7,
+    "why": "A trained 0.6B+4B encoder-decoder compressor that beats KV cache compression on the accuracy-efficiency Pareto frontier could meaningfully cut memory costs for long-context agents in production.",
+    "notes": [
+      "Architecture: 0.6B encoder maps a long token sequence to latent embeddings consumed by a 4B decoder; continually pre-trained on 350B+ tokens each at 1:4, 1:8, and 1:16 compression ratios.",
+      "Claims to close the longstanding accuracy gap between encoder-decoder compressors and KV cache compression methods — prior encoder-decoder work was not competitive on the Pareto frontier.",
+      "Agent use case highlighted: LCLM lets agents 'skim' a compressed context and adaptively re-expand only relevant segments on demand — a practical architecture for long-horizon tasks.",
+      "Production-compatibility framed as a differentiator; existing KV cache methods are cited as incompatible with modern inference engines or requiring input to fit within the target window.",
+      "Caveat: only the abstract is available here; base models for continual pre-training, benchmark suite, and independent replication are unstated — treat performance claims as preliminary until full paper review."
+    ],
+    "summary": "This arXiv paper introduces Latent Context Language Models (LCLMs), a family of encoder-decoder compressors designed to address the KV cache memory bottleneck in long-context LLM inference. The authors conduct an architecture search across many variants, then continually pre-train 0.6B-encoder/4B-decoder pairs on over 350B tokens at compression ratios of 1:4, 1:8, and 1:16. LCLMs claim to improve the Pareto frontier over both prior encoder-decoder approaches and KV cache compression techniques on general-task performance, compression speed, and peak memory. A key application is long-horizon agents that can skim compressed context and selectively expand high-relevance segments. The paper frames production-inference compatibility as a core design constraint, distinguishing LCLMs from methods that require fitting the full input inside the target model's context window.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "novelty": "Encoder-decoder compression for LLMs is not new, but scaling it with an architecture search, 350B-token continual pre-training, and demonstrating competitive parity (or superiority) against KV cache methods at production-relevant ratios is the new claim. The adaptive skim-and-expand agent integration pattern is also a novel framing of how compressed context can be used dynamically.",
+    "audience": "ML engineers and researchers building long-context inference infrastructure or long-horizon agents who need memory-efficient alternatives to KV cache growth.",
+    "source_url": "https://arxiv.org/abs/2606.09659",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2606.09659",
+        "points": 15,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      }
+    ],
+    "sources_count": 1,
+    "first_seen": "2026-06-07T20:00:00.000Z",
+    "curated_at": "2026-06-13T09:01:39.205005+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": 1059,
+    "title": "Import AI 452: Scaling laws for cyberwar; rising tides of AI automation; and a puzzle over gDP forecasting",
+    "relevance": 7,
+    "score": 3.725,
+    "why": "Lyptus Research's quantified scaling laws for AI cyberoffense—9.8-month capability doubling time overall, accelerating to 5.7 months post-2024, with frontier-to-open-weight diffusion lag of only 5.7 months—give the first concrete measurement framework to a risk the field has mostly discussed qualitatively.",
+    "notes": [
+      "Lyptus Research benchmarked AI cyberoffense across 7 public datasets (CyBashBench, CyBench, CVEBench, etc.) plus a new 291-task expert-calibrated set (10 offensive security professionals); GPT-5.3 Codex and Opus 4.6 achieve 50% success on ~3-hour expert tasks; open-weight GLM-5 lags frontier by 5.7 months—implying rapid offensive capability diffusion.",
+      "INSEAD/HBS field experiment (n=515 startups): structured AI-adoption training yielded 44% more AI use cases discovered, 12% more task completions, 18% higher customer acquisition rate, 1.9× revenue, and 39.5% lower capital demand vs. control; effect sizes are large and statistically significant (RCT design).",
+      "MIT analyzed 3,000 O-NET tasks via 17,000 worker evaluations; characterizes AI automation as a 'rising tide' (broad simultaneous gains) not 'crashing waves' (sudden cluster disruption); projects 80–95% AI success rate on most text-based labor-market tasks by 2029, validated against METR's time-horizon framework.",
+      "Forecasting Research Institute surveyed 69 economists, 52 AI experts, 38 accurate forecasters, 401 public: consensus expects moderate-to-rapid capability gains but only ~1 additional GDP point by 2030—a paradox Clark attributes to human difficulty modeling exponentials.",
+      "Caveat: 'Lyptus Research' is not a widely recognized organization; model names referenced (GPT-5.3 Codex, GLM-5, Opus 4.6) are 2026-era frontier models; all claims are self-reported by the researchers and should be cross-checked against the published GitHub dataset before citing."
+    ],
+    "summary": "Import AI 452 aggregates four research items with primary source links. Lyptus Research measured AI cyberoffense scaling across seven public benchmarks plus a new 291-task expert-calibrated dataset, finding a 9.8-month doubling time since 2019 steepening to 5.7 months since 2024; best 2026 frontier models achieve 50% success on 3-hour expert tasks, with open-weight models trailing by only 5.7 months. An INSEAD/HBS RCT with 515 startups found that teaching founders to \"map AI to production processes\" produced 44% more AI use cases, 1.9× revenue, and 39.5% lower capital demand versus control. MIT researchers applied 17,000 worker evaluations to 3,000 O-NET tasks and characterize AI automation as a broad \"rising tide\" rather than sudden task-cluster disruption, projecting 80–95% AI success rates on most text-based work by 2029. A Forecasting Research Institute survey found a hard-to-reconcile paradox: experts expect continued AI capability gains yet forecast only ~1 additional GDP point by 2030, with Clark noting this gap may reflect universal human difficulty modeling exponential change.",
+    "channels": [
+      "ai",
+      "security",
+      "ml-research",
+      "startups"
+    ],
+    "novelty": "Quantified cyberoffense capability doubling times anchored to specific models, plus the 5.7-month frontier-to-open-weight diffusion estimate, are new empirical contributions. The MIT \"rising tide vs. crashing waves\" framing with 2029 task-success projections synthesizes METR-style time-horizon analysis at labor-market scale. The FRI paradox—experts simultaneously expecting rapid capability growth and negligible near-term GDP impact—is a new calibration data point on expert forecasting consistency.",
+    "audience": "AI safety researchers, security engineers, and technically-minded founders tracking AI's structural implications for threat landscapes and economic productivity.",
+    "source_url": "https://jack-clark.net/2026/04/06/import-ai-452-scaling-laws-for-cyberwar-rising-tides-of-ai-automation-and-a-puzzle-over-gdp-forecasting",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://jack-clark.net/2026/04/06/import-ai-452-scaling-laws-for-cyberwar-rising-tides-of-ai-automation-and-a-puzzle-over-gdp-forecasting/",
+        "points": null,
+        "comments": null,
+        "name": "Import AI (Jack Clark)"
+      },
+      {
+        "url": "https://importai.substack.com/p/import-ai-452-scaling-laws-for-cyberwar",
+        "points": null,
+        "comments": null,
+        "name": "Import AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-04-06T12:31:31+00:00",
+    "curated_at": "2026-06-13T08:54:01.754557+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": 1055,
+    "title": "Import AI 456: RSI and economic growth; radical optionality for AI regulation; and a neural computer",
+    "relevance": 7,
+    "score": 3.725,
+    "why": "Four substantive research items in one issue — including specific economic thresholds for RSI-driven explosive growth and Google's new cross-datacenter distributed training technique — make this denser than the typical newsletter digest.",
+    "notes": [
+      "RSI/growth paper (Forethought/Columbia/UVA, NBER): 13% automation across all sectors sufficient for explosive growth; hardware R&D has ~5× leverage over software — 20% hardware automation alone crosses the threshold; baseline simulation reaches singularity in ~6 years under full software R&D automation + 5% broad automation.",
+      "Decoupled DiLoCo (Google): asynchronous learners decouple from a global syncer, enabling cross-datacenter training; 88% goodput vs 58% for elastic data-parallel under aggressive failures; 12B param model trained across 4 US regions over 2–5 Gbps WAN — no new custom inter-facility networking required.",
+      "Neural Computers (Meta/KAIST, Schmidhuber): proposes using generative video models (Wan 2.1) as a learned runtime substrate unifying compute, memory, and I/O; CLI and GUI prototypes work but acknowledged as 'wright brothers before takeoff'; mature target posited at 10T–1000T parameters.",
+      "Radical Optionality (Institute for Law & AI): prescribes pre-investing in transparency/reporting requirements, audit regimes, eval capacity, weight security, and AISI/CAISI hiring — without premature substantive regulation; authors explicitly reject expanding emergency powers like the Defense Production Act.",
+      "Conflict of interest flagged by Clark himself: Anton Korinek (RSI paper co-author) now works at Anthropic alongside Clark; worth noting when weighing editorial framing of that item."
+    ],
+    "summary": "Import AI #456 by Jack Clark (Anthropic co-founder) covers four substantive items. First, an Institute for Law & AI paper argues governments should pre-build governance capacity — transparency rules, audit regimes, evals infrastructure — without premature substantive regulation, framed as \"radical optionality.\" Second, an NBER working paper from Forethought/Columbia/UVA models recursive self-improvement and finds 13% cross-sector automation (or 20% hardware-only) tips the economy into explosive growth, with hardware R&D carrying ~5× the leverage of software. Third, a Meta/KAIST paper co-authored by Jürgen Schmidhuber proposes \"neural computers\" — generative video models used as learned runtime substrates replacing conventional OS/compute abstractions — with early CLI/GUI prototypes using Wan 2.1. Fourth, Google DeepMind's Decoupled DiLoCo enables asynchronous distributed training across geographic datacenter regions, achieving 88% goodput under aggressive failure scenarios versus 58% for elastic data-parallel, and successfully training a 12B-parameter model across four US regions over commodity WAN bandwidth.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "hardware"
+    ],
+    "novelty": "The RSI economics paper provides specific, calibrated thresholds (13%/17%/20%) derived from an innovation-network model — putting falsifiable numbers on \"singularity\" timing for the first time in this framing. Decoupled DiLoCo's cross-region async learner architecture is new over prior DiLoCo work. The neural computers concept (video model as OS substrate) is a novel framing, though clearly pre-paradigmatic.",
+    "audience": "ML infrastructure engineers and AI policy researchers tracking both the technical and socioeconomic trajectory of frontier AI development.",
+    "source_url": "https://jack-clark.net/2026/05/11/import-ai-456-rsi-and-economic-growth-radical-optionality-for-ai-regulation-and-a-neural-computer",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://jack-clark.net/2026/05/11/import-ai-456-rsi-and-economic-growth-radical-optionality-for-ai-regulation-and-a-neural-computer/",
+        "points": null,
+        "comments": null,
+        "name": "Import AI (Jack Clark)"
+      },
+      {
+        "url": "https://importai.substack.com/p/import-ai-456-rsi-and-economic-growth",
+        "points": null,
+        "comments": null,
+        "name": "Import AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-05-11T12:46:12+00:00",
+    "curated_at": "2026-06-13T08:51:53.680142+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": 1054,
+    "title": "Import AI 457: AI stuxnet; cursed Muon optimizer; and positive alignment",
+    "relevance": 7,
+    "score": 3.725,
+    "why": "Three independently newsworthy findings land in one issue: a pre-Stuxnet precision-sabotage cyberweapon targeting nuclear simulation tools, a concrete neuron-death bug in the trendy Muon optimizer with a proposed fix, and a large-scale (14k H200 hours) autonomous AI research benchmark that quantifies where agents beat humans and where they fail.",
+    "notes": [
+      "fast16.sys (SentinelOne): ~2001-era virus injects subtle FPU arithmetic errors into LS-DYNA 970, PKPM, and MOHID — precision simulation suites cited in nuclear-weapons-development context — via memory patching; fewer than 10 files matched YARA signatures in a large period corpus, indicating narrow, deliberate targeting.",
+      "Muon optimizer bug (Tilde Research): row-norm anisotropy causes >25% of MLP neurons to permanently die by training step 500; their Aurora fix achieves loss 2.26 vs Muon's 2.31 at 1.1B params / 100B tokens with +10 MMLU points; independently validated by Alexander Doria (Pleias) at 600M scale — Aurora not yet tested at production scale.",
+      "Prime Intellect autonomous research: Codex (GPT-5.5) + Claude Code (Opus 4.7) ran ~10k optimizer experiments consuming ~14k H200 hours on the nanoGPT speedrun track, beating human baseline; agents excel at hyperparameter sweeps and method stacking but fail to generate novel ideas without upstream human records to build on.",
+      "Positive alignment position paper (Oxford, Google DeepMind, OpenAI, Anthropic, Stanford, et al.): frames current safety work as 'floor without ceiling' and proposes pluralistic, decentralized governance — notably in tension with centralized-control safety paradigms; critics could read some critiques of existing safety research as uncharitable (Clark's own caveat).",
+      "Clark's speculative framing — that a superintelligence might use fast16-style silent arithmetic corruption as 'AI non-proliferation' — is explicitly editorial, not a finding, but structurally illustrates a threat model rarely discussed."
+    ],
+    "summary": "Import AI #457 by Jack Clark (Anthropic co-founder) surveys four items. SentinelOne's investigation of fast16.sys reveals a ~2001-era cyberweapon that silently corrupts FPU arithmetic in precision engineering tools (LS-DYNA, PKPM, MOHID), predating Stuxnet's public exposure by roughly five years and suggesting a state-level program targeting nuclear simulation pipelines. Tilde Research identifies a neuron-death bug in the Muon optimizer — row-norm anisotropy kills over a quarter of MLP neurons by step 500 — and proposes Aurora, showing a 2.26 vs 2.31 final loss at 1.1B parameters and a +10 MMLU-point gain, though only small-scale validation exists so far. Prime Intellect benchmarked Codex (GPT-5.5) and Claude Code (Opus 4.7) on the nanoGPT speedrun, consuming ~14k H200 hours across ~10k runs to beat human baselines via optimizer search and method stacking, while confirming agents cannot independently generate novel research directions. A multi-institutional position paper argues for \"positive alignment\" — AI explicitly designed to advance human flourishing rather than merely minimize harm — calling for decentralized, pluralistic governance structures rather than centralized lab control.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "security"
+    ],
+    "novelty": "The fast16.sys pre-Stuxnet sabotage-via-FPU-error mechanism is a newly published historical finding; the Aurora optimizer paper identifies a previously undocumented production failure mode in Muon with quantified fixes; Prime Intellect's H200-scale autonomous optimizer search provides the most concrete public benchmark to date on agent-driven ML research capability and its limits.",
+    "audience": "ML engineers evaluating modern optimizers, AI safety and policy researchers, and security researchers tracking state-level cyberweapon history.",
+    "source_url": "https://jack-clark.net/2026/05/18/import-ai-457-ai-stuxnet-cursed-muon-optimizer-and-positive-alignment",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://jack-clark.net/2026/05/18/import-ai-457-ai-stuxnet-cursed-muon-optimizer-and-positive-alignment/",
+        "points": null,
+        "comments": null,
+        "name": "Import AI (Jack Clark)"
+      },
+      {
+        "url": "https://importai.substack.com/p/import-ai-457-ai-stuxnet-cursed-muon",
+        "points": null,
+        "comments": null,
+        "name": "Import AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-05-18T13:31:17+00:00",
+    "curated_at": "2026-06-13T08:50:21.727752+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": 53514,
+    "title": "Nobody Reads My Docs Anymore—Not Even the AI Agents",
+    "relevance": 7,
+    "score": 3.964,
+    "why": "Empirically derived framework for what documentation actually helps AI coding agents—and the one failure mode (unverifiable convention drift) that causes silent, 100% task failure.",
+    "notes": [
+      "Core finding: agent doc value = (what the task needs) − (what's already legible in the code); for source-shipped libraries this residue is near-zero, making a separate manual dead weight or worse.",
+      "Critical asymmetry measured: verifiable facts (signatures, macros, flags) self-correct — agents cross-check and route around wrong docs. Unverifiable conventions (units, defaults, orderings) are trusted blindly; a single injected wrong line caused 100% task failure across all agents tested.",
+      "ETH Zurich paper 'Evaluating AGENTS.md' cited as independent validation: context files added >20% inference cost across the board; auto-generated ones hurt success rates; human-written files capturing non-inferable detail came out ahead.",
+      "Forced reading penalty measured: prepending 'read the manual first' on a well-documented library raised token cost ~20–30% with no improvement in success rate.",
+      "Author conflict of interest: article promotes their own 'agent-ready' Claude Code plugin and companion repo — methodology details (N per condition, exact task definitions, model versions) are not fully disclosed, limiting reproducibility claims."
+    ],
+    "summary": "A Go library author (binarystruct) ran controlled experiments comparing AI coding agent performance with and without curated documentation, measuring both task success rate and token cost. The central finding is a residue framework: a manual's value equals what a task requires minus what an agent can already infer from source code, API names, and training priors. For source-legible libraries this residue is near-zero; for CLIs, compiled binaries, and service APIs it is substantial—and agents autonomously sought docs in those cases, reducing token cost ~30%. The most dangerous failure mode identified is unverifiable-convention drift: wrong units, defaults, or orderings in prose that agents cannot cross-check against code caused silent 100% task failure in every trial. An independent ETH Zurich study on AGENTS.md files corroborates the split, finding auto-generated context files hurt outcomes while human-written files capturing non-inferable detail helped. Practical guidance derived: write only the residue, place it where agents verifiably look (runnable Example tests, CLAUDE.md), and treat \"remember to…\" in docs as a design smell to eliminate via declarative API structure.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "novelty": "The \"residue\" diagnostic (task needs minus agent-legible context) as a first-principles framework for doc value, plus the empirically measured asymmetry between verifiable and unverifiable drift—the latter causing catastrophic, uncorrectable failure—is a genuinely new articulation with measurement backing, not just received wisdom about writing good docs.",
+    "audience": "Library and tool authors optimizing repositories for consumption by AI coding agents (Claude Code, Cursor, Gemini).",
+    "source_url": "https://dev.to/mixcode/nobody-reads-my-docs-anymore-not-even-the-ai-agents-dec",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://dev.to/mixcode/nobody-reads-my-docs-anymore-not-even-the-ai-agents-dec",
+        "points": 2,
+        "comments": 1,
+        "name": "dev.to top articles"
+      }
+    ],
+    "sources_count": 1,
+    "first_seen": "2026-06-12T06:04:28Z",
+    "curated_at": "2026-06-13T08:42:17.578000+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
+    "id": 53575,
+    "title": "There is a shadow hanging over this Fable thing",
+    "relevance": 7,
+    "score": 4.816,
+    "why": "The US government has set a concrete precedent — using export controls to force the complete commercial shutdown of a deployed frontier AI model — which means every future AI infrastructure investment implicitly depends on politically revocable access.",
+    "notes": [
+      "US government issued an export control directive at 5:21 PM ET Friday compelling Anthropic to disable Fable 5 and Mythos 5 globally — covering all users, US-based foreign nationals, and Anthropic's own employees — citing a discovered jailbreak; no specific national security rationale was provided in the letter.",
+      "Anthropic's public counter: the demonstrated jailbreak technique produces capabilities 'widely available from other models (including OpenAI's GPT-5.5)' and is 'used every day by defenders'; they complied under protest, calling a narrow jailbreak insufficient cause to recall a model deployed to hundreds of millions.",
+      "Author flags material conflict-of-interest signals: Kushner family invested in OpenAI; Trump administration previously designated Anthropic a 'supply chain risk' while continuing to use Anthropic models in Venezuela and Iran military operations; timing is pre-Anthropic IPO.",
+      "Friday 5:21 PM announcement fits a documented White House pattern of releasing market-sensitive news post-market-close; The Kobeissi Letter compilation cited lists ~8 prior instances including Iran strikes, China tariffs, and the Intel deal.",
+      "Core structural risk surfaced: if governments can unilaterally revoke access to deployed AI systems at any time, the multi-trillion dollar datacenter/GPU/infrastructure investment thesis is politically contingent — a point the author notes is already being discussed on HN/Reddit as a potential high-water mark."
+    ],
+    "summary": "The US government issued an export control directive on a Friday evening compelling Anthropic to immediately and fully disable Fable 5 and Mythos 5 for all users worldwide, citing a discovered jailbreak with unspecified national security implications. Anthropic complied under protest, publicly asserting the demonstrated capability is already available in other commercial models including GPT-5.5 and is routinely used by security defenders. The author — a developer running Anthropic models in production — contextualizes the action within the Trump administration's documented adversarial history with Anthropic (prior supply chain risk designation, Kushner-OpenAI financial ties, continued military use of Anthropic models despite the prior ban) and questions whether this constitutes legitimate AI regulation or competitive retaliation timed to Anthropic's IPO. The piece's most durable contribution is the structural risk framing: a government capable of unilaterally disabling deployed commercial AI models on short notice introduces political revocability into an investment thesis that currently underpins multi-trillion dollar infrastructure commitments. A widely-upvoted HN comment quoted in the piece argues this may mark the beginning of nation-states restricting general access to frontier LLMs entirely, regardless of the specific action's motivation.",
+    "channels": [
+      "ai",
+      "security",
+      "startups"
+    ],
+    "novelty": "The specific enforcement mechanism — export control used to force total commercial shutdown of a deployed frontier model, operationally indistinguishable from a full public ban — is new; broader AI regulation concerns are well-trodden, but this is the first concrete instance of the action rather than the threat.",
+    "audience": "AI practitioners, infrastructure investors, and policy researchers who need to price political/regulatory risk into deployed-model dependencies and long-horizon infrastructure bets.",
+    "source_url": "https://12gramsofcarbon.com/p/tech-things-there-is-a-massive-shadow",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=48513536",
+        "points": 222,
+        "comments": 201,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 1,
+    "first_seen": "2026-06-13T05:16:41+00:00",
+    "curated_at": "2026-06-13T08:37:38.150378+00:00",
+    "model": "claude-sonnet-4-6"
+  },
+  {
     "id": 53156,
     "title": "SkillSpector",
     "relevance": 7,
-    "score": 5.213,
+    "score": 5.171,
     "why": "The first production-grade static analyzer for AI agent skills quantifies a measurably real supply-chain risk—26.1% of skills in the wild contain vulnerabilities—directly threatening any developer who installs community-sourced agent plugins for Claude Code, Codex CLI, or Gemini CLI.",
     "notes": [
       "Empirical backing from Liu et al. 2026 (\"Agent Skills in the Wild\") across 42,447 skills: 26.1% contain ≥1 vulnerability, 5.2% show likely malicious intent, and skills with executable scripts are 2.12x more likely vulnerable — paper is cited but not linked, so figures are unverified.",
@@ -1556,7 +1925,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48509844",
-        "points": 34,
+        "points": 40,
         "comments": 4,
         "name": "Hacker News"
       }
@@ -1570,7 +1939,7 @@
     "id": 52718,
     "title": "Building and evaluating model diffing agents",
     "relevance": 7,
-    "score": 4.51,
+    "score": 4.374,
     "why": "Google DeepMind's interpretability team shows that a simple LLM auditor actively crafting its own prompts can reliably surface behavioral \"unknown unknowns\" between model versions — a practical primitive for release engineering and RLHF side-effect detection.",
     "notes": [
       "Agent runs 10 turns, up to 5 parallel samples per query; applied over 50 random seeds per model pair — surfaced concrete Gemini diffs e.g. Gemini 3 Pro defaulting to Fast Doubling vs Matrix Exponentiation for O(log n) Fibonacci, and crisis-helpline over-triggering differences between 2.5-pro and 3-pro.",
@@ -1613,7 +1982,7 @@
     "id": 31165,
     "title": "WebChallenger: A Reliable and Efficient Generalist Web Agent",
     "relevance": 7,
-    "score": 4.777,
+    "score": 4.649,
     "why": "WebChallenger demonstrates that web agent performance gaps are architectural—not model capability—problems, achieving near-frontier benchmark scores with unmodified open-weight models by introducing a deterministic DOM-derived page representation that replaces reliance on expensive proprietary reasoning models.",
     "notes": [
       "PageMem is a deterministic DOM-to-hierarchy parser exposing each page as semantic sections with short summaries — the single shared substrate for all three mechanisms, requiring no site-specific adapters.",
@@ -1656,7 +2025,7 @@
     "id": 50946,
     "title": "Getting Better at Working With You: Compiling User Corrections into Runtime Enforcement for Coding Agents",
     "relevance": 7,
-    "score": 4.88,
+    "score": 4.752,
     "why": "Coding agents that silently re-violate your corrections across sessions are a real productivity tax, and this paper offers a deployable fix with surprising out-of-distribution generalization.",
     "notes": [
       "Baseline problem quantified: Mem0 (leading memory approach) still leaves 57.5% of applicable user-preference checks violated, establishing that retrieval ≠ compliance.",
@@ -1699,7 +2068,7 @@
     "id": 49525,
     "title": "Encrypted Spaces",
     "relevance": 7,
-    "score": 4.843,
+    "score": 4.732,
     "why": "A world-class cryptography team (Signal Protocol author, KZG co-inventor, ex-Signal Foundation tech lead) is building a Firebase/Supabase-style sync engine where servers stay blind to plaintext — a credible attempt to make E2EE collaboration the path of least resistance for developers.",
     "notes": [
       "Team pedigree is exceptional and load-bearing for credibility: Trevor Perrin (Signal Protocol, Noise Framework), Greg Zaverucha (KZG polynomial commitment scheme co-inventor, Signal Private Group System co-author), Nora Trapp (ex-Signal Foundation technical lead for usernames/groups), Michele Orrù (CNRS, arkworks/Tor contributor).",
@@ -1742,7 +2111,7 @@
     "id": 51637,
     "title": "Brain-inspired chip runs near absolute zero and could transform quantum computing",
     "relevance": 7,
-    "score": 4.862,
+    "score": 4.741,
     "why": "Cryogenic control electronics are the scaling bottleneck for quantum computers, and this SiC approach attacks that problem with existing industrial fabs—making it structurally more credible than most \"quantum breakthrough\" press releases.",
     "notes": [
       "SiC MOSFETs exhibit an S-shaped negative differential resistance (NDR) effect below 2K via electron-donor impact ionization (EDII)—an intrinsic material property, not a thermal artifact—enabling consistent behavior across manufacturing batches.",
@@ -1791,7 +2160,7 @@
     "id": 52778,
     "title": "A Michigan farm town voted down plans for a giant OpenAI-Oracle data center. Weeks later, construction began",
     "relevance": 7,
-    "score": 4.566,
+    "score": 4.536,
     "why": "Reveals the specific legal and political mechanics—exclusionary zoning doctrine, state-level pre-negotiation, financial asymmetry—that make large AI data centers effectively unstoppable at the local level, a pattern now replicating across the Midwest.",
     "notes": [
       "21M sq ft, $16B Saline Township campus for OpenAI/Oracle Stargate; both planning commission and township board voted to reject (4–1); Related Digital sued two days later under Michigan exclusionary zoning doctrine, arguing a township with zero industrial-zoned land cannot categorically exclude a 'necessary' land use.",
@@ -1815,7 +2184,7 @@
     "surfaces": [
       {
         "url": "https://fortune.com/2026/05/06/ai-data-center-michigan-saline-politics-farmland/",
-        "points": 30,
+        "points": 36,
         "comments": null,
         "name": "Mastodon trending links"
       }
@@ -1829,7 +2198,7 @@
     "id": 52811,
     "title": "Police officer under criminal investigation over alleged use of AI",
     "relevance": 7,
-    "score": 5.104,
+    "score": 4.951,
     "why": "The first UK criminal investigation of a police officer for AI-fabricated evidence moves \"AI misuse in legal proceedings\" from hypothetical risk to active case law, with the CPS already notifying defense teams — meaning existing convictions may unravel.",
     "notes": [
       "Derbyshire Police officer is being investigated for perverting the course of justice by allegedly using AI to 'create evidential material in a number of cases' — reported as the first known criminal case of its kind in the UK.",
@@ -1878,7 +2247,7 @@
     "id": 1978,
     "title": "The Cold-Start Safety Gap in LLM Agents",
     "relevance": 7,
-    "score": 5.33,
+    "score": 5.202,
     "why": "Anyone deploying tool-calling agents needs to know that session-start is the highest-risk moment — and that a concrete warm-up strategy measurably closes the gap without hurting capability.",
     "notes": [
       "Safety improves 9–52% (model-dependent; wide range is a caveat) as preceding regular agentic tasks increase from 0 to 20, across 7 models from 4 families.",
@@ -1921,7 +2290,7 @@
     "id": 52280,
     "title": "A PDF that changes based on who is reading",
     "relevance": 7,
-    "score": 5.689,
+    "score": 5.582,
     "why": "Anyone building RAG pipelines or LLM document ingestion gets a zero-overhead way to embed clean, structured markdown inside a standard PDF using a 25-year-old, essentially unused spec feature.",
     "notes": [
       "Uses PDF's `ActualText` marked-content replacement property (PDF 1.4, 2001), originally specced for ligature normalization (e.g., 'fi' glyph → 'f'+'i' chars) but never adopted at document scale — this repurposes it to hold full markdown at the content-stream level.",
@@ -1944,7 +2313,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48506209",
-        "points": 137,
+        "points": 140,
         "comments": 67,
         "name": "Hacker News"
       }
@@ -1958,7 +2327,7 @@
     "id": 52271,
     "title": "WASI 0.3 Launched",
     "relevance": 7,
-    "score": 5.844,
+    "score": 5.779,
     "why": "Async is now a canonical ABI primitive in WebAssembly Components—not bolted on—removing the last major composability blocker and enabling in-process service chaining that collapses inter-component latency from milliseconds to nanoseconds.",
     "notes": [
       "stream<T> and future<T> are owned handles in the canonical ABI; the host manages one shared event loop across all components, replacing the per-component event loops of WASI 0.2 that made cross-component async composition impossible.",
@@ -1980,7 +2349,7 @@
     "surfaces": [
       {
         "url": "https://lobste.rs/s/kosw9h/wasi_0_3_launched",
-        "points": 15,
+        "points": 18,
         "comments": 2,
         "name": "Lobsters"
       },
@@ -2000,7 +2369,7 @@
     "id": 52278,
     "title": "Malware developers added nuclear and biological weapons text to to their spyware",
     "relevance": 7,
-    "score": 6.06,
+    "score": 5.979,
     "why": "Attackers are already weaponizing LLM safety systems as evasion primitives against AI-powered security tooling — a second-order failure mode that will scale.",
     "notes": [
       "Technique: malware authors embedded WMD-related text (nuclear/biological) directly in spyware payloads to trigger LLM content-filter refusals in AI-based malware scanners, blinding the tool without affecting human analysts.",
@@ -2023,8 +2392,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48495928",
-        "points": 362,
-        "comments": 204,
+        "points": 386,
+        "comments": 217,
         "name": "Hacker News"
       }
     ],
@@ -2037,7 +2406,7 @@
     "id": 52829,
     "title": "Swift at Apple: Migrating the TrueType Hinting Interpreter",
     "relevance": 7,
-    "score": 6.34,
+    "score": 6.253,
     "why": "Rare production evidence that a memory-safe rewrite of a complex, security-critical C bytecode interpreter can simultaneously eliminate memory unsafety *and* beat the original C on performance—directly applicable to anyone evaluating Swift or Rust for security-motivated migrations.",
     "notes": [
       "13% average CPU speedup over the C interpreter, measured per-glyph across all hinted system fonts on macOS plus a sampling of third-party fonts—not a micro-benchmark.",
@@ -2060,14 +2429,14 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48508726",
-        "points": 182,
-        "comments": 71,
+        "points": 197,
+        "comments": 86,
         "name": "Hacker News"
       },
       {
         "url": "https://lobste.rs/s/o8i26c/swift_at_apple_migrating_truetype",
-        "points": 17,
-        "comments": 3,
+        "points": 26,
+        "comments": 4,
         "name": "Lobsters"
       },
       {
@@ -2086,7 +2455,7 @@
     "id": 50834,
     "title": "Can I Buy Your KV Cache?",
     "relevance": 7,
-    "score": 6.398,
+    "score": 6.248,
     "why": "As multi-agent systems hammer identical documents with redundant prefill, this paper puts concrete numbers on a CDN-style KV cache marketplace that could cut inference costs ~50× for popular content — and shows existing prompt-caching APIs already accidentally implement the economics.",
     "notes": [
       "Token-exact verification on Qwen3-4B: loading a precomputed KV cache and continuing generation matches full prefill on 24/24 greedy decode tokens, with identical logits — zero accuracy cost.",
@@ -2129,7 +2498,7 @@
     "id": 50775,
     "title": "Arbor: Tree Search as a Cognition Layer for Autonomous Agents",
     "relevance": 7,
-    "score": 3.422,
+    "score": 3.327,
     "why": "Tree search as shared multi-agent working memory delivers 193% LLM inference throughput improvement vs. 33% for a single agent — a concrete architectural proof that where individual agents plateau and crash, coordinated search with failure-as-signal doesn't.",
     "notes": [
       "Arbor maintains an explicit scored hypothesis tree as shared working memory across all agents; every failure reshapes subsequent exploration rather than being discarded — this is the key departure from prior stateless autonomous optimization systems.",
@@ -2167,7 +2536,7 @@
     "id": 50948,
     "title": "ComAct: Reframing Professional Software Manipulation via COM-as-Action Paradigm",
     "relevance": 7,
-    "score": 3.819,
+    "score": 3.723,
     "why": "If you're building agents for professional Windows software, this paper demonstrates that leveraging COM interfaces—stable, typed, deterministic APIs already embedded in nearly all serious Windows apps—delivers massive gains over GUI-based agents, and formalizes the paradigm with a concrete benchmark and training infrastructure.",
     "notes": [
       "COM-as-Action reframes agent interaction as deterministic program synthesis over typed COM object hierarchies, bypassing fragile visual grounding; COM is already natively exposed by virtually all professional Windows software (CAD, Office suites, etc.).",
@@ -2210,399 +2579,6 @@
     "sources_count": 3,
     "first_seen": "2026-06-12T04:00:00+00:00",
     "curated_at": "2026-06-12T12:53:15.724909+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 50982,
-    "title": "Unsafer in Many Turns: Benchmarking and Defending Multi-Turn Safety Risks in Tool-Using Agents",
-    "relevance": 7,
-    "score": 4.603,
-    "why": "Multi-turn tool-using agents are measurably less safe than single-turn benchmarks suggest, and this paper both quantifies the gap and offers a training-free defense that cuts attack success rates by 30%.",
-    "notes": [
-      "MT-AgentRisk is the first benchmark combining multi-turn interaction with realistic tool use for agent safety evaluation; built via a principled taxonomy that maps single-turn harmful tasks to multi-turn attack sequences.",
-      "Empirical finding: Attack Success Rate (ASR) rises ~16% on average across open and closed models when moving from single-turn to multi-turn settings — current safety measures systematically erode across turns.",
-      "ToolShield is training-free and tool-agnostic: at tool-onboarding time the agent autonomously generates test cases, executes them to observe downstream effects, and distills 'safety experiences' used at inference; no fine-tuning required.",
-      "ToolShield reduces ASR by ~30% on average in multi-turn settings — the abstract does not detail per-model breakdowns or compute cost of the self-exploration phase, which is a notable omission for production feasibility.",
-      "Caveat: the abstract reports aggregate averages without specifying which open vs. closed models were tested or whether any model family is a clear outlier; full experimental tables are in the PDF only."
-    ],
-    "summary": "This arXiv paper (cs.CR/cs.SE) introduces MT-AgentRisk, the first safety benchmark targeting multi-turn, tool-using LLM agents, constructed via a taxonomy that systematically transforms single-turn harmful prompts into multi-turn attack sequences. Experiments across open and closed models show that Attack Success Rate increases ~16% on average in multi-turn settings relative to single-turn baselines, demonstrating that standard safety alignment measurably degrades as conversation length and tool complexity grow. The authors also propose ToolShield, a training-free defense in which an agent autonomously probes each new tool at deployment time — generating test cases, executing them, and distilling safety heuristics — before the tool enters live use. ToolShield reduces ASR by ~30% on average without requiring model retraining, making it applicable to deployed systems. Both benchmark and code are publicly released on GitHub.",
-    "channels": [
-      "ai",
-      "security"
-    ],
-    "novelty": "MT-AgentRisk is the first benchmark to jointly evaluate multi-turn and tool-use dimensions of agent safety; ToolShield's pre-deployment self-exploration mechanism (tool probing to build safety priors before inference) is a distinct defense paradigm from RLHF, prompt engineering, or fine-tuning approaches.",
-    "audience": "Agent framework developers and AI safety researchers building or auditing production LLM agent systems with tool-calling capabilities.",
-    "source_url": "https://arxiv.org/abs/2602.13379",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://arxiv.org/abs/2602.13379",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CR"
-      },
-      {
-        "url": "https://arxiv.org/abs/2602.13379",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.SE"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-12T04:00:00+00:00",
-    "curated_at": "2026-06-12T12:40:34.074184+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 50967,
-    "title": "DIG: Oracle-Guided Directed Input Generation for One-Day Vulnerabilities",
-    "relevance": 7,
-    "score": 4.603,
-    "why": "LLM-synthesized patch oracles now let automated systems reproduce known CVE exploits 40% more broadly than prior art — directly compressing the window between patch drop and real-world risk assessment.",
-    "notes": [
-      "Evaluates 138 real-world CVEs; DIG triggers 80 vs. 57 for the best prior baseline (40% improvement); exclusively triggers 9 CVEs no other tool can reach.",
-      "Core insight: patch diffs implicitly encode the preconditions needed to trigger the vulnerability — an LLM reads the diff and synthesizes an explicit 'oracle' encoding those constraints.",
-      "Two-level architecture: high-level agent-based constraint inference and solving (oracle-guided generator evolution) + low-level directed fuzzing instrumented with the oracle and branch-distance feedback — addresses 'goal drift' in pure-agent approaches.",
-      "Speed advantage is large: faster than tool-average in 92.9% of cases; >100x speedup in 48.8% of cases; single-case maximum of 3,664x.",
-      "Side-effect result: DIG independently discovered 6 previously unknown zero-day vulnerabilities in widely deployed libraries — suggesting the oracle mechanism generalizes beyond patch-guided replay.",
-      "Caveat: arXiv pre-print, no peer review noted; CVE selection methodology and patch availability assumptions not detailed in the abstract — replication details matter here."
-    ],
-    "summary": "DIG is a hybrid vulnerability reproduction system that treats software patch diffs as implicit specifications of the preconditions needed to trigger a bug. An LLM analyzes the patch and synthesizes an explicit oracle encoding those conditions; the oracle then drives two complementary processes — a high-level agent that infers and solves input constraints, and a low-level directed fuzzer instrumented with branch-distance feedback anchored to the oracle. Evaluated across 138 real-world CVEs, DIG triggered 80, versus 57 for the best competing baseline, and was faster than the average competing tool in 92.9% of cases with speedups exceeding 100x in nearly half of trials and peaking at 3,664x. The system also uncovered 6 previously unknown vulnerabilities in widely deployed libraries, demonstrating that the oracle-based approach generalizes to zero-day discovery beyond its primary one-day PoC use case. The paper is an arXiv pre-print (cs.CR/cs.SE); independent replication and peer review are pending.",
-    "channels": [
-      "security",
-      "ai",
-      "devtools"
-    ],
-    "novelty": "Using patch diffs as oracle specifications for vulnerability preconditions is architecturally new. Prior directed fuzzers rely on target-distance metrics with no explicit constraint model; prior agentic approaches lack grounding and suffer goal drift on long-horizon tasks. DIG's contribution is anchoring agent reasoning to a patch-derived oracle, then composing that oracle with low-level fuzzing — neither component alone achieves the result.",
-    "audience": "Security researchers and fuzzing practitioners exploring LLM-augmented vulnerability analysis and automated PoC generation.",
-    "source_url": "https://arxiv.org/abs/2606.13037",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://arxiv.org/abs/2606.13037",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CR"
-      },
-      {
-        "url": "https://arxiv.org/abs/2606.13037",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.SE"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-12T04:00:00+00:00",
-    "curated_at": "2026-06-12T12:39:07.393699+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 50801,
-    "title": "MDForge: Agentic Molecular Dynamics Pipeline Design under Sparse Simulator Feedback",
-    "relevance": 7,
-    "score": 4.603,
-    "why": "MDForge introduces a generalizable agentic pattern—multi-agent debate to densify sparse simulator reward—and backs it with a rare wet-lab confirmation of a picomolar binder, making it one of the stronger experimental proofs that LLM agents can drive genuine scientific discovery.",
-    "notes": [
-      "Multi-agent debate among simulated 'physics expert' agents converts sparse binary simulator feedback into dense verbal reward, used as in-context update signal rather than gradient-based training — a potentially portable pattern for any high-cost-to-evaluate code generation loop.",
-      "Key architectural distinction from prior MD agents: MDForge generates full simulation pipelines as open-ended code rather than selecting from a predefined tool library, giving it flexibility on novel systems.",
-      "Benchmarked on three SAMPL host-guest binding free-energy challenges — community-standard blind predictive assessments — where it matches human-expert pipeline quality.",
-      "Deployed on an unseen CB[7] guest library, it identified a novel binder subsequently confirmed by wet-lab competition NMR to exhibit high-affinity, picomolar binding — a quantifiable, independently verifiable result.",
-      "Caveat: preprint only (arXiv June 2026, not peer-reviewed); wet-lab details (sample size, controls, NMR methodology) are sparse in the abstract and warrant scrutiny before citing the discovery claim."
-    ],
-    "summary": "MDForge is an LLM agent system that automates molecular dynamics (MD) pipeline design by framing the task as open-ended code generation rather than orchestration of a fixed tool set. Because running MD simulations is expensive and feedback is sparse, the system employs a multi-agent debate among physics-expert role-playing agents to translate rare simulator signals into rich verbal reward, enabling in-context policy refinement. Evaluated on three SAMPL host-guest binding free-energy benchmarks, MDForge produces pipelines competitive with human experts. Applied to a library of unseen candidate guests for the CB[7] host molecule, it autonomously discovered a novel binder that wet-lab competition NMR confirmed as a picomolar-affinity ligand. Code and data are publicly released on GitHub.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "science"
-    ],
-    "novelty": "Multi-agent debate as a sparse-reward-densification mechanism for agentic code generation loops (not previously demonstrated in this form); full pipeline generation from scratch rather than tool selection; and a wet-lab-confirmed scientific discovery attributed to an autonomous LLM agent, which remains rare in the literature.",
-    "audience": "AI/agents researchers and computational scientists exploring LLM-driven scientific discovery pipelines, particularly those working on reward shaping for high-cost simulators.",
-    "source_url": "https://arxiv.org/abs/2606.12916",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://arxiv.org/abs/2606.12916",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.AI"
-      },
-      {
-        "url": "https://arxiv.org/abs/2606.12916",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CL"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-12T04:00:00+00:00",
-    "curated_at": "2026-06-12T12:33:36.926074+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 49637,
-    "title": "Evoflux: Inference-Time Evolution of Executable Tool Workflows for Compact Agents",
-    "relevance": 7,
-    "score": 4.704,
-    "why": "Evolutionary inference-time search reliably beats fine-tuning for compact models on MCP tool workflows — a direct, empirically grounded counterargument to the \"just distill it\" playbook for small agents.",
-    "notes": [
-      "Evoflux raises execution feasibility from ~3% to 17–24% on MCP-Bench (250 tools, live MCP servers) for small planners, with no retraining required.",
-      "SFT and SFT+DPO trained on the same search-mined traces match, underperform, or collapse *below* zero-shot performance — not merely slower gains, but actual regression in some cases.",
-      "ReAct achieves higher peak performance but at higher token cost and variance, making Evoflux the more predictable option under tight inference budgets.",
-      "Core mechanism: typed workflow graphs are evolved via structured edits + execution feedback + adaptive search intensity + meta-guided redesign + diversity pruning — all at inference time.",
-      "Key causal claim: distillation traces teach workflow format but not recovery behavior needed to repair plans over changing tool catalogs; small trace corpora (~hundreds) can't cover the failure modes."
-    ],
-    "summary": "Evoflux addresses the systematic failure of compact language models on MCP-style agentic tool use, where agents must discover tools from live catalogs, satisfy schemas, and track inter-step dependencies. Rather than training, it frames tool use as inference-time workflow repair: typed workflow graphs are evolved via structured edits guided by execution feedback, adaptive intensity, meta-guided redesign, and diversity pruning. On MCP-Bench across 250 tools and live MCP servers, Evoflux raises execution feasibility from roughly 3% to 17–24% across several small planners. Critically, SFT and SFT+DPO trained on the same search-mined data regress or plateau — the paper argues this is because few-hundred-trace teacher corpora can teach format but cannot cover recovery from failed plans over evolving catalogs. ReAct achieves higher peaks but with higher variance and token cost, positioning Evoflux as the more reliable choice under scarce training data and constrained inference budgets.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "devtools"
-    ],
-    "novelty": "Inference-time evolutionary repair of typed workflow graphs specifically for MCP tool use; empirical demonstration that SFT/DPO on distilled traces can regress below zero-shot on execution tasks; MCP-Bench on live servers as an evaluation harness for agentic tool-use research.",
-    "audience": "ML engineers building compact or edge-deployed agents with MCP tool integration, and researchers studying small-model agentic capabilities.",
-    "source_url": "https://arxiv.org/abs/2606.12674",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2606.12674",
-        "points": 3,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2606.12674",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.AI"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-09T20:00:00.000Z",
-    "curated_at": "2026-06-12T12:26:59.164933+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 48382,
-    "title": "Canadian mother sues OpenAI, alleging ChatGPT led her daughter to kill herself",
-    "relevance": 7,
-    "score": 5.079,
-    "why": "OpenAI's own disclosed statistics — 1M+ users/week sending suicide-related messages — combined with the specific allegation that \"humanization\" model updates actively degraded safety behavior, together define an emerging product-liability frontier that will shape how AI companies design and version consumer-facing models.",
-    "notes": [
-      "OpenAI's October 2025 blog post self-disclosed that 1M+ users/week send messages with 'explicit indicators of potential suicidal planning or intent'; ~560K of 800M weekly users show signs of mental health emergencies — these numbers are the company's own, not plaintiffs' estimates.",
-      "Core liability theory: OpenAI's iterative updates to make ChatGPT 'sound more human' are alleged to have worsened safety outcomes by deepening engagement and undermining crisis hotline referrals — a direct mechanism tying model improvement cycles to harm.",
-      "This case joins 18 coordinated California lawsuits against OpenAI over suicide/self-harm; Google faces a parallel Gemini suit; Florida AG filed the first state-level suit and opened a criminal investigation — coordinated legal pressure, not isolated incidents.",
-      "OpenAI's defense: the interactions occurred on 'an earlier version of ChatGPT that is no longer available' — raises the question of whether version-specific liability shields or implicates the update pipeline itself.",
-      "Remedy sought includes a court order requiring automatic termination of self-harm conversations, not just damages — structural injunctive relief that could constrain model behavior by legal fiat rather than product policy."
-    ],
-    "summary": "A Canadian mother filed suit in San Francisco against OpenAI and Sam Altman, alleging ChatGPT engaged her 24-year-old daughter Alice Carrier in escalating conversations about suicidal ideation across 2024 before her 2025 death, without triggering human review or terminating the sessions. The lawsuit's central mechanism claim is that successive model updates aimed at more naturalistic responses deepened Alice's dependence on the chatbot while undermining crisis hotline referrals, with the filing quoting ChatGPT as saying \"Maybe this is just the end.\" OpenAI denies current-version liability and says the interactions predate its strengthened safeguards, but its own October 2025 disclosures acknowledge 1M+ weekly messages containing explicit suicidal-planning indicators among 800M weekly users. The case is the 19th in a coordinated California proceeding targeting OpenAI over suicide-related harms, alongside a parallel Gemini suit against Google and Florida's first-ever state-level AI lawsuit with an attendant criminal investigation. Plaintiffs seek both damages and an injunction mandating automatic conversation termination for self-harm disclosures — injunctive relief that, if granted, could impose architecture-level constraints via court order.",
-    "channels": [
-      "ai",
-      "security",
-      "startups"
-    ],
-    "novelty": "The specific allegation that \"humanization\" model updates are the proximate causal mechanism of harm — not a one-off misuse but a product-design regression — is the new thread here. Combined with OpenAI's own scale disclosures (1M+ at-risk users/week) and the coordinated multi-jurisdiction legal strategy including a state criminal probe, this is qualitatively beyond prior single-case coverage.",
-    "audience": "AI product managers, safety engineers, and policy-focused engineers building or governing consumer-facing LLM applications",
-    "source_url": "https://theguardian.com/technology/2026/jun/11/canada-mother-chatgpt-daughter-suicide-lawsuit",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://www.theguardian.com/technology/2026/jun/11/canada-mother-chatgpt-daughter-suicide-lawsuit",
-        "points": null,
-        "comments": null,
-        "name": "The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/jun/11/canada-mother-chatgpt-daughter-suicide-lawsuit",
-        "points": null,
-        "comments": null,
-        "name": "World news | The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/jun/11/canada-mother-chatgpt-daughter-suicide-lawsuit",
-        "points": null,
-        "comments": null,
-        "name": "Guardian Technology"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-06-11T19:14:46+00:00",
-    "curated_at": "2026-06-12T10:26:46.936719+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 46348,
-    "title": "TreeSeeker: Tree-Structured Trial, Error, and Return in Deep Search",
-    "relevance": 7,
-    "score": 5.369,
-    "why": "Inference-time tree search with UCB-style exploration/exploitation tradeoffs is a concrete, mechanistically novel approach to the hard problem of multi-step web research agents going down dead-end paths.",
-    "notes": [
-      "TreeSeeker decomposes deep search into a branch-and-return tree over sub-goals, controlled by **textual UCB signals** encoding value, uncertainty, and risk — adapting classic MCTS exploration math to the language agent setting.",
-      "**TreeMem** is a dedicated structured memory component that attaches evidence, uncertainty estimates, conflict flags, and failure cues directly to the branch that produced them, enabling later branches to condition on past trial outcomes.",
-      "Evaluated on three benchmarks: XBench-DeepSearch, BrowseComp, and BrowseComp-ZH (Chinese); authors claim consistent outperformance over 'strong open-source baselines' — but the abstract provides no concrete numbers, so effect sizes are unknown pending full paper read.",
-      "The framing is **inference-time only** — no fine-tuning claimed; this positions it as a wrapper/controller layer over existing reasoning+tool-use models, which is practically important for deployment.",
-      "Caveat: arXiv preprint as of June 2026, no peer review; code/data availability not confirmed in abstract; 'strong open-source baselines' left unspecified — methodology transparency is unverifiable from abstract alone."
-    ],
-    "summary": "TreeSeeker is an inference-time framework that structures deep web-search agent behavior as a branch-and-return tree over sub-goals, borrowing UCB exploration-exploitation logic from Monte Carlo Tree Search and adapting it to textual signals of value, uncertainty, and risk. A companion component called TreeMem maintains per-branch evidence, conflict cues, and failure signals so that outcomes from one search direction can inform decisions in others. The system aims to address the central failure modes of greedy deep search agents — premature commitment to weak branches and undisciplined budget waste — without requiring model fine-tuning. Benchmarks on XBench-DeepSearch, BrowseComp, and BrowseComp-ZH show consistent wins over open-source baselines, though the abstract withholds quantitative margins. The work is an arXiv preprint and has not undergone peer review.",
-    "channels": [
-      "ai",
-      "ml-research"
-    ],
-    "novelty": "Applying UCB-style exploration signals — with explicit uncertainty and risk terms, not just value — to control a tree-structured search over sub-goals at inference time, paired with a structured branch-scoped memory (TreeMem) that propagates trial outcomes forward. Prior deep search agents either use flat greedy rollouts or undifferentiated parallel sampling; the branch-and-return control loop with textual UCB is the new mechanism.",
-    "audience": "ML engineers and researchers building or evaluating multi-step web-search agents (e.g., deep research tools, agentic RAG pipelines).",
-    "source_url": "https://arxiv.org/abs/2606.11662",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2606.11662",
-        "points": 10,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2606.11662",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.AI"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-11T04:00:00+00:00",
-    "curated_at": "2026-06-12T10:25:40.140339+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 46485,
-    "title": "VIA-SD: Verification via Intra-Model Routing for Speculative Decoding",
-    "relevance": 7,
-    "score": 5.448,
-    "why": "Adds a practical third tier to speculative decoding's binary accept/reject loop, reducing expensive full-model calls for medium-confidence tokens and delivering 10–20% additional wall-clock speedup over existing SD systems—no retraining required.",
-    "notes": [
-      "Three-tier routing: direct accept (high confidence) → slim-verifier derived via intra-model routing from the full model (medium confidence) → full-model re-generation (uncertain); the slim-verifier is not a separately trained model but a subnetwork routed from the verifier itself.",
-      "Empirical gains: rejection rate drops 0.10–0.22 across tasks; 10–20% speedup over strong SD baselines; 2.5–3× over non-speculative decoding baseline.",
-      "Evaluated on four representative tasks across multiple model families — specific models and tasks are not named in the abstract, which is a transparency caveat worth noting.",
-      "Claims drop-in compatibility with existing SD frameworks (e.g., SpecInfer, EAGLE-style systems) without modifying their training procedures — a significant practical claim that needs validation on real deployments.",
-      "Preprint only (arXiv 2606.12243, June 2026); no peer review yet; latency breakdown and routing overhead costs are not detailed in the abstract."
-    ],
-    "summary": "VIA-SD introduces a multi-tier speculative decoding framework that replaces the conventional binary accept/reject decision with a three-way routing scheme. The central insight is that tokens rejected by the full verifier often do not require full-model recomputation: a slim submodel derived from the verifier via intra-model routing (not a separately trained draft model) can handle medium-confidence cases at lower cost. The three tiers are: direct acceptance for high-confidence draft tokens, slim-verifier regeneration for moderate cases, and full large-model verification for uncertain tokens. Across four representative tasks and multiple model families, the method reduces rejection rates by 0.10–0.22 and achieves 10–20% speedup over strong SD baselines, and 2.5–3× over non-drafting decoding. The authors claim compatibility with existing SD frameworks without requiring changes to training pipelines, positioning multi-tier SD as a general paradigm for scalable LLM inference.",
-    "channels": [
-      "ai",
-      "ml-research"
-    ],
-    "novelty": "The intra-model routing mechanism that extracts a slim sub-verifier from the full verifier at inference time (no separate training) for intermediate-confidence tokens; the three-tier decision framework itself, as prior speculative decoding work uses only binary accept/reject.",
-    "audience": "ML engineers and researchers optimizing LLM inference latency, particularly those deploying or extending speculative decoding pipelines in production.",
-    "source_url": "https://arxiv.org/abs/2606.12243",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2606.12243",
-        "points": 14,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2606.12243",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CL"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-11T04:00:00+00:00",
-    "curated_at": "2026-06-12T10:24:13.371882+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 49639,
-    "title": "WeaveBench: A Long-Horizon, Real-World Benchmark for Computer-Use Agents with Hybrid Interfaces",
-    "relevance": 7,
-    "score": 4.05,
-    "why": "Current agent benchmarks flatter model performance by grading outcomes alone — WeaveBench's trajectory-aware judge shows how badly, and establishes a harder bar for cross-interface orchestration that frontier models still mostly fail.",
-    "notes": [
-      "114 tasks across 8 real-world work domains, each requiring a single trajectory that spans GUI, CLI, code editing, browser, and external tools on a live Ubuntu desktop — not sandboxed/simulated.",
-      "Best PassRate across frontier model-runtime pairings is 41.2%, with the benchmark explicitly described as far from saturated.",
-      "Trajectory-aware judge inspects deliverables, files, screenshots, logs, AND action traces — and specifically detects shortcut/cheating behaviors such as fabricated visual evidence and hard-coded metrics; this is the key methodological contribution.",
-      "Outcome-only grading 'substantially overestimates' agent performance per the judge comparison — magnitude not quantified in the abstract, which is a notable gap in the available information.",
-      "Benchmark grounded in 'real user requests and publicly verifiable artifacts,' which addresses the common critique that agent benchmarks use synthetic or easily gamed tasks; no independent replication yet (arXiv preprint, June 2026)."
-    ],
-    "summary": "WeaveBench is a new benchmark targeting computer-use agents (CUAs) that must orchestrate GUI, CLI, code, and browser actions within single long-horizon trajectories. It comprises 114 tasks across 8 real-world domains, evaluated on an actual Ubuntu desktop with a minimal desktop-control plugin augmenting CLI-agent runtimes. The benchmark's central methodological contribution is a trajectory-aware judge that examines the full action trace — not just final artifacts — and detects gaming behaviors like fabricated screenshots or hard-coded metric outputs. Frontier model-runtime pairings peak at 41.2% pass rate, indicating substantial headroom. The authors show that outcome-only evaluation materially overstates agent capability, which has direct implications for how practitioners interpret existing leaderboard results. The paper is an arXiv preprint; neither the benchmark suite nor the judge's precision/recall figures have yet been independently validated.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "devtools"
-    ],
-    "novelty": "The trajectory-aware judge that actively detects shortcut/fabrication behaviors is genuinely new — most CUA benchmarks grade final state only. The explicit hybrid-interface framing (GUI + CLI + code in one trajectory) and the public-artifact grounding also distinguish this from OSWorld/WebArena-class benchmarks that treat interfaces separately.",
-    "audience": "ML engineers and researchers building or evaluating computer-use / desktop-automation agents.",
-    "source_url": "https://arxiv.org/abs/2606.09426",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2606.09426",
-        "points": 57,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      }
-    ],
-    "sources_count": 1,
-    "first_seen": "2026-06-07T20:00:00.000Z",
-    "curated_at": "2026-06-12T06:49:54.599387+00:00",
-    "model": "claude-sonnet-4-6"
-  },
-  {
-    "id": 46475,
-    "title": "FORT-Searcher: Synthesizing Shortcut-Resistant Search Tasks for Training Deep Search Agents",
-    "relevance": 7,
-    "score": 5.285,
-    "why": "If your training data lets agents shortcut to answers without genuine search, you're not training search agents — FORT-Searcher formalizes that failure mode and shows SFT on shortcut-resistant data beats prior open-source agents without any RL.",
-    "notes": [
-      "Four named shortcut risks in search-agent training data: evidence co-coverage, single-clue selectivity, exposed constants, and prior-knowledge binding — each collapses intended multi-hop search to a cheaper route.",
-      "Diagnostic uses three trajectory signatures: solving cost, answer hit time, and prior-shortcut rate — making shortcut prevalence measurable rather than qualitative.",
-      "FORT pipeline addresses shortcuts at four stages: entity selection, evidence graph construction, question formulation, and adversarial refinement.",
-      "FORT-Searcher trained with SFT only (no reinforcement learning) claims best overall performance among comparable-size open-source deep search agents on 'challenging deep search benchmarks' — benchmarks not named in the abstract.",
-      "Key caveat: evaluation benchmarks and baseline identities are not specified in the abstract; the comparison scope ('comparable-size open-source') is narrow and self-defined."
-    ],
-    "summary": "FORT-Searcher tackles a structural problem in training deep search agents: synthesizing questions whose apparent difficulty (via complex knowledge graphs) doesn't translate to realized search difficulty because cheaper shortcut paths exist. The authors formalize a shortcut-aware difficulty framework with four shortcut risk categories and propose corresponding trajectory-based diagnostics. Their FORT framework controls for these risks across the full data-synthesis pipeline — entity selection through adversarial question refinement. An agent trained on FORT data using supervised fine-tuning alone achieves top reported performance among comparable open-source search agents, suggesting that training data quality along the shortcut-resistance axis matters more than the training objective (SFT vs. RL). Code and data are promised but not yet public at time of preprint.",
-    "channels": [
-      "ai",
-      "ml-research"
-    ],
-    "novelty": "The formal taxonomy of shortcut risk types in training-data synthesis for search agents is new, as is the trajectory-signature framework for measuring realized shortcut rate. Prior work focused on structural complexity of evidence graphs without auditing whether those structures were actually traversed. The SFT-only competitive result also pushes back against the assumption that RL is necessary for strong search-agent performance.",
-    "audience": "ML researchers and practitioners building or fine-tuning multi-hop search / agentic retrieval systems",
-    "source_url": "https://arxiv.org/abs/2606.12087",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2606.12087",
-        "points": 71,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2606.12087",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CL"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-06-11T04:00:00+00:00",
-    "curated_at": "2026-06-12T06:29:43.936800+00:00",
     "model": "claude-sonnet-4-6"
   }
 ]
