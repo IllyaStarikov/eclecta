@@ -1,8 +1,8 @@
 /**
  * Reader preferences — device-local (localStorage), no backend.
  * The inline script in Base.astro stamps <html data-*> before first paint;
- * this module keeps everything live after load: the theme toggle, the
- * preferences page controls, and the per-pick thumbs.
+ * this module keeps everything live after load: the masthead theme toggle
+ * and the preferences-page controls.
  */
 const PREFIX = 'lede:';
 
@@ -27,7 +27,6 @@ function set(key, value) {
 const FLAG_ATTRS = [
   ['showScores', 'showscores'],
   ['showSignals', 'showsignals'],
-  ['hideDownvoted', 'hidedown'],
 ];
 
 function apply() {
@@ -48,7 +47,6 @@ function apply() {
     if (get(key) === '1') d.dataset[attr] = '1';
     else delete d.dataset[attr];
   }
-  applyVotes();
   syncToggleLabels();
   syncControls();
 }
@@ -65,24 +63,6 @@ function syncToggleLabels() {
   for (const btn of document.querySelectorAll('[data-theme-toggle]')) {
     btn.textContent = currentTheme();
     btn.setAttribute('aria-label', 'Theme: ' + currentTheme() + ' — click to change');
-  }
-}
-
-/* ── thumbs (device-local) ───────────────────────────────────────────── */
-function votes() {
-  try {
-    return JSON.parse(get('votes') || '{}') || {};
-  } catch {
-    return {};
-  }
-}
-
-function applyVotes() {
-  const v = votes();
-  for (const el of document.querySelectorAll('[data-pick-id]')) {
-    const vote = v[el.dataset.pickId];
-    if (vote === 'up' || vote === 'down') el.dataset.vote = vote;
-    else delete el.dataset.vote;
   }
 }
 
@@ -104,17 +84,6 @@ document.addEventListener('click', (e) => {
   const toggle = e.target.closest('[data-theme-toggle]');
   if (toggle) {
     set('theme', THEME_CYCLE[currentTheme()] === 'auto' ? null : THEME_CYCLE[currentTheme()]);
-    return;
-  }
-  const voteBtn = e.target.closest('[data-vote-btn]');
-  if (voteBtn) {
-    const pick = voteBtn.closest('[data-pick-id]');
-    if (!pick) return;
-    const v = votes();
-    const id = pick.dataset.pickId;
-    v[id] = v[id] === voteBtn.dataset.voteBtn ? undefined : voteBtn.dataset.voteBtn;
-    if (v[id] === undefined) delete v[id];
-    set('votes', JSON.stringify(v));
     return;
   }
   const clear = e.target.closest('[data-prefs-reset]');

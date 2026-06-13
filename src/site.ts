@@ -6,7 +6,7 @@
  */
 export const site = {
   name: 'Lede',
-  kicker: 'Technology · AI · Science',
+  kicker: 'The frontier, distilled',
   tagline: 'We read the firehose, so you read the lede.',
   description:
     'Lede watches the places technology, AI, and the sciences break first — ' +
