@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { site } from '../site';
+import { CATEGORIES } from '../lib/taxonomy';
 
 interface SegOption { value: string; label: string; }
 // Radio groups consumed by src/scripts/prefs.js: a [data-pref-group]
@@ -103,6 +104,28 @@ const densityOpts: SegOption[] = [
               <span class="pref-field__hint">Relevance and score in each pick's byline.</span>
             </span>
           </label>
+        </fieldset>
+
+        <fieldset class="pref-group">
+          <legend>Sections</legend>
+          <p class="pref-field__hint" style="margin-bottom:var(--space-4);">
+            Switch off sections you don't want on the front page or in the nav.
+            A muted section still keeps its own page and feed — it's just out of
+            your way here.
+          </p>
+          <div class="mute-grid">
+            {CATEGORIES.map((c) => (
+              <label class="pref-toggle pref-toggle--compact">
+                <input type="checkbox" data-mute={c.slug} id={`mute-${c.slug}`} checked />
+                <span class="pref-toggle__box" aria-hidden="true"></span>
+                <span class="pref-toggle__name">{c.name}</span>
+              </label>
+            ))}
+          </div>
+          <div class="mute-actions">
+            <button type="button" class="danger" data-mute-none>Show all</button>
+            <button type="button" class="danger" data-mute-all>Mute all</button>
+          </div>
         </fieldset>
 
         <div class="pref-reset">

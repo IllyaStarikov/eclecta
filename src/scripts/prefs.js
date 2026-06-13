@@ -47,8 +47,18 @@ function apply() {
     if (get(key) === '1') d.dataset[attr] = '1';
     else delete d.dataset[attr];
   }
+
+  const muted = mutedList();
+  if (muted.length) d.dataset.muted = muted.join(' ');
+  else delete d.dataset.muted;
+
   syncToggleLabels();
   syncControls();
+}
+
+/* ── muted sections (a comma list in one key) ────────────────────────── */
+function mutedList() {
+  return (get('mutedCategories') || '').split(',').filter(Boolean);
 }
 
 /* ── theme toggle (masthead) ─────────────────────────────────────────── */
@@ -78,12 +88,40 @@ function syncControls() {
       input.checked = stored === '1';
     }
   }
+  // section mutes: a checked box means the section is SHOWN (not muted)
+  const muted = new Set(mutedList());
+  for (const box of document.querySelectorAll('[data-mute]')) {
+    box.checked = !muted.has(box.dataset.mute);
+  }
+}
+
+/** Recompute the muted list from the section toggles (unchecked = muted). */
+function writeMutesFromControls() {
+  const muted = [];
+  for (const box of document.querySelectorAll('[data-mute]')) {
+    if (!box.checked) muted.push(box.dataset.mute);
+  }
+  set('mutedCategories', muted.length ? muted.join(',') : null);
+}
+
+function allMuteSlugs() {
+  return [...document.querySelectorAll('[data-mute]')].map((b) => b.dataset.mute);
 }
 
 document.addEventListener('click', (e) => {
   const toggle = e.target.closest('[data-theme-toggle]');
   if (toggle) {
     set('theme', THEME_CYCLE[currentTheme()] === 'auto' ? null : THEME_CYCLE[currentTheme()]);
+    return;
+  }
+  const muteAll = e.target.closest('[data-mute-all]');
+  if (muteAll) {
+    set('mutedCategories', allMuteSlugs().join(',') || null);
+    return;
+  }
+  const showAll = e.target.closest('[data-mute-none]');
+  if (showAll) {
+    set('mutedCategories', null);
     return;
   }
   const clear = e.target.closest('[data-prefs-reset]');
@@ -98,6 +136,11 @@ document.addEventListener('click', (e) => {
 });
 
 document.addEventListener('change', (e) => {
+  const muteBox = e.target.closest('[data-mute]');
+  if (muteBox) {
+    writeMutesFromControls();
+    return;
+  }
   const input = e.target.closest('input[data-pref]');
   if (!input) return;
   const key = input.dataset.pref;

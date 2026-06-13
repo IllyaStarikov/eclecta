@@ -1,15 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { readdirSync, readFileSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BASE_URL } from '../../playwright.config';
+import { CATEGORIES } from '../../src/lib/taxonomy';
 
 const u = (path: string) => `${BASE_URL}${path}`;
 const here = dirname(fileURLToPath(import.meta.url));
-
-const channels: { slug: string }[] = JSON.parse(
-  readFileSync(join(here, '../../src/data/channels.json'), 'utf8')
-);
 
 // Discover digest routes from the content directory, so new editions are
 // covered without touching this file.
@@ -21,8 +18,11 @@ const digestIds = readdirSync(digestDir, { recursive: true, withFileTypes: true 
 
 const routes = [
   '/',
-  ...channels.map((c) => `/${c.slug}/`),
+  ...CATEGORIES.map((c) => `/${c.slug}/`),
+  ...CATEGORIES.flatMap((c) => c.subcategories.map((s) => `/${c.slug}/${s.slug}/`)),
   ...digestIds.map((id) => `/digests/${id}/`),
+  '/sources/',
+  '/coverage/',
   '/archive/',
   '/feeds/',
   '/preferences/',

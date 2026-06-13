@@ -1,17 +1,19 @@
 import rss from '@astrojs/rss';
 import picks from '../../data/picks.json';
-import channels from '../../data/channels.json';
 import { absUrl } from '../../site';
+import { CATEGORIES, deriveCategory } from '../../lib/taxonomy';
 import { getFeed, pickItemHtml, pickPrimaryLink } from '../../lib/feeds';
 
 export function getStaticPaths() {
-  return channels.map((c) => ({ params: { channel: c.slug }, props: { channel: c } }));
+  return CATEGORIES.map((c) => ({ params: { category: c.slug }, props: { category: c } }));
 }
 
 export function GET(context) {
-  const { channel } = context.props;
-  const feed = getFeed(`channel-${channel.slug}`);
-  const list = picks.filter((p) => p.channels.includes(channel.slug));
+  const { category } = context.props;
+  const feed = getFeed(`cat-${category.slug}`);
+  const list = picks.filter(
+    (p) => deriveCategory(p.title, p.channels).category === category.slug
+  );
   return rss({
     title: feed.title,
     description: feed.description,
@@ -25,6 +27,6 @@ export function GET(context) {
     })),
     customData:
       '<language>en-us</language>' +
-      `<docs>${absUrl(`/${channel.slug}/`, context.site)}</docs>`,
+      `<docs>${absUrl(`/${category.slug}/`, context.site)}</docs>`,
   });
 }

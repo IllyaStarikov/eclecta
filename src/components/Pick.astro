@@ -1,8 +1,11 @@
 ---
 import { href } from '../site';
+import { deriveCategory, categoryName } from '../lib/taxonomy';
 
 interface Surface { url: string; points: number | null; comments: number | null; name: string; }
-/** The canonical pick contract — mirrors lib/schema.ts pickSchema exactly. */
+/** The canonical pick contract — mirrors lib/schema.ts pickSchema.
+ *  category/subcategories are optional: emitted by the pipeline when present,
+ *  otherwise derived from the title + channels on the front end. */
 export interface PickData {
   id: number; title: string; relevance: number; score: number;
   why: string; notes: string[]; summary: string; channels: string[];
@@ -11,10 +14,15 @@ export interface PickData {
   paywalled: boolean; surfaces: Surface[];
   sources_count: number; first_seen: string | null; curated_at: string;
   model: string | null;
+  category?: string; subcategories?: string[];
 }
 interface Props { pick: PickData; index?: number; variant?: 'lead' | 'brief' | 'also'; }
 const { pick, index = 0, variant = 'brief' } = Astro.props;
 const delay = Math.min(index, 8) * 55;
+
+const tax = pick.category
+  ? { category: pick.category, subcategories: pick.subcategories ?? [] }
+  : deriveCategory(pick.title, pick.channels);
 
 // primary source first, always; backup free link when one exists
 const primary = pick.source_url;
@@ -39,7 +47,10 @@ const Heading = variant === 'lead' ? 'h2' : 'h3';
       <span class="pick__no" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
       {host && <span class="pick__src">{host}</span>}
       {date && <span class="pick__date">{date}</span>}
-      {pick.channels.map((c) => <a class="pick__tag" href={href(`/${c}/`)}>{c}</a>)}
+      <a class="pick__tag" href={href(`/${tax.category}/`)}>{categoryName(tax.category)}</a>
+      {tax.subcategories.slice(0, 2).map((s) => (
+        <a class="pick__tag pick__tag--sub" href={href(`/${tax.category}/${s}/`)}>{s}</a>
+      ))}
       <span class="pick__score">{pick.relevance}/10 · score {Number(pick.score ?? 0).toFixed(1)}</span>
     </div>
     <Heading class="pick__title">

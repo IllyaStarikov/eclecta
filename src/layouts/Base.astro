@@ -5,9 +5,9 @@ import '@fontsource-variable/source-serif-4/opsz-italic.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
-import channels from '../data/channels.json';
 import rawStats from '../data/stats.json';
 import { site, href } from '../site';
+import { CATEGORIES } from '../lib/taxonomy';
 
 interface Props {
   title?: string;
@@ -75,6 +75,8 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
           if (g('density') === 'compact') d.dataset.density = 'compact';
           if (g('showScores') === '1') d.dataset.showscores = '1';
           if (g('showSignals') === '1') d.dataset.showsignals = '1';
+          var muted = g('mutedCategories');
+          if (muted) d.dataset.muted = muted.split(',').filter(Boolean).join(' ');
         } catch (e) { /* first paint falls back to defaults */ }
       })();
     </script>
@@ -107,8 +109,8 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
         <div class="wrap">
           <nav class="channels" aria-label="Sections">
             <a href={href('/')} aria-current={isCurrent('/')}>Front</a>
-            {channels.map((c) => (
-              <a href={href(`/${c.slug}/`)} aria-current={isCurrent(`/${c.slug}/`)}>{c.name}</a>
+            {CATEGORIES.map((c) => (
+              <a href={href(`/${c.slug}/`)} data-category={c.slug} aria-current={isCurrent(`/${c.slug}/`)}>{c.name}</a>
             ))}
             <a href={href('/archive/')} aria-current={isCurrent('/archive/')}>Archive</a>
             <a href={href('/feeds/')} aria-current={isCurrent('/feeds/')}>Feeds</a>

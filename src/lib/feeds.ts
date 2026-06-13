@@ -5,7 +5,7 @@
  * record (why, notes, summary, primary + free links, surfaces) in RSS
  * regardless of any on-site display preference.
  */
-import channels from '../data/channels.json';
+import { CATEGORIES } from './taxonomy';
 import { site, KINDS, KIND_LABEL, type DigestKind } from '../site';
 
 /** Minimal XML/HTML escaping for feed content. */
@@ -93,7 +93,7 @@ export function digestItemHtml(d: FeedDigest, url: string): string {
 
 /* ── the registry ──────────────────────────────────────────────────────── */
 
-export type FeedGroup = 'everything' | 'digests' | 'cadence' | 'channel';
+export type FeedGroup = 'everything' | 'digests' | 'cadence' | 'category';
 
 export interface FeedDef {
   slug: string;
@@ -135,13 +135,13 @@ export const FEEDS: FeedDef[] = [
       group: 'cadence',
     })
   ),
-  ...channels.map(
+  ...CATEGORIES.map(
     (c): FeedDef => ({
-      slug: `channel-${c.slug}`,
-      title: `${site.name} · ${c.name}`,
+      slug: `cat-${c.slug}`,
+      title: `${site.name} — ${c.name.toLowerCase()}`,
       path: `/${c.slug}/rss.xml`,
       description: c.blurb,
-      group: 'channel',
+      group: 'category',
     })
   ),
 ];

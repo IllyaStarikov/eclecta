@@ -1,0 +1,63 @@
+---
+import Base from '../layouts/Base.astro';
+import { site, href } from '../site';
+import sourcesData from '../data/sources.json';
+
+interface Source { name: string; homepage: string; category: string; tier: number; paywalled: boolean; }
+const sources = sourcesData as Source[];
+
+const SRC_CAT_LABEL: Record<string, string> = {
+  aggregators: 'Aggregators',
+  ai_companies: 'AI companies & labs',
+  devtools: 'Dev tools',
+  expert_blogs: 'Expert & practitioner blogs',
+  hardware_science: 'Hardware & science',
+  news: 'News desks',
+  newsletters: 'Newsletters',
+  physics: 'Physics',
+  research: 'Research & papers',
+  science: 'Science',
+  tech_news: 'Tech press',
+  security: 'Security',
+};
+const label = (k: string) => SRC_CAT_LABEL[k] ?? k.replaceAll('_', ' ');
+
+const groups = new Map<string, Source[]>();
+for (const s of sources) {
+  if (!groups.has(s.category)) groups.set(s.category, []);
+  groups.get(s.category)!.push(s);
+}
+const ordered = [...groups.entries()].sort((a, b) => b[1].length - a[1].length);
+const total = sources.length;
+---
+<Base title={`Sources — ${site.name}`} description={`Every feed Lede reads — ${total} verified sources across aggregators, labs, expert blogs, research, security, and the sciences.`}>
+  <div class="section-head" style="padding-top:2.4rem;">
+    <h1>Sources</h1>
+    <span class="count">{total.toLocaleString('en-US')} feeds</span>
+  </div>
+  <p class="cat-blurb">
+    Every feed the wire reads, grouped by the kind of source it is. Each was
+    verified to resolve and parse before it was added; the set grows as new
+    ones clear that bar. For the volumes behind it, see
+    <a href={href('/coverage/')}>coverage</a>.
+  </p>
+
+  {ordered.map(([cat, list]) => (
+    <section class="src-group">
+      <div class="rail">
+        <span class="rail__label">{label(cat)}</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">{list.length}</span>
+      </div>
+      <ul class="src-list">
+        {list.map((s) => (
+          <li class="src-item">
+            <a href={s.homepage} target="_blank" rel="noopener">{s.name}</a>
+            {s.tier === 1 && <span class="src-flag">flagship</span>}
+            {s.paywalled && <span class="src-flag src-flag--pay">paywalled</span>}
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
+</Base>

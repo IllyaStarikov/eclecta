@@ -3,38 +3,43 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Pick, { type PickData } from '../components/Pick.astro';
 import picksJson from '../data/picks.json';
-import channels from '../data/channels.json';
 import stats from '../data/stats.json';
-import { site, href, KIND_LABEL } from '../site';
+import { site, href, KIND_LABEL, KINDS } from '../site';
+import { CATEGORIES, deriveCategory } from '../lib/taxonomy';
 
 const digests = (await getCollection('digests')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
-// Lead with the most substantial recent edition (weekly+), and surface the
-// latest daily brief as a strip beneath it. If only dailies exist, lead daily.
-const longform = digests.find((d) => d.data.kind !== 'daily');
-const latestDaily = digests.find((d) => d.data.kind === 'daily');
-const lead = longform ?? digests[0];
-const daily = latestDaily && latestDaily.id !== lead?.id ? latestDaily : null;
+const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
+// latest edition of each kind, for the "Editions" index near the foot
+const editions = KINDS.map((k) => digests.find((d) => d.data.kind === k)).filter(
+  (d): d is (typeof digests)[number] => Boolean(d)
+);
 
-// JSON import inference produces a per-entry union; the zod contract in
-// lib/schema (unit-tested in CI) is the real validator.
-const picks = picksJson as unknown as PickData[];
+// The pipeline emits the v1 contract (channels[]); derive the public taxonomy
+// here so the front page reads as a sectioned edition. When the pipeline emits
+// category/subcategories natively, this passthrough simply uses them.
+const picks = (picksJson as unknown as PickData[]).map((p) => {
+  const tax = deriveCategory(p.title, p.channels);
+  return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
+});
 
-// The Brief (the digest hero) is the page's editorial lead when an edition
-// exists. THE PICKS always carries its OWN ranked #1 (rendered large) so the
-// section never collapses into a flat wall: pick 1 is the lede, 2–8 are
-// briefing rows, and the long tail downshifts to Also Notable.
-const leadRow = picks[0] ?? null;
-const briefRows = picks.slice(1, 8);
-const also = picks.slice(8, 22);
-const shown = (leadRow ? 1 : 0) + briefRows.length + also.length;
-const overflow = picks.length - shown;
+const lead = picks[0] ?? null;
+const rest = lead ? picks.slice(1) : picks;
 
+// Group the remainder by primary category; busiest sections lead the edition.
+const PER_SECTION = 4;
+const sections = CATEGORIES.map((cat) => ({
+  cat,
+  items: rest.filter((p) => p.category === cat.slug),
+}))
+  .filter((s) => s.items.length > 0)
+  .sort((a, b) => b.items.length - a.items.length);
+
+const sourceCount = stats?.sources?.verified ?? stats?.sources?.total ?? null;
+const leadLabel = `${picks.length} curated${sourceCount ? ` · ${sourceCount.toLocaleString('en-US')} sources` : ''}`;
 const fmt = (d: Date) =>
   d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-const sourceCount = stats?.sources?.verified ?? stats?.sources?.total ?? null;
-const picksLabel = `${picks.length} curated${sourceCount ? ` · ${sourceCount.toLocaleString('en-US')} sources read` : ''}`;
 ---
 <Base>
   <p class="standfirst reveal">
@@ -45,72 +50,66 @@ const picksLabel = `${picks.length} curated${sourceCount ? ` · ${sourceCount.to
     <a href={href('/about/')}>How it works →</a>
     {sourceCount && (
       <span class="figures">
-        {sourceCount.toLocaleString('en-US')} sources · daily brief on weekday
-        mornings · digests weekly to yearly
+        {sourceCount.toLocaleString('en-US')} sources read; a brief each weekday,
+        digests weekly to yearly
       </span>
     )}
   </p>
 
   {lead && (
-    <section class="reveal" aria-label="Latest edition">
+    <section class="reveal" aria-label="Lead story" data-category={lead.category}>
       <div class="rail">
-        <span class="rail__label">The Brief</span>
+        <span class="rail__label">Today's lead</span>
         <span class="rail__rule"></span>
-        <span class="rail__count">{KIND_LABEL[lead.data.kind]}</span>
+        <span class="rail__count">{leadLabel}</span>
       </div>
-      <div class="lead-block">
-        <div class="lead">
-          <div class="lead__meta">
-            <span class="label">{KIND_LABEL[lead.data.kind]}</span>
-            <span class="lead__dot" aria-hidden="true">▪</span>
-            <span class="label"><span class="lead__serial">{lead.data.period}</span> · {fmt(lead.data.date)}</span>
-          </div>
-          <h2 class="lead__title"><a href={href(`/digests/${lead.id}/`)}>{lead.data.title}</a></h2>
-          <p class="lead__blurb">{lead.data.blurb}</p>
-          <a class="cta" href={href(`/digests/${lead.id}/`)}>
-            Read the {lead.data.kind === 'daily' ? 'brief' : 'digest'} <span aria-hidden="true">→</span>
-          </a>
-        </div>
-        {daily && (
-          <div class="today">
-            <span class="label today__kind">Today</span>
-            <h3 class="today__title">
-              <a href={href(`/digests/${daily.id}/`)}>{daily.data.title}</a>
-            </h3>
-            <span class="today__blurb">{daily.data.blurb}</span>
-          </div>
-        )}
+      <div class="briefing">
+        <Pick pick={lead} index={0} variant="lead" />
       </div>
     </section>
   )}
 
-  <div class="rail">
-    <span class="rail__label">The Picks</span>
-    <span class="rail__rule"></span>
-    <span class="rail__count">{picksLabel}</span>
-  </div>
-
-  <div class="briefing">
-    {leadRow && <Pick pick={leadRow} index={0} variant="lead" />}
-    {briefRows.map((p, i) => <Pick pick={p} index={i + 1} variant="brief" />)}
-  </div>
-
-  {also.length > 0 && (
-    <Fragment>
-      <div class="rail">
-        <span class="rail__label">Also Notable</span>
-        <span class="rail__rule"></span>
-      </div>
-      <div class="also">
-        {also.map((p, i) => <Pick pick={p} index={i} variant="also" />)}
-      </div>
-    </Fragment>
+  {latestDaily && (
+    <aside class="brief-strip reveal" aria-label="Today's brief" data-category="brief">
+      <span class="brief-strip__kind">The brief — {KIND_LABEL[latestDaily.data.kind].toLowerCase()}</span>
+      <a class="brief-strip__title" href={href(`/digests/${latestDaily.id}/`)}>{latestDaily.data.title}</a>
+      <p class="brief-strip__blurb">{latestDaily.data.blurb}</p>
+      <a class="cta" href={href(`/digests/${latestDaily.id}/`)}>Read the brief <span aria-hidden="true">→</span></a>
+    </aside>
   )}
 
-  {overflow > 0 && (
-    <p class="more-note">
-      + {overflow} more across the <a href={href('/feeds/')}>channels and feeds</a>
-    </p>
+  {sections.map((s) => (
+    <section class="reveal" data-category={s.cat.slug} aria-label={s.cat.name}>
+      <div class="rail">
+        <span class="rail__label">{s.cat.name}</span>
+        <span class="rail__rule"></span>
+        <a class="rail__more" href={href(`/${s.cat.slug}/`)}>
+          {s.items.length} {s.items.length === 1 ? 'story' : 'stories'} <span aria-hidden="true">→</span>
+        </a>
+      </div>
+      <div class="briefing">
+        {s.items.slice(0, PER_SECTION).map((p, i) => <Pick pick={p} index={i} variant="brief" />)}
+      </div>
+    </section>
+  ))}
+
+  {editions.length > 0 && (
+    <section class="reveal" aria-label="Editions">
+      <div class="rail">
+        <span class="rail__label">Editions</span>
+        <span class="rail__rule"></span>
+        <a class="rail__more" href={href('/archive/')}>All editions <span aria-hidden="true">→</span></a>
+      </div>
+      <ul class="editions">
+        {editions.map((d) => (
+          <li class="editions__row">
+            <span class="editions__kind">{KIND_LABEL[d.data.kind]}</span>
+            <a class="editions__title" href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
+            <span class="editions__date">{fmt(d.data.date)}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   )}
 
   <section class="subscribe reveal">
@@ -118,13 +117,14 @@ const picksLabel = `${picks.length} curated${sourceCount ? ` · ${sourceCount.to
     <h2>Read it in your feed reader.</h2>
     <p>
       No inbox, no algorithm. Point any RSS reader at a feed and the best of it
-      arrives as it’s curated — or take only the digests, or only a channel.
+      arrives as it's curated — take everything, only the digests, or a single
+      section.
     </p>
     <div class="feeds">
       <a class="feed-chip" href={href('/rss.xml')}><span class="dot"></span>Everything</a>
       <a class="feed-chip" href={href('/digests/rss.xml')}><span class="dot"></span>Digests</a>
-      {channels.map((c) => (
-        <a class="feed-chip" href={href(`/${c.slug}/rss.xml`)}><span class="dot"></span>{c.name}</a>
+      {CATEGORIES.map((c) => (
+        <a class="feed-chip" href={href(`/${c.slug}/rss.xml`)} data-category={c.slug}><span class="dot"></span>{c.name}</a>
       ))}
     </div>
     <p style="margin-top:1.2rem;">

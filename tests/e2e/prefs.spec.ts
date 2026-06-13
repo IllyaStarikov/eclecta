@@ -21,7 +21,9 @@ test('showSignals reveals the signals panel on the front page', async ({ page })
   await expect(page.locator('.pick__signals').first()).toBeHidden();
 
   await page.goto(u('/preferences/'));
-  await page.check('#pref-signals');
+  // the checkbox is a visually-hidden switch; its wrapping label is the control
+  await page.getByText('Show curation signals').click();
+  await expect(page.locator('#pref-signals')).toBeChecked();
   await expect(page.locator('html')).toHaveAttribute('data-showsignals', '1');
 
   await page.goto(u('/'));

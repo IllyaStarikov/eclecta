@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { FEEDS, esc, pickItemHtml, type FeedPick } from '../../src/lib/feeds';
 import { KINDS } from '../../src/site';
-import channels from '../../src/data/channels.json';
+import { CATEGORIES } from '../../src/lib/taxonomy';
 
 describe('esc()', () => {
   it('escapes XML/HTML specials', () => {
@@ -45,13 +45,13 @@ describe('pickItemHtml()', () => {
 });
 
 describe('FEEDS registry', () => {
-  it('covers everything + digests + every kind + every channel', () => {
+  it('covers everything + digests + every kind + every category', () => {
     const slugs = new Set(FEEDS.map((f) => f.slug));
     expect(slugs).toContain('everything');
     expect(slugs).toContain('digests');
     for (const kind of KINDS) expect(slugs).toContain(`digests-${kind}`);
-    for (const c of channels) expect(slugs).toContain(`channel-${c.slug}`);
-    expect(FEEDS.length).toBe(2 + KINDS.length + channels.length);
+    for (const c of CATEGORIES) expect(slugs).toContain(`cat-${c.slug}`);
+    expect(FEEDS.length).toBe(2 + KINDS.length + CATEGORIES.length);
   });
 
   it('has unique paths', () => {

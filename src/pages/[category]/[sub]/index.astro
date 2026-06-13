@@ -1,0 +1,47 @@
+---
+import Base from '../../../layouts/Base.astro';
+import Pick, { type PickData } from '../../../components/Pick.astro';
+import picksJson from '../../../data/picks.json';
+import { site, href } from '../../../site';
+import { CATEGORIES, deriveCategory } from '../../../lib/taxonomy';
+
+export function getStaticPaths() {
+  return CATEGORIES.flatMap((c) =>
+    c.subcategories.map((s) => ({
+      params: { category: c.slug, sub: s.slug },
+      props: { category: c, sub: s },
+    }))
+  );
+}
+const { category, sub } = Astro.props;
+
+const picks = (picksJson as unknown as PickData[]).map((p) => {
+  const tax = deriveCategory(p.title, p.channels);
+  return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
+});
+const list = picks.filter(
+  (p) => p.category === category.slug && (p.subcategories ?? []).includes(sub.slug)
+);
+const lead = list[0] ?? null;
+const restRows = lead ? list.slice(1) : list;
+---
+<Base title={`${sub.name} — ${category.name} — ${site.name}`} description={sub.blurb}>
+  <p class="crumb" style="padding-top:2rem;"><a href={href(`/${category.slug}/`)}>← {category.name}</a></p>
+  <div class="section-head" style="margin-top:0.4rem;">
+    <h1>{sub.name}</h1>
+    <span class="count">{list.length} {list.length === 1 ? 'pick' : 'picks'}</span>
+  </div>
+  <p class="cat-blurb">{sub.blurb}</p>
+  <p style="margin-top:1.1rem;">
+    <a class="feed-chip" href={href(`/${category.slug}/rss.xml`)}><span class="dot"></span>Subscribe to {category.name}</a>
+  </p>
+
+  {list.length > 0 ? (
+    <div class="briefing" style="margin-top:1.4rem; border-top:1px solid var(--hairline-bold);">
+      {lead && <Pick pick={lead} index={0} variant="lead" />}
+      {restRows.map((p, i) => <Pick pick={p} index={i + 1} variant="brief" />)}
+    </div>
+  ) : (
+    <p class="empty-state">Nothing under {sub.name} in {category.name} right now.</p>
+  )}
+</Base>
