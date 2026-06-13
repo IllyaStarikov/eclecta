@@ -31,6 +31,15 @@ export const pickSchema = z.object({
   notes: z.array(z.string()),
   summary: z.string(),
   channels: z.array(z.string()),
+  // v2 taxonomy (pipeline-emitted; the front end derives them from title +
+  // channels until the pipeline writes them natively — see lib/taxonomy.ts).
+  // Optional during the transition; they become the contract once the pipeline
+  // v2 export is the sole writer.
+  category: z.string().optional(),
+  subcategories: z.array(z.string()).optional(),
+  story_id: z.string().optional(),
+  state: z.enum(['confident', 'developing']).optional(),
+  published_at: z.string().nullable().optional(),
   novelty: z.string().nullable(),
   audience: z.string().nullable(),
   source_url: z.string().min(1),
