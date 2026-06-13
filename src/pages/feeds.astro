@@ -15,19 +15,16 @@ const feedsFor = (g: FeedGroup) => FEEDS.filter((f) => f.group === g);
   <section class="feeds-page">
     <div class="section-head" style="padding-top:2.4rem;">
       <h1>Feeds</h1>
-      <span class="count">{FEEDS.length} feeds</span>
     </div>
-    <p class="measure" style="color:var(--ink-soft); font-style:italic; margin:0 0 0.6rem;">
+    <p class="measure" style="color:var(--ink-soft); font-style:italic; margin:0 0 var(--space-5);">
       {site.name} lives in your feed reader. Take all of it, or exactly the
       slice you want — every feed below is plain RSS.
     </p>
 
     {GROUPS.map((g) => (
-      <section>
-        <div class="section-head">
-          <h2 style="font-size:1.2rem;">{g.title}</h2>
-          <span class="count">{g.note}</span>
-        </div>
+      <section class="feed-group">
+        <h2 class="feed-group__title">{g.title}</h2>
+        <p class="feed-group__note">{g.note}</p>
         <ul class="feed-list">
           {feedsFor(g.key).map((f) => (
             <li>
@@ -42,39 +39,29 @@ const feedsFor = (g: FeedGroup) => FEEDS.filter((f) => f.group === g);
   </section>
 
   <style>
-    .feed-list {
-      list-style: none;
-      margin: 0;
-      padding: 0;
-      border-top: 1px solid var(--hairline-bold);
+    .feed-group { margin-top: var(--space-7); }
+    .feed-group__title {
+      font-family: var(--sans); font-weight: 700; font-size: 1.3rem;
+      letter-spacing: -0.015em; margin: 0; padding-bottom: 0.4rem;
+      border-bottom: 1px solid var(--hairline-bold);
     }
-    .feed-list li {
-      padding: 1rem 0 1.1rem;
-      border-bottom: 1px solid var(--hairline);
-      max-width: 46rem;
+    .feed-group__note {
+      margin: 0.5rem 0 0; color: var(--ink-soft); font-size: 0.98rem; max-width: 48ch;
+    }
+    .feed-list {
+      list-style: none; margin: var(--space-5) 0 0; padding: 0;
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(21rem, 1fr));
+      gap: var(--space-5) var(--space-6);
     }
     .feed-list__title {
-      font-family: var(--sans);
-      font-weight: 600;
-      font-size: 1.15rem;
-      letter-spacing: -0.01em;
+      font-family: var(--sans); font-weight: 600; font-size: 1.12rem; letter-spacing: -0.01em;
     }
     .feed-list__title:hover { color: var(--accent); }
-    .feed-list__desc {
-      margin: 0.25rem 0 0.5rem;
-      color: var(--ink-soft);
-      font-size: 0.98rem;
-    }
+    .feed-list__desc { margin: 0.25rem 0 0.5rem; color: var(--ink-soft); font-size: 0.95rem; }
     .feed-list code {
-      font-family: var(--mono);
-      font-size: 0.74rem;
-      letter-spacing: 0.02em;
-      color: var(--ink-faint);
-      border: 1px solid var(--hairline);
-      padding: 0.25rem 0.5rem;
-      display: inline-block;
-      user-select: all;
-      overflow-wrap: anywhere;
+      font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.02em;
+      color: var(--ink-faint); border: 1px solid var(--hairline);
+      padding: 0.25rem 0.5rem; display: inline-block; user-select: all; overflow-wrap: anywhere;
     }
   </style>
 </Base>
