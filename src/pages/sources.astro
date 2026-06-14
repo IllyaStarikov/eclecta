@@ -3,7 +3,7 @@ import Base from '../layouts/Base.astro';
 import { site, href } from '../site';
 import sourcesData from '../data/sources.json';
 
-interface Source { name: string; homepage: string; category: string; tier: number; paywalled: boolean; }
+interface Source { name: string; homepage: string; category: string; tier: number; paywalled: boolean; feed?: string | null; }
 const sources = sourcesData as Source[];
 
 const SRC_CAT_LABEL: Record<string, string> = {
@@ -55,6 +55,7 @@ const total = sources.length;
             <a href={s.homepage} target="_blank" rel="noopener">{s.name}</a>
             {s.tier === 1 && <span class="src-flag">flagship</span>}
             {s.paywalled && <span class="src-flag src-flag--pay">paywalled</span>}
+            {s.feed && <a class="src-rss" href={s.feed} target="_blank" rel="noopener" title={`RSS feed — ${s.name}`}>RSS</a>}
           </li>
         ))}
       </ul>
