@@ -6,8 +6,8 @@
  * Starts `astro preview` itself (or reuses one already on :4321), then
  * captures every page route × [light, dark] × three viewports as full-page
  * PNGs into screenshots/<timestamp>/<route>--<scheme>--<vp>.png.
- * Also captures forced-dark (localStorage lede:theme=dark) variants for
- * / and /preferences/ only. Every URL includes the /lede base.
+ * Also captures forced-dark (localStorage eclecta:theme=dark) variants for
+ * / and /preferences/ only. Every URL is served at the site root.
  */
 import { spawn } from 'node:child_process';
 import { mkdirSync, readdirSync } from 'node:fs';
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BASE_URL = 'http://localhost:4321/lede';
+const BASE_URL = 'http://localhost:4321';
 
 const VIEWPORTS = [
   { width: 390, height: 844 },
@@ -117,7 +117,7 @@ try {
 
   // forced-dark (reader preference, not OS) for the front + preferences
   const forced = await browser.newContext();
-  await forced.addInitScript(() => localStorage.setItem('lede:theme', 'dark'));
+  await forced.addInitScript(() => localStorage.setItem('eclecta:theme', 'dark'));
   for (const route of FORCED_DARK_ROUTES) {
     await capture(forced, route, 'forced-dark');
   }

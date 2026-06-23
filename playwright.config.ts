@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
-// The site deploys under base /lede — every URL in the e2e suite includes it.
-export const BASE_URL = 'http://localhost:4321/lede';
+// The site deploys at the root (base /) on eclecta.co; the e2e suite hits the
+// local preview root.
+export const BASE_URL = 'http://localhost:4321';
 
 export default defineConfig({
   testDir: 'tests/e2e',
@@ -16,7 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: 'npx astro preview',
-    url: 'http://localhost:4321/lede/',
+    url: 'http://localhost:4321/',
     reuseExistingServer: true,
     timeout: 30_000,
   },

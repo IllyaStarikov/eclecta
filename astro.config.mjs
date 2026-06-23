@@ -2,11 +2,11 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
-// Deploy target is env-driven so the custom-domain flip is one variable:
-//   today:  GitHub project pages  -> site https://illyastarikov.github.io, base /lede
-//   later:  lede.starikov.io      -> LEDE_SITE=https://lede.starikov.io LEDE_BASE=/
-const SITE = process.env.LEDE_SITE || 'https://illyastarikov.github.io';
-const BASE = process.env.LEDE_BASE || '/lede';
+// Deploy target is env-driven. The live site is the custom apex domain
+// eclecta.co (base /); override with ECLECTA_SITE / ECLECTA_BASE for a
+// project-pages preview (e.g. https://illyastarikov.github.io + /eclecta).
+const SITE = process.env.ECLECTA_SITE || 'https://eclecta.co';
+const BASE = process.env.ECLECTA_BASE || '/';
 
 export default defineConfig({
   site: SITE,

@@ -1,14 +1,14 @@
-# Lede — design language
+# Eclecta — design language
 
 The one place the look is written down. If a change to `global.css`, a layout,
 or a page contradicts something here, either the change is wrong or this doc is
 out of date — fix one of them in the same commit.
 
-Lede is a **wire service for the frontier**: an automated newswire that reads
+Eclecta is a **wire service for the frontier**: an automated newswire that reads
 thousands of sources across technology, AI, and the sciences and files a dated
 edition. The design has to read as a *publication*, not a blog and not a
 dashboard. It is deliberately unlike starikov.co (the author's warm-cream
-personal site): Lede is cool, structural, and built from rules and type.
+personal site): Eclecta is cool, structural, and built from rules and type.
 
 ## First principles
 
@@ -70,7 +70,7 @@ The page is a stack of labelled bands, each introduced by a **rail**:
 `▪ LABEL ───────────── count`. The orange square prefixes every rail label and
 is the recurring identity mark (it's also the wordmark period and the feed dot).
 
-- **Masthead** (`Base.astro`): wordmark `LEDE▪`, a mono kicker + tagline, then a
+- **Masthead** (`Base.astro`): wordmark `ECLECTA▪`, a mono kicker + tagline, then a
   **dateline band** (`weekday, month day, year · Automated edition · N sources`)
   under a 3px nameplate rule, then the section nav. The dateline is what makes
   every view read as a *dated edition*.
@@ -92,7 +92,7 @@ is the recurring identity mark (it's also the wordmark period and the feed dot).
 ## Spacing & measure
 
 4px scale (`--space-1`…`--space-8`). Reading column `--measure-prose: 66ch`;
-leads/standfirsts `--measure-lede: 54ch`. Section gaps are `--space-7`. Don't
+leads/standfirsts `--measure-lead: 54ch`. Section gaps are `--space-7`. Don't
 hardcode pixel margins; reference tokens.
 
 ## Motion & a11y

@@ -1,21 +1,20 @@
 /**
  * The ONE place the publication's identity lives.
  * Renaming the site = edit this file (+ `site.name` in the pipeline's
- * config/signal.json, the GitHub repo name, and public/CNAME when the
- * custom domain lands).
+ * config/signal.json, the GitHub repo name, and public/CNAME).
  */
 export const site = {
-  name: 'Lede',
+  name: 'Eclecta',
   kicker: 'The frontier, distilled',
-  tagline: 'We read the firehose, so you read the lede.',
+  tagline: 'We read the firehose, so you read what matters.',
   description:
-    'Lede watches the places technology, AI, and the sciences break first — ' +
+    'Eclecta watches the places technology, AI, and the sciences break first — ' +
     'thousands of sources — and distills what actually matters, with a clear ' +
     'account of why. A daily brief, a weekly digest, and the long view.',
   author: 'Illya Starikov',
   authorUrl: 'https://starikov.co',
   contactUrl: 'https://starikov.co/contact/',
-  storagePrefix: 'lede',
+  storagePrefix: 'eclecta',
 } as const;
 
 export const KINDS = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'] as const;
@@ -29,7 +28,7 @@ export const KIND_LABEL: Record<DigestKind, string> = {
   yearly: 'The year',
 };
 
-/** Base-aware internal href ('/about/' -> '/lede/about/' on project pages). */
+/** Base-aware internal href ('/about/' -> '<base>/about/'; base is '/' on eclecta.co). */
 export function href(path: string): string {
   const base = import.meta.env.BASE_URL.replace(/\/+$/, '');
   return base + (path.startsWith('/') ? path : '/' + path);

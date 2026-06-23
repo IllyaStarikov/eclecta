@@ -1,6 +1,6 @@
 # Decisions
 
-Short records of the choices behind the current shape of Lede, newest first.
+Short records of the choices behind the current shape of Eclecta, newest first.
 Each is "context → decision → why", so a future change knows what it's undoing.
 
 ## 2026-06-13 — Front page is a composed "today's edition", not the daily prose

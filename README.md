@@ -1,11 +1,11 @@
-# Lede
+# Eclecta
 
 A digital broadsheet for the frontier — the best of technology, AI, and the
 sciences, curated continuously and distilled on five cadences: a daily brief
 on weekday mornings, a weekly digest on Fridays, and monthly / quarterly /
 yearly reviews. Static site (Astro 5), deployed to GitHub Pages.
 
-**We read the firehose, so you read the lede.**
+**We read the firehose, so you read what matters.**
 
 ## How it works
 
@@ -56,7 +56,7 @@ repo) that:
 
 ```bash
 npm install
-npm run dev        # http://localhost:4321/lede/
+npm run dev        # http://localhost:4321/
 npm run build      # -> dist/
 npm run check      # astro check
 npm run test:unit  # vitest (data contracts, feed lib)
@@ -67,15 +67,14 @@ npm run capture    # screenshot every page × light/dark × 3 viewports
 ## Deploy
 
 GitHub Actions (`.github/workflows/deploy.yml`): test → build → Pages.
-Site/base are env-driven (`LEDE_SITE` / `LEDE_BASE`): project pages
-(`illyastarikov.github.io/lede`) today; flipping to a custom subdomain is a
-one-variable change plus `public/CNAME`.
+Site/base are env-driven (`ECLECTA_SITE` / `ECLECTA_BASE`); the live site is the
+custom apex domain (`eclecta.co`, base `/`), pinned by `public/CNAME`.
 
 ## Renaming the publication
 
 The name lives in `src/site.ts` (masthead, feeds, meta) and the pipeline's
 `config/signal.json` (`site.name`). Change those two, the repo name, and
-`public/CNAME` when the domain lands.
+`public/CNAME`.
 
 ## Structure
 

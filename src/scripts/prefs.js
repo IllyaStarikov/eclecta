@@ -4,7 +4,7 @@
  * this module keeps everything live after load: the masthead theme toggle
  * and the preferences-page controls.
  */
-const PREFIX = 'lede:';
+const PREFIX = 'eclecta:';
 
 function get(key) {
   try {
@@ -21,7 +21,7 @@ function set(key, value) {
     /* private mode — prefs just don't persist */
   }
   apply();
-  window.dispatchEvent(new CustomEvent('lede:prefs'));
+  window.dispatchEvent(new CustomEvent('eclecta:prefs'));
 }
 
 const FLAG_ATTRS = [
