@@ -81,7 +81,7 @@ These may not appear:
 59. Journalese: slams, blasts, sparks fury, doubles down, breaks silence, gives the green light, thumbs up, thumbs down.
 60. "Not just X, but Y" and "isn't about X; it's about Y" constructions.
 61. Rhetorical-question transitions: "So what does this mean?"
-62. Em-dash overuse: at most one em dash per item. Prefer commas, colons, and periods. The colon does setup and payoff: use it instead.
+62. Avoid the em dash. It is the reflex punctuation of machine prose, and a comma, colon, period, or parentheses almost always states the relation between clauses more precisely. Reach for it only when no other mark will do, and never more than one per item; a second em dash in a single item is a signal to rewrite, not a style choice. The colon does setup and payoff: use it for that. Parentheses hold an aside whose interior already has commas.
 
 ## 6. Tech and AI
 
