@@ -15,17 +15,22 @@
    ─────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ground / ink */
-  --ground:       #f1f2f0;   /* cool oat-grey paper */
-  --ground-2:     #e9eae7;   /* inset panels, sticky fills */
-  --ink:          #16181d;
-  --ink-soft:     #5b5f66;
-  --ink-faint:    #757980;    /* darkened: clears AA-large, carries dates/counts */
-  --hairline:     #d5d7d2;
-  --hairline-bold:#bfc2bc;
-  --accent:       #e8451f;    /* signal orange */
-  --accent-ink:   #c63a18;    /* text-safe on light */
-  --link-rule:    rgba(22,24,29,0.30);
+  /* Theme: OS preference by default; the reader override (html[data-theme])
+     narrows color-scheme, and every color token is a light-dark() pair —
+     ONE source of truth, no duplicated dark block to keep in sync. */
+  color-scheme: light dark;
+
+  /* ground / ink — light-dark(light, dark) */
+  --ground:       light-dark(#f1f2f0, #101214);  /* cool oat-grey paper */
+  --ground-2:     light-dark(#e9eae7, #16181b);  /* inset panels, sticky fills */
+  --ink:          light-dark(#16181d, #ecece8);
+  --ink-soft:     light-dark(#5b5f66, #9ca0a6);
+  --ink-faint:    light-dark(#757980, #888d96);  /* darkened/lifted: clears AA-large, carries dates/counts */
+  --hairline:     light-dark(#d5d7d2, #2a2d31);
+  --hairline-bold:light-dark(#bfc2bc, #3a3e43);
+  --accent:       light-dark(#e8451f, #ff6a3d);  /* signal orange */
+  --accent-ink:   light-dark(#c63a18, #ff8a63);  /* text-safe accent */
+  --link-rule:    light-dark(rgba(22,24,29,0.30), rgba(236,236,232,0.28));
 
   /* type */
   --sans:  "Schibsted Grotesk Variable", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -46,7 +51,6 @@
   --mono-xs:    0.68rem;   /* per-pick meta: source, date, ordinal, score */
   --mono-sm:    0.72rem;   /* structural: nav, rails, labels, CTAs, footer */
   --mono-lg:    0.78rem;   /* CTA emphasis */
-  --mono-label: 0.72rem;   /* alias for the structural tier */
   --track-meta: 0.08em;    /* lowercase meta */
   --track-cap:  0.14em;    /* uppercase structural */
 
@@ -56,7 +60,6 @@
   --measure-lead:  54ch;   /* leads / standfirsts */
   --leading-read:  1.6;    /* running serif body */
   --leading-tight: 1.34;   /* display blurbs / standfirsts */
-  --wide:    58rem;
   --maxw:    78rem;     /* the page frame — chrome + broadsheet, one width everywhere */
   --maxw-read: 66rem;   /* secondary pages: a single reading column inside the frame */
   --gutter:  clamp(1.25rem, 4vw, 3.5rem);
@@ -68,38 +71,17 @@
   --pick-pad: 1.5rem;   /* briefing row vertical padding (compact overrides) */
 }
 
-/* dark — by OS preference (unless reader forced light)… */
+/* reader theme override — light-dark() follows color-scheme */
+html[data-theme="light"] { color-scheme: light; }
+html[data-theme="dark"]  { color-scheme: dark; }
+
+/* Weights follow the theme too, but light-dark() carries only colors — this
+   is the ONE sanctioned dual block (design-language.md §2.1). Dark bumps
+   weight so serif strokes survive on a dark ground. */
 @media (prefers-color-scheme: dark) {
-  html:not([data-theme="light"]) {
-    --ground:       #101214;
-    --ground-2:     #16181b;
-    --ink:          #ececE8;
-    --ink-soft:     #9ca0a6;
-    --ink-faint:    #888d96;   /* lifted: clears AA on ground + inset panels */
-    --hairline:     #2a2d31;
-    --hairline-bold:#3a3e43;
-    --accent:       #ff6a3d;
-    --accent-ink:   #ff8a63;
-    --link-rule:    rgba(236,236,232,0.28);
-    --body-wght:    430;   /* keep serif strokes from vanishing on dark */
-    --bold-wght:    640;
-  }
+  html:not([data-theme="light"]) { --body-wght: 430; --bold-wght: 640; }
 }
-/* …or forced by the reader. Keep in sync with the block above. */
-html[data-theme="dark"] {
-  --ground:       #101214;
-  --ground-2:     #16181b;
-  --ink:          #ecece8;
-  --ink-soft:     #9ca0a6;
-  --ink-faint:    #888d96;
-  --hairline:     #2a2d31;
-  --hairline-bold:#3a3e43;
-  --accent:       #ff6a3d;
-  --accent-ink:   #ff8a63;
-  --link-rule:    rgba(236,236,232,0.28);
-  --body-wght:    430;
-  --bold-wght:    640;
-}
+html[data-theme="dark"] { --body-wght: 430; --bold-wght: 640; }
 
 /* reader font scale: rem-based layout scales wholesale */
 html[data-fontsize="s"]  { font-size: 92%; }
@@ -254,7 +236,7 @@ a { color: inherit; text-decoration: none; }
 
 /* ── label / mono kicker ───────────────────────────────────────────────── */
 .label {
-  font-family: var(--mono); font-size: var(--mono-label); font-weight: 500;
+  font-family: var(--mono); font-size: var(--mono-sm); font-weight: 500;
   letter-spacing: var(--track-cap); text-transform: uppercase; color: var(--ink-soft);
 }
 
@@ -672,7 +654,6 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 .prose strong { font-weight: var(--bold-wght); }
 
 /* ── preferences page ──────────────────────────────────────────────────── */
-.prefs { max-width: var(--maxw); }
 .prefs__intro { max-width: 56ch; color: var(--ink-soft); margin: 0 0 var(--space-6); text-wrap: pretty; }
 .prefs__note {
   max-width: 60ch; border-left: 2px solid var(--accent);
@@ -801,7 +782,6 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
   gap: var(--space-5) var(--space-6); margin: var(--space-6) 0; padding: var(--space-5) 0;
   border-top: 1px solid var(--hairline-bold); border-bottom: 1px solid var(--hairline-bold);
 }
-.stat { background: none; padding: 0; }
 .stat b {
   display: block; font-family: var(--sans); font-weight: 700;
   font-size: 2rem; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
@@ -855,6 +835,7 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
   text-transform: uppercase; color: var(--ink-faint); font-variant-numeric: tabular-nums;
 }
 .foot__links { display: flex; flex-wrap: wrap; gap: 0.9rem 1.3rem; }
+.foot__links .label { align-self: center; }
 .foot__links a { font-family: var(--mono); font-size: var(--mono-sm); letter-spacing: var(--track-cap); text-transform: uppercase; color: var(--ink-soft); }
 .foot__links a:hover { color: var(--accent); }
 
@@ -878,6 +859,7 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
 
 /* ── print: the briefing, literally ────────────────────────────────────── */
 @media print {
+  :root { color-scheme: light; }
   body { background: #fff; color: #000; font-size: 11pt; }
   .channels, .toggle, .pick__signals, .subscribe, .foot,
   .skip, .back, .digest-nav, .pick__details, .dateline { display: none !important; }
