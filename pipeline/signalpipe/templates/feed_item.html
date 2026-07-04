@@ -1,0 +1,46 @@
+{#- Plain semantic HTML for RSS content:encoded. Absolute URLs only; no
+    classes/CSS/JS (readers sanitize). archive_url must NEVER appear here. -#}
+{%- if item.curated -%}
+{%- if item.why_it_matters %}
+<p><strong>Why it matters:</strong> {{ item.why_it_matters }}</p>
+{%- endif %}
+{%- if item.notes_list %}
+<p><strong>Notes</strong></p>
+<ul>
+{%- for n in item.notes_list %}
+  <li>{{ n }}</li>
+{%- endfor %}
+</ul>
+{%- endif %}
+{%- if item.summary %}
+<p><strong>Summary:</strong> {{ item.summary }}</p>
+{%- endif %}
+{%- if item.novelty %}
+<p><strong>What's new:</strong> {{ item.novelty }}</p>
+{%- endif %}
+{%- else -%}
+<p><em>Scored {{ "%.1f"|format(item.score or 0) }}/10 by deterministic signals;
+not yet LLM-curated.</em></p>
+{%- if item.excerpt %}
+<p>{{ item.excerpt }}</p>
+{%- endif %}
+{%- endif %}
+{%- if item.surfaces %}
+<p><strong>Where it surfaced</strong></p>
+<ul>
+{%- for s in item.surfaces %}
+  <li><a href="{{ s.url }}">{{ s.name }}</a>
+  {%- if s.points %} — {{ s.points }} points{% endif %}
+  {%- if s.comments %}, {{ s.comments }} comments{% endif %}</li>
+{%- endfor %}
+</ul>
+{%- endif %}
+<p>
+{%- if item.source_url %}
+<strong>Original:</strong> <a href="{{ item.source_url }}">{{ item.source_url }}</a>
+{%- if item.paywalled %} (paywalled{% if item.read_kind and item.read_kind != 'canonical-fallback' %}; free read linked above via {{ item.read_kind }}{% endif %}){% endif %}
+{%- endif %}
+</p>
+{%- if item.channel_list %}
+<p><small>Channels: {{ item.channel_list|join(", ") }}</small></p>
+{%- endif %}

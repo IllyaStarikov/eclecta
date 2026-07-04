@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="refresh" content="{{ auto_refresh }}">
+<title>Signal — review dashboard</title>
+<link rel="stylesheet" href="/static/signal.css">
+<link rel="alternate" type="application/rss+xml" title="Signal" href="/feed.xml">
+</head>
+<body>
+<header class="masthead">
+  <h1>SIGNAL</h1>
+  <nav class="channels">
+    <a href="/" class="{{ 'active' if not active_channel else '' }}">everything</a>
+    {%- for ch in channels if ch != 'everything' %}
+    <a href="/?channel={{ ch }}" class="{{ 'active' if active_channel == ch else '' }}">{{ ch }}</a>
+    {%- endfor %}
+  </nav>
+  <div class="meta-links">
+    <a href="/feed.xml{{ '?channel=' + active_channel if active_channel else '' }}">feed.xml</a>
+    <a href="/opml">opml</a>
+    <a href="/healthz">healthz</a>
+  </div>
+</header>
+
+<section class="health">
+  <div class="health-grid">
+    <div class="stat"><span class="k">sources</span><span class="v">{{ health.sources_verified }}/{{ health.sources_enabled }}</span></div>
+    <div class="stat"><span class="k">clusters</span><span class="v">{{ health.clusters }}</span></div>
+    <div class="stat"><span class="k">curated</span><span class="v">{{ health.curated }}</span></div>
+    <div class="stat"><span class="k">spend today</span><span class="v">${{ "%.2f"|format(health.spend_today) }}</span></div>
+    <div class="stat"><span class="k">last ingest</span><span class="v">{{ health.last_ingest|ts or "never" }}</span></div>
+    <div class="stat"><span class="k">last curate</span><span class="v">{{ health.last_curate|ts or "never" }}</span></div>
+  </div>
+  {%- if health.failing_sources %}
+  <details class="failing">
+    <summary>{{ health.failing_sources|length }} failing source(s)</summary>
+    <ul>
+    {%- for s in health.failing_sources %}
+      <li><code>{{ s.slug }}</code> ×{{ s.error_count }} — {{ s.last_error }}</li>
+    {%- endfor %}
+    </ul>
+  </details>
+  {%- endif %}
+  {%- if health.recent %}
+  <details>
+    <summary>recent runs</summary>
+    <ul>
+    {%- for h in health.recent %}
+      <li><code>{{ h.ts|ts }}</code> [{{ h.level }}] {{ h.job }}: {{ h.message }}</li>
+    {%- endfor %}
+    </ul>
+  </details>
+  {%- endif %}
+</section>
+
+{%- if digest %}
+<section class="digest">
+  <h2>{{ digest.kind|capitalize }} digest — {{ digest.period_key }}{% if not digest.promoted %} <span class="badge">draft</span>{% endif %}</h2>
+  <article class="digest-body">{{ digest.body_html|safe }}</article>
+  <p class="digest-actions">staged at <code>{{ digest.staged_path }}</code> —
+  promote with <code>python3 -m signalpipe promote --target local --apply</code></p>
+</section>
+{%- endif %}
+
+<main>
+  <h2>{{ "Curated" if items and items[0].curated else "Scored (awaiting curation)" }}
+      <span class="count">{{ items|length }}</span></h2>
+  {%- for item in items %}
+  <article class="card {{ 'uncurated' if not item.curated }}">
+    <div class="badges">
+      {%- if item.curated %}<span class="badge rel">{{ item.relevance_score }}/10</span>{% endif %}
+      <span class="badge score">{{ "%.1f"|format(item.score or 0) }}</span>
+      {%- for ch in item.channel_list %}<span class="badge ch">{{ ch }}</span>{% endfor %}
+      {%- if item.paywalled %}<span class="badge paywall">paywalled</span>{% endif %}
+      <span class="badge surf">{{ item.surface_count }} surface{{ 's' if item.surface_count != 1 }}</span>
+    </div>
+    <h3><a href="{{ item.link }}">{{ item.title }}</a></h3>
+    {%- if item.curated %}
+      {%- if item.why_it_matters %}<p class="why">{{ item.why_it_matters }}</p>{% endif %}
+      {%- if item.notes_list %}
+      <ul class="notes">
+        {%- for n in item.notes_list %}<li>{{ n }}</li>{% endfor %}
+      </ul>
+      {%- endif %}
+      {%- if item.summary %}<details><summary>summary</summary><p>{{ item.summary }}</p></details>{% endif %}
+    {%- elif item.excerpt %}
+      <p class="why">{{ item.excerpt[:300] }}</p>
+    {%- endif %}
+    <div class="surfaces">
+      {%- for s in item.surfaces[:6] %}
+      <a href="{{ s.url }}">{{ s.name }}{% if s.points %} ({{ s.points }}){% endif %}</a>
+      {%- endfor %}
+      {%- if item.source_url and item.source_url != item.link %}
+      <a href="{{ item.source_url }}" class="orig">original</a>
+      {%- endif %}
+    </div>
+  </article>
+  {%- else %}
+  <p class="empty">No items yet. Run <code>python3 -m signalpipe ingest</code>
+  then <code>score</code>.</p>
+  {%- endfor %}
+</main>
+
+<footer>
+  <p>signal {{ version }} · params: <code>?channel= &min_score= &min_relevance= &since=7d &limit= &sources=hn,lobsters</code></p>
+</footer>
+</body>
+</html>
