@@ -36,7 +36,7 @@ TRENDS_SCHEMA = {
 
 SYSTEM_TRENDS = (
     "You maintain 'kb/trends.md', a rolling working document tracking the "
-    "durable trendlines in technology + AI for a senior engineer's personal "
+    "durable trendlines in technology + AI for the publication's internal "
     "knowledge base. You receive the current document, the latest weekly "
     "digest, and the most recent top curations. Rewrite the document: keep "
     "trends that still hold, update ones that moved, retire dead ones into "

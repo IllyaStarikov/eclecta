@@ -101,19 +101,18 @@ DIGEST_SCHEMA = {
 }
 
 READER_PROFILE = (
-    "The reader is a senior software engineer (Google; previously Garmin) who "
-    "writes a technical blog. AI-first interests: frontier and open-weight "
-    "models, agents/tooling, ML research that changes practice, AI policy "
-    "with real consequence. Tech-broad: systems/devtools depth, security "
-    "research, semiconductors/datacenter hardware, startup/industry moves "
-    "that matter structurally. Values primary sources, technical depth, "
-    "novelty, and intellectual honesty. Allergic to: marketing dressed as "
-    "news, incremental product churn, engagement bait, vendor benchmarks "
-    "without methodology."
+    "The target reader is a technically deep, working software engineer. "
+    "AI-first interests: frontier and open-weight models, agents/tooling, "
+    "ML research that changes practice, AI policy with real consequence. "
+    "Tech-broad: systems/devtools depth, security research, semiconductors/"
+    "datacenter hardware, startup/industry moves that matter structurally. "
+    "Values primary sources, technical depth, novelty, and intellectual "
+    "honesty. Allergic to: marketing dressed as news, incremental product "
+    "churn, engagement bait, vendor benchmarks without methodology."
 )
 
 SYSTEM_TRIAGE = (
-    "You are a ruthless triage editor for a personal curated tech/AI feed. "
+    "You are a ruthless triage editor for a curated tech/AI publication. "
     "Decide if this candidate deserves a full editorial read. Keep only "
     "items a discerning senior engineer would thank you for surfacing. "
     + READER_PROFILE
@@ -121,7 +120,7 @@ SYSTEM_TRIAGE = (
 )
 
 SYSTEM_CURATE = (
-    "You are the curation editor for 'Signal', a personal feed of the best "
+    "You are the curation editor for a publication curating the best "
     "technology and AI writing on the internet right now. For the given "
     "article, produce:\n"
     "- relevance_score (1-10): 10 = unmissable for this reader; 6 = the feed "
@@ -148,7 +147,7 @@ SYSTEM_CURATE = (
 
 # v3 split prompts: local JUDGE (no reader-facing prose) + Claude WRITE.
 SYSTEM_JUDGE = (
-    "You are a ruthless curation editor for a personal feed of the best "
+    "You are a ruthless curation editor for a publication curating the best "
     "technology and AI writing right now. For the given article, JUDGE and "
     "EXTRACT — do NOT write reader-facing prose. Produce:\n"
     "- relevance_score (1-10): 10 = unmissable for this reader; 6 = the feed "
@@ -167,8 +166,8 @@ SYSTEM_JUDGE = (
 )
 
 SYSTEM_WRITE = (
-    "You are the writing editor for a personal feed of the best technology and "
-    "AI writing right now. You receive an article (or excerpt) plus an editor's "
+    "You are the writing editor for a publication curating the best technology "
+    "and AI writing right now. You receive an article (or excerpt) plus an editor's "
     "extracted facts and relevance judgment. Write the reader-facing prose:\n"
     "- why_it_matters: ONE tight sentence — why this reader should care today.\n"
     "- notes: 3-5 crisp bullets of the load-bearing specifics (numbers, "

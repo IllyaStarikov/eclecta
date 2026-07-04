@@ -6,8 +6,7 @@ to SQLite. So the daemons run from a runtime COPY at
 ~/.local/state/signal/app/ containing:
 
     app/signalpipe/   (package code + templates + static + sources files)
-    app/config/signal.json        (+ signal.topics.json, bulk_sources.json)
-    app/doc/ask-me-scope.md       (topic extraction input)
+    app/config/signal.json        (+ bulk_sources.json)
     app/doc/digest-style.md       (digest style guide; baked-in fallback)
 
 `install` copies the runtime, writes two LaunchAgents, and bootstraps them:
@@ -63,13 +62,13 @@ def _copy_runtime(cfg) -> None:
 
     (APP_DIR / "config").mkdir(exist_ok=True)
     shutil.copy2(repo / "config" / "signal.json", APP_DIR / "config" / "signal.json")
-    for name in ("signal.topics.json", "bulk_sources.json"):
+    for name in ("bulk_sources.json",):
         src = repo / "config" / name
         if src.exists():
             shutil.copy2(src, APP_DIR / "config" / name)
 
     (APP_DIR / "doc").mkdir(exist_ok=True)
-    for name in ("ask-me-scope.md", "digest-style.md"):
+    for name in ("digest-style.md",):
         src = repo / "doc" / name
         if src.exists():
             shutil.copy2(src, APP_DIR / "doc" / name)

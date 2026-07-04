@@ -8,7 +8,9 @@ score = w_consensus·consensus + w_engagement·engagement + w_reputation·rep
 - engagement:  log-scaled max points + comments across surfaces.
 - reputation:  best source reputation among surfaces (0..1.5 → capped).
 - recency:     half-life decay on last_seen.
-- topic_match: channel lexicon + personal-interest match on the title.
+- topic_match: predefined channel + taxonomy lexicon match on the title
+               (0.7 for a channel hit, 1.0 when a taxonomy subcategory term
+               also hits — no per-user personalization).
 
 Re-scores everything inside the rolling window each run (a story that peaks
 on day 2 re-enters the funnel; curation idempotency lives in curations.status,
@@ -107,7 +109,10 @@ def run(cfg, show: int = 20) -> int:
             topic = 0.0
             if channels:
                 topic = 0.7
-            topic = max(topic, topics_mod.interest_score(c["title"], topics_data))
+                # Specific taxonomy-subcategory hit = strong topical fit.
+                tax = topics_mod.match_taxonomy(c["title"], sorted(channels))
+                if tax["subcategories"]:
+                    topic = 1.0
 
             score01 = (
                 float(w.get("consensus", 0.3)) * _consensus(c["surface_count"])

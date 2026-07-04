@@ -178,7 +178,7 @@ class Config:
     @property
     def user_agent(self) -> str:
         return self.data.get(
-            "user_agent", "signal/0.1 (+https://starikov.co; personal feed curator)"
+            "user_agent", "signalpipe/0.1 (+https://eclecta.co; feed curator)"
         )
 
     def model_for(self, tier: str, backend: Optional[str] = None) -> str:

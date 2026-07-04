@@ -1,20 +1,17 @@
-"""Topic lexicons for channel matching + personal-interest weighting.
+"""Topic lexicons for channel + taxonomy matching.
 
-Two layers:
-  1. A curated base lexicon per channel (deterministic, code-owned).
-  2. Personal-interest terms extracted from doc/ask-me-scope.md — hash-gated:
-     re-extracted only when that file's content hash changes; cached in
-     config/signal.topics.json. Extraction is plain frequency analysis (no
-     LLM): the per-item scoring path must stay free and deterministic.
+One layer, deliberately impersonal: curated, code-owned lexicons per channel
+(BASE_LEXICON) and per public category (TAXONOMY). No per-user interest
+profile — topical fit is defined by the publication's predefined categories
+so the pipeline behaves identically for anyone who runs it. The per-item
+scoring path stays free and deterministic (no LLM).
 """
 
 from __future__ import annotations
 
-import json
-import re
 from typing import Any, Dict, List, Optional, Set
 
-from .config import Config, sha256_file
+from .config import Config
 
 # Channel lexicons: lowercase substrings/tokens matched against titles.
 BASE_LEXICON: Dict[str, List[str]] = {
@@ -60,61 +57,11 @@ BASE_LEXICON: Dict[str, List[str]] = {
     ],
 }
 
-_STOP = {
-    "the", "and", "for", "that", "this", "with", "from", "have", "what",
-    "when", "where", "which", "while", "about", "into", "their", "there",
-    "would", "could", "should", "been", "being", "more", "most", "some",
-    "such", "than", "then", "them", "they", "your", "just", "like", "want",
-    "will", "make", "made", "good", "best", "really", "thing", "things",
-    "post", "posts", "blog", "write", "writing", "page", "site", "https",
-    "http", "com", "org",
-}
-
-_WORD_RE = re.compile(r"[a-z][a-z0-9\-]{3,}")
-
-
-def _extract_interests(text: str, top_n: int = 120) -> Dict[str, float]:
-    """Frequency-based interest terms from the scope doc (deterministic)."""
-    counts: Dict[str, int] = {}
-    base_terms = {t for terms in BASE_LEXICON.values() for t in terms}
-    for w in _WORD_RE.findall(text.lower()):
-        if w in _STOP or w in base_terms:
-            continue
-        counts[w] = counts.get(w, 0) + 1
-    ranked = sorted(counts.items(), key=lambda kv: (-kv[1], kv[0]))
-    out: Dict[str, float] = {}
-    for w, n in ranked[:top_n]:
-        if n < 3:
-            break
-        out[w] = min(1.0, 0.3 + 0.1 * n)  # 3 hits -> 0.6, caps at 1.0
-    return out
-
-
 def build_or_load(cfg: Config) -> Dict[str, Any]:
-    """Return {"channels": BASE_LEXICON, "interests": {...}} — rebuilt only
-    when doc/ask-me-scope.md's hash changes."""
-    topics_path = cfg.repo_root / "config" / "signal.topics.json"
-    scope_path = cfg.repo_path("doc/ask-me-scope.md")
-    scope_hash = sha256_file(scope_path)
-
-    if topics_path.exists():
-        try:
-            cached = json.loads(topics_path.read_text())
-            if cached.get("scope_hash") == scope_hash:
-                return cached
-        except ValueError:
-            pass
-
-    interests: Dict[str, float] = {}
-    if scope_path.exists():
-        interests = _extract_interests(scope_path.read_text(errors="ignore"))
-    data = {
-        "scope_hash": scope_hash,
-        "channels": BASE_LEXICON,
-        "interests": interests,
-    }
-    topics_path.write_text(json.dumps(data, indent=1) + "\n")
-    return data
+    """Return the topic data used by scoring. Code-owned and static — kept
+    as a function (with the Config arg) for call-site compatibility."""
+    del cfg  # no per-user state; lexicons are predefined
+    return {"channels": BASE_LEXICON}
 
 
 def match_channels(title: str, topics_data: Dict[str, Any]) -> Set[str]:
@@ -127,16 +74,6 @@ def match_channels(title: str, topics_data: Dict[str, Any]) -> Set[str]:
                 hit.add(channel)
                 break
     return hit
-
-
-def interest_score(title: str, topics_data: Dict[str, Any]) -> float:
-    """0..1: how strongly the title matches personal-interest terms."""
-    t = (title or "").lower()
-    best = 0.0
-    for term, w in (topics_data.get("interests") or {}).items():
-        if term in t:
-            best = max(best, float(w))
-    return best
 
 
 # ── Public 2-level taxonomy ─────────────────────────────────────────────────
