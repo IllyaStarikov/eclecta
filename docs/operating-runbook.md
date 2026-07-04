@@ -1,4 +1,4 @@
-# Eclecta / signalpipe — Operating Runbook
+# Eclecta / signalpipe: Operating Runbook
 
 How the pipeline runs day to day, and how to work on it safely.
 
@@ -27,10 +27,10 @@ memory while the machine is in interactive use.
 
 Three agents (`launchctl list | grep signal`):
 
-- `…signal.server` — the review dashboard + parameterized RSS on port 8765.
-- `…signal.worker` — the loop: ingest → score → fetch → curate → publish →
+- `…signal.server`, the review dashboard + parameterized RSS on port 8765.
+- `…signal.worker`, the loop: ingest → score → fetch → curate → publish →
   editions, each on its own interval, most gated by downtime.
-- `…signal.watchdog` — restarts the worker if its heartbeat goes stale.
+- `…signal.watchdog`, restarts the worker if its heartbeat goes stale.
 
 Job bodies live in `pipeline/ops/`.
 
@@ -114,7 +114,7 @@ time, keep a dated backup, and read the next few job logs before changing more.
 - **Scoring:** `score_weights` (consensus / engagement / reputation / recency /
   topic_match + `recency_halflife_hours`); the sum need not be 1.
 - **Routing & spend:** `backend.tier_overrides`, `tiers.*`, `spend.*`.
-- **Downtime:** `downtime.*` — loosen to clear a backlog, tighten to protect an
+- **Downtime:** `downtime.*`, loosen to clear a backlog, tighten to protect an
   interactive session.
 
 ## Going live / reloading after changes

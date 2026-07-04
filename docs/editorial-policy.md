@@ -1,9 +1,9 @@
-# Eclecta — Editorial Policy (what to publish)
+# Eclecta: Editorial Policy (what to publish)
 
 This is the companion to `digest-style.md`. Style governs *how* a sentence
 reads; this governs *what* earns a place and *how much* weight it gets. The
 pipeline injects this into the digest system prompt. It is binding on selection,
-ranking, and emphasis — for both the automated runs and any hand-authored
+ranking, and emphasis, for both the automated runs and any hand-authored
 edition. Break a rule only to avoid an outcome that is plainly worse.
 
 Eclecta is a wire service for the frontier: it reads the firehose so the reader
@@ -24,7 +24,7 @@ churn, engagement bait, and vendor benchmarks without methodology.
 Write for that reader's judgment, not their ego. Assume they know the field;
 tell them what is new and what it means, not what a term is.
 
-## 2. The bar — what earns a slot
+## 2. The bar: what earns a slot
 
 A story is a candidate when it clears one of these, and it ranks by how many it
 clears and how hard:
@@ -32,12 +32,12 @@ clears and how hard:
 1. **Consequence.** It changes what a practitioner builds, ships, secures, buys,
    or believes. The larger the blast radius (a default flipped, a standard set,
    a capability now cheap), the higher it ranks.
-2. **Novelty.** It reports something genuinely new — a first, a result that
+2. **Novelty.** It reports something genuinely new, a first, a result that
    overturns a prior belief, a number nobody had. Not the tenth write-up of a
    known thing. Ask: what did the reader not know an hour ago?
 3. **Evidence.** It is grounded in something checkable: a paper, a measurement, a
    primary document, a named source, working code. Strength of evidence is
-   itself a ranking signal — a reproduced result outranks a vendor claim.
+   itself a ranking signal, a reproduced result outranks a vendor claim.
 4. **Durability.** It will still matter in a month. Prefer the shift over the
    announcement, the mechanism over the moment. A benchmark that exposes what
    metrics miss beats a launch that moves a leaderboard.
@@ -57,7 +57,7 @@ cut.
 - **Vendor benchmarks without methodology.** A self-reported number with no
   harness, baseline, or independent check is a claim, not a result. It can be
   *reported as a claim* if the story is the claim; it cannot lead on its own.
-- **Thin rewrites and duplicate coverage.** One story, one slot — the best,
+- **Thin rewrites and duplicate coverage.** One story, one slot, the best,
   most-primary surface. Never the aggregator's rewrite when the source is free.
 - **Unfalsifiable and unsourced.** "Experts say," "could revolutionize," no named
   source, no document. If it cannot be attributed, write around it or drop it.
@@ -73,7 +73,7 @@ Within an edition, order by consequence to *this* reader, not by topic tidiness.
   blast radius and durability, not recency or drama. If two contend, the one with
   stronger evidence leads.
 - **Group the rest into beats**, each a coherent angle (a theme, not a category
-  bucket). A story appears in exactly one beat — the one matching its most
+  bucket). A story appears in exactly one beat, the one matching its most
   consequential angle. Never repeat an item across beats.
 - **Length follows weight.** The biggest story gets the most words; a minor item
   gets a sentence. Never pad a small story to match its neighbors, never
@@ -88,21 +88,21 @@ Within an edition, order by consequence to *this* reader, not by topic tidiness.
 Each cadence answers a different question. Do not write a long daily; do not
 write a weekly that is five dailies stapled together.
 
-- **Daily** — *What matters today?* The day's decisive story leads; 2–4 beats;
+- **Daily**, *What matters today?* The day's decisive story leads; 2–4 beats;
   end with "What to watch today": concrete, dated, forward-looking hooks grounded
   in the day's items. Report events. 300–700 words.
-- **Weekly** — *What were the week's through-lines?* Synthesize, don't recap:
+- **Weekly**, *What were the week's through-lines?* Synthesize, don't recap:
   name 3–6 themes the week's stories share, and what each adds up to. A story
   that ran in a daily may reappear here only as part of a larger pattern. End
   with Quick Hits for the strong tail. 700–1200 words.
-- **Monthly** — *What developed, and what resolved?* A thematic retrospective:
+- **Monthly**, *What developed, and what resolved?* A thematic retrospective:
   the month's 3–5 dominant arcs, how each moved week to week, what closed versus
   what stays open. Elevate; do not re-list. 900–1500 words.
-- **Quarterly** — *What is the trajectory?* Trendlines over events. Durable
+- **Quarterly**, *What is the trajectory?* Trendlines over events. Durable
   trends versus noise; inflection points; positions and predictions that aged
   well or badly. Synthesize the monthlies. Prefer the vector to the incident.
   1000–1600 words.
-- **Yearly** — *What did the year decide, and what did conventional wisdom get
+- **Yearly**, *What did the year decide, and what did conventional wisdom get
   wrong?* The defining shifts, the stories that mattered in hindsight, the open
   questions carried forward. 1200–2000 words.
 
@@ -113,8 +113,8 @@ about what proved to matter.
 ## 6. Cross-edition discipline
 
 - **Dedup across editions of a cadence.** A daily never repeats a prior daily's
-  story. Retrospectives may revisit a story, but only to advance it — new
-  development, or its place in a pattern — never to re-report it.
+  story. Retrospectives may revisit a story, but only to advance it, new
+  development, or its place in a pattern, never to re-report it.
 - **Track developing threads.** When a story moves (a recall reversed, a patch
   shipped, a claim rebutted), say what changed and when, and reference the prior
   state in one clause. Datelines are absolute; the reader may arrive late.
@@ -123,15 +123,15 @@ about what proved to matter.
 
 ## 7. Handling contested and provisional material
 
-- **Claims stay claims.** Anything from an interested party — a vendor, a
-  founder, a government without published basis — is attributed and framed as a
+- **Claims stay claims.** Anything from an interested party, a vendor, a
+  founder, a government without published basis, is attributed and framed as a
   claim until independently checked. Never launder a claim into fact.
 - **Label review status.** Preprints are preprints; self-reported benchmarks are
   flagged as self-reported every time; demos are not shipping products.
 - **Show disagreement.** Where credible sources conflict, present both with
   attribution. Do not resolve a live dispute for the reader.
 - **Security items** carry the four facts that are the story: what is affected,
-  what it allows, whether exploitation is observed, and whether a patch exists —
+  what it allows, whether exploitation is observed, and whether a patch exists , 
   no panic verbs.
 - **Separate fact from forecast.** What happened is indicative past tense; what
   might happen gets an explicit conditional and a named owner.

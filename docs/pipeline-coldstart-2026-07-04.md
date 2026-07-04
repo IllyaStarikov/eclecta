@@ -52,11 +52,11 @@ deploy without stopping a service (which fights the watchdog):
 
 ## Guidance docs (AI-authored, versioned, pipeline-consumed)
 
-- `docs/digest-style.md` — voice canon.
-- `docs/editorial-policy.md` — *what to publish* + emphasis (`digest.py` injects
+- `docs/digest-style.md`, voice canon.
+- `docs/editorial-policy.md`, *what to publish* + emphasis (`digest.py` injects
   this into the digest system prompt; it was absent until this cold-start).
-- `docs/cadence-templates.md` — per-kind skeletons + blurb/header/lede craft.
-- `docs/operating-runbook.md` — the day-to-day/weekly/monthly workflow.
+- `docs/cadence-templates.md`, per-kind skeletons + blurb/header/lede craft.
+- `docs/operating-runbook.md`, the day-to-day/weekly/monthly workflow.
 
 ## Verification & iterate ×5
 

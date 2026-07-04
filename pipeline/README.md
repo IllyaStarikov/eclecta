@@ -1,4 +1,4 @@
-# pipeline — signalpipe
+# pipeline: signalpipe
 
 The local curation pipeline behind Eclecta. This directory is the **versioned
 source of truth** for the pipeline; it is *not* built or run from here. The
@@ -14,7 +14,7 @@ being online.
 ```
 signalpipe/     the pipeline package (ingest, score, curate, digest, publish)
 ops/            run-worker.sh, signal-watchdog.sh (launchd job bodies)
-config/         signal.example.json — a redacted reference of the runtime config
+config/         signal.example.json, a redacted reference of the runtime config
 ```
 
 The editorial docs the pipeline reads at runtime live in [`../docs/`](../docs):
