@@ -162,7 +162,7 @@ a { color: inherit; text-decoration: none; }
 }
 /* main + rail share a top edge — drop the leading element's own top margin */
 .broadsheet__main > :first-child { margin-top: 0; }
-@media (max-width: 60rem) {
+@media (max-width: 60rem) { /* bp-rail */
   .broadsheet { grid-template-columns: 1fr; gap: 0; }
   .broadsheet__main { border-right: 0; padding-right: 0; }
 }
@@ -172,7 +172,7 @@ a { color: inherit; text-decoration: none; }
   display: flex; flex-direction: column; gap: var(--space-6);
   font-variant-numeric: tabular-nums;
 }
-@media (max-width: 60rem) {
+@media (max-width: 60rem) { /* bp-rail */
   .erail {
     position: static; margin-top: var(--space-7);
     padding-top: var(--space-5); border-top: 2px solid var(--ink);
@@ -408,7 +408,7 @@ html[data-muted~="industry"] [data-category="industry"] { display: none !importa
 .arch__period { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .arch .pick__title { margin-bottom: 0.4rem; }
 .arch .pick__why { font-style: italic; color: var(--ink-soft); margin-bottom: 0; }
-@media (max-width: 40rem) { .arch { grid-template-columns: 1fr; gap: 0.25rem; } }
+@media (max-width: 40rem) { /* bp-mobile */ .arch { grid-template-columns: 1fr; gap: 0.25rem; } }
 
 /* category / subcategory landing pages */
 /* the deck — one-line page intro under a page title */
@@ -670,7 +670,7 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 23rem);
   gap: var(--space-6) var(--space-7); align-items: start;
 }
-@media (max-width: 52rem) { .prefs__layout { grid-template-columns: 1fr; } }
+@media (max-width: 52rem) { /* bp-column */ .prefs__layout { grid-template-columns: 1fr; } }
 
 .pref-group {
   border: 0; border-top: 1px solid var(--hairline-bold);
@@ -689,7 +689,7 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 }
 .pref-field__hint { grid-column: 2; font-size: 0.9rem; line-height: 1.45; color: var(--ink-soft); text-wrap: pretty; }
 .pref-field__hint--lede { margin-bottom: var(--space-4); }
-@media (max-width: 30rem) {
+@media (max-width: 30rem) { /* bp-phone */
   .pref-field { grid-template-columns: 1fr; }
   .pref-field__hint { grid-column: 1; }
 }
@@ -741,7 +741,7 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 .pref-toggle--compact { align-items: center; margin-bottom: 0; }
 
 .mute-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem 1.5rem; }
-@media (max-width: 30rem) { .mute-grid { grid-template-columns: 1fr; } }
+@media (max-width: 30rem) { /* bp-phone */ .mute-grid { grid-template-columns: 1fr; } }
 .mute-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-top: var(--space-5); }
 
 /* reset */
@@ -763,7 +763,7 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
   border: 1px solid var(--hairline-bold); background: var(--ground);
   padding: var(--space-4) var(--space-5) var(--space-5); position: sticky; top: 1rem;
 }
-@media (max-width: 52rem) { .prefs__preview { position: static; } }
+@media (max-width: 52rem) { /* bp-column */ .prefs__preview { position: static; } }
 .prefs__preview-lab {
   display: block; font-family: var(--mono); font-size: var(--mono-sm);
   letter-spacing: var(--track-cap); text-transform: uppercase; color: var(--ink-faint);
@@ -809,7 +809,7 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
   font-family: var(--mono); font-size: var(--mono-xs); color: var(--ink-faint);
   text-align: right; font-variant-numeric: tabular-nums;
 }
-@media (max-width: 40rem) {
+@media (max-width: 40rem) { /* bp-mobile */
   .bar {
     grid-template-columns: 1fr auto;
     grid-template-areas: "label label" "track val";
@@ -862,18 +862,22 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
 }
 
 /* ── print: the briefing, literally ────────────────────────────────────── */
+@page { margin: 1.6cm; }
 @media print {
   :root { color-scheme: light; }
   body { background: #fff; color: #000; font-size: 11pt; }
-  .channels, .toggle, .pick__signals, .subscribe, .foot,
+  .channels, .toggle, .pick__signals, .erail, .foot,
   .skip, .back, .digest-nav, .pick__details, .dateline { display: none !important; }
+  /* the broadsheet prints as a single reading column — no rail, no rule */
+  .broadsheet { display: block; }
+  .broadsheet__main { border-right: 0; padding-right: 0; }
   .pick, .also__item { break-inside: avoid; }
   .prose a::after, .pick__title a::after, .also__title a::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #444; }
   .masthead { padding: 0.5rem 0; border-bottom-width: 2px; }
 }
 
 /* ── responsive ────────────────────────────────────────────────────────── */
-@media (max-width: 40rem) {
+@media (max-width: 40rem) { /* bp-mobile */
   .channels { gap: 0.35rem 1.15rem; padding: 0.8rem 0; }
   .channels a { padding: 0.45rem 0; }       /* ~44px tap target */
   .toggle { padding-top: 0.45rem; padding-bottom: 0.45rem; }
@@ -890,12 +894,9 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
   .prefs .danger { padding: 0.7rem 1rem; }
   .pref-toggle { min-height: 44px; align-items: center; }
   /* keep the byline to one line so the headline is read first */
-  .briefing .pick:not(.pick--lead) .pick__date,
-  .briefing .pick:not(.pick--lead) .pick__meta a.pick__tag ~ a.pick__tag { display: none; }
+  .briefing .pick:not(.pick--lead) .pick__date { display: none; }
 }
 
-/* on wide screens, the front-page briefing shows one channel tag per row;
-   the full set stays available inside "+ details". */
-@media (min-width: 40.0625rem) {
-  .briefing .pick:not(.pick--lead) .pick__meta a.pick__tag ~ a.pick__tag { display: none; }
-}
+/* briefing rows carry one category tag at every width; the full set stays
+   available inside "+ details" (was duplicated across two media blocks). */
+.briefing .pick:not(.pick--lead) .pick__meta a.pick__tag ~ a.pick__tag { display: none; }
