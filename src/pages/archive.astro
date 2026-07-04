@@ -13,46 +13,32 @@ const groups = KINDS.map((kind) => ({
 })).filter((g) => g.entries.length > 0);
 ---
 <Base title={`Archive — ${site.name}`} description="Every edition Eclecta has published, daily brief to the year in review.">
-  <div class="section-head" style="padding-top:2.4rem;">
+  <div class="section-head section-head--page">
     <h1>The archive</h1>
   </div>
 
   {groups.map((g) => (
     <section>
-      <div class="section-head">
-        <h2 style="font-size:1.25rem;">{KIND_LABEL[g.kind]}</h2>
+      <div class="rail">
+        <h2 class="rail__label">{KIND_LABEL[g.kind]}</h2>
+        <span class="rail__rule"></span>
+        <a class="chip" href={href(`/digests/${g.kind}/rss.xml`)}>
+          <span class="chip__dot"></span>{KIND_LABEL[g.kind]} feed
+        </a>
       </div>
-      <div class="picks">
+      <div class="briefing">
         {g.entries.map((d, i) => (
           <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
             <div class="label arch__period">{d.data.period}</div>
             <div>
-              <h3 class="pick__title" style="margin-bottom:0.4rem;">
+              <h3 class="pick__title">
                 <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
               </h3>
-              <p class="pick__why" style="font-style:italic; color:var(--ink-soft); margin-bottom:0;">{d.data.blurb}</p>
+              <p class="pick__why">{d.data.blurb}</p>
             </div>
           </article>
         ))}
       </div>
-      <p style="margin:1rem 0 0;">
-        <a class="chip" href={href(`/digests/${g.kind}/rss.xml`)}>
-          <span class="chip__dot"></span>{KIND_LABEL[g.kind]} feed
-        </a>
-      </p>
     </section>
   ))}
-
-  <style>
-    .arch {
-      display: grid;
-      grid-template-columns: 7rem 1fr;
-      gap: 0 1rem;
-    }
-    .arch__period { padding-top: 0.5rem; }
-    @media (max-width: 38rem) {
-      .arch { grid-template-columns: 1fr; }
-      .arch__period { padding-top: 0; }
-    }
-  </style>
 </Base>

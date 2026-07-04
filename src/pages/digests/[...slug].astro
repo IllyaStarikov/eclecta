@@ -25,8 +25,8 @@ const newer = i > 0 ? siblings[i - 1] : null;
 const older = i >= 0 && i < siblings.length - 1 ? siblings[i + 1] : null;
 ---
 <Base title={`${entry.data.title} — ${site.name}`} description={entry.data.blurb} compactHeader edition={`${KIND_LABEL[entry.data.kind]} ${entry.data.period}`}>
-  <a class="arrow-link back" href={href('/')}>← Front page</a>
-  <article class="article measure" style="margin:0 auto;">
+  <a class="arrow-link back" href={href('/archive/')}><span aria-hidden="true">←</span> Archive</a>
+  <article class="article measure measure--center">
     <header class="article__head">
       <div class="article__meta">
         <span class="label article__kind">{KIND_LABEL[entry.data.kind]}</span>
@@ -39,14 +39,17 @@ const older = i >= 0 && i < siblings.length - 1 ? siblings[i + 1] : null;
     <div class="prose">
       <Content />
     </div>
+    <footer class="article__foot">
+      <a class="arrow-link" href={href(`/digests/${entry.data.kind}/rss.xml`)}>{KIND_LABEL[entry.data.kind]} feed <span aria-hidden="true">→</span></a>
+      <a class="arrow-link arrow-link--faint" href={href('/feeds/')}>All feeds <span aria-hidden="true">→</span></a>
+    </footer>
   </article>
-  <nav class="digest-nav measure" style="margin:0 auto;" aria-label="More digests">
+  <nav class="digest-nav measure measure--center" aria-label="More digests">
     <span>
-      {older && <a class="arrow-link back" href={href(`/digests/${older.id}/`)}>← {older.data.title}</a>}
+      {older && <a class="arrow-link back" href={href(`/digests/${older.id}/`)}><span aria-hidden="true">←</span> {older.data.title}</a>}
     </span>
     <span>
-      {newer && <a class="arrow-link back" href={href(`/digests/${newer.id}/`)}>{newer.data.title} →</a>}
+      {newer && <a class="arrow-link back" href={href(`/digests/${newer.id}/`)}>{newer.data.title} <span aria-hidden="true">→</span></a>}
     </span>
   </nav>
-  <p style="text-align:center;"><a class="arrow-link back" href={href('/archive/')}>← All digests</a></p>
 </Base>

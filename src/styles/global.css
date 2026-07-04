@@ -131,6 +131,7 @@ a { color: inherit; text-decoration: none; }
 /* ── shell ─────────────────────────────────────────────────────────────── */
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 var(--gutter); }
 .measure { max-width: var(--measure); }
+.measure--center { margin-inline: auto; }
 /* secondary pages: a reading column that left-aligns under the wide frame, so
    every page shares the masthead's left edge (no rail = a quiet right margin) */
 .column { max-width: var(--maxw-read); }
@@ -343,8 +344,9 @@ a { color: inherit; text-decoration: none; }
   display: flex; align-items: center; gap: 0.9rem;
   margin: calc(var(--space-7) + var(--space-3)) 0 var(--space-5);
 }
+.rail--tight { margin: 0 0 var(--space-3); }
 .rail__label {
-  display: inline-flex; align-items: center;
+  margin: 0; display: inline-flex; align-items: center;
   font-family: var(--mono); font-weight: 600; font-size: var(--mono-lg);
   letter-spacing: var(--track-cap); text-transform: uppercase; color: var(--ink);
   white-space: nowrap;
@@ -391,6 +393,9 @@ html[data-muted~="industry"] [data-category="industry"] { display: none !importa
   font-family: var(--sans); font-weight: 700; font-size: var(--h2);
   letter-spacing: -0.015em; line-height: 1.15; margin: 0;
 }
+/* the first head of a reading-column page: shared page-head offset */
+.section-head--page { padding-top: var(--space-6); }
+.crumb + .section-head { margin-top: var(--space-2); }
 .section-head .count, .count {
   font-family: var(--mono); font-size: var(--mono-sm); letter-spacing: var(--track-cap);
   text-transform: uppercase; color: var(--ink-faint); white-space: nowrap;
@@ -401,10 +406,13 @@ html[data-muted~="industry"] [data-category="industry"] { display: none !importa
 /* archive rows: period label + linked title/blurb */
 .arch { display: grid; grid-template-columns: 7rem 1fr; gap: 0 1.2rem; align-items: baseline; }
 .arch__period { color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.arch .pick__title { margin-bottom: 0.4rem; }
+.arch .pick__why { font-style: italic; color: var(--ink-soft); margin-bottom: 0; }
 @media (max-width: 40rem) { .arch { grid-template-columns: 1fr; gap: 0.25rem; } }
 
 /* category / subcategory landing pages */
-.cat-blurb { max-width: var(--measure-lead); color: var(--ink-soft); margin: 0 0 0.6rem; font-size: 1.05rem; text-wrap: pretty; }
+/* the deck — one-line page intro under a page title */
+.deck { max-width: var(--measure-lead); color: var(--ink-soft); margin: 0 0 0.6rem; font-size: 1.05rem; text-wrap: pretty; }
 .subchips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: var(--space-5) 0 var(--space-2); }
 .crumb {
   font-family: var(--mono); font-size: var(--mono-sm); letter-spacing: var(--track-cap);
@@ -415,10 +423,12 @@ html[data-muted~="industry"] [data-category="industry"] { display: none !importa
   padding: var(--space-6) 0; color: var(--ink-soft); font-style: italic;
   border-top: 1px solid var(--hairline); margin-top: 1.4rem;
 }
+.empty-state p { margin: 0 0 0.8rem; }
+.empty-state p:last-child { margin-bottom: 0; }
 .empty-state a { font-style: normal; color: var(--accent-ink); border-bottom: 1px solid var(--link-rule); }
 .empty-state a:hover { color: var(--accent); border-color: var(--accent); }
-.cat-blurb a { color: var(--accent-ink); border-bottom: 1px solid var(--link-rule); }
-.cat-blurb a:hover { color: var(--accent); border-color: var(--accent); }
+.deck a { color: var(--accent-ink); border-bottom: 1px solid var(--link-rule); }
+.deck a:hover { color: var(--accent); border-color: var(--accent); }
 
 /* ── sources directory ─────────────────────────────────────────────────── */
 .src-group { margin-bottom: var(--space-5); }
@@ -572,6 +582,7 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 
 /* ALSO NOTABLE — downshifted bare headline + source */
 .also { list-style: none; margin: 0; padding: 0; }
+.also--gap { margin-top: var(--space-5); }
 .also__item {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.3rem 0.8rem;
   padding: 0.55rem 0; border-bottom: 1px solid var(--hairline);
@@ -677,6 +688,7 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
   text-transform: uppercase; color: var(--ink);
 }
 .pref-field__hint { grid-column: 2; font-size: 0.9rem; line-height: 1.45; color: var(--ink-soft); text-wrap: pretty; }
+.pref-field__hint--lede { margin-bottom: var(--space-4); }
 @media (max-width: 30rem) {
   .pref-field { grid-template-columns: 1fr; }
   .pref-field__hint { grid-column: 1; }
@@ -833,6 +845,12 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
 /* .back composes .arrow-link; it only positions the link off the chrome */
 .back { padding: 1.4rem 0; }
 .digest-nav { display: flex; justify-content: space-between; gap: 1rem; max-width: var(--measure); border-top: 1px solid var(--hairline); }
+/* the article colophon — feeds now; model attribution joins it later */
+.article__foot {
+  display: flex; flex-wrap: wrap; gap: 0.6rem 1.5rem;
+  margin-top: var(--space-6); padding-top: var(--space-4);
+  border-top: 1px solid var(--hairline);
+}
 
 /* ── staggered load ────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
