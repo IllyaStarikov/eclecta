@@ -1,8 +1,8 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../../layouts/Base.astro';
 import Pick, { type PickData } from '../../components/Pick.astro';
 import Rail from '../../components/Rail.astro';
+import { latestEditions } from '../../lib/editions';
 import picksJson from '../../data/picks.json';
 import { site, href } from '../../site';
 import { CATEGORIES, resolveCategory } from '../../lib/taxonomy';
@@ -27,11 +27,8 @@ const subCounts = category.subcategories
   .map((s) => ({ sub: s, n: list.filter((p) => (p.subcategories ?? []).includes(s.slug)).length }))
   .filter((x) => x.n > 0);
 
-// the edition's latest daily brief, for the rail
-const digests = (await getCollection('digests')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
-const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
+// the editions ledger, for the rail
+const editions = await latestEditions();
 ---
 <Base wide={true} feedLinks={[{ title: `${site.name} | ${category.name}`, href: href(`/${category.slug}/rss.xml`) }]} title={`${category.name} | ${site.name}`} description={category.blurb}>
   <div class="broadsheet">
@@ -73,10 +70,7 @@ const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
     </div>
 
     <Rail
-      brief={latestDaily ? {
-        title: latestDaily.data.title,
-        href: href(`/digests/${latestDaily.id}/`),
-      } : null}
+      editions={editions}
       feeds={{
         title: 'Subscribe',
         items: [

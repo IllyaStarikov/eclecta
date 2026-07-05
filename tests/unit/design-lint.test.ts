@@ -9,6 +9,9 @@
  *     (`design-lint-allow: display-xl`, the 404 numeral) must exist exactly
  *     once in the whole tree.
  *  3. Every width-based media query uses a canonical breakpoint.
+ *  4. No em-dashes in chrome copy: reader-facing strings use commas or the
+ *     house `|` separator. Code comments and JSDoc are exempt; digest body
+ *     prose is the pipeline's concern, not the templates'.
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
@@ -75,6 +78,31 @@ describe('design lint', () => {
       for (const m of text.matchAll(/@media[^{\n]*\((?:min|max)-width:\s*([\d.]+(?:rem|px|em))\)/g)) {
         if (!BREAKPOINTS.has(m[1])) offenders.push(`${file}: @media ${m[1]}`);
       }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it('no em-dashes in chrome copy', () => {
+    // Reader-facing sources: templates plus the string modules the chrome
+    // renders (feed titles, category blurbs, the site identity).
+    const copySources = [
+      ...astroFiles,
+      join(SRC, 'site.ts'),
+      join(SRC, 'lib/feeds.ts'),
+      join(SRC, 'lib/taxonomy.ts'),
+    ];
+    const offenders: string[] = [];
+    for (const file of copySources) {
+      // Comments carry prose about the code, not copy for the reader: strip
+      // block and line comments wholesale (preserving line count), then flag
+      // whatever em-dashes remain — those are strings or markup the reader sees.
+      const text = readFileSync(file, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+        .replace(/(^|[^:])\/\/[^\n]*/g, (m, pre) => pre + ' '.repeat(m.length - pre.length));
+      text.split('\n').forEach((line, i) => {
+        if (!line.includes('—')) return;
+        offenders.push(`${file}:${i + 1}: ${line.trim().slice(0, 80)}`);
+      });
     }
     expect(offenders).toEqual([]);
   });
