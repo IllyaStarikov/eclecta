@@ -3,26 +3,146 @@ import Base from '../layouts/Base.astro';
 import { site } from '../site';
 import { CATEGORIES } from '../lib/taxonomy';
 
-interface SegOption { value: string; label: string; }
+interface SegOption { value: string; label: string; dot?: boolean; }
+interface SegField {
+  id: string;        // element id prefix: `${id}-${value}` (tests rely on these)
+  key: string;       // localStorage key, minus the eclecta: prefix
+  label: string;
+  def: string;       // the default value; stored as null (removed)
+  hint: string;
+  opts: SegOption[];
+}
+interface ToggleField { id: string; key: string; name: string; hint: string; }
+
 // Radio groups consumed by src/scripts/prefs.js: a [data-pref-group]
 // carries the key's default; the default value is stored as null (removed).
-const themeOpts: SegOption[] = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+const appearance: SegField[] = [
+  {
+    id: 'theme', key: 'theme', label: 'Theme', def: 'auto',
+    hint: 'Auto follows your system. The masthead toggle cycles it too.',
+    opts: [
+      { value: 'auto', label: 'Auto' },
+      { value: 'light', label: 'Light' },
+      { value: 'dark', label: 'Dark' },
+    ],
+  },
+  {
+    id: 'accent', key: 'accent', label: 'Accent', def: 'signal',
+    hint: 'Re-inks the signal colour: rules, active marks, and links pick it up everywhere.',
+    opts: [
+      { value: 'signal', label: 'Signal', dot: true },
+      { value: 'cobalt', label: 'Cobalt', dot: true },
+      { value: 'moss', label: 'Moss', dot: true },
+      { value: 'plum', label: 'Plum', dot: true },
+      { value: 'ink', label: 'Ink', dot: true },
+    ],
+  },
+  {
+    id: 'fontsize', key: 'fontSize', label: 'Type size', def: 'm',
+    hint: 'Scales the whole page, small to extra-large.',
+    opts: [
+      { value: 's', label: 'S' },
+      { value: 'm', label: 'M' },
+      { value: 'l', label: 'L' },
+      { value: 'xl', label: 'XL' },
+    ],
+  },
+  {
+    id: 'density', key: 'density', label: 'Density', def: 'comfortable',
+    hint: 'Compact tightens the rows and folds away per-pick notes.',
+    opts: [
+      { value: 'comfortable', label: 'Comfortable' },
+      { value: 'compact', label: 'Compact' },
+    ],
+  },
 ];
-const fontOpts: SegOption[] = [
-  { value: 's', label: 'S' },
-  { value: 'm', label: 'M' },
-  { value: 'l', label: 'L' },
-  { value: 'xl', label: 'XL' },
+
+const reading: SegField[] = [
+  {
+    id: 'bodyfont', key: 'bodyFont', label: 'Body type', def: 'serif',
+    hint: 'Serif is the house style. Sans sets the reading text in the headline face.',
+    opts: [
+      { value: 'serif', label: 'Serif' },
+      { value: 'sans', label: 'Sans' },
+    ],
+  },
+  {
+    id: 'leading', key: 'leading', label: 'Line height', def: 'normal',
+    hint: 'How open the running text sits on the page.',
+    opts: [
+      { value: 'tight', label: 'Tight' },
+      { value: 'normal', label: 'Normal' },
+      { value: 'relaxed', label: 'Relaxed' },
+    ],
+  },
+  {
+    id: 'measure', key: 'measure', label: 'Line width', def: 'normal',
+    hint: 'The longest a line of reading text can run. Normal is 66 characters.',
+    opts: [
+      { value: 'narrow', label: 'Narrow' },
+      { value: 'normal', label: 'Normal' },
+      { value: 'wide', label: 'Wide' },
+    ],
+  },
 ];
-const densityOpts: SegOption[] = [
-  { value: 'comfortable', label: 'Comfortable' },
-  { value: 'compact', label: 'Compact' },
+
+const readingToggles: ToggleField[] = [
+  {
+    id: 'pref-justify', key: 'justify', name: 'Justify text',
+    hint: 'Sets reading text flush on both edges, hyphenating where needed.',
+  },
+  {
+    id: 'pref-newtab', key: 'externalNewTab', name: 'Open external links in a new tab',
+    hint: 'Picks, sources, and every other outbound link opens alongside, keeping your place here.',
+  },
+];
+
+const accessibility: SegField[] = [
+  {
+    id: 'motion', key: 'motion', label: 'Motion', def: 'auto',
+    hint: 'Reduced switches off the reveal animations and hover movement. Auto follows your system setting.',
+    opts: [
+      { value: 'auto', label: 'Auto' },
+      { value: 'reduce', label: 'Reduced' },
+    ],
+  },
+  {
+    id: 'contrast', key: 'contrast', label: 'Contrast', def: 'auto',
+    hint: 'High pushes the text and every rule further from the paper, in whichever theme you read. Auto follows your system setting.',
+    opts: [
+      { value: 'auto', label: 'Auto' },
+      { value: 'high', label: 'High' },
+    ],
+  },
+];
+
+const accessibilityToggles: ToggleField[] = [
+  {
+    id: 'pref-underline', key: 'underlineLinks', name: 'Underline every link',
+    hint: 'Links in navigation, rails, and the footer get underlines too, so colour is never the only cue.',
+  },
+  {
+    id: 'pref-widespacing', key: 'wideSpacing', name: 'Wide letter spacing',
+    hint: 'Opens the space between letters and words across the site. Some readers find this easier to track.',
+  },
+];
+
+const detailToggles: ToggleField[] = [
+  {
+    id: 'pref-signals', key: 'showSignals', name: 'Show curation signals',
+    hint: 'Per pick: where it surfaced and how loudly, relevance, score, and which model curated it.',
+  },
+  {
+    id: 'pref-scores', key: 'showScores', name: 'Show scores inline',
+    hint: "Relevance and score in each pick's byline.",
+  },
+  {
+    id: 'pref-expand', key: 'expandDetails', name: 'Expand details',
+    hint: 'Every pick arrives with its notes already unfolded.',
+  },
 ];
 ---
-<Base title={`Preferences | ${site.name}`} description="Reading preferences for Eclecta: theme, type size, density, and how much curation detail to show. Stored on this device only.">
+<Base title={`Preferences | ${site.name}`} description="Reading preferences for Eclecta: theme, accent, type, reading comfort, accessibility, and how much curation detail to show. Stored on this device only.">
   <section class="prefs">
     <div class="section-head" style="padding-top:2.4rem;">
       <h1>Preferences</h1>
@@ -31,13 +151,15 @@ const densityOpts: SegOption[] = [
     <p class="prefs__intro">
       Everything here lives in this browser. No account, no sync, nothing sent
       anywhere. Changes take effect as you make them, and the panel previews
-      them live.
+      them live. To carry your settings to another device, copy them from the
+      data panel at the foot of the page.
     </p>
 
     <noscript>
       <p class="prefs__note">
         Preferences need JavaScript. Without it the site still reads fine; you
-        just get the defaults: auto theme, medium type, comfortable density.
+        just get the defaults: auto theme, signal-orange accent, medium serif
+        type, comfortable density.
       </p>
     </noscript>
 
@@ -45,73 +167,105 @@ const densityOpts: SegOption[] = [
       <div class="prefs__controls">
         <fieldset class="pref-group">
           <legend>Appearance</legend>
-
-          <div class="pref-field" data-pref-group data-pref-group-default="auto" role="radiogroup" aria-labelledby="lab-theme">
-            <span class="pref-field__lab" id="lab-theme">Theme</span>
-            <div class="seg">
-              {themeOpts.map((o) => (
-                <>
-                  <input type="radio" name="theme" data-pref="theme" value={o.value} id={`theme-${o.value}`} />
-                  <label for={`theme-${o.value}`}>{o.label}</label>
-                </>
-              ))}
+          {appearance.map((f) => (
+            <div class="pref-field" data-pref-group data-pref-group-default={f.def} role="radiogroup" aria-labelledby={`lab-${f.id}`} aria-describedby={`hint-${f.id}`}>
+              <span class="pref-field__lab" id={`lab-${f.id}`}>{f.label}</span>
+              <div class="seg">
+                {f.opts.map((o) => (
+                  <>
+                    <input type="radio" name={f.key} data-pref={f.key} value={o.value} id={`${f.id}-${o.value}`} />
+                    <label for={`${f.id}-${o.value}`}>
+                      {o.dot && <span class={`seg__dot seg__dot--${o.value}`} aria-hidden="true"></span>}{o.label}
+                    </label>
+                  </>
+                ))}
+              </div>
+              <span class="pref-field__hint" id={`hint-${f.id}`}>{f.hint}</span>
             </div>
-            <span class="pref-field__hint">Auto follows your system. The masthead toggle cycles it too.</span>
-          </div>
+          ))}
+        </fieldset>
 
-          <div class="pref-field" data-pref-group data-pref-group-default="m" role="radiogroup" aria-labelledby="lab-fontsize">
-            <span class="pref-field__lab" id="lab-fontsize">Type size</span>
-            <div class="seg">
-              {fontOpts.map((o) => (
-                <>
-                  <input type="radio" name="fontSize" data-pref="fontSize" value={o.value} id={`fontsize-${o.value}`} />
-                  <label for={`fontsize-${o.value}`}>{o.label}</label>
-                </>
-              ))}
+        <fieldset class="pref-group">
+          <legend>Reading</legend>
+          {reading.map((f) => (
+            <div class="pref-field" data-pref-group data-pref-group-default={f.def} role="radiogroup" aria-labelledby={`lab-${f.id}`} aria-describedby={`hint-${f.id}`}>
+              <span class="pref-field__lab" id={`lab-${f.id}`}>{f.label}</span>
+              <div class="seg">
+                {f.opts.map((o) => (
+                  <>
+                    <input type="radio" name={f.key} data-pref={f.key} value={o.value} id={`${f.id}-${o.value}`} />
+                    <label for={`${f.id}-${o.value}`}>{o.label}</label>
+                  </>
+                ))}
+              </div>
+              <span class="pref-field__hint" id={`hint-${f.id}`}>{f.hint}</span>
             </div>
-            <span class="pref-field__hint">Scales the whole page, small to extra-large.</span>
-          </div>
+          ))}
+          {readingToggles.map((t) => (
+            <div class="pref-toggle-field">
+              <label class="pref-toggle">
+                <input type="checkbox" data-pref={t.key} id={t.id} aria-describedby={`hint-${t.id}`} />
+                <span class="pref-toggle__box" aria-hidden="true"></span>
+                <span class="pref-toggle__name">{t.name}</span>
+              </label>
+              <span class="pref-field__hint" id={`hint-${t.id}`}>{t.hint}</span>
+            </div>
+          ))}
+        </fieldset>
 
-          <div class="pref-field" data-pref-group data-pref-group-default="comfortable" role="radiogroup" aria-labelledby="lab-density">
-            <span class="pref-field__lab" id="lab-density">Density</span>
-            <div class="seg">
-              {densityOpts.map((o) => (
-                <>
-                  <input type="radio" name="density" data-pref="density" value={o.value} id={`density-${o.value}`} />
-                  <label for={`density-${o.value}`}>{o.label}</label>
-                </>
-              ))}
+        <fieldset class="pref-group">
+          <legend>Accessibility</legend>
+          {accessibility.map((f) => (
+            <div class="pref-field" data-pref-group data-pref-group-default={f.def} role="radiogroup" aria-labelledby={`lab-${f.id}`} aria-describedby={`hint-${f.id}`}>
+              <span class="pref-field__lab" id={`lab-${f.id}`}>{f.label}</span>
+              <div class="seg">
+                {f.opts.map((o) => (
+                  <>
+                    <input type="radio" name={f.key} data-pref={f.key} value={o.value} id={`${f.id}-${o.value}`} />
+                    <label for={`${f.id}-${o.value}`}>{o.label}</label>
+                  </>
+                ))}
+              </div>
+              <span class="pref-field__hint" id={`hint-${f.id}`}>{f.hint}</span>
             </div>
-            <span class="pref-field__hint">Compact tightens the rows and folds away per-pick notes.</span>
-          </div>
+          ))}
+          {accessibilityToggles.map((t) => (
+            <div class="pref-toggle-field">
+              <label class="pref-toggle">
+                <input type="checkbox" data-pref={t.key} id={t.id} aria-describedby={`hint-${t.id}`} />
+                <span class="pref-toggle__box" aria-hidden="true"></span>
+                <span class="pref-toggle__name">{t.name}</span>
+              </label>
+              <span class="pref-field__hint" id={`hint-${t.id}`}>{t.hint}</span>
+            </div>
+          ))}
+          <p class="pref-field__hint" style="margin:0;">
+            Type size and reduced motion set here work alongside your browser
+            and system settings, never against them. Zoom, large-text modes,
+            and screen readers all keep working as usual.
+          </p>
         </fieldset>
 
         <fieldset class="pref-group">
           <legend>Detail</legend>
-          <label class="pref-toggle">
-            <input type="checkbox" data-pref="showSignals" id="pref-signals" />
-            <span class="pref-toggle__box" aria-hidden="true"></span>
-            <span class="pref-toggle__text">
-              <span class="pref-toggle__name">Show curation signals</span>
-              <span class="pref-field__hint">Per pick: where it surfaced and how loudly, relevance, score, and which model curated it.</span>
-            </span>
-          </label>
-          <label class="pref-toggle">
-            <input type="checkbox" data-pref="showScores" id="pref-scores" />
-            <span class="pref-toggle__box" aria-hidden="true"></span>
-            <span class="pref-toggle__text">
-              <span class="pref-toggle__name">Show scores inline</span>
-              <span class="pref-field__hint">Relevance and score in each pick's byline.</span>
-            </span>
-          </label>
+          {detailToggles.map((t) => (
+            <div class="pref-toggle-field">
+              <label class="pref-toggle">
+                <input type="checkbox" data-pref={t.key} id={t.id} aria-describedby={`hint-${t.id}`} />
+                <span class="pref-toggle__box" aria-hidden="true"></span>
+                <span class="pref-toggle__name">{t.name}</span>
+              </label>
+              <span class="pref-field__hint" id={`hint-${t.id}`}>{t.hint}</span>
+            </div>
+          ))}
         </fieldset>
 
-        <fieldset class="pref-group">
+        <fieldset class="pref-group" aria-describedby="hint-sections">
           <legend>Sections</legend>
-          <p class="pref-field__hint" style="margin-bottom:var(--space-4);">
+          <p class="pref-field__hint" id="hint-sections" style="margin-bottom:var(--space-4);">
             Switch off sections you don't want on the front page or in the nav.
             A muted section still keeps its own page and feed; it's just out of
-            your way here.
+            your way here. A switch on means the section is shown.
           </p>
           <div class="mute-grid">
             {CATEGORIES.map((c) => (
@@ -128,25 +282,46 @@ const densityOpts: SegOption[] = [
           </div>
         </fieldset>
 
+        <fieldset class="pref-group">
+          <legend>Your data</legend>
+          <p class="pref-field__hint" style="margin-bottom:var(--space-4);">
+            Your settings, gathered as JSON. Each one lives in this browser's
+            localStorage under the <code>eclecta:</code> prefix. Copy the set
+            to move to another device, or paste a saved set and apply it.
+            Applying replaces everything: settings you leave out of the paste
+            return to their defaults.
+          </p>
+          <label class="sr-only" for="prefs-io">Your settings as JSON</label>
+          <textarea id="prefs-io" class="pref-io__text" data-prefs-io rows="6" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+          <div class="pref-io__actions">
+            <button type="button" class="danger" data-prefs-export>Copy settings</button>
+            <button type="button" class="danger" data-prefs-import>Apply pasted settings</button>
+          </div>
+          <p class="pref-io__status" data-prefs-status role="status" aria-live="polite"></p>
+        </fieldset>
+
         <div class="pref-reset">
           <button type="button" class="danger" data-prefs-reset>Reset to defaults</button>
+          <span class="count" data-prefs-count>all defaults</span>
           <span class="pref-field__hint">Clears every Eclecta preference stored in this browser.</span>
         </div>
       </div>
 
       <aside class="prefs__preview" aria-label="Live preview of your settings">
         <span class="prefs__preview-lab">Preview</span>
-        <div class="briefing">
+        {/* a placeholder pick, hidden from the accessibility tree: its links
+            are inert and its text is sample copy, not content */}
+        <div class="briefing" aria-hidden="true">
           <article class="pick pick--brief">
             <div class="pick__meta">
-              <span class="pick__no" aria-hidden="true">01</span>
+              <span class="pick__no">01</span>
               <span class="pick__src">example.com</span>
               <span class="pick__date">2026-06-13</span>
-              <a class="pick__tag" href="#" aria-hidden="true" tabindex="-1">ai</a>
+              <a class="pick__tag" href="#" tabindex="-1">ai</a>
               <span class="pick__score">rel 9/10 score 5.7</span>
             </div>
-            <h3 class="pick__title"><a href="#" aria-hidden="true" tabindex="-1">A sample headline, set the way your picks will read</a></h3>
-            <p class="pick__why">The one-line account of why it matters sits here. Your settings change how much shows around it.</p>
+            <p class="pick__title"><a href="#" tabindex="-1">A sample headline, set the way your picks will read</a></p>
+            <p class="pick__why">The one-line account of why it matters sits here. Your settings change how much shows around it, how the type is set, and how openly the lines breathe.</p>
             <details class="pick__details">
               <summary>Details</summary>
               <ul class="pick__notes">
@@ -154,7 +329,7 @@ const densityOpts: SegOption[] = [
                 <li>Another concrete detail worth keeping.</li>
               </ul>
             </details>
-            <aside class="pick__signals" aria-label="Curation signals">
+            <aside class="pick__signals">
               <span class="lab">Signals</span>
               <span>3 sources</span>
               <span>relevance 9/10</span>
@@ -163,7 +338,7 @@ const densityOpts: SegOption[] = [
             </aside>
           </article>
         </div>
-        <span class="prefs__preview-foot">Toggle the controls and watch this update.</span>
+        <span class="prefs__preview-foot">Appearance, reading, and detail controls update this pane live. The rest take effect across the site.</span>
       </aside>
     </div>
   </section>

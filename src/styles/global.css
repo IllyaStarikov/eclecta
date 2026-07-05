@@ -6,12 +6,23 @@
    rules do all the work.
 
    Reader preferences arrive as data-attributes on <html>, stamped before
-   first paint by the inline script in Base.astro:
-     data-theme       auto(absent) | light | dark
-     data-fontsize    s | m(absent) | l | xl
-     data-density     comfortable(absent) | compact
-     data-showscores  "1" reveals relevance/score chips
-     data-showsignals "1" reveals the per-pick signals panel
+   first paint by the inline script in Base.astro (keep three places in
+   sync: that script, src/scripts/prefs.js, and this file):
+     data-theme        auto(absent) | light | dark
+     data-accent       signal(absent) | cobalt | moss | plum | ink
+     data-fontsize     s | m(absent) | l | xl
+     data-bodyfont     serif(absent) | sans
+     data-density      comfortable(absent) | compact
+     data-leading      tight | normal(absent) | relaxed
+     data-measure      narrow | normal(absent) | wide
+     data-justify      "1" sets reading text flush on both edges
+     data-motion       auto(absent) | reduce
+     data-contrast     auto(absent) | high
+     data-underline    "1" underlines every link
+     data-widespacing  "1" opens letter and word spacing
+     data-showscores   "1" reveals relevance/score chips
+     data-showsignals  "1" reveals the per-pick signals panel
+     data-muted        space-list of muted category slugs
    ─────────────────────────────────────────────────────────────────────── */
 
 :root {
@@ -23,14 +34,22 @@
   --ink-faint:    #757980;    /* darkened: clears AA-large, carries dates/counts */
   --hairline:     #d5d7d2;
   --hairline-bold:#bfc2bc;
-  --accent:       #e8451f;    /* signal orange */
-  --accent-ink:   #c63a18;    /* text-safe on light */
   --link-rule:    rgba(22,24,29,0.30);
+
+  /* accent inks — the reader can re-ink the signal colour (Preferences).
+     Dark blocks below override the --acc-* pairs; --accent follows along. */
+  --acc-signal: #e8451f;  --acc-signal-ink: #c63a18;   /* signal orange (default) */
+  --acc-cobalt: #2251d6;  --acc-cobalt-ink: #1a41ad;
+  --acc-moss:   #2e7d3f;  --acc-moss-ink:   #256633;
+  --acc-plum:   #9333b8;  --acc-plum-ink:   #7b2a9b;
+  --accent:     var(--acc-signal);
+  --accent-ink: var(--acc-signal-ink);
 
   /* type */
   --sans:  "Schibsted Grotesk Variable", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   --serif: "Source Serif 4 Variable", Georgia, "Times New Roman", serif;
   --mono:  "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --body-font: var(--serif);   /* reading face — data-bodyfont swaps it */
   --body-wght: 420;
   --bold-wght: 600;
 
@@ -51,8 +70,8 @@
   --track-cap:  0.14em;    /* uppercase structural */
 
   /* measure / leading */
-  --measure:       min(66ch, 100% - 2rem);
-  --measure-prose: 66ch;   /* canonical reading column */
+  --measure:       min(var(--measure-prose), 100% - 2rem);
+  --measure-prose: 66ch;   /* canonical reading column — data-measure retunes it */
   --measure-lead:  54ch;   /* leads / standfirsts */
   --leading-read:  1.6;    /* running serif body */
   --leading-tight: 1.34;   /* display blurbs / standfirsts */
@@ -78,8 +97,10 @@
     --ink-faint:    #888d96;   /* lifted: clears AA on ground + inset panels */
     --hairline:     #2a2d31;
     --hairline-bold:#3a3e43;
-    --accent:       #ff6a3d;
-    --accent-ink:   #ff8a63;
+    --acc-signal: #ff6a3d;  --acc-signal-ink: #ff8a63;
+    --acc-cobalt: #7aa2ff;  --acc-cobalt-ink: #9db9ff;
+    --acc-moss:   #6fce85;  --acc-moss-ink:   #8edd9f;
+    --acc-plum:   #cf8af0;  --acc-plum-ink:   #dea8f5;
     --link-rule:    rgba(236,236,232,0.28);
     --body-wght:    430;   /* keep serif strokes from vanishing on dark */
     --bold-wght:    640;
@@ -94,11 +115,53 @@ html[data-theme="dark"] {
   --ink-faint:    #888d96;
   --hairline:     #2a2d31;
   --hairline-bold:#3a3e43;
-  --accent:       #ff6a3d;
-  --accent-ink:   #ff8a63;
+  --acc-signal: #ff6a3d;  --acc-signal-ink: #ff8a63;
+  --acc-cobalt: #7aa2ff;  --acc-cobalt-ink: #9db9ff;
+  --acc-moss:   #6fce85;  --acc-moss-ink:   #8edd9f;
+  --acc-plum:   #cf8af0;  --acc-plum-ink:   #dea8f5;
   --link-rule:    rgba(236,236,232,0.28);
   --body-wght:    430;
   --bold-wght:    640;
+}
+
+/* accent re-inking — the --acc pairs above already carry light/dark, so one
+   rule per accent covers both themes */
+html[data-accent="cobalt"] { --accent: var(--acc-cobalt); --accent-ink: var(--acc-cobalt-ink); }
+html[data-accent="moss"]   { --accent: var(--acc-moss);   --accent-ink: var(--acc-moss-ink); }
+html[data-accent="plum"]   { --accent: var(--acc-plum);   --accent-ink: var(--acc-plum-ink); }
+html[data-accent="ink"]    { --accent: var(--ink);        --accent-ink: var(--ink); }
+
+/* high contrast — JS stamps data-contrast="high" from the reader's pref, or
+   from prefers-contrast when the pref is auto (see Base.astro / prefs.js) */
+html[data-contrast="high"] {
+  --ink:          #000000;
+  --ink-soft:     #2b2e33;
+  --ink-faint:    #3f434a;
+  --hairline:     #8f928c;
+  --hairline-bold:#5f625c;
+  --acc-signal-ink: #b3300f;
+  --link-rule:    rgba(0,0,0,0.6);
+}
+/* …dark ground needs the opposite push. Keep the two dark blocks in sync. */
+html[data-theme="dark"][data-contrast="high"] {
+  --ink:          #ffffff;
+  --ink-soft:     #d6d9de;
+  --ink-faint:    #c2c6cc;
+  --hairline:     #4a4e53;
+  --hairline-bold:#6a6e73;
+  --acc-signal-ink: #ffa588;
+  --link-rule:    rgba(255,255,255,0.6);
+}
+@media (prefers-color-scheme: dark) {
+  html:not([data-theme="light"])[data-contrast="high"] {
+    --ink:          #ffffff;
+    --ink-soft:     #d6d9de;
+    --ink-faint:    #c2c6cc;
+    --hairline:     #4a4e53;
+    --hairline-bold:#6a6e73;
+    --acc-signal-ink: #ffa588;
+    --link-rule:    rgba(255,255,255,0.6);
+  }
 }
 
 /* reader font scale: rem-based layout scales wholesale */
@@ -106,12 +169,58 @@ html[data-fontsize="s"]  { font-size: 92%; }
 html[data-fontsize="l"]  { font-size: 108%; }
 html[data-fontsize="xl"] { font-size: 116%; }
 
+/* reading preferences — token-level, so everything downstream follows */
+html[data-bodyfont="sans"] { --body-font: var(--sans); }
+html[data-leading="tight"]   { --leading-read: 1.45; }
+html[data-leading="relaxed"] { --leading-read: 1.78; }
+html[data-measure="narrow"] { --measure-prose: 56ch; }
+html[data-measure="wide"]   { --measure-prose: 78ch; }
+html[data-justify="1"] :is(.prose > p, .pick__why, .pick__summary, .cat-blurb, .prefs__intro, .standfirst) {
+  text-align: justify;
+  -webkit-hyphens: auto;
+  hyphens: auto;
+}
+
 /* compact density — tighter rows, secondary text hidden */
 html[data-density="compact"] {
   --pick-pad: 0.9rem;
 }
 html[data-density="compact"] .pick__details { display: none; }
 html[data-density="compact"] .pick--lead .pick__notes { display: none; }
+
+/* forced reduced motion (Preferences) — mirrors the media block at the foot */
+html[data-motion="reduce"] *,
+html[data-motion="reduce"] *::before,
+html[data-motion="reduce"] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+html[data-motion="reduce"] .reveal { opacity: 1; transform: none; }
+
+/* underline every link (Preferences) — the wordmark and skip link carry
+   their own affordances */
+html[data-underline="1"] a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+/* the lead headline opts out of resting underlines below; this pref wins */
+html[data-underline="1"] .pick--lead .pick__title a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.15em;
+}
+html[data-underline="1"] a.masthead__wordmark,
+html[data-underline="1"] .masthead__wordmark a,
+html[data-underline="1"] .skip { text-decoration: none; }
+
+/* wide letter/word spacing (Preferences) — opens the set for readers who
+   track better with more air; tight display tracking relaxes to match */
+html[data-widespacing="1"] body { letter-spacing: 0.025em; word-spacing: 0.08em; }
+html[data-widespacing="1"] :is(.pick__title, .article__title, .section-head h1, .section-head h2, .erail__brieflink, .also__title, .prose h2, .prose h3, .standfirst, .masthead__wordmark, .foot__name) {
+  letter-spacing: 0.01em;
+}
 
 *, *::before, *::after { box-sizing: border-box; border-radius: 0 !important; }
 
@@ -121,7 +230,7 @@ body {
   margin: 0;
   background: var(--ground);
   color: var(--ink);
-  font-family: var(--serif);
+  font-family: var(--body-font);
   font-size: var(--body);
   font-weight: var(--body-wght);
   line-height: var(--leading-read);
@@ -134,6 +243,8 @@ body {
 ::selection { background: var(--accent); color: var(--ground); }
 
 a { color: inherit; text-decoration: none; }
+
+code { font-family: var(--mono); font-size: 0.9em; letter-spacing: 0; }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -384,7 +495,7 @@ html[data-muted~="industry"] [data-category="industry"] { display: none !importa
 .standfirst {
   max-width: var(--measure-prose); margin: var(--space-5) 0 0;
   padding-left: 1.1rem; border-left: 2px solid var(--accent);
-  font-family: var(--serif); font-size: clamp(1.16rem, 1.05rem + 0.6vw, 1.4rem);
+  font-family: var(--body-font); font-size: clamp(1.16rem, 1.05rem + 0.6vw, 1.4rem);
   line-height: 1.5; color: var(--ink); text-wrap: pretty;
 }
 /* the lead follows the standfirst closely — one rhythm unit, not a chasm */
@@ -513,7 +624,7 @@ html:not([data-showscores="1"]) .pick__score { display: none; }
 .pick__title a:hover { color: var(--accent-ink); text-decoration-color: var(--accent); text-decoration-thickness: 2px; }
 
 .pick__why {
-  margin: 0 0 0.5rem; font-family: var(--serif); font-size: var(--body);
+  margin: 0 0 0.5rem; font-family: var(--body-font); font-size: var(--body);
   line-height: var(--leading-read); color: var(--ink); max-width: var(--measure-prose);
   text-wrap: pretty;
 }
@@ -711,24 +822,38 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
   .pref-field__hint { grid-column: 1; }
 }
 
-/* segmented control — ground-2 track, ink fill marks the active cell */
-.seg { display: inline-flex; }
+/* segmented control — ground-2 track, ink fill marks the active cell.
+   Cells carry full borders overlapped by -1px margins so rows can wrap with
+   single-width seams; the wrapper's padding re-aligns the outer edges. */
+.seg { display: inline-flex; flex-wrap: wrap; padding: 1px 0 0 1px; }
 .seg label {
   font-family: var(--mono); font-size: var(--mono-sm); letter-spacing: var(--track-meta);
   text-transform: uppercase; color: var(--ink-soft); background: var(--ground-2);
-  border: 1px solid var(--hairline-bold); border-left-width: 0;
+  border: 1px solid var(--hairline-bold); margin: -1px 0 0 -1px;
   padding: 0.5rem 0.9rem; cursor: pointer; user-select: none;
   transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
-.seg label:first-of-type { border-left-width: 1px; }
 .seg label:hover { color: var(--ink); }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg input:checked + label {
   background: var(--ink); color: var(--ground); border-color: var(--ink);
   box-shadow: inset 0 -3px 0 var(--accent);   /* spend the accent on the active control */
+  position: relative; z-index: 1;
 }
 .seg input:checked + label:hover { color: var(--ground); }
-.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; position: relative; z-index: 1; }
+.seg input:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 2px; position: relative; z-index: 2; }
+
+/* accent swatch dots inside the accent picker's cells */
+.seg__dot {
+  display: inline-block; width: 0.62em; height: 0.62em; margin-right: 0.45em;
+  border: 1px solid var(--ground);   /* keeps the ink dot visible on the ink fill */
+  vertical-align: baseline;
+}
+.seg__dot--signal { background: var(--acc-signal); }
+.seg__dot--cobalt { background: var(--acc-cobalt); }
+.seg__dot--moss   { background: var(--acc-moss); }
+.seg__dot--plum   { background: var(--acc-plum); }
+.seg__dot--ink    { background: var(--ink); }
 
 /* toggle rows — a square sliding switch; ink fill = on (matches the seg) */
 .pref-toggle {
@@ -754,8 +879,30 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 .pref-toggle input:checked + .pref-toggle__box::after { transform: translateX(1.1rem); background: var(--ground); }
 .pref-toggle input:focus-visible + .pref-toggle__box { outline: 2px solid var(--accent); outline-offset: 2px; }
 .pref-toggle__name { font-family: var(--sans); font-weight: 600; font-size: 1.02rem; }
-.pref-toggle__text .pref-field__hint { grid-column: auto; margin-top: 0.15rem; display: block; }
 .pref-toggle--compact { align-items: center; margin-bottom: 0; }
+
+/* a toggle with its hint below, indented past the switch column; the hint is
+   aria-describedby'd from the checkbox, so it stays outside the label */
+.pref-toggle-field { margin: 0 0 var(--space-5); }
+.pref-toggle-field:last-child { margin-bottom: 0; }
+.pref-toggle-field .pref-toggle { margin-bottom: 0.2rem; }
+.pref-toggle-field > .pref-field__hint { display: block; margin-left: 3.5rem; }
+@media (max-width: 30rem) { .pref-toggle-field > .pref-field__hint { margin-left: 0; } }
+
+/* Windows High Contrast (forced colors) strips author backgrounds and
+   shadows; repaint control state with system colours so on/off survives */
+@media (forced-colors: active) {
+  .seg input:checked + label {
+    forced-color-adjust: none;
+    background: SelectedItem; color: SelectedItemText; border-color: ButtonText;
+    box-shadow: none;
+  }
+  .pref-toggle__box, .pref-toggle__box::after { forced-color-adjust: none; }
+  .pref-toggle__box { background: Canvas; border-color: ButtonText; }
+  .pref-toggle__box::after { background: GrayText; }
+  .pref-toggle input:checked + .pref-toggle__box { background: SelectedItem; border-color: ButtonText; }
+  .pref-toggle input:checked + .pref-toggle__box::after { background: SelectedItemText; }
+}
 
 .mute-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem 1.5rem; }
 @media (max-width: 30rem) { .mute-grid { grid-template-columns: 1fr; } }
@@ -775,6 +922,24 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 }
 .prefs .danger:hover { color: var(--accent); border-color: var(--accent); }
 
+/* settings as JSON — copy out, paste in */
+.pref-io__text {
+  display: block; width: 100%; min-height: 6.5rem; resize: vertical;
+  font-family: var(--mono); font-size: 0.78rem; line-height: 1.55;
+  color: var(--ink-soft); background: var(--ground-2);
+  border: 1px solid var(--hairline-bold); padding: 0.6rem 0.75rem;
+}
+.pref-io__text:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pref-io__actions {
+  display: flex; flex-wrap: wrap; gap: 0.6rem 0.6rem; align-items: center;
+  margin-top: var(--space-3);
+}
+.pref-io__status {
+  margin: var(--space-3) 0 0; min-height: 1.2em;
+  font-family: var(--mono); font-size: var(--mono-xs); letter-spacing: var(--track-meta);
+  color: var(--accent-ink);
+}
+
 /* the live preview pane */
 .prefs__preview {
   border: 1px solid var(--hairline-bold); background: var(--ground);
@@ -788,6 +953,10 @@ html:not([data-showsignals="1"]) .pick__signals { display: none; }
 }
 .prefs__preview .pick { padding-top: 0.3rem; border-bottom: 0; }
 .prefs__preview .pick__title a { cursor: default; text-decoration-color: var(--link-rule); }
+/* keep a resting trace of the accent in the pane so re-inking shows even at
+   default settings (the briefing proper reserves these marks for leads) */
+.prefs__preview .pick__src::before,
+.prefs__preview .pick__details > summary::before { color: var(--accent); }
 .prefs__preview-foot {
   display: block; margin-top: var(--space-4); padding-top: var(--space-3);
   border-top: 1px solid var(--hairline);
@@ -880,7 +1049,9 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
 @media print {
   body { background: #fff; color: #000; font-size: 11pt; }
   .channels, .toggle, .pick__signals, .subscribe, .foot,
-  .skip, .back, .digest-nav, .pick__details, .dateline { display: none !important; }
+  .skip, .back, .digest-nav, .pick__details, .dateline,
+  .pref-io__actions, .mute-actions, .pref-reset { display: none !important; }
+  .pref-io__text { color: #000; background: #fff; border-color: #999; }
   .pick, .also__item { break-inside: avoid; }
   .prose a::after, .pick__title a::after, .also__title a::after { content: " (" attr(href) ")"; font-size: 0.8em; color: #444; }
   .masthead { padding: 0.5rem 0; border-bottom-width: 2px; }
