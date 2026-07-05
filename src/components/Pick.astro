@@ -25,12 +25,12 @@ const host = hostOf(primary);
 const Heading = variant === 'lead' ? 'h2' : 'h3';
 ---
 {variant === 'also' ? (
-  <article class="also__item reveal" style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+  <article class="also__item reveal" id={`p-${pick.id}`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
     <span class="also__title"><a href={primary} target="_blank" rel="noopener">{pick.title}</a></span>
     {host && <span class="also__src">{host}</span>}
   </article>
 ) : (
-  <article class={`pick pick--${variant} reveal`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+  <article class={`pick pick--${variant} reveal`} id={`p-${pick.id}`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
     <div class="pick__meta">
       <span class="pick__no" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
       {host && <span class="pick__src">{host}</span>}
@@ -39,8 +39,10 @@ const Heading = variant === 'lead' ? 'h2' : 'h3';
       {tax.subcategories.slice(0, 2).map((s) => (
         <a class="pick__tag pick__tag--sub" href={href(`/${tax.category}/${s}/`)}>{s}</a>
       ))}
+      {pick.state === 'developing' && <span class="pick__tag pick__tag--state">developing</span>}
       <span class="pick__score">rel {pick.relevance}/10 score {Number(pick.score ?? 0).toFixed(1)}</span>
     </div>
+    {variant === 'lead' && pick.novelty && <p class="pick__novelty">{pick.novelty}</p>}
     <Heading class="pick__title">
       <a href={primary} target="_blank" rel="noopener">{pick.title}</a>
     </Heading>
@@ -86,6 +88,8 @@ const Heading = variant === 'lead' ? 'h2' : 'h3';
       <span>relevance {pick.relevance}/10</span>
       <span>score {Number(pick.score ?? 0).toFixed(2)}</span>
       {pick.read_kind && pick.read_kind !== 'primary' && <span>read: {pick.read_kind}</span>}
+      {variant !== 'lead' && pick.novelty && <span>new: {pick.novelty}</span>}
+      {pick.audience && <span>for: {pick.audience}</span>}
       {pick.model && <span>curator: {pick.model}</span>}
       {date && <span>curated {date}</span>}
       {pick.surfaces.map((s) => (
