@@ -3,7 +3,11 @@ import {
   columnChart,
   curatedStrip,
   fmtDay,
+  funnelRows,
+  heatLevels,
+  histogramRows,
   seriesCaption,
+  stripSegments,
 } from '../../src/lib/coverage';
 
 const day = (d: string, items: number, curated = 0) => ({
@@ -79,5 +83,88 @@ describe('seriesCaption', () => {
     expect(cap.busiest.d).toBe('2026-07-01');
     expect(cap.quietest.d).toBe('2026-07-03');
     expect(cap.mean).toBe(50);
+  });
+});
+
+describe('funnelRows', () => {
+  const rows = funnelRows({
+    items: 100000,
+    clusters: 90000,
+    fetched: 4000,
+    curated: 900,
+    published: 850,
+  });
+
+  it('orders the five stages and keeps counts', () => {
+    expect(rows.map((r) => r.key)).toEqual([
+      'items',
+      'clusters',
+      'fetched',
+      'curated',
+      'published',
+    ]);
+    expect(rows[0].count).toBe(100000);
+  });
+
+  it('computes conversion vs the previous stage (first is null)', () => {
+    expect(rows[0].pct).toBeNull();
+    expect(rows[1].pct).toBeCloseTo(90, 1);
+    expect(rows[4].pct).toBeCloseTo((850 / 900) * 100, 1);
+  });
+
+  it('log-scales widths: first is 100, all positive counts >= 2', () => {
+    expect(rows[0].widthPct).toBe(100);
+    for (const r of rows) expect(r.widthPct).toBeGreaterThanOrEqual(2);
+    expect(rows[3].widthPct).toBeLessThan(rows[1].widthPct);
+  });
+
+  it('survives zero counts', () => {
+    const z = funnelRows({ items: 0, clusters: 0, fetched: 0, curated: 0, published: 0 });
+    expect(z[0].widthPct).toBe(2);
+    expect(z[1].pct).toBeNull();
+  });
+});
+
+describe('stripSegments', () => {
+  it('drops zero segments and yields percentages summing to ~100', () => {
+    const segs = stripSegments([
+      { label: 'ok', value: 75 },
+      { label: 'paywalled', value: 25 },
+      { label: 'failed', value: 0 },
+    ]);
+    expect(segs.map((s) => s.label)).toEqual(['ok', 'paywalled']);
+    expect(segs[0].pct).toBeCloseTo(75, 5);
+    expect(segs.reduce((a, s) => a + s.pct, 0)).toBeCloseTo(100, 5);
+  });
+
+  it('returns [] when everything is zero', () => {
+    expect(stripSegments([{ label: 'x', value: 0 }])).toEqual([]);
+  });
+});
+
+describe('histogramRows', () => {
+  it('fills 0..10, coercing missing buckets to zero', () => {
+    const { rows, max } = histogramRows({ kept: { '7': 40 }, skipped: { '3': 55 } });
+    expect(rows).toHaveLength(11);
+    expect(rows[7]).toEqual({ score: 7, kept: 40, skipped: 0 });
+    expect(rows[3]).toEqual({ score: 3, kept: 0, skipped: 55 });
+    expect(max).toBe(55);
+  });
+});
+
+describe('heatLevels', () => {
+  it('buckets 0 to level 0 and max to the top level', () => {
+    const levels = heatLevels([
+      [0, 5, 10],
+      [1, 0, 2],
+    ]);
+    expect(levels[0][0]).toBe(0);
+    expect(levels[0][2]).toBe(4);
+    expect(levels[1][1]).toBe(0);
+    expect(levels[1][0]).toBeGreaterThanOrEqual(1);
+  });
+
+  it('handles an all-zero grid', () => {
+    expect(heatLevels([[0, 0]])).toEqual([[0, 0]]);
   });
 });
