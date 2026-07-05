@@ -91,6 +91,14 @@ export function digestItemHtml(d: FeedDigest, url: string): string {
   );
 }
 
+/**
+ * XSL that renders every raw feed as a human-readable "subscribe" page in the
+ * browser (public/rss/styles.xsl), while the feed stays valid RSS for readers.
+ * Passed as the `stylesheet` option to each rss.xml.js endpoint. Base-aware:
+ * BASE_URL is '/' on eclecta.co, so this resolves to '/rss/styles.xsl'.
+ */
+export const FEED_STYLESHEET = import.meta.env.BASE_URL + 'rss/styles.xsl';
+
 /* ── the registry ──────────────────────────────────────────────────────── */
 
 export type FeedGroup = 'everything' | 'digests' | 'cadence' | 'category';

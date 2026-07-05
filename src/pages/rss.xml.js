@@ -2,7 +2,7 @@ import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import picks from '../data/picks.json';
 import { absUrl, KIND_LABEL } from '../site';
-import { getFeed, pickItemHtml, pickPrimaryLink, digestItemHtml } from '../lib/feeds';
+import { getFeed, pickItemHtml, pickPrimaryLink, digestItemHtml, FEED_STYLESHEET } from '../lib/feeds';
 
 export async function GET(context) {
   const feed = getFeed('everything');
@@ -29,6 +29,7 @@ export async function GET(context) {
     })),
   ];
   return rss({
+    stylesheet: FEED_STYLESHEET,
     title: feed.title,
     description: feed.description,
     site: new URL(import.meta.env.BASE_URL, context.site).href,
