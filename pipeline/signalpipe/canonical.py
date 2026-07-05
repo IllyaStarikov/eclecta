@@ -131,7 +131,10 @@ def canonicalize(url: Optional[str]) -> Optional[str]:
         return None
     if host.startswith("www."):
         host = host[4:]
-    port = parts.port
+    try:
+        port = parts.port  # property raises ValueError on a bad/oob port
+    except ValueError:
+        return None
     netloc = host
     if port and port not in (80, 443):
         netloc = "%s:%d" % (host, port)

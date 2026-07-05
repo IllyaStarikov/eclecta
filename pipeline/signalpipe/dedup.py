@@ -55,6 +55,8 @@ def story_id(canonical_url: Optional[str], title_key_val: str) -> str:
         parts = urlsplit(canonical_url)
         host = registered_domain(canonical_url) or parts.netloc
         basis = host + "|" + (parts.path or "/").rstrip("/")
+        if parts.query:  # canonicalize() already stripped tracking params
+            basis += "?" + parts.query
     else:
         basis = "titlekey|" + (title_key_val or "")
     return "s_" + hashlib.sha1(basis.encode("utf-8")).hexdigest()[:16]

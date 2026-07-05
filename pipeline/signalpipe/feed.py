@@ -25,6 +25,14 @@ import sqlite3
 from typing import Any, Dict, List, Optional
 from xml.sax.saxutils import escape, quoteattr
 
+# XML 1.0 forbids most C0 controls (tab/newline/CR are the only legal ones);
+# feedparser passes stray bytes through, so scrub them before embedding.
+_XML_ILLEGAL = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _xml_safe(s: str) -> str:
+    return escape(_XML_ILLEGAL.sub("", s or ""))
+
 GUID_FMT = "tag:starikov.co,2026:signal/%d"
 _REL_RE = re.compile(r"^(\d+)([hdwm])$")
 
@@ -235,14 +243,14 @@ def render_rss(
         desc = (it.get("why_it_matters") or it.get("excerpt") or "")[:500]
         pub = it.get("curated_at") or it.get("last_seen")
         out.append("<item>")
-        out.append("<title>%s</title>" % escape(title))
+        out.append("<title>%s</title>" % _xml_safe(title))
         if it.get("link"):
             out.append("<link>%s</link>" % escape(it["link"]))
         out.append(
             '<guid isPermaLink="false">%s</guid>' % escape(GUID_FMT % it["id"])
         )
         out.append("<pubDate>%s</pubDate>" % _rfc822(pub))
-        out.append("<description>%s</description>" % escape(desc))
+        out.append("<description>%s</description>" % _xml_safe(desc))
         if it.get("source_url") and it.get("source_url") != it.get("link"):
             out.append("<dc:source>%s</dc:source>" % escape(it["source_url"]))
         html = item_html.get(it["id"])
