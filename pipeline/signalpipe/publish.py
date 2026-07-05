@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import datetime
 import json
+import math
 import os
 import pathlib
 import re
@@ -82,6 +83,14 @@ def _iso_days_ago(days: int) -> str:
     return (
         datetime.datetime.now(datetime.timezone.utc)
         - datetime.timedelta(days=days)
+    ).isoformat()
+
+
+def _iso_hours_ago(hours: int) -> str:
+    """Same convention as _iso_days_ago, hour-granular (spotlight window)."""
+    return (
+        datetime.datetime.now(datetime.timezone.utc)
+        - datetime.timedelta(hours=hours)
     ).isoformat()
 
 
@@ -181,6 +190,116 @@ def export_picks(conn: sqlite3.Connection, cfg) -> List[Dict[str, Any]]:
             "model": r["model_used"],
         })
     return picks
+
+
+# Spotlight: stories gaining traction across the internet right now.
+# Pure SQL over clusters/surfaces/items — no LLM, no schema migration.
+# Site contract: eclecta src/lib/schema.ts spotlightFileSchema.
+SPOTLIGHT_DEFAULTS = {"window_hours": 48, "min_surfaces": 3,
+                      "limit": 8, "velocity_n": 3}
+SPOTLIGHT_W_BREADTH = 1.0      # per distinct surface
+SPOTLIGHT_W_ENGAGEMENT = 0.5   # x log1p(points + comments)
+SPOTLIGHT_W_VELOCITY = 6.0     # / hours from 1st to Nth distinct source
+
+
+def export_spotlight(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
+    """src/data/spotlight.json: clusters with unusual cross-surface breadth
+    and velocity inside the window, curated or not. Velocity comes from
+    items.ingested_at (immutable first sighting per source) — NEVER from
+    surfaces.seen_at, which is overwritten on every re-ingest. Same
+    archive-URL scrub as picks; no spend, no health text."""
+    sp = dict(SPOTLIGHT_DEFAULTS)
+    sp.update(cfg.site.get("spotlight") or {})
+    min_rel = int(cfg.site.get("picks_min_relevance",
+                               cfg.funnel.get("min_relevance_for_feed", 6)))
+    since = _iso_hours_ago(int(sp["window_hours"]))
+
+    rows = conn.execute(
+        "SELECT c.id, c.story_id, c.title, c.canonical_url, c.first_seen, "
+        "c.surface_count, "
+        "cu.status AS cu_status, cu.skip AS cu_skip, "
+        "cu.relevance_score AS cu_rel "
+        "FROM clusters c LEFT JOIN curations cu ON cu.cluster_id = c.id "
+        "WHERE c.first_seen >= ? AND c.surface_count >= ? "
+        "ORDER BY c.surface_count DESC LIMIT 40",
+        (since, int(sp["min_surfaces"])),
+    ).fetchall()
+
+    items: List[Dict[str, Any]] = []
+    for r in rows:
+        surfaces = [
+            {
+                "url": no_archive(s["url"]),
+                "name": s["name"],
+                "points": s["points"],
+                "comments": s["comments"],
+            }
+            for s in conn.execute(
+                "SELECT s.url, s.points, s.comments, src.name "
+                "FROM surfaces s JOIN sources src ON src.id=s.source_id "
+                "WHERE s.cluster_id=? "
+                "ORDER BY s.points IS NULL, s.points DESC LIMIT 5",
+                (r["id"],),
+            ).fetchall()
+            if no_archive(s["url"])
+        ]
+        url = no_archive(r["canonical_url"]) or next(
+            (s["url"] for s in surfaces if s["url"]), None)
+        if not url or not r["title"]:
+            continue
+
+        eng = conn.execute(
+            "SELECT COALESCE(SUM(points),0) AS pts, "
+            "COALESCE(SUM(comments),0) AS com "
+            "FROM surfaces WHERE cluster_id=?", (r["id"],)).fetchone()
+        points, comments = int(eng["pts"] or 0), int(eng["com"] or 0)
+
+        firsts = [
+            row[0] for row in conn.execute(
+                "SELECT MIN(ingested_at) FROM items WHERE cluster_id=? "
+                "GROUP BY source_id ORDER BY 1", (r["id"],)).fetchall()
+            if row[0]
+        ]
+        velocity = None
+        n = int(sp["velocity_n"])
+        if len(firsts) >= n:
+            try:
+                t0 = datetime.datetime.fromisoformat(firsts[0])
+                tn = datetime.datetime.fromisoformat(firsts[n - 1])
+                velocity = round(max((tn - t0).total_seconds(), 0.0) / 3600.0, 1)
+            except ValueError:
+                pass
+
+        traction = (
+            SPOTLIGHT_W_BREADTH * (r["surface_count"] or 0)
+            + SPOTLIGHT_W_ENGAGEMENT * math.log1p(points + comments)
+            + (SPOTLIGHT_W_VELOCITY / max(velocity, 1.0)
+               if velocity is not None else 0.0)
+        )
+        curated = (r["cu_status"] == "done" and not r["cu_skip"])
+        pick_id = (r["id"] if curated and (r["cu_rel"] or 0) >= min_rel
+                   else None)
+        items.append({
+            "story_id": r["story_id"],
+            "title": r["title"],
+            "canonical_url": url,
+            "first_seen": r["first_seen"],
+            "surface_count": r["surface_count"],
+            "surfaces": surfaces,
+            "velocity_hours": velocity,
+            "points": points,
+            "comments": comments,
+            "score": round(traction, 2),
+            "curated": curated,
+            "pick_id": pick_id,
+        })
+
+    items.sort(key=lambda x: -x["score"])
+    return {
+        "generated_at": _now_iso(),
+        "window_hours": int(sp["window_hours"]),
+        "items": items[: int(sp["limit"])],
+    }
 
 
 def export_stats(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
@@ -363,19 +482,19 @@ def write_digest_md(cfg, row, blurb: Optional[str] = None) -> Tuple[str, str]:
     # daily keys (2026-06-10) YAML-parse as Date and yearly keys (2026) as
     # number, which fails astro build. date stays UNQUOTED — the schema is
     # z.coerce.date() and wants the bare ISO date.
-    content = (
-        "---\n"
-        "title: %s\n"
-        "kind: %s\n"
-        "period: %s\n"
-        "date: %s\n"
-        "blurb: %s\n"
-        "items: %d\n"
-        "---\n\n"
-        "%s\n" % (
-            _fm_quote(digest_title(kind, key)), kind, _fm_quote(key), date,
-            _fm_quote(blurb), items, (row["body_md"] or "").strip(),
-        )
+    model = row["model_used"] if "model_used" in row.keys() else None
+    fm = [
+        "title: %s" % _fm_quote(digest_title(kind, key)),
+        "kind: %s" % kind,
+        "period: %s" % _fm_quote(key),
+        "date: %s" % date,
+        "blurb: %s" % _fm_quote(blurb),
+        "items: %d" % items,
+    ]
+    if model:  # provenance: the site colophon states who wrote the edition
+        fm.append("model: %s" % _fm_quote(model))
+    content = "---\n%s\n---\n\n%s\n" % (
+        "\n".join(fm), (row["body_md"] or "").strip(),
     )
     return relpath, content
 
@@ -628,6 +747,12 @@ def _collect_writes(conn: sqlite3.Connection, cfg, what: str,
     if what in ("picks", "all", "refresh"):
         writes["src/data/picks.json"] = (
             json.dumps(export_picks(conn, cfg), indent=2, ensure_ascii=False)
+            + "\n"
+        )
+    if what in ("spotlight", "all", "refresh"):
+        writes["src/data/spotlight.json"] = (
+            json.dumps(export_spotlight(conn, cfg), indent=2,
+                       ensure_ascii=False)
             + "\n"
         )
     if what in ("stats", "all", "refresh"):
