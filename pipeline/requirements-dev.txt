@@ -1,21 +1,26 @@
 # Dev/test dependencies for the signalpipe pytest suite.
-# Installed in CI on top of requirements.txt so the hermetic suite can import
-# every module (many optional runtime deps are imported lazily inside
-# functions, but a few integration tests exercise those paths directly).
--r requirements.txt
+#
+# Enumerated explicitly (rather than `-r requirements.txt`) so CI stays fast and
+# robust: the hermetic suite monkeypatches the heavy extraction stack
+# (trafilatura / readability-lxml / lxml native builds), so those are NOT pulled
+# here. Tests that would exercise a genuinely-optional dependency use
+# `pytest.importorskip`.
 
+# Test runner + coverage
 pytest>=7.4,<9
 pytest-cov>=4.1
 coverage>=7.4
-hypothesis>=6.100          # property tests; guarded by an import-skip if absent
+hypothesis>=6.100          # property tests; guarded by importorskip if absent
 ruff>=0.4
 
-# Runtime deps that integration tests import directly (unit tests rely on the
-# lazy in-function imports and don't need these):
-httpx>=0.27
-jinja2>=3.1
-markdown>=3.5
-anthropic>=0.40            # backend_api integration tests (mocked; no network)
+# Runtime deps the tests import directly (unit tests otherwise rely on the
+# pipeline's own lazy in-function imports):
+httpx>=0.27               # PoliteClient + MockTransport
+feedparser>=6.0.12        # rss / arxiv / googlenews / reddit-rss parsing
+defusedxml>=0.7.1         # OPML parsing in the registry
+jinja2>=3.1               # render.py templates
+markdown>=3.5             # digest HTML rendering
+anthropic>=0.40           # backend_api tests (client is mocked; no network/key)
 fastapi>=0.110            # server TestClient integration tests
-apscheduler>=3.10,<4      # worker scheduler integration tests
 starlette>=0.37           # FastAPI TestClient dependency
+apscheduler>=3.10,<4      # worker scheduler integration tests

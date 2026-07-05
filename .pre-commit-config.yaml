@@ -1,0 +1,53 @@
+# Pre-commit + pre-push hooks for eclecta.
+#
+# Opt in with:
+#   pip install pre-commit
+#   pre-commit install                       # commit-stage hooks
+#   pre-commit install --hook-type pre-push  # test hooks
+#
+# NOTE: ruff is scoped to pipeline/tests/ ONLY — it deliberately does NOT reformat
+# the pipeline product source (that would be large, unrelated churn). Broaden the
+# `files:` globs yourself if you ever want the whole pipeline linted/formatted.
+
+minimum_pre_commit_version: "3.5.0"
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        name: ruff-lint (tests)
+        args: [--fix]
+        files: ^pipeline/tests/.*\.py$
+      - id: ruff-format
+        name: ruff-format (tests)
+        files: ^pipeline/tests/.*\.py$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=5120] # catch accidental multi-MB blobs; the data JSON files are under this
+
+  - repo: local
+    hooks:
+      - id: pytest-fast
+        name: pytest (fast hermetic unit subset)
+        entry: bash -c 'cd pipeline && python3 -m pytest -q -m "not live and not integration"'
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: ^pipeline/.*\.py$
+
+      - id: vitest-unit
+        name: vitest unit
+        entry: npm run test:unit
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+        files: \.(ts|js|mjs|astro)$
