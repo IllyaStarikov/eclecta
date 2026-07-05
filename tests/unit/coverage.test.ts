@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   columnChart,
   curatedStrip,
+  editionsCalendar,
   fmtDay,
   funnelRows,
   heatLevels,
@@ -166,5 +167,46 @@ describe('heatLevels', () => {
 
   it('handles an all-zero grid', () => {
     expect(heatLevels([[0, 0]])).toEqual([[0, 0]]);
+  });
+});
+
+const entry = (kind: string, iso: string, id: string) => ({
+  kind,
+  date: new Date(`${iso}T00:00:00Z`),
+  id,
+  title: id,
+  period: iso,
+});
+
+describe('editionsCalendar', () => {
+  const entries = [
+    entry('daily', '2026-05-14', 'daily/2026-05-14'), // a Thursday
+    entry('daily', '2026-05-15', 'daily/2026-05-15'),
+    entry('weekly', '2026-05-11', 'weekly/2026-w20'), // Monday of that week
+    entry('monthly', '2026-05-01', 'monthly/2026-05'),
+  ];
+  const cal = editionsCalendar(entries, new Date('2026-05-21T12:00:00Z'));
+
+  it('spans from the earliest entry week to the today week', () => {
+    expect(cal.weeks).toHaveLength(2); // week of May 11, week of May 18
+    expect(cal.weeks[0].days[0].date).toBe('2026-05-11');
+    expect(cal.weeks[0].days[6].date).toBe('2026-05-17');
+  });
+
+  it('places dailies on their day and weeklies on their week', () => {
+    expect(cal.weeks[0].days[3].entry?.id).toBe('daily/2026-05-14');
+    expect(cal.weeks[0].days[0].entry).toBeNull(); // weekly is not a day fill
+    expect(cal.weeks[0].weekly?.id).toBe('weekly/2026-w20');
+    expect(cal.weeks[1].weekly).toBeNull();
+  });
+
+  it('routes monthly/quarterly/yearly to specials, ascending', () => {
+    expect(cal.specials.map((s) => s.id)).toEqual(['monthly/2026-05']);
+  });
+
+  it('returns empty structures for no entries', () => {
+    const empty = editionsCalendar([], new Date('2026-05-21T00:00:00Z'));
+    expect(empty.weeks).toEqual([]);
+    expect(empty.specials).toEqual([]);
   });
 });

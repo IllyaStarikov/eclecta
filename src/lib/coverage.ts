@@ -147,3 +147,73 @@ export function heatLevels(grid: number[][], steps = 5): number[][] {
     )
   );
 }
+
+export interface EditionEntry {
+  kind: string;
+  date: Date;
+  id: string;
+  title: string;
+  period: string;
+}
+
+const DAY_MS = 86_400_000;
+
+function isoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** UTC Monday 00:00 of the week containing d. */
+function mondayOf(d: Date): Date {
+  const utc = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const dow = new Date(utc).getUTCDay(); // 0 = Sun
+  return new Date(utc - ((dow + 6) % 7) * DAY_MS);
+}
+
+/**
+ * Editions calendar: GitHub-style weeks (Mon-first) from the earliest
+ * edition to today. Dailies fill day cells; the weekly digest marks its
+ * week; monthly/quarterly/yearly are a separate labelled row.
+ */
+export function editionsCalendar(
+  entries: EditionEntry[],
+  today: Date
+): {
+  weeks: { days: { date: string; entry: EditionEntry | null }[]; weekly: EditionEntry | null }[];
+  specials: EditionEntry[];
+} {
+  if (entries.length === 0) return { weeks: [], specials: [] };
+
+  const dailies = new Map<string, EditionEntry>();
+  const weeklies = new Map<string, EditionEntry>(); // key: monday ISO
+  const specials: EditionEntry[] = [];
+  const dailyAndWeeklyDates: number[] = [];
+  for (const e of entries) {
+    if (e.kind === 'daily') {
+      dailies.set(isoDate(e.date), e);
+      dailyAndWeeklyDates.push(e.date.valueOf());
+    } else if (e.kind === 'weekly') {
+      weeklies.set(isoDate(mondayOf(e.date)), e);
+      dailyAndWeeklyDates.push(e.date.valueOf());
+    } else {
+      specials.push(e);
+    }
+  }
+  specials.sort((a, b) => a.date.valueOf() - b.date.valueOf());
+
+  const first = dailyAndWeeklyDates.length > 0
+    ? mondayOf(new Date(Math.min(...dailyAndWeeklyDates)))
+    : mondayOf(today);
+  const last = mondayOf(today);
+  const weeks = [];
+  for (let t = first.valueOf(); t <= last.valueOf(); t += 7 * DAY_MS) {
+    const monday = new Date(t);
+    weeks.push({
+      days: Array.from({ length: 7 }, (_, i) => {
+        const date = isoDate(new Date(t + i * DAY_MS));
+        return { date, entry: dailies.get(date) ?? null };
+      }),
+      weekly: weeklies.get(isoDate(monday)) ?? null,
+    });
+  }
+  return { weeks, specials };
+}
