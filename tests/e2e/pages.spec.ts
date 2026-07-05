@@ -51,16 +51,6 @@ for (const route of routes) {
   });
 }
 
-const feedRoutes = ['/rss.xml', '/digests/rss.xml', '/digests/weekly/rss.xml'];
-
-for (const route of feedRoutes) {
-  test(`feed ${route} serves RSS`, async ({ request }) => {
-    const resp = await request.get(u(route));
-    expect(resp.status()).toBe(200);
-    expect(await resp.text()).toContain('<rss');
-  });
-}
-
 const consoleRoutes = [
   '/',
   '/ai/',

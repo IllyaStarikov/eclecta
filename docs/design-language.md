@@ -53,7 +53,7 @@ is no second dark block to keep in sync.
 | `--ground-2` | `#e9eae7` | `#16181b` | inset panels (signals, chart tracks, previews) |
 | `--ink` | `#16181d` | `#ecece8` | body text |
 | `--ink-soft` | `#5b5f66` | `#9ca0a6` | secondary text, decks, notes |
-| `--ink-faint` | `#757980` | `#888d96` | tertiary: dates, counts, ordinals — darkened/lifted to clear AA because it carries functional text |
+| `--ink-faint` | `#63676e` | `#888d96` | tertiary: dates, counts, ordinals — darkened/lifted to clear AA (4.5:1+) at the small furniture sizes it carries |
 | `--hairline` | `#d5d7d2` | `#2a2d31` | row rules |
 | `--hairline-bold` | `#bfc2bc` | `#3a3e43` | section rules, chip borders |
 | `--accent` | `#e8451f` | `#ff6a3d` | the square, bar fills, hover, focus ring |
