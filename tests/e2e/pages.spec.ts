@@ -16,11 +16,23 @@ const digestIds = readdirSync(digestDir, { recursive: true, withFileTypes: true 
   .map((e) => join(e.parentPath ?? (e as any).path, e.name))
   .map((p) => p.slice(digestDir.length + 1).replace(/\.md$/, ''));
 
+// Sample instead of enumerating (the daily archive grows forever): the
+// newest edition of each kind + the oldest daily as a regression canary.
+const byKind = new Map<string, string[]>();
+for (const id of digestIds) {
+  const kind = id.split('/')[0];
+  byKind.set(kind, [...(byKind.get(kind) ?? []), id]);
+}
+const sampledDigests = [
+  ...[...byKind.values()].map((ids) => [...ids].sort().at(-1)!),
+  ...(byKind.has('daily') ? [[...byKind.get('daily')!].sort()[0]] : []),
+];
+
 const routes = [
   '/',
   ...CATEGORIES.map((c) => `/${c.slug}/`),
   ...CATEGORIES.flatMap((c) => c.subcategories.map((s) => `/${c.slug}/${s.slug}/`)),
-  ...digestIds.map((id) => `/digests/${id}/`),
+  ...sampledDigests.map((id) => `/digests/${id}/`),
   '/sources/',
   '/coverage/',
   '/archive/',

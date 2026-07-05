@@ -8,6 +8,9 @@
 import { CATEGORIES } from './taxonomy';
 import { site, KINDS, KIND_LABEL, type DigestKind } from '../site';
 
+/** Digest feeds serve the newest N editions; dailies accumulate forever. */
+export const FEED_DIGEST_CAP = 50;
+
 /** Minimal XML/HTML escaping for feed content. */
 export function esc(s: unknown): string {
   return String(s ?? '')

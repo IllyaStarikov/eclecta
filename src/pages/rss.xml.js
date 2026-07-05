@@ -2,7 +2,7 @@ import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import picks from '../data/picks.json';
 import { absUrl, KIND_LABEL } from '../site';
-import { getFeed, pickItemHtml, pickPrimaryLink, digestItemHtml, FEED_STYLESHEET } from '../lib/feeds';
+import { getFeed, pickItemHtml, pickPrimaryLink, digestItemHtml, FEED_STYLESHEET, FEED_DIGEST_CAP } from '../lib/feeds';
 
 export async function GET(context) {
   const feed = getFeed('everything');
@@ -10,7 +10,7 @@ export async function GET(context) {
     (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
   );
   const items = [
-    ...digests.map((d) => {
+    ...digests.slice(0, FEED_DIGEST_CAP).map((d) => {
       const url = absUrl(`/digests/${d.id}/`, context.site);
       return {
         title: `${KIND_LABEL[d.data.kind]} · ${d.data.title}`,

@@ -18,6 +18,8 @@ interface Props {
   edition?: string;
   /** widen the shell to the broadsheet width (front + category pages) */
   wide?: boolean;
+  /** extra RSS autodiscovery links for this page's own feed(s) */
+  feedLinks?: { title: string; href: string }[];
 }
 const {
   title = `${site.name} | the best of technology, AI & science`,
@@ -25,6 +27,7 @@ const {
   compactHeader = false,
   edition,
   wide = false,
+  feedLinks = [],
 } = Astro.props;
 const year = new Date().getFullYear();
 
@@ -51,6 +54,9 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title={`${site.name} | everything`} href={href('/rss.xml')} />
     <link rel="alternate" type="application/rss+xml" title={`${site.name} | digests`} href={href('/digests/rss.xml')} />
+    {feedLinks.map((f) => (
+      <link rel="alternate" type="application/rss+xml" title={f.title} href={f.href} />
+    ))}
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <meta name="color-scheme" content="light dark" />
     <meta name="author" content={site.author} />
