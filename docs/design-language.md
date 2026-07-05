@@ -84,9 +84,16 @@ is the recurring identity mark (it's also the wordmark period and the feed dot).
   bare headline+source.
 - **Category / subcategory pages**: section head, blurb, subcategory chips with
   counts, a feed chip, then lead + brief rows.
-- **Coverage** (`/coverage/`): the transparency dashboard — headline stat cards
-  and CSS bar charts (`.bars`/`.bar`) of sources by category/tier and the
-  loudest surfaces. **Sources** (`/sources/`): the full feed roll, grouped.
+- **Coverage** (`/coverage/`): the transparency dashboard, a stack of
+  rail-labelled bands rendered as build-time SVG/CSS (never a chart
+  library): stat cards with 7-day deltas, the 90-day wire chart with its
+  curated strip, the log-scale funnel, source bars and tier/echo strips,
+  configured-vs-observed model provenance, the relevance histogram, the
+  7x24 ingest heatmap, and the editions calendar. Chart primitives live in
+  global.css (`.wire-chart`, `.funnel`, `.strip`, `.hist`, `.heatmap`,
+  `.editions`); geometry in `src/lib/coverage.ts`. One accent lead per
+  chart. `/stats/` redirects here. **Sources** (`/sources/`): the full
+  feed roll, grouped.
 - **Footer**: bookends the masthead — wordmark, one-line colophon, link row.
 
 ## Spacing & measure
