@@ -715,14 +715,25 @@ def test_probe_candidates_partitions_and_dedups(cfg, tmp_path, monkeypatch):
     good = next(v for v in verified if v["name"] == "Good")
     assert good["url"] == "https://good.example/feed"
     assert good["slug"] == "good"
+    assert good["type"] == "rss"
     assert good["tier"] == 3 and good["reputation"] == 0.8
+    # FB's guessed feed_url 404s, so probe_candidates re-probes the homepage
+    # (the work()-level fallback). The verified row must carry the
+    # homepage-discovered feed/kind, NOT the dead guess.
+    fb = next(v for v in verified if v["name"] == "FB")
+    assert fb["url"] == "https://fallback.example/real"
+    assert fb["type"] == "atom"
+    assert fb["entries"] == 2
+    assert fb["slug"] == "fb"
 
     reasons = {r["name"]: r["reason"] for r in rejected}
     assert reasons["Dup"] == "duplicate/dead"
     assert reasons["Dead"] == "duplicate/dead"
-    assert reasons["DomDup"].startswith("domain already registered")
-    # the no-url candidate rejects with an empty name
-    assert any(r["reason"] == "no url" for r in rejected)
+    assert reasons["DomDup"] == "domain already registered (dup.example)"
+    # the no-url candidate rejects with an empty name AND empty url
+    nourl = [r for r in rejected if r["reason"] == "no url"]
+    assert len(nourl) == 1
+    assert nourl[0]["name"] == "" and nourl[0]["url"] == ""
 
 
 # --------------------------------------------------------------------------- #
@@ -745,7 +756,7 @@ def test_seed_invalid_specs_returns_1(cfg, tmp_path, capsys):
 
 @pytest.mark.integration
 def test_seed_insert_then_update(cfg, tmp_path, capsys, freeze_now_iso):
-    freeze_now_iso(reg)
+    frozen = freeze_now_iso(reg)
     _use_tmp_registry(cfg, tmp_path)
     _write_registry(
         cfg,
@@ -762,7 +773,8 @@ def test_seed_insert_then_update(cfg, tmp_path, capsys, freeze_now_iso):
     assert reg.seed(cfg) == 0
     out = capsys.readouterr().out
     assert "seeded: 0 new, 2 updated, 2 total" in out
-    assert _db_row(cfg, "s-a")["added_at"] is not None
+    # added_at is stamped once at insert (frozen clock) and NOT churned on update
+    assert _db_row(cfg, "s-a")["added_at"] == frozen
 
 
 @pytest.mark.integration
@@ -824,7 +836,13 @@ def test_stats_reads_db(cfg, conn, seed, capsys):
     assert reg.stats(cfg) == 0
     out = capsys.readouterr().out
     assert "sources: 3 total, 2 enabled, 1 verified, 1 failing(3+)" in out
-    assert "ai" in out and "news" in out
+    # Per-category rows: ai has a1(tier1,enabled,verified) + a2(tier2,enabled) ->
+    # 2 total / 2 enab / 1 verif, tier split 1/1/0. news has n1(tier3,disabled)
+    # -> 1 total / 0 enab / 0 verif, tier split 0/0/1.
+    ai_line = next(ln for ln in out.splitlines() if ln.startswith("ai "))
+    assert ai_line.split() == ["ai", "2", "2", "1", "1/1/0"]
+    news_line = next(ln for ln in out.splitlines() if ln.startswith("news "))
+    assert news_line.split() == ["news", "1", "0", "0", "0/0/1"]
     assert "operation-1k: 1 / 500 verified" in out
 
 
@@ -856,7 +874,9 @@ def test_expand_adds_builtins_then_idempotent(cfg, tmp_path, capsys, freeze_now_
 
     assert reg.expand(cfg) == 0
     out = capsys.readouterr().out
-    assert "expand: added" in out
+    # 2 arXiv + 2 reddit + 1 gnews-topic + 1 gnews-query + 1 gdelt + 5 api +
+    # 3 techmeme (incl. the -2 slug collision) = 15 new into an empty registry.
+    assert "expand: added 15 sources (registry now 15)" in out
 
     specs = {s.slug: s for s in reg.load_specs(cfg)}
     for slug in (
@@ -912,6 +932,9 @@ def test_probe_cmd_url_ok(cfg, tmp_path, capsys, monkeypatch):
     payload = json.loads(out)
     assert payload["ok"] is True
     assert payload["feed_url"] == "https://x.example/feed"
+    assert payload["kind"] == "rss"
+    assert payload["entries"] == 3
+    assert payload["candidate_url"] == "https://x.example/feed"
 
 
 @pytest.mark.integration
@@ -948,7 +971,9 @@ def test_probe_cmd_candidates_writes_verified_json(cfg, tmp_path, capsys, monkey
     assert rc == 0
     out = capsys.readouterr().out
     assert "verified 1 / rejected 1 of 2 candidates" in out
-    assert "REJECT" in out
+    # the rejected candidate's name and reason are both surfaced in the report
+    reject_line = next(ln for ln in out.splitlines() if "REJECT" in ln)
+    assert "B" in reject_line and "dead" in reject_line
     out_path = tmp_path / "cands.verified.json"
     assert out_path.exists()
     assert json.loads(out_path.read_text()) == verified

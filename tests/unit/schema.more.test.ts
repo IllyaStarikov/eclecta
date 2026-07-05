@@ -158,12 +158,30 @@ describe('parsePicks — synthetic', () => {
         ],
       }),
     ]);
-    expect(ok[0].surfaces).toHaveLength(2);
+    // the nested schema round-trips exactly: null counts stay null, numeric
+    // counts stay numeric (not coerced), url/name preserved verbatim.
+    expect(ok[0].surfaces).toEqual([
+      { url: 'https://a', name: 'A', points: null, comments: null },
+      { url: 'https://b', name: 'B', points: 5, comments: 3 },
+    ]);
 
-    // empty surface url is rejected
+    // empty surface url is rejected (min(1))
     expect(() =>
       parsePicks([
         minimalPick({ surfaces: [{ url: '', name: 'A', points: null, comments: null }] }),
+      ])
+    ).toThrow();
+    // empty surface name is rejected (min(1)) — the claim in the test name
+    // covers name too, so pin it.
+    expect(() =>
+      parsePicks([
+        minimalPick({ surfaces: [{ url: 'https://a', name: '', points: null, comments: null }] }),
+      ])
+    ).toThrow();
+    // points is number|null, not string — a string must be rejected, not coerced.
+    expect(() =>
+      parsePicks([
+        minimalPick({ surfaces: [{ url: 'https://a', name: 'A', points: 'lots', comments: null }] }),
       ])
     ).toThrow();
   });
@@ -330,5 +348,37 @@ describe('parseStats — synthetic', () => {
   it('throws when the models object is absent entirely', () => {
     const { models: _omit, ...noModels } = minimalStats();
     expect(() => parseStats(noModels)).toThrow();
+  });
+
+  it('validates channels[] and top_surfaces_7d[] item shapes', () => {
+    // minimalStats defaults both to [], so the item object schemas are
+    // otherwise never exercised — pin them here.
+    const stats = parseStats(
+      minimalStats({
+        channels: [
+          { slug: 'ai', picks_current: 7 },
+          { slug: 'crypto', picks_current: 0 },
+        ],
+        top_surfaces_7d: [{ name: 'Hacker News', clusters: 12 }],
+      })
+    );
+    expect(stats.channels).toEqual([
+      { slug: 'ai', picks_current: 7 },
+      { slug: 'crypto', picks_current: 0 },
+    ]);
+    expect(stats.top_surfaces_7d).toEqual([{ name: 'Hacker News', clusters: 12 }]);
+
+    // channels[].picks_current must be a number, not a string
+    expect(() =>
+      parseStats(minimalStats({ channels: [{ slug: 'ai', picks_current: 'many' }] }))
+    ).toThrow();
+    // channels[].slug is required
+    expect(() =>
+      parseStats(minimalStats({ channels: [{ picks_current: 1 }] }))
+    ).toThrow();
+    // top_surfaces_7d[].clusters must be a number, not null
+    expect(() =>
+      parseStats(minimalStats({ top_surfaces_7d: [{ name: 'HN', clusters: null }] }))
+    ).toThrow();
   });
 });

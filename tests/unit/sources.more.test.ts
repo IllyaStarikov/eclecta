@@ -210,9 +210,33 @@ describe('parseSources() — valid input', () => {
     },
   ];
 
-  it('parses a well-formed array of sources', () => {
+  it('parses a well-formed array of sources, preserving every field', () => {
     const parsed = parseSources(valid);
     expect(parsed).toHaveLength(3);
+    // full round-trip: zod validates and passes known fields through unchanged
+    expect(parsed[0]).toEqual({
+      name: 'A',
+      homepage: 'https://a.com',
+      category: 'news',
+      tier: 1,
+      paywalled: false,
+    });
+    expect(parsed[1]).toEqual({
+      name: 'B',
+      homepage: 'http://b.com',
+      category: 'devtools',
+      tier: 3,
+      paywalled: true,
+      feed: null,
+    });
+    expect(parsed[2]).toEqual({
+      name: 'C',
+      homepage: 'https://c.com',
+      category: 'research',
+      tier: 2,
+      paywalled: false,
+      feed: 'https://c.com/rss',
+    });
   });
 
   it('accepts feed as an http url, null, or absent', () => {
@@ -228,11 +252,13 @@ describe('parseSources() — valid input', () => {
     expect(parsed[1].homepage).toBe('http://b.com');
   });
 
-  it('accepts each tier 1, 2, 3', () => {
+  it('accepts each tier 1, 2, 3 and preserves the exact value', () => {
     for (const tier of [1, 2, 3] as const) {
-      expect(() =>
-        parseSources([{ name: 'T', homepage: 'https://t.com', category: 'news', tier, paywalled: false }])
-      ).not.toThrow();
+      const parsed = parseSources([
+        { name: 'T', homepage: 'https://t.com', category: 'news', tier, paywalled: false },
+      ]);
+      expect(parsed).toHaveLength(1);
+      expect(parsed[0].tier).toBe(tier);
     }
   });
 

@@ -32,7 +32,14 @@ describe('deriveCategory() — single category', () => {
   });
 
   it('channels default to [] when only a title is passed', () => {
-    expect(deriveCategory('agentic orchestration').category).toBe('ai');
+    // Omitting the channels arg must behave identically to passing [].
+    expect(deriveCategory('agentic orchestration')).toEqual({
+      category: 'ai',
+      subcategories: ['agents'],
+    });
+    expect(deriveCategory('agentic orchestration')).toEqual(
+      deriveCategory('agentic orchestration', []),
+    );
   });
 });
 
@@ -153,13 +160,17 @@ describe('deriveCategory() — PRIORITY tie-breaks', () => {
 
 describe('deriveCategory() — case insensitivity', () => {
   it('lowercases the title before matching', () => {
-    expect(deriveCategory('AGENTIC ORCHESTRATION')).toEqual(
-      deriveCategory('agentic orchestration'),
-    );
+    // Pin the concrete result: a broken lowercase path must not be able to pass
+    // by returning the same (wrong) value for both the upper- and lower-cased call.
+    expect(deriveCategory('AGENTIC ORCHESTRATION')).toEqual({
+      category: 'ai',
+      subcategories: ['agents'],
+    });
   });
 
   it('matches an uppercase category-match word', () => {
-    expect(deriveCategory('OPENAI').category).toBe('ai');
+    // "openai" is an ai category-match word; no ai subcategory matches, so subs = [].
+    expect(deriveCategory('OPENAI')).toEqual({ category: 'ai', subcategories: [] });
   });
 });
 
@@ -175,8 +186,12 @@ describe('deriveCategory() — leading/trailing space padding', () => {
   });
 
   it('matches a trailing space-bounded token at the end of the title', () => {
-    // software category-match word is " api " (spaces both sides).
-    expect(deriveCategory('the api').category).toBe('software');
+    // software category-match word is " api " (spaces both sides); the trailing
+    // pad supplies the closing space. No software subcategory matches, so subs = [].
+    expect(deriveCategory('the api')).toEqual({
+      category: 'software',
+      subcategories: [],
+    });
   });
 });
 

@@ -239,7 +239,8 @@ def test_write_scripts_writes_three_executable_scripts(capsys):
     assert installer.SIGNAL_SHIM.parent.is_dir()
 
     for p in (installer.WRAPPER, installer.WATCHDOG, installer.SIGNAL_SHIM):
-        assert p.stat().st_mode & 0o755 == 0o755  # executable
+        # chmod(0o755) -> exactly rwxr-xr-x, no group/other write bits.
+        assert p.stat().st_mode & 0o777 == 0o755
 
     out = capsys.readouterr().out
     assert "wrote %s" % installer.WRAPPER in out
@@ -334,10 +335,13 @@ def test_copy_runtime_skips_absent_optional_files(monkeypatch, tmp_path):
     # No pre-existing dst_pkg -> exercises the `if dst_pkg.exists()` False branch.
     installer._copy_runtime(SimpleNamespace(blog_repo=repo))
 
-    assert (installer.APP_DIR / "config" / "signal.json").exists()
+    assert (installer.APP_DIR / "config" / "signal.json").read_text() == '{"ok": 1}'
     assert not (installer.APP_DIR / "config" / "bulk_sources.json").exists()
     assert not (installer.APP_DIR / "doc" / "digest-style.md").exists()
-    assert (installer.APP_DIR / "sync_manifest.json").exists()
+    # _git_rev returned None -> the manifest records a null git_rev, not a crash.
+    manifest = json.loads((installer.APP_DIR / "sync_manifest.json").read_text())
+    assert manifest["git_rev"] is None
+    assert manifest["repo"] == str(repo)
 
 
 # --------------------------------------------------------------------------- #
@@ -413,8 +417,11 @@ def test_bootstrap_reports_failure_on_nonzero_bootstrap(monkeypatch, capsys):
     installer._bootstrap()
 
     out = capsys.readouterr().out
-    assert "%s: FAILED (rc 3)" % installer.LABEL_SERVER in out
-    assert "FAILED (rc 3)" in out
+    # Every label bootstraps independently -> each reports its own rc-3 failure.
+    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER,
+                  installer.LABEL_WATCHDOG):
+        assert "%s: FAILED (rc 3)" % label in out
+    assert out.count("FAILED (rc 3)") == 3
     assert "started" not in out
 
 
@@ -473,15 +480,17 @@ def test_install_start_true_bootstraps_last(monkeypatch, capsys):
     monkeypatch.setattr(installer, "_warn_if_no_secret", lambda: calls.append("warn"))
     monkeypatch.setattr(installer, "_bootstrap", lambda: calls.append("boot"))
 
-    cfg = SimpleNamespace(server={"port": 8765})
+    # Non-default port so the assertion proves the port is read from cfg
+    # (not that the code happened to fall back to the 8765 default).
+    cfg = SimpleNamespace(server={"port": 9099})
     rc = installer.install(cfg, start=True)
 
     assert rc == 0
     assert calls == ["copy", "scripts", "plists", "warn", "boot"]
     out = capsys.readouterr().out
-    assert "check:" in out
-    assert "healthz" in out
-    assert "8765" in out
+    assert "check:  launchctl print gui/%d/%s" % (os.getuid(), installer.LABEL_WORKER) in out
+    assert "logs:   tail -f %s/worker.err.log" % installer.LOGS_DIR in out
+    assert "server: curl -s http://127.0.0.1:9099/healthz" in out
 
 
 def test_install_start_true_uses_default_port(monkeypatch, capsys):

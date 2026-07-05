@@ -257,6 +257,10 @@ def test_build_prompt_subdigest_title_and_body_fallbacks():
     subs = [_sub_row(title=None, body_md=None)]
     p = digest._build_prompt("monthly", "2026-06", SINCE, UNTIL, [], subs)
     assert "### [daily 2026-07-01] (untitled)" in p
+    # body_md=None -> "" (NOT the literal string "None"): the chunk is exactly
+    # the untitled header line followed by an empty body, so p ends there.
+    assert p.endswith("### [daily 2026-07-01] (untitled)\n")
+    assert "None" not in p
 
 
 def test_build_prompt_empty_is_header_only():
@@ -566,18 +570,20 @@ def test_run_without_period_derives_key_and_window_from_today(cfg, conn, seed,
     monkeypatch.setattr(digest, "datetime", types.SimpleNamespace(
         date=_FixedDate, datetime=_dt.datetime, timezone=_dt.timezone))
 
-    key = period_mod.period_key("weekly", run_date)
-    since, until = period_mod.window("weekly", run_date)
+    since, _until = period_mod.window("weekly", run_date)
     _seed_window_curation(seed, conn, curated_at=since)
     fake = _fake_adapter(DIGEST_OUT, 0.12)
     monkeypatch.setattr(digest.adapter, "complete_with_cost", fake)
 
     rc = digest.run(cfg, kind="weekly")  # no explicit period -> uses today
     assert rc == 0
-    row = _digest_row(conn, key=key)
+    # Pin the derived edition/window to concrete literals rather than
+    # re-deriving them from period_mod (the same helpers run() calls): with
+    # today frozen to 2026-07-03, run() must land on ISO week 2026-W27.
+    row = _digest_row(conn, key="2026-W27")
     assert row is not None
-    assert row["window_start"] == since
-    assert row["window_end"] == until
+    assert row["window_start"] == "2026-06-26T00:00:00+00:00"
+    assert row["window_end"] == "2026-07-03T00:00:00+00:00"
 
 
 @pytest.mark.integration
@@ -830,7 +836,11 @@ def test_run_publish_failure_does_not_kill_digest(cfg, conn, seed, monkeypatch,
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     # publish failure is swallowed: the digest itself still succeeds + persists
     assert rc == 0
-    assert _digest_row(conn) is not None
+    row = _digest_row(conn)
+    assert row is not None
+    # the real model output was committed BEFORE the failing publish hook ran
+    assert row["title"] == "This week in tech"
+    assert row["body_md"] == DIGEST_OUT["body_md"]
     assert "site publish failed" in capsys.readouterr().out
     warn = conn.execute(
         "SELECT message FROM health WHERE job='digest' AND level='warn'"

@@ -335,6 +335,14 @@ def test_bullet_text_entities_unescaped_in_title():
     (item,) = _bullet_items(html, DAY)
     assert "&amp;" not in item["title"]
     assert "Company X & Company Y" in item["title"]
+    # Pin the full normalized title: entity decoded, citation anchor gone.
+    assert item["title"] == (
+        "Company X & Company Y announce a merger valued in the billions today"
+    )
+    # guid hashes that same decoded text.
+    assert item["guid"] == _expected_guid(
+        "Company X & Company Y announce a merger valued in the billions today"
+    )
 
 
 def test_bullet_trailing_dash_and_punct_stripped():
@@ -345,6 +353,11 @@ def test_bullet_trailing_dash_and_punct_stripped():
     (item,) = _bullet_items(html, DAY)
     assert item["title"].endswith("today")
     assert not item["title"].endswith("—")
+    # The trailing " —" is fully stripped (strip set includes space + dashes),
+    # leaving no dangling separator.
+    assert item["title"] == (
+        "An event of great significance occurred in the capital today"
+    )
 
 
 def test_bullet_no_links_is_skipped():
@@ -682,15 +695,37 @@ def test_fetch_recorded_day_page_end_to_end(load_text, make_result):
     # Spot-check mappings that exercise unescaping + wiki_url capture.
     kharkiv = items[0]
     assert kharkiv["extra"]["wiki_url"] == "https://en.wikipedia.org/wiki/Kharkiv"
-    assert kharkiv["title"].startswith("Russian forces launch a large-scale missile strike")
+    # Full title: the "(Reuters)" citation anchor and the /wiki/Kharkiv anchor
+    # markup are gone, trailing "." stripped.
+    assert kharkiv["title"] == (
+        "Russian forces launch a large-scale missile strike on the city of "
+        "Kharkiv, killing at least five civilians and wounding dozens more"
+    )
 
     cabinet = items[1]
-    assert "last week's general election" in cabinet["title"]  # &#39; -> '
     assert cabinet["extra"]["wiki_url"] == "https://en.wikipedia.org/wiki/Government_of_Example"
+    # &#39; -> ' unescaping across the whole title.
+    assert cabinet["title"] == (
+        "The Government of Example announces a new cabinet following "
+        "last week's general election"
+    )
 
     angler = items[2]
     assert angler["extra"]["wiki_url"] == "https://en.wikipedia.org/wiki/Anglerfish"
-    assert "topic header" not in angler["title"]
+    # Wiki-fallback bullet (no external citation). On this realistic bullet the
+    # title truncates to EXACTLY 140 chars, cut mid-word ("...the Paci")...
+    assert len(angler["title"]) == 140
+    assert angler["title"] == (
+        "Researchers publish a landmark study describing a newly discovered "
+        "species of deep-sea anglerfish living near hydrothermal vents in the Paci"
+    )
+    # ...but the guid hashes the FULL untruncated text ("...Pacific Ocean").
+    assert angler["guid"] == _expected_guid(
+        "Researchers publish a landmark study describing a newly discovered "
+        "species of deep-sea anglerfish living near hydrothermal vents in the "
+        "Pacific Ocean",
+        day=day,
+    )
 
 
 # --------------------------------------------------------------------------- #

@@ -450,8 +450,9 @@ def test_run_defers_when_ollama_down_for_local_judge(
     assert "ollama unreachable" in out
     assert "deferring" in out
     assert _count(conn, "curations") == 0
-    assert _count(conn, "health",
-                  "job='curate' AND level='warn'") >= 1
+    # exactly one warn row and no end-of-run info row (deferral returns early).
+    assert _count(conn, "health", "job='curate' AND level='warn'") == 1
+    assert _count(conn, "health", "job='curate'") == 1
 
 
 @pytest.mark.integration
@@ -470,7 +471,9 @@ def test_run_defers_when_quota_hold_active(
     out = capsys.readouterr().out
     assert "deferring curate (usage limit)" in out
     assert _count(conn, "curations") == 0
-    assert _count(conn, "health", "job='curate' AND level='warn'") >= 1
+    # exactly one warn row and no end-of-run info row (deferral returns early).
+    assert _count(conn, "health", "job='curate' AND level='warn'") == 1
+    assert _count(conn, "health", "job='curate'") == 1
 
 
 @pytest.mark.integration
@@ -517,8 +520,11 @@ def test_run_sweeps_orphaned_pending_claims(
     out = capsys.readouterr().out
     assert "orphaned pending claim" in out
     assert "no uncurated finalists" in out
-    assert _count(conn, "health",
-                  "job='curate' AND level='warn' AND message LIKE '%orphaned%'") >= 1
+    # exactly one warn (the sweep); the no-finalists early return logs nothing.
+    assert _count(
+        conn, "health",
+        "job='curate' AND level='warn' AND message LIKE '%orphaned%'") == 1
+    assert _count(conn, "health", "job='curate'") == 1
 
 
 @pytest.mark.integration
@@ -581,7 +587,9 @@ def test_run_happy_path_in_band_triage_judge_write(
     out = capsys.readouterr().out
     assert "1 done" in out and "0 triaged out" in out
     assert _count(conn, "runs", "job='curate'") == 1
-    assert _count(conn, "health", "job='curate' AND level='info'") >= 1
+    # exactly one summary info row, no warns on a clean run.
+    assert _count(conn, "health", "job='curate' AND level='info'") == 1
+    assert _count(conn, "health", "job='curate' AND level='warn'") == 0
     lr = _last_run(cfg)
     assert lr["job"] == "curate"
     assert lr["stats"]["done"] == 1
@@ -674,8 +682,17 @@ def test_run_judge_skip_untriaged(cfg, conn, seed, patched, monkeypatch):
     fake = _patch_adapter(monkeypatch, handler)
 
     assert curate.run(cfg) == 0
-    assert _curation(conn, cid)["tier_used"] == "judge"
+    row = _curation(conn, cid)
+    assert row["status"] == "skipped"
+    assert row["tier_used"] == "judge"          # no triage prefix (above band)
+    assert row["skip"] == 1
+    assert row["skip_reason"] == "thin rewrite"
+    assert row["relevance_score"] == 3
+    assert json.loads(row["channels"]) == ["ai"]
+    assert row["novelty"] is None               # None passed through as NULL
+    assert row["audience"] is None
     assert fake.tiers == ["judge"]
+    assert _last_run(cfg)["stats"]["skipped"] == 1
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -821,8 +838,9 @@ def test_run_phase2_spend_cap_deletes_claim_and_stops(
     lr = _last_run(cfg)
     assert lr["stats"]["cap_stopped"] == 1
     assert lr["stats"]["done"] == 0
-    assert _count(conn, "health",
-                  "job='curate' AND level='warn' AND message LIKE '%cap reached%'") >= 1
+    assert _count(
+        conn, "health",
+        "job='curate' AND level='warn' AND message LIKE '%cap reached%'") == 1
 
 
 @pytest.mark.integration

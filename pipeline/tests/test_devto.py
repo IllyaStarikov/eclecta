@@ -207,6 +207,21 @@ def test_fetch_uses_articles_url_unconditionally(fake_client, make_result):
     assert client.requested == [ARTICLES_URL]
 
 
+def test_fetch_is_non_conditional(fake_client, make_result):
+    # dev.to "top" must be a fresh GET, not a cache-conditional one that could 304.
+    # FakePoliteClient does not record the flag, so subclass it to capture the call.
+    calls = []
+
+    class RecordingClient(fake_client):
+        def fetch(self, url, conditional=True):
+            calls.append((url, conditional))
+            return super().fetch(url, conditional)
+
+    client = RecordingClient(responses=_responses(make_result, [_article()]))
+    fetch_items(client, {})
+    assert calls == [(ARTICLES_URL, False)]
+
+
 def test_empty_array_returns_empty_list(fake_client, make_result):
     client = fake_client(responses=_responses(make_result, []))
     assert fetch_items(client, {}) == []
@@ -405,7 +420,10 @@ def test_source_row_is_ignored(fake_client, make_result):
     client = fake_client(responses=_responses(make_result, [_article()]))
     weird = {"url": "ignored", "mode": "whatever", "slug": "x", "id": 7}
     items = fetch_items(client, weird)
+    # The article is parsed normally; nothing from source_row leaks into output.
     assert len(items) == 1
+    assert items[0]["guid"] == "devto-12345"
+    assert items[0]["raw_url"] == "https://dev.to/foo/a-story-about-rust"
     assert client.requested == [ARTICLES_URL]
 
 

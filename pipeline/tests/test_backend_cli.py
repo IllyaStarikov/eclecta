@@ -239,7 +239,9 @@ class TestRaiseIfUsageLimited:
         monkeypatch.setattr(bc.quota, "set_hold", _HoldRecorder())
         with pytest.raises(UsageLimitExhausted) as ei:
             bc._raise_if_usage_limited("usage limit", _Cfg(), 0.0)
+        # `cost or 0.0` yields the float 0.0, not None/int (the docstring contract).
         assert ei.value.cost_usd == 0.0
+        assert isinstance(ei.value.cost_usd, float)
 
     def test_real_quota_writes_hold_file(self, monkeypatch):
         # Uses the REAL quota.set_hold; HOLD_PATH is redirected to tmp by conftest.
@@ -532,6 +534,11 @@ class TestRunIsError:
         assert ei.value.retry_at == 4102444800.0
         assert ei.value.cost_usd == 0.05  # envelope cost carried through
         assert len(rec.calls) == 1
+        # run() must forward the FULL 'errors' detail and the epoch it parsed
+        # from the "|<epoch>" tail into set_hold (positional: cfg, reason, epoch).
+        got_cfg, got_reason, got_epoch = rec.calls[0]
+        assert got_reason == "Claude AI usage limit reached|1751652000"
+        assert got_epoch == 1751652000.0
         assert len(fake.calls) == 1  # no repair retry for infra errors
 
     def test_is_error_generic_raises_llmerror_with_status(self, patch_run, monkeypatch):
@@ -556,12 +563,19 @@ class TestRunIsError:
 
     def test_is_error_falls_back_to_result_field(self, patch_run, monkeypatch):
         # No 'errors' key -> detail comes from 'result'.
-        monkeypatch.setattr(bc.quota, "set_hold", _HoldRecorder())
+        rec = _HoldRecorder(retry_at=4102444800.0)
+        monkeypatch.setattr(bc.quota, "set_hold", rec)
         env = _envelope(is_error=True, result="quota exceeded", total_cost_usd=0.02)
         patch_run(_proc(0, env))
         with pytest.raises(UsageLimitExhausted) as ei:
             bc.run("m", "s", "p", SCHEMA, _Cfg())
+        assert ei.value.retry_at == 4102444800.0
         assert ei.value.cost_usd == 0.02
+        # Pin the fallback: the hold reason (and message) is the 'result' string,
+        # proving `errors or result` chose 'result' when 'errors' was absent.
+        assert len(rec.calls) == 1
+        assert rec.calls[0][1] == "quota exceeded"
+        assert "subscription usage limit: quota exceeded" in str(ei.value)
 
 
 # --------------------------------------------------------------------------- #

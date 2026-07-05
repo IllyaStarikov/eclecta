@@ -155,7 +155,11 @@ def test_feed_curated_omits_missing_optional_sections():
     assert "Why it matters" not in html
     assert "<strong>Notes</strong>" not in html
     assert "Summary:" not in html
-    assert "What&#39;s new" not in html
+    # The novelty label is static template text with a *literal* apostrophe (see
+    # test_feed_curated_renders_all_sections), so its absence must be checked as
+    # "What's new" — the escaped "What&#39;s new" never appears in ANY code path,
+    # which would make that a vacuous assertion that can't catch the section leaking.
+    assert "What's new" not in html
 
 
 def test_feed_archive_url_never_rendered():
@@ -185,11 +189,18 @@ def test_feed_uncurated_missing_score_defaults_to_zero():
 
 
 def test_feed_uncurated_without_excerpt_omits_paragraph():
-    item = {"id": 9, "curated": False, "score": 3.0}
-    html = render.render_feed_item_html(item)
-    assert "Scored 3.0/10" in html
-    # Only the <em> paragraph, no trailing excerpt paragraph.
-    assert html.count("<p>") == 0 or "excerpt" not in html
+    base = {"id": 9, "curated": False, "score": 3.0}
+    without = render.render_feed_item_html(base)
+    with_excerpt = render.render_feed_item_html({**base, "excerpt": "BODYTEXT"})
+    assert "Scored 3.0/10" in without
+    # With an excerpt, a dedicated body paragraph <p>{{ excerpt }}</p> is emitted...
+    assert "<p>BODYTEXT</p>" in with_excerpt
+    # ...and without one it is dropped entirely (not rendered empty).
+    assert "BODYTEXT" not in without
+    # The only paragraphs left in the no-excerpt case are the <em> score line and
+    # the always-present (empty) source_url <p>; the excerpt <p> raises that to 3.
+    assert without.count("<p>") == 2
+    assert with_excerpt.count("<p>") == 3
 
 
 # --------------------------------------------------------------------------- #
@@ -408,7 +419,8 @@ def test_dashboard_never_when_no_timestamps():
     ctx["health"]["last_ingest"] = ""
     ctx["health"]["last_curate"] = None
     html = render.render_dashboard(ctx)
-    assert html.count("never") >= 2
+    # Exactly one "never" per empty timestamp stat (last ingest + last curate).
+    assert html.count("never") == 2
 
 
 @pytest.mark.integration

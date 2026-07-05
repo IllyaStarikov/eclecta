@@ -275,10 +275,14 @@ def test_fresh_enough_future_date_is_fresh(frozen_now):
 
 
 def test_now_returns_aware_utc():
-    # The unfrozen clock: a tz-aware UTC datetime close to real 'now'.
+    # The unfrozen clock: a tz-aware UTC datetime that tracks real wall-clock
+    # 'now' (not a frozen/wrong-offset stub).
+    before = datetime.datetime.now(datetime.timezone.utc)
     got = bulk_import._now()
+    after = datetime.datetime.now(datetime.timezone.utc)
     assert got.tzinfo is datetime.timezone.utc
     assert isinstance(got, datetime.datetime)
+    assert before <= got <= after
 
 
 # =========================================================================== #
@@ -396,6 +400,8 @@ def test_apply_quality_gates_missing_tier_defaults_to_3(frozen_now):
     del v["tier"]
     kept, _ = bulk_import._apply_quality_gates([v])
     assert kept[0]["tier"] == 3
+    assert kept[0]["cadence_min"] == bulk_import.TIER_CADENCE[3] == 720
+    assert kept[0]["reputation"] == bulk_import.TIER_REPUTATION[3] == 0.8
 
 
 # =========================================================================== #
@@ -564,8 +570,9 @@ def test_load_checkpoint_corrupt_json_returns_default(cfg):
     path = bulk_import._checkpoint_path(cfg, "corrupt")
     path.write_text("{ this is not json ]")
     state = bulk_import._load_checkpoint(cfg, "corrupt")
-    assert state["complete"] is False
-    assert state["hosts_done"] == []
+    # Corruption falls back to the full pristine default, not a partial dict.
+    assert state == {"hosts_done": [], "verified": 0, "rejected": 0,
+                     "imported": 0, "complete": False}
 
 
 # =========================================================================== #
@@ -755,6 +762,15 @@ def test_run_resume_filters_hosts_done(cfg, tmp_path, monkeypatch, frozen_now):
     (wave,) = calls
     assert [c["name"] for c in wave] == ["fresh"]
 
+    # Resume accumulates onto the checkpoint (1 pre-existing + 1 new), and the
+    # newly-probed host joins the already-done host.
+    state = bulk_import._load_checkpoint(cfg, "inline")
+    assert state["verified"] == 2
+    assert state["imported"] == 2
+    assert state["rejected"] == 0
+    assert state["hosts_done"] == ["done.example.com", "new.example.com"]
+    assert state["complete"] is True
+
 
 @pytest.mark.integration
 def test_run_no_resume_ignores_checkpoint(cfg, tmp_path, monkeypatch, frozen_now):
@@ -775,6 +791,8 @@ def test_run_no_resume_ignores_checkpoint(cfg, tmp_path, monkeypatch, frozen_now
     state = bulk_import._load_checkpoint(cfg, "inline")
     assert state["complete"] is True
     assert state["verified"] == 1        # reset counters, not the stale 9
+    assert state["imported"] == 1        # imported also reset (was 9)
+    assert state["hosts_done"] == ["keep.example.com"]
 
 
 @pytest.mark.integration

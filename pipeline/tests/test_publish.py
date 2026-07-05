@@ -26,7 +26,6 @@ import pytest
 
 import signalpipe.kb as kb
 import signalpipe.publish as publish
-from signalpipe import topics
 
 # --------------------------------------------------------------------------- #
 # Frozen clock — publish uses ``datetime.datetime.now`` / ``date.today`` which are
@@ -253,7 +252,7 @@ def test_digest_display_date_weekly_is_monday():
 
 
 @pytest.mark.parametrize("kind,key,expected", [
-    ("daily", "2026-07-04", "%s, July 4, 2026" % datetime.date(2026, 7, 4).strftime("%A")),
+    ("daily", "2026-07-04", "Saturday, July 4, 2026"),  # 2026-07-04 is a Saturday
     ("weekly", "2026-W27", "Week of %s" % _human(datetime.date(2026, 6, 29))),
     ("monthly", "2026-07", "July 2026"),
     ("quarterly", "2026-Q1", "Q1 2026"),
@@ -366,8 +365,7 @@ def test_write_digest_md_daily_shape(conn, seed, cfg):
     relpath, content = publish.write_digest_md(cfg, row)
 
     assert relpath == "src/content/digests/daily/2026-07-04.md"
-    weekday = datetime.date(2026, 7, 4).strftime("%A")
-    assert ('title: "%s, July 4, 2026"\n' % weekday) in content
+    assert 'title: "Saturday, July 4, 2026"\n' in content  # 2026-07-04 is a Saturday
     assert "kind: daily\n" in content
     assert 'period: "2026-07-04"\n' in content       # period quoted (schema string)
     assert "date: 2026-07-04\n" in content           # date left UNQUOTED
@@ -520,10 +518,12 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
     assert b["free_link"] is None
 
     d = _pick_by_id(picks, cd)
-    expected = topics.match_taxonomy("New Rust compiler release ships faster builds",
-                                     ["devtools"])
-    assert d["category"] == expected["category"]
-    assert d["category"]  # non-empty
+    # NULL category -> derived deterministically from title + channels. Pin the
+    # concrete taxonomy result rather than re-deriving via topics.match_taxonomy
+    # (which would be tautological against the SUT's own internal call). The
+    # subcategories fall back to the derived list because the row seeded None.
+    assert d["category"] == "software"
+    assert d["subcategories"] == ["languages"]
     assert d["free_link"] is None  # read_url == source_url
 
 
@@ -621,7 +621,13 @@ def test_export_stats_shape(conn, seed, cfg, monkeypatch):
     assert by_slug["science"] == 0
 
     assert stats["top_surfaces_7d"] == [{"name": "Source One", "clusters": 1}]
-    assert stats["models"] == {t: cfg.model_for(t) for t in ("triage", "deep", "digest")}
+    # Concrete model routing from the config fixture's tiers block (subscription
+    # backend). Pinned literally, not re-derived via cfg.model_for.
+    assert stats["models"] == {
+        "triage": "claude-haiku-4-5",
+        "deep": "claude-sonnet-4-6",
+        "digest": "claude-opus-4-8",
+    }
 
     # privacy guarantees: no spend dollars, no health/error text anywhere.
     blob = json.dumps(stats).lower()

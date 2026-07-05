@@ -121,9 +121,14 @@ def test_run_write_updates_every_curation(cfg, conn, seed, capsys):
 
 
 def test_run_returns_zero_and_seeds_empty_ledger_when_no_digests(cfg, conn, seed):
-    _seed_rows(seed, specs=[("https://ex.com/c1", "AI models from OpenAI", [])])
+    rows = _seed_rows(seed, specs=[("https://ex.com/c1", "AI models from OpenAI", [])])
     rc = retag.run(cfg)
     assert rc == 0
+    # The write path actually ran: the SENTINEL category was overwritten with the
+    # concrete taxonomy ("AI models from OpenAI" -> ai, no subcategory terms hit).
+    got = _curation(conn, rows[0][0])
+    assert got["category"] == "ai"
+    assert json.loads(got["subcategories"]) == []
     # No digests seeded -> ledger stays empty even on the write path.
     assert _ledger_count(conn) == 0
 
@@ -141,6 +146,10 @@ def test_run_malformed_channels_degrades_to_empty(cfg, conn, seed):
     got = _curation(conn, cid)
     assert got["category"] == expected["category"]
     assert json.loads(got["subcategories"]) == expected["subcategories"]
+    # Pin the concrete degraded result so a taxonomy regression can't move both
+    # sides together: bad JSON -> [] channels -> title-only categorization -> ai.
+    assert got["category"] == "ai"
+    assert json.loads(got["subcategories"]) == []
 
 
 def test_run_null_channels_treated_as_empty(cfg, conn, seed):
@@ -155,6 +164,10 @@ def test_run_null_channels_treated_as_empty(cfg, conn, seed):
     got = _curation(conn, cid)
     assert got["category"] == expected["category"]
     assert json.loads(got["subcategories"]) == expected["subcategories"]
+    # Concrete pin: "quantum"/"physics" are research/science terms -> the research
+    # category with a single "science" subcategory.
+    assert got["category"] == "research"
+    assert json.loads(got["subcategories"]) == ["science"]
 
 
 def test_run_is_idempotent(cfg, conn, seed):
@@ -163,6 +176,13 @@ def test_run_is_idempotent(cfg, conn, seed):
     assert retag.run(cfg) == 0
     first = {cid: (r["category"], r["subcategories"])
              for cid, *_ in rows for r in [_curation(conn, cid)]}
+    # Guard the idempotency claim against a no-op regression: a run that never
+    # wrote would leave every row at SENTINEL and STILL satisfy first == second.
+    # Anchor the first run to the concrete taxonomy it must have produced.
+    assert first[rows[0][0]][0] == "ai"
+    assert first[rows[1][0]][0] == "software"
+    assert first[rows[2][0]][0] == "security"
+    assert "SENTINEL" not in {cat for cat, _ in first.values()}
 
     assert retag.run(cfg) == 0
     second = {cid: (r["category"], r["subcategories"])
@@ -181,6 +201,10 @@ def test_run_null_title_falls_back_without_crashing(cfg, conn, seed):
     assert retag.run(cfg) == 0
     got = _curation(conn, cid)
     assert got["category"] == topics.match_taxonomy(" ", [])["category"]
+    # No-signal fallback pinned concretely: no title terms + no channels -> the
+    # hard-coded default "industry", with no subcategories.
+    assert got["category"] == "industry"
+    assert json.loads(got["subcategories"]) == []
 
 
 # --------------------------------------------------------------------------- #
@@ -224,7 +248,12 @@ def test_run_dry_run_distribution_output(cfg, seed, capsys):
     out = capsys.readouterr().out
     assert "retag: 2 curations" in out
     assert "by category:" in out
-    assert "ai" in out  # both rows land in the ai category
+    # Both rows land in ai, so ai is the ONLY category line: pin it as an actual
+    # indented distribution row and assert every other category is absent, rather
+    # than a bare "ai" substring that any incidental text could satisfy.
+    assert "\n  ai" in out
+    for other in ("software", "security", "research", "hardware", "industry"):
+        assert other not in out
 
 
 # --------------------------------------------------------------------------- #

@@ -221,6 +221,7 @@ def test_offline_decodable_entries_never_resolve(fake_client, make_result):
     client, items = _run(fake_client, make_result, feed, resolver=boom, resolve_top=25)
 
     assert client.resolved == []  # network seam never touched
+    assert len(items) == 3  # every entry survives; none dropped
     for i, it in enumerate(items):
         assert it["raw_url"] == "https://ex%d.com/a" % i
         assert it["extra"]["gnews_url"] == links[i]  # original google link retained
@@ -277,7 +278,9 @@ def test_network_resolve_gives_up_after_five_misses(fake_client, make_result, ca
     assert "gn-topic" in err  # message carries the slug
     assert "%d consecutive" % RESOLVE_GIVE_UP_AFTER in err
 
-    # every entry keeps its google link; no gnews_url on any of them.
+    # give-up stops resolving but every entry (incl. 5,6 past the cutoff) still
+    # yields an item; each keeps its google link and carries no gnews_url.
+    assert len(items) == 7
     for i, it in enumerate(items):
         assert it["raw_url"] == links[i]
         assert "gnews_url" not in it["extra"]
@@ -318,6 +321,7 @@ def test_resolve_top_boundary_stops_network(fake_client, make_result, capsys):
 
     assert client.resolved == links[:2]  # entries 2..4 never resolved
     assert "gnews:" not in capsys.readouterr().err
+    assert len(items) == 5  # eligibility cap gates resolve, not item emission
     for i, it in enumerate(items):
         assert it["raw_url"] == links[i]
 

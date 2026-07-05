@@ -186,10 +186,13 @@ def test_dispatch_hn_pages_coerced_from_string(patched_fetchers, fake_client):
 
 
 def test_dispatch_reddit_prefix_matches_any_subreddit(patched_fetchers, fake_client):
-    pipeline._fetch_for_source(
-        fake_client(), {"slug": "reddit-MachineLearning", "type": "json"}, FakeCfg()
-    )
+    src = {"slug": "reddit-MachineLearning", "type": "json"}
+    pipeline._fetch_for_source(fake_client(), src, FakeCfg())
+    assert len(patched_fetchers) == 1
     assert patched_fetchers[0]["key"] == "reddit"
+    assert patched_fetchers[0]["source_row"] is src
+    # Default reddit_mode flows through even for an arbitrary subreddit slug.
+    assert patched_fetchers[0]["kwargs"] == {"mode": "public_json"}
 
 
 def test_dispatch_unknown_slug_and_type_raises(patched_fetchers, fake_client):
@@ -233,8 +236,9 @@ def test_store_new_item_inserts_item_cluster_and_surface(conn, seed, freeze_now_
         "SELECT * FROM items WHERE source_id=? AND guid='g1'", (sid,)
     ).fetchone()
     assert row["raw_url"] == "https://example.com/story"
-    assert row["canonical_url"] == canonicalize("https://example.com/story")
-    assert row["title"] == it["title"]
+    # Pin the literal (not canonicalize(...)) so a canonicalizer regression is caught.
+    assert row["canonical_url"] == "https://example.com/story"
+    assert row["title"] == "Fresh headline about widgets and gadgets"
     assert row["author"] == "Jane Doe"
     assert row["published_at"] == "2026-06-01T00:00:00+00:00"
     assert row["ingested_at"] == frozen
@@ -693,7 +697,9 @@ def test_run_store_phase_failure_rolls_back_and_isolates(
     ).fetchone()
     assert a["error_count"] == 1
     assert a["enabled"] == 1
-    assert a["last_error"]  # the IntegrityError message was recorded
+    # The rolled-back store phase records the exact IntegrityError from the
+    # NOT NULL clusters.title constraint (title=None), truncated to <=300 chars.
+    assert a["last_error"] == "NOT NULL constraint failed: clusters.title"
 
     # src-a's partial write rolled back: no items and no cluster for it.
     assert _n(conn, "SELECT COUNT(*) FROM items WHERE source_id=?", sid_a) == 0

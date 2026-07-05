@@ -384,6 +384,10 @@ def test_backfill_single_day(conn, cfg, monkeypatch):
     _freeze_kb_datetime(monkeypatch)  # yesterday = 2026-07-03
     writes = kb.backfill(conn, cfg, "2026-07-03")
     assert set(writes) == {"kb/days/2026-07-03.md"}
+    # The single write must be that day's ledger, not an empty/garbage value.
+    assert writes["kb/days/2026-07-03.md"].startswith(
+        "# Signal ledger — 2026-07-03\n"
+    )
 
 
 # =========================================================================== #
@@ -493,6 +497,11 @@ def test_trends_repo_read_oserror_falls_back(conn, cfg, seed, tmp_path,
     out = kb.trends(conn, cfg)
     assert out is not None
     assert "(empty — first run)" in calls[0]["prompt"]
+    # Fallback path still produces a well-formed doc from the fake result.
+    relpath, content = out
+    assert relpath == "kb/trends.md"
+    assert content.startswith("## X\n\ny")
+    assert content.endswith("## Changelog\n- 2026-07-04: c\n")
 
 
 @pytest.mark.integration
@@ -515,6 +524,11 @@ def test_trends_picks_only_no_weekly(conn, cfg, seed, tmp_path, monkeypatch):
     assert "LATEST WEEKLY DIGEST" not in prompt
     assert "TOP RECENT CURATIONS (JSON):" in prompt
     assert "Only a pick" in prompt
+    # Return value pinned: right path + the fake body verbatim at the top.
+    relpath, content = out
+    assert relpath == "kb/trends.md"
+    assert content.startswith("## T\n\nbody")
+    assert content.endswith("## Changelog\n- 2026-07-04: c\n")
 
 
 @pytest.mark.integration
@@ -597,7 +611,12 @@ def test_trends_guard_spend_cap_returns_none(conn, cfg, seed, tmp_path,
 
     assert kb.trends(conn, cfg) is None
     rows = _health_rows(conn)
-    assert any("kb trends LLM: cap hit" in r["message"] for r in rows)
+    assert any(
+        r["job"] == "publish"
+        and r["level"] == "error"
+        and "kb trends LLM: cap hit" in r["message"]
+        for r in rows
+    )
 
 
 # --------------------------------------------------------------------------- #

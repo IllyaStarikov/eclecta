@@ -313,15 +313,24 @@ def test_run_due_editions_covered_short_circuits(cfg, monkeypatch):
 
 
 def test_run_due_editions_defaults_today_to_real_date(cfg, monkeypatch):
-    # today=None path: default to datetime.date.today(); we just assert it runs
-    # without error and dispatches only currently-due kinds (patched no-ops).
-    rec = _EditionRecorder()
-    _patch_editions(monkeypatch, rec)
+    # today=None must default to datetime.date.today(): omitting today has to
+    # dispatch EXACTLY what an explicit call with today's real date does. This
+    # pins the ``today or datetime.date.today()`` default — a regression to
+    # None (crash) or a wrong offset (yesterday/tomorrow) would diverge.
+    rec_default = _EditionRecorder()
+    _patch_editions(monkeypatch, rec_default)
+    before = datetime.date.today()
+    worker.run_due_editions(cfg)  # today omitted -> defaults internally
+    after = datetime.date.today()
 
-    worker.run_due_editions(cfg)  # today omitted
+    rec_explicit = _EditionRecorder()
+    _patch_editions(monkeypatch, rec_explicit)
+    worker.run_due_editions(cfg, today=after)
 
-    for kind, _p in rec.digest_calls:
-        assert kind in period_mod.KINDS
+    if before == after:  # skip only on a (near-impossible) midnight rollover
+        assert rec_default.digest_calls == rec_explicit.digest_calls
+    else:  # pragma: no cover - rollover guard
+        pytest.skip("date rolled over mid-test")
 
 
 # ========================================================================== #
@@ -575,6 +584,7 @@ def test_job_fetch_runs(cfg, monkeypatch):
     worker._job("fetch")()
 
     assert spy.called
+    assert spy.calls[0][0][0] is cfg
 
 
 def test_job_editions_sets_and_clears_lock_even_on_error(cfg, monkeypatch, capsys):
@@ -616,6 +626,7 @@ def test_job_publish_refresh_runs_when_push_true(cfg, monkeypatch):
     worker._job("publish_refresh")()
 
     assert spy.called
+    assert spy.calls[0][0][0] is cfg
 
 
 def test_job_publish_refresh_skips_when_push_false(cfg, monkeypatch):
@@ -638,6 +649,7 @@ def test_job_kb_trends_runs_when_push_true(cfg, monkeypatch):
     worker._job("kb_trends")()
 
     assert spy.called
+    assert spy.calls[0][0][0] is cfg
 
 
 def test_job_kb_trends_skips_when_push_false(cfg, monkeypatch):
@@ -663,11 +675,17 @@ def test_job_backup_runs_and_reports_dest(cfg, monkeypatch, capsys):
     assert "db backup -> /tmp/backup/signal-2026.db" in capsys.readouterr().out
 
 
-def test_job_unknown_name_is_ungated_noop(cfg, monkeypatch):
+def test_job_unknown_name_is_ungated_noop(cfg, monkeypatch, capsys):
     _patch_load(monkeypatch, cfg)
     # An unrecognized name is ungated (need_key is None) and matches no stage
     # branch: the runner falls through the if/elif chain and does nothing.
+    # A no-op means no defer/backup print (stdout empty) AND the except body
+    # never fired (stderr empty — no "mystery failed" traceback).
     worker._job("mystery")()  # no error, no output side effects
+
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == ""
 
 
 def test_job_runner_has_descriptive_name():
@@ -684,7 +702,9 @@ def test_heartbeat_writes_parseable_iso_timestamp(monkeypatch):
     hb = worker.config_mod.STATE_DIR / "heartbeat"
     assert hb.exists()
     parsed = datetime.datetime.fromisoformat(hb.read_text().strip())
-    assert parsed.tzinfo is not None  # written in UTC
+    # Written in UTC specifically (source uses datetime.timezone.utc): a bug
+    # that emitted a local-tz stamp would still be tz-aware, so pin the offset.
+    assert parsed.utcoffset() == datetime.timedelta(0)
 
 
 def test_heartbeat_swallows_write_error(monkeypatch, capsys):

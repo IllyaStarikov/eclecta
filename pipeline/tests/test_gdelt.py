@@ -113,10 +113,15 @@ def test_query_url_round_trips_via_parse_qs():
 
 
 def test_query_url_uses_doc_api_template():
-    result = query_url("x")
-    assert result == DOC_API % "x"  # "x" has no chars needing escaping
-    assert result.startswith("https://api.gdeltproject.org/api/v2/doc/doc?query=")
-    assert result.endswith("&mode=artlist&format=json&maxrecords=50&timespan=1d")
+    result = query_url("x")  # "x" has no chars needing escaping
+    # Pin the FULL concrete URL (not `DOC_API % "x"`, which re-derives from the
+    # same constant): a template regression — changed path, dropped/reordered
+    # param, wrong maxrecords/timespan — is only caught by a hard-coded literal.
+    assert result == (
+        "https://api.gdeltproject.org/api/v2/doc/doc?query=x"
+        "&mode=artlist&format=json&maxrecords=50&timespan=1d"
+    )
+    assert result == DOC_API % "x"  # and the template really is the source of it
 
 
 def test_doc_api_and_default_queries_constants():
@@ -381,13 +386,19 @@ def test_fetch_items_skips_missing_title_key(fake_client, make_result):
 # fetch_items — dedup by guid
 # --------------------------------------------------------------------------- #
 def test_fetch_items_dedups_within_one_payload(fake_client, make_result):
-    dup = _art(url="https://ex.com/same", title="Same")
+    # Same url → same guid. The two differ in title/domain so we can prove the
+    # FIRST occurrence is the one kept (source: `if guid in by_guid: continue`).
+    first = _art(url="https://ex.com/same", title="First Seen", domain="first.com")
+    second = _art(url="https://ex.com/same", title="Second Dropped", domain="second.com")
     client = _client(
         fake_client,
-        responses={FULL_URL: make_result(content=_payload([dup, dict(dup)]))},
+        responses={FULL_URL: make_result(content=_payload([first, second]))},
     )
     items = fetch_items(client, _full_source())
     assert len(items) == 1
+    assert items[0]["guid"] == "gdelt-https://ex.com/same"
+    assert items[0]["title"] == "First Seen"
+    assert items[0]["extra"]["domain"] == "first.com"
 
 
 def test_fetch_items_dedups_across_queries_and_pins_interval(fake_client, make_result):
@@ -521,9 +532,9 @@ def test_fetch_items_all_fail_message_joins_errors(fake_client, make_result):
     )
     with pytest.raises(RuntimeError) as exc:
         fetch_items(client, _bare_source())
-    msg = str(exc.value)
-    assert "boom one" in msg and "boom two" in msg
-    assert "; " in msg
+    # Deterministic: urls iterate [Q0_URL, Q1_URL], so errors join in that order
+    # behind the fixed prefix with a "; " separator.
+    assert str(exc.value) == "gdelt: all queries failed: boom one; boom two"
 
 
 def test_fetch_items_error_message_preferred_over_status(fake_client, make_result):

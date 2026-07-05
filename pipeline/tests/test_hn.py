@@ -73,7 +73,7 @@ def test_single_hit_maps_every_field(fake_client, make_result):
         "points": 128,
         "comments": 64,
         "extra": {
-            "discussion_url": ITEM_URL % "42",
+            "discussion_url": "https://news.ycombinator.com/item?id=42",
             "surface": "hn",
         },
     }
@@ -109,6 +109,23 @@ def test_source_row_is_ignored(fake_client, make_result):
     assert client.requested == [ALGOLIA % 0]
 
 
+def test_fetch_is_unconditional(fake_client, make_result):
+    # The ranked front page must always be fetched fresh: the module passes
+    # conditional=False so it is never served from the etag/if-modified cache.
+    # PoliteClient.fetch defaults conditional=True, so a regression that dropped
+    # the explicit flag would be invisible to every other test — pin it here.
+    seen_conditional: List[bool] = []
+
+    class Recorder(fake_client):
+        def fetch(self, url: str, conditional: bool = True):
+            seen_conditional.append(conditional)
+            return super().fetch(url, conditional)
+
+    client = Recorder(responses=_page_responses(make_result, {0: [_hit()], 1: []}))
+    fetch_items(client, {}, pages=2)
+    assert seen_conditional == [False, False]
+
+
 # --------------------------------------------------------------------------- #
 # raw_url fallback (self-posts)
 # --------------------------------------------------------------------------- #
@@ -119,7 +136,7 @@ def test_self_post_without_url_falls_back_to_discussion(fake_client, make_result
         )
     )
     (item,) = fetch_items(client, {}, pages=1)
-    assert item["raw_url"] == ITEM_URL % "777"
+    assert item["raw_url"] == "https://news.ycombinator.com/item?id=777"
     assert item["raw_url"] == item["extra"]["discussion_url"]
 
 
@@ -129,7 +146,7 @@ def test_empty_string_url_falls_back_to_discussion(fake_client, make_result):
         responses=_page_responses(make_result, {0: [_hit(objectID="5", url="")]})
     )
     (item,) = fetch_items(client, {}, pages=1)
-    assert item["raw_url"] == ITEM_URL % "5"
+    assert item["raw_url"] == "https://news.ycombinator.com/item?id=5"
 
 
 def test_present_url_is_preferred_over_discussion(fake_client, make_result):

@@ -223,8 +223,11 @@ class TestRunHappy:
             content=[_text_block("thinking..."), _tool_block(data=payload)],
         )
         install_fake_anthropic(monkeypatch, response=resp)
-        data, _ = backend_api.run("claude-haiku-4-5", "sys", "p", SCHEMA, cfg)
+        data, cost = backend_api.run("claude-haiku-4-5", "sys", "p", SCHEMA, cfg)
         assert data == payload
+        # Cost is still computed off usage even though the tool_use block is not
+        # first: 10 input tokens at haiku 1.0/MTok -> 1e-5.
+        assert cost == pytest.approx(1e-5)
 
     def test_effort_arg_is_accepted_and_ignored(self, cfg, monkeypatch):
         payload = {"relevance_score": 1, "summary": "x"}
@@ -305,6 +308,9 @@ class TestRunRequestShape:
         cfg.data["backend"]["api_max_retries"] = "9"
         cap = self._run_capture(cfg, monkeypatch)
         assert cap["init"]["max_retries"] == 9
+        # Must be a real int, not float("9")==9.0 (which == 9 would pass but is
+        # the wrong type for the SDK). Pins the int() coercion, not just equality.
+        assert type(cap["init"]["max_retries"]) is int
 
 
 # --------------------------------------------------------------------------- #

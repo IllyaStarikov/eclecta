@@ -376,7 +376,10 @@ def test_curate_spend_cap_stops_batch(conn, seed, cfg, monkeypatch):
     assert rc == 1  # cap hit stops the whole batch
     assert conn.execute("SELECT COUNT(*) FROM curations").fetchone()[0] == 0
     warns = _health(conn, "warn")
-    assert any("cap" in w["message"] for w in warns)
+    # exactly one warn: the batch stops on the FIRST item's cap, so the second
+    # never runs. The logged message is the verbatim SpendCapExceeded text.
+    assert len(warns) == 1
+    assert warns[0]["message"] == "daily spend cap $10.00 reached"
     # the early return skips the terminal info log.
     assert _health(conn, "info") == []
 
@@ -411,7 +414,10 @@ def test_curate_llm_error_marks_failed_and_continues(conn, seed, cfg,
     assert stats["failed"] == 1
     assert stats["done"] == 1
     warns = _health(conn, "warn")
-    assert any(w["message"].startswith("item %d:" % h) for w in warns)
+    # one warn, tagged with the failing item's id and carrying the (truncated)
+    # backend error text verbatim.
+    assert len(warns) == 1
+    assert warns[0]["message"] == "item %d: backend exploded" % h
 
 
 @pytest.mark.integration
@@ -430,7 +436,10 @@ def test_curate_dry_run_writes_nothing(conn, seed, cfg, monkeypatch, capsys):
     assert conn.execute("SELECT COUNT(*) FROM curations").fetchone()[0] == 0
     # dry_run touches no health rows either.
     assert conn.execute("SELECT COUNT(*) FROM health").fetchone()[0] == 0
-    assert "candidates" in capsys.readouterr().out
+    # Pin the dry-run-only per-day line (count + top score). The terminal
+    # summary also contains the word "candidates" regardless of dry_run, so a
+    # bare `"candidates" in out` would pass even if the dry-run branch were dead.
+    assert "2026-05-01: 1 candidates (top score 9.0)" in capsys.readouterr().out
 
 
 # --------------------------------------------------------------------------- #

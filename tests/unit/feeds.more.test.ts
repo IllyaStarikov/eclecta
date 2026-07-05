@@ -81,12 +81,22 @@ describe('pickItemHtml() edge cases', () => {
 
   it('omits the Notes block when notes is an empty array', () => {
     const p: FeedPick = { title: 't', source_url: 'https://src.example/post', notes: [] };
-    expect(pickItemHtml(p)).not.toContain('Notes');
+    const html = pickItemHtml(p);
+    // Empty notes collapses to exactly the bare Read line — nothing else.
+    expect(html).toBe(
+      '<p><strong>Read</strong> · <a href="https://src.example/post">Primary source</a></p>'
+    );
+    expect(html).not.toContain('Notes');
   });
 
   it('omits the Surfaced-on block when surfaces is an empty array', () => {
     const p: FeedPick = { title: 't', source_url: 'https://src.example/post', surfaces: [] };
-    expect(pickItemHtml(p)).not.toContain('Surfaced on');
+    const html = pickItemHtml(p);
+    // Empty surfaces collapses to exactly the bare Read line — nothing else.
+    expect(html).toBe(
+      '<p><strong>Read</strong> · <a href="https://src.example/post">Primary source</a></p>'
+    );
+    expect(html).not.toContain('Surfaced on');
   });
 
   it('renders a surface with null points/comments as a bare name link', () => {
@@ -140,12 +150,17 @@ describe('digestItemHtml()', () => {
     expect(html).toContain('<p><em>The day, in &quot;brief&quot; &amp; &lt;sharp&gt;.</em></p>');
   });
 
-  it('shows the KIND_LABEL for the digest kind', () => {
-    expect(html).toContain('Daily brief');
+  it('shows the KIND_LABEL for the digest kind, right after the blurb', () => {
+    // Pin position: the metadata paragraph opens with the label immediately
+    // after the emphasized blurb — not merely "Daily brief" somewhere.
+    expect(html).toContain('</em></p><p>Daily brief · ');
   });
 
-  it('shows the period', () => {
-    expect(html).toContain('2026-07-04');
+  it('shows the period in the metadata slot, not just via the URL', () => {
+    // The URL also contains "2026-07-04" (…/daily/2026-07-04/…), so a bare
+    // toContain('2026-07-04') would pass even if the period were dropped.
+    // Pin the label · period · link ordering instead.
+    expect(html).toContain('Daily brief · 2026-07-04 · <a href="https://eclecta.co/');
   });
 
   it('links to the on-site edition, labelled with the site name', () => {

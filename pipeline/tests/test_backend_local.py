@@ -216,7 +216,7 @@ class TestValidate:
     def test_boolean_type_check(self, value, ok):
         schema = {"properties": {"flag": {"type": "boolean"}}}
         err = backend_local._validate({"flag": value}, schema)
-        assert (err is None) is ok
+        assert err == (None if ok else "key 'flag' has wrong type")
 
     @pytest.mark.parametrize(
         "value, ok",
@@ -230,7 +230,7 @@ class TestValidate:
     def test_integer_type_check(self, value, ok):
         schema = {"properties": {"n": {"type": "integer"}}}
         err = backend_local._validate({"n": value}, schema)
-        assert (err is None) is ok
+        assert err == (None if ok else "key 'n' has wrong type")
 
     @pytest.mark.parametrize(
         "value, ok",
@@ -243,7 +243,7 @@ class TestValidate:
     def test_number_type_check(self, value, ok):
         schema = {"properties": {"x": {"type": "number"}}}
         err = backend_local._validate({"x": value}, schema)
-        assert (err is None) is ok
+        assert err == (None if ok else "key 'x' has wrong type")
 
     @pytest.mark.parametrize(
         "value, ok",
@@ -257,7 +257,7 @@ class TestValidate:
     def test_array_type_check(self, value, ok):
         schema = {"properties": {"tags": {"type": "array"}}}
         err = backend_local._validate({"tags": value}, schema)
-        assert (err is None) is ok
+        assert err == (None if ok else "key 'tags' has wrong type")
 
     def test_unknown_or_missing_type_is_not_enforced(self):
         # An unrecognised type (or a property with no 'type') maps to no checker.

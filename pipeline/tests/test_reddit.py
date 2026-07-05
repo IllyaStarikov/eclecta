@@ -75,6 +75,10 @@ def test_oauth_mode_from_row_raises(row_mode):
     msg = str(ei.value)
     assert "reddit.com/prefs/apps" in msg
     assert "oauth" in msg
+    # The oauth branch's contract is that its message documents the concrete
+    # upgrade path (module docstring). Pin that guidance, not just the word.
+    assert "not configured" in msg
+    assert "ingest.reddit_mode" in msg
 
 
 def test_oauth_mode_from_arg_when_row_mode_none():
@@ -83,7 +87,9 @@ def test_oauth_mode_from_arg_when_row_mode_none():
         reddit.fetch_items(
             object(), {"mode": None, "slug": "reddit-x", "url": "u"}, mode="oauth"
         )
-    assert "reddit.com/prefs/apps" in str(ei.value)
+    msg = str(ei.value)
+    assert "reddit.com/prefs/apps" in msg
+    assert "ingest.reddit_mode" in msg
 
 
 def test_row_mode_overrides_arg(monkeypatch):
@@ -183,15 +189,23 @@ def test_public_json_happy_path(make_result, load_json):
     }
 
     # link post: raw_url is the external url; discussion_url is still the permalink.
-    assert link_post["guid"] == "t3_link1"
-    assert link_post["raw_url"] == "https://example.com/article"
-    assert (
-        link_post["extra"]["discussion_url"]
-        == "https://www.reddit.com/r/python/comments/link1/external/"
-    )
-    assert link_post["points"] == 210
-    assert link_post["comments"] == 12
-    assert link_post["published_at"] == "2023-11-14T08:20:00+00:00"
+    # Full-dict pin so the link branch's author/title/upvote_ratio mapping is also
+    # covered (not just the self-post path above).
+    assert link_post == {
+        "guid": "t3_link1",
+        "raw_url": "https://example.com/article",              # <- external url, not permalink
+        "title": "External link post",
+        "author": "bob",
+        "published_at": "2023-11-14T08:20:00+00:00",           # 1699950000 -> ISO UTC
+        "points": 210,
+        "comments": 12,
+        "extra": {
+            "discussion_url": "https://www.reddit.com/r/python/comments/link1/external/",
+            "subreddit": "python",
+            "upvote_ratio": 0.87,
+            "surface": "reddit",
+        },
+    }
 
 
 @pytest.mark.parametrize(

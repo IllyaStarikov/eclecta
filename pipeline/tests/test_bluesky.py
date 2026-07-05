@@ -426,8 +426,20 @@ def test_source_row_is_ignored(fake_client, make_result, source_row):
 
 def test_fetch_is_unconditional(fake_client, make_result):
     # The parser requests the endpoint exactly once and without conditional caching.
+    # `.requested` only records URLs, so spy on `fetch` to pin the `conditional` kwarg:
+    # the source calls `client.fetch(TRENDS_URL, conditional=False)` — a regression to
+    # the fetch() default (True) must fail here, not slip through the URL-only check.
     client = _client(fake_client, make_result, content=_body([_topic()]))
+    calls: list = []
+    original_fetch = client.fetch
+
+    def spy(url, conditional=True):
+        calls.append((url, conditional))
+        return original_fetch(url, conditional)
+
+    client.fetch = spy
     fetch_items(client, {})
+    assert calls == [(TRENDS_URL, False)]
     assert client.requested == [TRENDS_URL]
 
 

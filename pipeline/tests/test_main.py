@@ -519,11 +519,20 @@ def test_cmd_status_happy_path(cfg, conn, seed, monkeypatch, capsys, tmp_path):
     assert "routing: triage=" in out             # _tier_desc string builder
     assert "digest=" in out
     assert "downtime gate: OPEN" in out
+    # Every table in the COUNT loop is seeded exactly once; pin the %-10s layout
+    # for each so a broken/renamed COUNT query can't hide behind a green run.
     assert "sources    1" in out                 # table count, %-10s formatting
+    assert "items      1" in out
+    assert "clusters   1" in out
+    assert "articles   1" in out
+    assert "curations  1" in out
+    assert "digests    1" in out
     assert "verified   1" in out                 # enabled AND verified_at NOT NULL
     assert "spend today: cli $1.2500  api $2.5000  (9 calls)" in out
     assert "recent health:" in out
-    assert "all clear" in out
+    # Full health line: ts is truncated to [:19] (Z dropped) and rendered
+    # "  <ts> [<level>] <job>: <message>".
+    assert "2026-07-04T10:00:00 [info] ingest: all clear" in out
 
 
 @pytest.mark.integration
@@ -611,8 +620,9 @@ def test_cmd_runs_happy(cfg, conn, seed, monkeypatch, capsys):
     assert "new=5" in out and "dupes=2" in out
     assert "by_src=" not in out  # nested dict value filtered out of the summary
     assert "finalists=40" in out
-    # oldest-first, and the config change is flagged between the two rows.
-    assert "<- config changed" in out
+    # Exactly one hash transition (abc123 -> zzz999) across the three rows, so the
+    # marker fires once — not zero (logic dead) and not on every row (prev unset).
+    assert out.count("<- config changed") == 1
 
 
 @pytest.mark.integration

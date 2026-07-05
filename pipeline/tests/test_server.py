@@ -256,10 +256,21 @@ def test_healthz_ok_truncates_and_carries_version(cfg, conn, seed):
     assert "time" in body and body["time"]
     # aggregate keys merged in
     assert body["sources_enabled"] == 6
-    # truncated to five for the JSON payload
+    # truncated to five for the JSON payload — and the truncation keeps the
+    # WORST offenders (error_count DESC), dropping the lowest (fail0/ec=3).
     assert len(body["failing_sources"]) == 5
+    assert [s["slug"] for s in body["failing_sources"]] == [
+        "fail5", "fail4", "fail3", "fail2", "fail1"
+    ]
+    assert body["failing_sources"][0] == {
+        "slug": "fail5", "error_count": 8, "last_error": "e5"
+    }
+    assert all("fail0" != s["slug"] for s in body["failing_sources"])
+    # recent truncated to five, newest (highest id) first
     assert len(body["recent"]) == 5
-    assert all(isinstance(s, dict) for s in body["failing_sources"])
+    assert [r["message"] for r in body["recent"]] == [
+        "m5", "m4", "m3", "m2", "m1"
+    ]
 
 
 @pytest.mark.integration
@@ -316,8 +327,11 @@ def test_feed_channel_200_for_known(curated_cfg):
     assert resp.headers["content-type"].startswith("application/rss+xml")
     body = resp.text
     assert "<rss" in body
-    assert "Example story about AI models" in body
-    assert "tag:starikov.co,2026:signal/" in body
+    assert "<title>Example story about AI models</title>" in body
+    # the single seeded cluster is id 1 -> its byte-stable, non-permalink guid
+    assert (
+        '<guid isPermaLink="false">tag:starikov.co,2026:signal/1</guid>' in body
+    )
 
 
 @pytest.mark.integration

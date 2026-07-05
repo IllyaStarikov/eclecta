@@ -138,10 +138,11 @@ def test_hf_fixture_all_rows_and_points(fake_client, make_result, load_bytes):
 
 
 def test_hf_requests_hf_daily_non_conditional(make_result):
-    rec = _RecClient(make_result(content=_hf_body([_hf_row()]), status=200))
-    fetch_hf_daily_papers(rec, {})
+    rec = _RecClient(make_result(content=_hf_body([_hf_row(pid="only", title="Only")]), status=200))
+    items = fetch_hf_daily_papers(rec, {})
     assert rec.requested == [HF_DAILY]
     assert rec.conditionals == [False]  # conditional=False is hard-wired
+    assert [i["guid"] for i in items] == ["hf-only"]  # the recorded body was actually parsed
 
 
 def test_hf_source_row_is_ignored(fake_client, make_result):
@@ -290,10 +291,11 @@ def test_gh_description_tags_stripped_and_whitespace_collapsed(fake_client, make
 
 
 def test_gh_requests_gh_trending_non_conditional(make_result):
-    rec = _RecClient(make_result(content=_gh_html([_gh_card()]).encode("utf-8")))
-    fetch_github_trending(rec, {})
+    rec = _RecClient(make_result(content=_gh_html([_gh_card(owner="own", repo="rep")]).encode("utf-8")))
+    items = fetch_github_trending(rec, {})
     assert rec.requested == [GH_TRENDING]
     assert rec.conditionals == [False]
+    assert [i["guid"] for i in items] == ["ghtrend-own/rep"]  # the recorded body was actually parsed
 
 
 def test_gh_source_row_is_ignored(fake_client, make_result):
@@ -308,20 +310,21 @@ def test_gh_source_row_is_ignored(fake_client, make_result):
 # GitHub trending — stars regex (pure)
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize(
-    "text,expected",
+    "text,expected,expected_num",
     [
-        ("1,234 stars today", "1,234"),
-        ("1 star today", "1"),           # singular
-        ("56 stars today", "56"),
-        ("12,345,678 stars today", "12,345,678"),
-        ("0 stars today", "0"),
+        ("1,234 stars today", "1,234", 1234),
+        ("1 star today", "1", 1),           # singular
+        ("56 stars today", "56", 56),
+        ("12,345,678 stars today", "12,345,678", 12345678),
+        ("0 stars today", "0", 0),
     ],
 )
-def test_gh_stars_regex_matches(text, expected):
+def test_gh_stars_regex_matches(text, expected, expected_num):
     m = _GH_STARS_TODAY_RE.search("noise <span> %s </span> noise" % text)
     assert m is not None
     assert m.group(1) == expected
-    assert int(m.group(1).replace(",", "")) == int(expected.replace(",", ""))
+    # Pin the int the fetcher derives against a hardcoded literal (not re-derived from `expected`).
+    assert int(m.group(1).replace(",", "")) == expected_num
 
 
 @pytest.mark.parametrize(

@@ -125,11 +125,43 @@ def test_two_page_happy_path_concatenates_in_order(fake_client, make_result):
 
 
 def test_source_row_is_ignored(fake_client, make_result):
-    # A wildly different source_row must not change the requested URL or output.
+    # A wildly different source_row must not change the requested URL OR any output
+    # field: source_row["url"]="ignored" must never leak into raw_url/discussion_url.
     client = fake_client(responses=_page_responses(make_result, {1: [_story()]}))
     items = fetch_items(client, {"url": "ignored", "mode": "whatever", "slug": "x"}, pages=1)
-    assert len(items) == 1
     assert client.requested == [HOTTEST % 1]
+    assert items == [
+        {
+            "guid": "lob-abc123",
+            "raw_url": "https://example.com/story",
+            "title": "A story about Lisp",
+            "author": "alice",
+            "published_at": "2026-07-01T09:30:00.000-05:00",
+            "points": 42,
+            "comments": 7,
+            "extra": {
+                "discussion_url": "https://lobste.rs/s/abc123",
+                "tags": ["lisp", "programming"],
+                "surface": "lobsters",
+            },
+        }
+    ]
+
+
+def test_fetch_is_unconditional(fake_client, make_result):
+    # Lobsters fetches must pass conditional=False. A regression to PoliteClient's
+    # conditional=True default would let a 304/empty-body response slip in and trip the
+    # `not res.content` guard, raising spuriously — so pin the exact flag per page.
+    seen: List[bool] = []
+
+    class RecordingClient(fake_client):  # fake_client fixture IS the class object
+        def fetch(self, url, conditional=True):
+            seen.append(conditional)
+            return super().fetch(url, conditional=conditional)
+
+    client = RecordingClient(responses=_page_responses(make_result, {1: [], 2: []}))
+    fetch_items(client, {}, pages=2)
+    assert seen == [False, False]
 
 
 # --------------------------------------------------------------------------- #
@@ -155,6 +187,8 @@ def test_present_url_is_preferred_over_comments_url(fake_client, make_result):
     )
     (item,) = fetch_items(client, {}, pages=1)
     assert item["raw_url"] == "https://real.example/x"
+    # discussion_url still comes from comments_url (the default), independent of url.
+    assert item["extra"]["discussion_url"] == "https://lobste.rs/s/abc123"
     assert item["raw_url"] != item["extra"]["discussion_url"]
 
 

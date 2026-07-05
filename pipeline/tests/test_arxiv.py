@@ -154,6 +154,10 @@ def test_fetch_items_overwrites_preexisting_surface(monkeypatch):
     )
     (item,) = fetch_items(object(), {"url": ARXIV_URL})
     assert item["extra"]["surface"] == "arxiv"
+    # The overwrite is a targeted single-key set, not a wholesale dict replacement:
+    # the sibling 'bozo' key survives and no extra keys are introduced.
+    assert item["extra"]["bozo"] is False
+    assert set(item["extra"]) == {"bozo", "surface"}
 
 
 def test_fetch_items_mutates_extra_dict_in_place(monkeypatch):
@@ -182,6 +186,10 @@ def test_fetch_items_filters_updated_after_tagging(monkeypatch):
     assert len(items) == 1
     assert items[0] is normal
     assert items[0]["extra"]["surface"] == "arxiv"
+    # "after tagging": the loop tags EVERY item in place before the filter runs,
+    # so even the dropped UPDATED item carries the surface tag (tag-all-then-filter,
+    # not filter-then-tag-survivors).
+    assert updated["extra"]["surface"] == "arxiv"
 
 
 def test_fetch_items_keeps_word_updated_that_is_not_the_suffix(monkeypatch):

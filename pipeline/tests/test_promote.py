@@ -111,8 +111,8 @@ def test_latest_digest_explicit_week_ignores_non_weekly_kind(conn, seed):
 def test_latest_digest_missing_returns_none(conn, seed):
     seed.digest(period_key="2026-W27", staged_path="/x/c.md")
     assert promote._latest_digest(conn, "2026-W99") is None
-    # Empty-of-weeklies: a lone daily leaves the None-week query with nothing.
-    assert promote._latest_digest(conn, None) is not None  # sanity: weekly exists
+    # sanity: the single seeded weekly is still selectable via the None-week query
+    assert promote._latest_digest(conn, None)["period_key"] == "2026-W27"
 
 
 def test_latest_digest_empty_table_none(conn):
@@ -317,10 +317,17 @@ def test_run_apply_prod_publish_now_sets_promoted_and_logs(promo_cfg, conn, seed
                      publish_now=True)
     assert rc == 0
 
+    assert len(rec.calls) == 1
     cmd = rec.calls[0]["cmd"]
     assert any("_publish_to_prod.py" in c for c in cmd)
+    # hard separation guarantees must hold on the prod publish path too:
+    # tag is ALWAYS Signal (-> /signal/ collection) and --no-feature ALWAYS.
+    assert "--tag" in cmd and promote.TAG in cmd
+    assert "--no-feature" in cmd
+    assert "--slug" in cmd and "signal-2026-W27" in cmd
     assert "--replace" in cmd
     assert "--publish" in cmd
+    assert rec.calls[0]["cwd"] == str(promo_cfg.blog_repo / "scripts")
 
     # prod + publish_now flips promoted and logs an info health line
     assert _digest_row(conn, did)["promoted"] == 1
@@ -329,7 +336,8 @@ def test_run_apply_prod_publish_now_sets_promoted_and_logs(promo_cfg, conn, seed
     ).fetchone()
     assert health["level"] == "info"
     assert "PUBLISHED to prod" in health["message"]
-    assert "signal-2026-W27" in health["message"]
+    # message pins the exact /signal/ route (the separation contract)
+    assert "/signal/signal-2026-W27/" in health["message"]
 
     out = capsys.readouterr().out
     assert "starikov.co" in out
@@ -344,7 +352,12 @@ def test_run_apply_prod_draft_default_does_not_promote(promo_cfg, conn, seed,
 
     rc = promote.run(promo_cfg, week=None, target="prod", apply=True)
     assert rc == 0
+    assert len(rec.calls) == 1
     cmd = rec.calls[0]["cmd"]
+    assert any("_publish_to_prod.py" in c for c in cmd)
+    # separation guarantees hold on the prod DRAFT path as well
+    assert "--tag" in cmd and promote.TAG in cmd
+    assert "--no-feature" in cmd
     assert "--replace" in cmd
     assert "--publish" not in cmd  # draft: no --publish
     # draft: promoted stays 0, no PUBLISHED health line

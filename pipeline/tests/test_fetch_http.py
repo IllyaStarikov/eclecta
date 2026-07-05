@@ -177,7 +177,12 @@ def test_fetch_200_happy_path_and_cache_upsert(polite_client_factory, conn):
     assert row is not None
     assert row["etag"] == '"abc"'
     assert row["last_modified"] == "Wed, 01 Jan 2020 00:00:00 GMT"
-    assert row["body_sha256"] == hashlib.sha256(body).hexdigest()
+    # Concrete literal (sha256 of b"hello world"), not a mirror of the SUT's
+    # own hashing expression — pins the exact stored digest.
+    assert (
+        row["body_sha256"]
+        == "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
+    )
     assert row["status"] == 200
 
 
@@ -296,9 +301,13 @@ def test_fetch_changed_body_is_not_unchanged(polite_client_factory, conn):
     assert res.status == 200
     assert res.unchanged is False
     assert res.content == body
-    # The stale cached hash was overwritten with the new body's hash.
+    # The stale cached hash was overwritten with the new body's hash
+    # (concrete literal: sha256 of b"brand new content").
     row = _cache_row(conn, url)
-    assert row["body_sha256"] == hashlib.sha256(body).hexdigest()
+    assert (
+        row["body_sha256"]
+        == "5513aea5c15197e2a26ffb463e7859200ada061938f7c64acce7c6efac146d3b"
+    )
 
 
 def test_fetch_empty_body_hash_is_none(polite_client_factory, conn):
@@ -454,9 +463,16 @@ def test_cache_helpers_noop_without_conn(polite_client_factory):
         return httpx.Response(200, content=b"x")
 
     pc = polite_client_factory(handler, cache=False)
-    # _cache_row returns None and _cache_put does nothing / does not raise.
+    # _cache_row returns None and _cache_put short-circuits (returns None,
+    # never touches conn) — removing the `conn is None` guard would raise
+    # AttributeError on conn.execute and fail here.
     assert pc._cache_row("https://example.com/whatever") is None
-    pc._cache_put("https://example.com/whatever", 200, "e", "lm", "sha")
+    assert pc._cache_put("https://example.com/whatever", 200, "e", "lm", "sha") is None
+    # A network-only fetch still works and never grows a cache row.
+    res = pc.fetch("https://example.com/whatever")
+    assert res.status == 200
+    assert res.content == b"x"
+    assert pc._cache_row("https://example.com/whatever") is None
 
 
 # --------------------------------------------------------------------------- #
@@ -651,7 +667,11 @@ def test_fetch_cache_upsert_roundtrip(polite_client_factory, conn, monkeypatch):
 
     row = _cache_row(conn, url)
     assert row["etag"] == '"v1"'  # latest fetch won
-    assert row["body_sha256"] == hashlib.sha256(bodies[1]).hexdigest()
+    # Concrete literal: sha256 of b"second-version" (the winning body).
+    assert (
+        row["body_sha256"]
+        == "0bf4f0c2fe256440721e138b839d11642d6529b99be0b9d7c1752cc954cb0b40"
+    )
     assert row["fetched_at"] == "2026-07-04T00:00:02+00:00"
 
 

@@ -221,8 +221,11 @@ def test_fetch_feed_items_atom_happy_path(fake_client, make_result):
     # Second Atom entry has only <updated> -> _entry_time uses updated fallback.
     assert second["guid"] == "urn:uuid:entry-2"
     assert second["raw_url"] == "https://example.com/updated-only"
+    assert second["title"] == "Updated Only"
     assert second["author"] is None
     assert second["published_at"] == "2026-06-12T08:00:00+00:00"
+    assert second["points"] is None and second["comments"] is None
+    assert second["extra"] == {"bozo": False}
 
 
 def test_fetch_feed_items_reads_only_url_key(fake_client, make_result):
@@ -231,7 +234,10 @@ def test_fetch_feed_items_reads_only_url_key(fake_client, make_result):
     client = fake_client(responses={other: make_result(content=ATOM, status=200)})
     items = fetch_feed_items(client, {"url": other})
     assert client.requested == [other]
+    # The body fetched from ['url'] is what actually gets parsed (not merely counted).
     assert len(items) == 2
+    assert items[0]["raw_url"] == "https://example.com/atom-post"
+    assert items[0]["guid"] == "urn:uuid:entry-1"
 
 
 # --------------------------------------------------------------------------- #
@@ -264,6 +270,9 @@ def test_fetch_feed_items_under_cap_returns_all(fake_client, make_result):
     client = fake_client(default=make_result(content=_big_feed(5), status=200))
     items = fetch_feed_items(client, _src())
     assert len(items) == 5
+    # All five survive and stay in document order (no cap, no reordering).
+    assert [it["title"] for it in items] == ["Post %d" % i for i in range(5)]
+    assert items[0]["guid"] == "g0" and items[-1]["guid"] == "g4"
 
 
 # --------------------------------------------------------------------------- #

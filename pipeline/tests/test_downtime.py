@@ -136,6 +136,11 @@ def test_parse_duration_numeric_suffixed_never_raises():
     def _check(n, suffix):
         result = downtime.parse_duration("%d%s" % (n, suffix))
         assert isinstance(result, int)
+        # non-negative input can never yield a negative duration, and a bare/`s`
+        # suffix is a lossless pass-through (int(float(n)) == n)
+        assert result >= 0
+        if suffix in ("s", ""):
+            assert result == (n if suffix == "s" else n * 60)
 
     _check()
 
@@ -516,6 +521,9 @@ def test_pause_negative_seconds_clamped_to_zero(state_dir, monkeypatch):
     T = 3_000_000.0
     monkeypatch.setattr(downtime.time, "time", lambda: T)
     assert downtime.pause(-500) == T  # max(0, -500) == 0
+    # the clamped instant must also be what got persisted (not T - 500)
+    assert downtime.paused_until() == T
+    assert json.loads(downtime.PAUSE_FILE.read_text())["paused_until"] == T
 
 
 def test_paused_until_missing_file_is_zero(state_dir):
@@ -661,8 +669,9 @@ def test_is_open_reason_ordering_paused_beats_battery(all_open, monkeypatch):
     monkeypatch.setattr(downtime, "paused_until", lambda: T + 60)
     monkeypatch.setattr(downtime, "on_ac", lambda: False)
     ok, reason = downtime.is_open(make_cfg())
-    assert ok is False
-    assert reason.startswith("paused")  # paused checked before AC
+    # paused is checked before AC, so the reason is the pause message (with its
+    # 60s -> "1m" rounding), never "on battery"
+    assert (ok, reason) == (False, "paused (1m left)")
 
 
 # --------------------------------------------------------------------------- #

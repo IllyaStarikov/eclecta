@@ -67,12 +67,23 @@ describe('KINDS + KIND_LABEL', () => {
     expect(new Set(KINDS).size).toBe(KINDS.length);
   });
 
-  it('has a non-empty label for every KIND', () => {
-    for (const kind of KINDS) {
-      const label = KIND_LABEL[kind as DigestKind];
-      expect(typeof label).toBe('string');
-      expect(label.length).toBeGreaterThan(0);
-    }
+  it('maps each KIND to its exact display label', () => {
+    // Pins the concrete cadence copy: this is what renders in the UI.
+    expect(KIND_LABEL).toEqual({
+      daily: 'Daily brief',
+      weekly: 'Weekly digest',
+      monthly: 'Monthly review',
+      quarterly: 'Quarterly report',
+      yearly: 'The year',
+    });
+    // Every KIND resolves to that exact label (no undefined gaps).
+    expect(KINDS.map((k) => KIND_LABEL[k as DigestKind])).toEqual([
+      'Daily brief',
+      'Weekly digest',
+      'Monthly review',
+      'Quarterly report',
+      'The year',
+    ]);
   });
 
   it('has no extra label keys beyond KINDS', () => {
@@ -91,16 +102,25 @@ describe('site constant', () => {
     expect(site.storagePrefix).toBe('eclecta');
   });
 
-  it('exposes https:// URLs', () => {
+  it('points identity URLs at their real https destinations', () => {
+    expect(site.authorUrl).toBe('https://starikov.co');
+    expect(site.contactUrl).toBe('https://starikov.co/contact/');
+    expect(site.repoUrl).toBe('https://github.com/IllyaStarikov/eclecta');
+    // Belt-and-suspenders: nothing here is ever plain http.
     for (const url of [site.authorUrl, site.contactUrl, site.repoUrl]) {
       expect(url).toMatch(/^https:\/\//);
     }
   });
 
-  it('has non-empty identity copy', () => {
-    for (const field of [site.kicker, site.tagline, site.description, site.author]) {
-      expect(typeof field).toBe('string');
-      expect(field.length).toBeGreaterThan(0);
-    }
+  it('carries the exact identity copy', () => {
+    expect(site.author).toBe('Illya Starikov');
+    expect(site.kicker).toBe('The frontier, distilled');
+    expect(site.tagline).toBe('We read the firehose, so you read what matters.');
+    // Description is a multi-part concatenation; pin its stable opening and
+    // closing clauses rather than the full em-dash-laden paragraph.
+    expect(site.description).toContain(
+      'Eclecta watches the places technology, AI, and the sciences break first',
+    );
+    expect(site.description).toContain('A daily brief, a weekly digest, and the long view.');
   });
 });

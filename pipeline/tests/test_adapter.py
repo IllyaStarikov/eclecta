@@ -114,7 +114,8 @@ def test_local_single_model_returns_zero_cost_and_skips_cap(cfg, fake_conn, leav
     assert cost == 0.0
     # single local model -> one run, no consensus fusion
     assert len(leaves.local_run.calls) == 1
-    assert leaves.local_run.calls[0][0][0] == "qwen2.5:14b"  # tiers.triage.local
+    # the tier's single local model, with system/prompt/schema/cfg forwarded in order
+    assert leaves.local_run.calls[0][0] == ("qwen2.5:14b", "sys", "prompt", SCHEMA, cfg)
     assert not leaves.consensus.called
     # local NEVER touches the cap or the ledger
     assert not leaves.assert_cap.called
@@ -152,9 +153,11 @@ def test_local_failure_degrades_to_subscription_fallback(cfg, fake_conn, leaves)
 
     assert obj == {"src": "cli"}
     assert cost == 0.11
-    # degraded through the subscription cloud path
-    assert leaves.cli_run.called
+    # degraded through the subscription cloud path on the resolved subscription model
+    assert leaves.cli_run.calls[0][0][0] == "claude-haiku-4-5"  # tiers.triage.subscription
     assert not leaves.api_run.called
+    # the degraded subscription path still passes through the usage-limit hold
+    assert leaves.status.called
     # fallback is cap-gated + recorded as subscription
     assert leaves.assert_cap.called
     assert leaves.record.calls[0][0][1] == "subscription"
@@ -172,11 +175,12 @@ def test_local_failure_degrades_to_api_fallback(cfg, fake_conn, leaves):
 
     assert obj == {"src": "api"}
     assert cost == 0.3
-    assert leaves.api_run.called
+    assert leaves.api_run.calls[0][0][0] == "claude-haiku-4-5"  # tiers.triage.api
     assert not leaves.cli_run.called
     # api fallback skips the quota hold (that gate is subscription-only)
     assert not leaves.status.called
     assert leaves.record.calls[0][0][1] == "api"
+    assert leaves.record.calls[0][0][2] == 0.3
 
 
 @pytest.mark.parametrize("fallback", ["local", None])
@@ -236,10 +240,14 @@ def test_success_subscription_records_backend_and_cost(cfg, fake_conn, leaves):
         "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, effort="high")
 
     assert (obj, cost) == ({"ok": True}, 0.42)
-    # resolved the subscription model id + passed effort through
+    # resolved the subscription model id + forwarded the whole call, in order
     cli_args = leaves.cli_run.calls[0][0]
     assert cli_args[0] == "claude-haiku-4-5"  # tiers.triage.subscription
-    assert cli_args[5] == "high"
+    assert cli_args[1] == "sys"
+    assert cli_args[2] == "prompt"
+    assert cli_args[3] is SCHEMA
+    assert cli_args[4] is cfg
+    assert cli_args[5] == "high"  # effort forwarded verbatim
     # recorded exactly once against the resolved backend
     assert len(leaves.record.calls) == 1
     rec_args, rec_kwargs = leaves.record.calls[0]
@@ -259,7 +267,13 @@ def test_success_api_records_backend_and_cost(cfg, fake_conn, leaves):
 
     assert (obj, cost) == ({"ok": True}, 0.7)
     # api backend resolves the api model id and skips the subscription-only hold
-    assert leaves.api_run.calls[0][0][0] == "claude-haiku-4-5"  # tiers.triage.api
+    api_args = leaves.api_run.calls[0][0]
+    assert api_args[0] == "claude-haiku-4-5"  # tiers.triage.api
+    assert api_args[1] == "sys"
+    assert api_args[2] == "prompt"
+    assert api_args[3] is SCHEMA
+    assert api_args[4] is cfg
+    assert api_args[5] is None  # effort defaults to None when the caller omits it
     assert not leaves.status.called
     assert not leaves.cli_run.called
     assert leaves.record.calls[0][0][1] == "api"
@@ -269,10 +283,15 @@ def test_success_api_records_backend_and_cost(cfg, fake_conn, leaves):
 def test_cap_kind_propagates_to_gate_and_record(cfg, fake_conn, leaves):
     leaves.cli_run.result = ({"ok": True}, 0.05)
 
-    adapter.complete_with_cost(
+    obj, cost = adapter.complete_with_cost(
         "digest", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, cap_kind="digest")
 
+    assert (obj, cost) == ({"ok": True}, 0.05)
+    # the digest tier resolves the opus subscription model
+    assert leaves.cli_run.calls[0][0][0] == "claude-opus-4-8"  # tiers.digest.subscription
+    # the non-default cap_kind reaches BOTH the pre-gate and the ledger write
     assert leaves.assert_cap.calls[0][1]["kind"] == "digest"
+    assert leaves.record.calls[0][0][2] == 0.05
     assert leaves.record.calls[0][1]["kind"] == "digest"
 
 
@@ -312,7 +331,9 @@ def test_failed_call_reported_cost_is_recorded(cfg, fake_conn, leaves):
             "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert len(leaves.record.calls) == 1
+    assert leaves.record.calls[0][0][1] == "subscription"
     assert leaves.record.calls[0][0][2] == 0.5
+    assert leaves.record.calls[0][1]["kind"] == "daily"
 
 
 def test_failed_api_call_records_against_api_backend(cfg, fake_conn, leaves):
@@ -430,7 +451,7 @@ def test_probe_auth_api_selector_uses_api_backend(cfg, leaves):
     ok, msg = adapter.probe_auth(cfg)
 
     assert (ok, msg) == (True, "auth ok")
-    assert leaves.api_run.called
+    assert leaves.api_run.calls[0][0][0] == "claude-haiku-4-5"  # tiers.triage.api
     assert not leaves.cli_run.called
 
 

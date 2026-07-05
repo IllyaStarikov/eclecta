@@ -159,8 +159,11 @@ def test_default_instance_when_empty_list(fake_client, make_result):
     client = fake_client(
         responses=_responses(make_result, {"mastodon.social": [_link()]})
     )
-    fetch_items(client, {}, instances=[])
+    items = fetch_items(client, {}, instances=[])
     assert client.requested == [TRENDS_URL % "mastodon.social"]
+    # The default instance's entry is actually parsed and returned (not just requested).
+    assert [it["extra"]["instance"] for it in items] == ["mastodon.social"]
+    assert items[0]["guid"] == "https://example.com/a"
 
 
 def test_url_and_title_are_stripped(fake_client, make_result):
@@ -377,6 +380,29 @@ def test_none_points_does_not_overwrite_existing(fake_client, make_result):
     assert len(items) == 1
     assert items[0]["points"] == 4
     assert items[0]["extra"]["instance"] == "a.example"
+
+
+def test_real_count_overwrites_prior_none(fake_client, make_result):
+    """Symmetric to the guard above: a prior None-count prev is displaced by a real count.
+
+    Exercises the ``(prev.get('points') or 0)`` None-guard in the overwrite direction —
+    ``(5 or 0)=5 > (None or 0)=0`` is True, so the second instance wins.
+    """
+    url = "https://shared.example/story"
+    responses = _responses(
+        make_result,
+        {
+            "a.example": [_link(url=url, history=[])],  # uses -> None
+            "b.example": [_link(url=url, history=[{"uses": "5", "accounts": "2"}])],
+        },
+    )
+    client = fake_client(responses=responses)
+    items = fetch_items(client, {}, instances=["a.example", "b.example"])
+
+    assert len(items) == 1
+    assert items[0]["points"] == 5
+    assert items[0]["extra"]["instance"] == "b.example"
+    assert items[0]["extra"]["accounts"] == 2
 
 
 def test_distinct_urls_across_instances_all_kept(fake_client, make_result):

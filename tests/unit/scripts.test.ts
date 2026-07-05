@@ -124,11 +124,14 @@ describe('dedup-sources.mjs (read-only duplicate reporter)', () => {
     expect(r.stdout).toContain('same registrable-domain clusters (review for near-dups): 1');
   });
 
-  it('exits non-zero with an error on malformed sources.json', () => {
+  it('exits 1 with a JSON error on malformed sources.json', () => {
     const { scriptDst } = stage(DEDUP_SRC, '{ this is not json');
     const r = run(scriptDst);
-    expect(r.status).not.toBe(0);
-    expect(r.stderr).toMatch(/JSON|SyntaxError|Unexpected/);
+    expect(r.status).toBe(1); // uncaught JSON.parse throw -> node exit 1
+    expect(r.stderr).toContain('SyntaxError');
+    expect(r.stderr).toMatch(/JSON/);
+    // it must not have emitted the success report before throwing
+    expect(r.stdout).not.toContain('SUMMARY:');
   });
 });
 
@@ -213,9 +216,24 @@ describe('merge-sources.mjs (merge candidates into sources.json)', () => {
     expect(out).toHaveLength(1);
     expect(out[0].name).toBe('Keep');
     expect(r.stdout).toContain('added 0');
-    expect(r.stdout).toMatch(/dead 1/);
-    expect(r.stdout).toMatch(/badCat 1/);
-    expect(r.stdout).toMatch(/malformed 2/); // ftp scheme + empty homepage
+    // full reject accounting on one line: dead 1, badCat 1, dup 0, malformed 2
+    expect(r.stdout).toMatch(/rejected: dead 1, badCat 1, dup 0, malformed 2/);
+  });
+
+  it('normalizes an out-of-range or missing tier to 3', () => {
+    const existing = [src({ name: 'Base', homepage: 'https://base.example', category: 'news', tier: 2 })];
+    const candidates = [
+      cand({ name: 'WeirdTier', homepage: 'https://weird.example', category: 'devtools', tier: 7 }),
+      cand({ name: 'NoTier', homepage: 'https://notier.example', category: 'devtools', tier: undefined }),
+    ];
+    const { scriptDst, read, candPath } = stageMerge(existing, candidates);
+    const r = run(scriptDst, [candPath]);
+    expect(r.status).toBe(0);
+    const out = JSON.parse(read());
+    expect(out).toHaveLength(3);
+    expect(out.find((s: any) => s.name === 'WeirdTier').tier).toBe(3);
+    expect(out.find((s: any) => s.name === 'NoTier').tier).toBe(3);
+    expect(r.stdout).toContain('added 2');
   });
 
   it('dedupes candidates against existing entries by canonical URL and normalized name', () => {
@@ -278,10 +296,14 @@ describe('merge-sources.mjs (merge candidates into sources.json)', () => {
     expect(r2.stdout).toContain('added 0');
   });
 
-  it('exits non-zero with an error on a malformed candidates file', () => {
-    const { scriptDst, candPath } = stageMerge([src()], '{ not valid json');
+  it('exits 1 with a JSON error and leaves sources.json untouched on a malformed candidates file', () => {
+    const before = JSON.stringify([src()]);
+    const { scriptDst, candPath, read } = stageMerge([src()], '{ not valid json');
     const r = run(scriptDst, [candPath]);
-    expect(r.status).not.toBe(0);
-    expect(r.stderr).toMatch(/JSON|SyntaxError|Unexpected/);
+    expect(r.status).toBe(1); // uncaught JSON.parse throw -> node exit 1
+    expect(r.stderr).toContain('SyntaxError');
+    expect(r.stderr).toMatch(/JSON/);
+    // parse of candidates throws before any write, so the target file is unchanged
+    expect(read()).toBe(before);
   });
 });

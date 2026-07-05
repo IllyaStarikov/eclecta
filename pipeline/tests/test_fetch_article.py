@@ -220,11 +220,13 @@ def test_extract_present_returns_plaintext_and_meta():
     text, meta = fa._extract(ARTICLE_HTML, "https://example.com/post")
     assert text  # non-empty
     assert "<" not in text  # tags stripped to plaintext
+    # BOTH article paragraphs must survive — a first-block-only regression
+    # would keep "first paragraph" but drop the tail sentence.
     assert "first paragraph" in text.lower()
-    # trafilatura path populates the meta dict with these keys.
-    assert isinstance(meta, dict)
-    for key in ("author", "date", "lang", "sitename"):
-        assert key in meta
+    assert "still more words so the extraction returns" in text.lower()
+    # trafilatura path populates the meta dict with exactly these keys; on
+    # metadata-free HTML the values are all None (no author/date/lang/sitename).
+    assert set(meta) == {"author", "date", "lang", "sitename"}
 
 
 @pytest.mark.skipif(not _readability_present(), reason="readability absent")
@@ -363,13 +365,16 @@ def test_run_skips_clusters_below_score_gate(conn, cfg, seed, make_result, monke
 # run() — publication-free (ok)
 # --------------------------------------------------------------------------- #
 @pytest.mark.integration
-def test_run_publication_free_ok(conn, cfg, seed, make_result, monkeypatch, capsys):
+def test_run_publication_free_ok(
+    conn, cfg, seed, make_result, monkeypatch, capsys, freeze_now_iso
+):
     url = "https://blog.example.com/post"
     cid = seed.cluster(canonical_url=url, score=5.0)
     client = LocalFakeClient({url: make_result(content=b"<html>body</html>", status=200)})
     _install_client(monkeypatch, client)
     body = _words(200)
     monkeypatch.setattr(fa, "_extract", lambda content, u: (body, {"lang": "en"}))
+    frozen = freeze_now_iso(fa)  # pin extracted_at to a known instant
 
     rc = fa.run(cfg, limit=10)
     assert rc == 0
@@ -384,8 +389,10 @@ def test_run_publication_free_ok(conn, cfg, seed, make_result, monkeypatch, caps
     assert row["word_count"] == 200
     assert row["lang"] == "en"
     assert row["text"] == body
-    assert row["excerpt"] == " ".join(body.split()[:70])
-    assert row["extracted_at"]  # stamped
+    # excerpt is the first 70 whitespace-joined tokens of the body.
+    assert row["excerpt"] == _words(70)
+    assert len(row["excerpt"].split()) == 70
+    assert row["extracted_at"] == frozen  # stamped with _now_iso()
     assert client.requested == [url]
     assert client.closed is True
     assert "1 ok, 0 paywalled, 0 failed, 0 skipped" in capsys.readouterr().out
@@ -531,6 +538,10 @@ def test_run_paywalled_medium_routes_to_freedium(conn, cfg, seed, make_result, m
     assert row["paywalled"] == 1
     assert row["fetch_status"] == "paywalled"
     assert row["archive_url"] is None
+    # The teaser text/word_count from the source fetch are retained as-is
+    # (freedium is a display redirect, not a re-extraction).
+    assert row["text"] == "Please subscribe to continue"
+    assert row["word_count"] == 4
     assert client.requested == [src]  # freedium branch does NOT re-fetch
 
 
@@ -555,6 +566,9 @@ def test_run_canonical_fallback_archive_gate(
     assert row["read_url"] == src  # read stays canonical; nothing free found
     assert row["paywalled"] == 1
     assert row["fetch_status"] == "paywalled"
+    # The short source extraction is kept (no free alternative to swap in).
+    assert row["text"] == _words(10)
+    assert row["word_count"] == 10
     if allow_archive:
         assert row["archive_url"] == "https://archive.ph/newest/%s" % src
         # Invariant: the internal archive URL is never the rendered read_url.
@@ -638,7 +652,9 @@ def test_run_mixed_batch_stats_and_tail(conn, cfg, seed, make_result, monkeypatc
 
     out = capsys.readouterr().out
     assert "1 ok, 1 paywalled, 1 failed, 1 skipped" in out
-    assert set(client.requested) == {a, b, c}  # the NULL cluster is never fetched
+    # score DESC order (9,8,7); the NULL-canonical cluster is skipped, never
+    # fetched; the paywalled canonical-fallback (b) does NOT trigger a re-fetch.
+    assert client.requested == [a, b, c]
     assert client.closed is True
 
     # Tail side effects: a health row, a runs row, and cfg.last_run all recorded.

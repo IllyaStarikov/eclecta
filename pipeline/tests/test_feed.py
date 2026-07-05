@@ -110,11 +110,21 @@ def test_parse_since_invalid_returns_none(frozen_clock, raw):
 
 
 def test_parse_since_no_monkeypatch_is_structural():
-    # Without freezing, the relative window is still a valid ISO in the past.
+    # Without freezing, "1h" must resolve to real-now minus exactly one hour
+    # (tz-aware UTC), not merely "some instant in the past".
+    before = datetime.datetime.now(datetime.timezone.utc)
     out = feed.parse_since("1h")
+    after = datetime.datetime.now(datetime.timezone.utc)
     assert out is not None
     parsed = datetime.datetime.fromisoformat(out)
-    assert parsed < datetime.datetime.now(datetime.timezone.utc)
+    # tz-aware, UTC-offset result.
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == datetime.timedelta(0)
+    # The internal `now` was captured between `before` and `after`, so
+    # `now - 1h` is bracketed by [before-1h, after-1h]. This pins the unit
+    # (hours, not days) and the sign (past, not future) to a tight window.
+    hour = datetime.timedelta(hours=1)
+    assert (before - hour) <= parsed <= (after - hour)
 
 
 # --------------------------------------------------------------------------- #

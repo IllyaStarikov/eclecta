@@ -70,6 +70,23 @@ def _client(fake_client, make_result, items, status=200, error=None, **top):
     )
 
 
+class _RecordingClient:
+    """Minimal PoliteClient stand-in that records the exact ``fetch`` call args.
+
+    ``FakePoliteClient`` only records URLs, so it cannot witness the ``conditional``
+    keyword. This captures ``(url, conditional)`` so a test can pin that the SE hot
+    feed is fetched UNconditionally (no If-None-Match revalidation).
+    """
+
+    def __init__(self, result):
+        self._result = result
+        self.calls: List[Any] = []
+
+    def fetch(self, url, conditional=True):
+        self.calls.append((url, conditional))
+        return self._result
+
+
 # --------------------------------------------------------------------------- #
 # Happy path & field mapping
 # --------------------------------------------------------------------------- #
@@ -101,6 +118,14 @@ def test_only_hot_url_is_requested(fake_client, make_result):
     client = _client(fake_client, make_result, [_q()])
     fetch_items(client, {})
     assert client.requested == [HOT_URL]
+
+
+def test_hot_feed_is_fetched_unconditionally(make_result):
+    # The single fetch must pass conditional=False (hot list is never revalidated
+    # via a cached ETag; we always want the fresh ranking).
+    client = _RecordingClient(make_result(content=_body([_q()]), status=200))
+    fetch_items(client, {})
+    assert client.calls == [(HOT_URL, False)]
 
 
 def test_multiple_questions_preserve_order(fake_client, make_result):
@@ -158,10 +183,21 @@ def test_title_html_unescape(fake_client, make_result, raw, expected):
     assert item["title"] == expected
 
 
-def test_title_is_stripped_before_unescape(fake_client, make_result):
+def test_title_outer_whitespace_is_stripped(fake_client, make_result):
     client = _client(fake_client, make_result, [_q(title="   Padded &amp; Title \n")])
     (item,) = fetch_items(client, {})
     assert item["title"] == "Padded & Title"
+
+
+def test_strip_runs_before_unescape(fake_client, make_result):
+    # Order matters: the code strips the RAW title, then unescapes. A trailing
+    # `&nbsp;` is literal text at strip time (not stripped) and only becomes a
+    # non-breaking space (U+00A0) after unescape → it survives on the tail.
+    # If unescape ran first, the U+00A0 would be whitespace and get stripped away
+    # to "x". Pinning "x\xa0" nails the actual (strip-then-unescape) ordering.
+    client = _client(fake_client, make_result, [_q(title="x&nbsp;")])
+    (item,) = fetch_items(client, {})
+    assert item["title"] == "x\xa0"
 
 
 # --------------------------------------------------------------------------- #
