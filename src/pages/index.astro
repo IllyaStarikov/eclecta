@@ -5,7 +5,7 @@ import Pick, { type PickData } from '../components/Pick.astro';
 import Rail from '../components/Rail.astro';
 import picksJson from '../data/picks.json';
 import { site, href, KIND_LABEL, KINDS } from '../site';
-import { CATEGORIES, deriveCategory } from '../lib/taxonomy';
+import { CATEGORIES, resolveCategory } from '../lib/taxonomy';
 
 const digests = (await getCollection('digests')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
@@ -22,7 +22,7 @@ const olderEditions = editions.filter((d) => d.id !== latestDaily?.id);
 // here so the front page reads as a sectioned edition. When the pipeline emits
 // category/subcategories natively, this passthrough simply uses them.
 const picks = (picksJson as unknown as PickData[]).map((p) => {
-  const tax = deriveCategory(p.title, p.channels);
+  const tax = resolveCategory(p);
   return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
 });
 

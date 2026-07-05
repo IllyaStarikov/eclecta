@@ -5,7 +5,7 @@ import Pick, { type PickData } from '../../components/Pick.astro';
 import Rail from '../../components/Rail.astro';
 import picksJson from '../../data/picks.json';
 import { site, href } from '../../site';
-import { CATEGORIES, deriveCategory } from '../../lib/taxonomy';
+import { CATEGORIES, resolveCategory } from '../../lib/taxonomy';
 
 export function getStaticPaths() {
   return CATEGORIES.map((c) => ({ params: { category: c.slug }, props: { category: c } }));
@@ -13,7 +13,7 @@ export function getStaticPaths() {
 const { category } = Astro.props;
 
 const picks = (picksJson as unknown as PickData[]).map((p) => {
-  const tax = deriveCategory(p.title, p.channels);
+  const tax = resolveCategory(p);
   return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
 });
 const list = picks.filter((p) => p.category === category.slug);

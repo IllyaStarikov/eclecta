@@ -1,7 +1,7 @@
 import rss from '@astrojs/rss';
 import picks from '../../data/picks.json';
 import { absUrl } from '../../site';
-import { CATEGORIES, deriveCategory } from '../../lib/taxonomy';
+import { CATEGORIES, resolveCategory } from '../../lib/taxonomy';
 import { getFeed, pickItemHtml, pickPrimaryLink, FEED_STYLESHEET } from '../../lib/feeds';
 
 export function getStaticPaths() {
@@ -12,7 +12,7 @@ export function GET(context) {
   const { category } = context.props;
   const feed = getFeed(`cat-${category.slug}`);
   const list = picks.filter(
-    (p) => deriveCategory(p.title, p.channels).category === category.slug
+    (p) => resolveCategory(p).category === category.slug
   );
   return rss({
     stylesheet: FEED_STYLESHEET,
