@@ -3,6 +3,8 @@ import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Pick, { type PickData } from '../components/Pick.astro';
 import Rail from '../components/Rail.astro';
+import Spotlight from '../components/Spotlight.astro';
+import { joinCurated, loadSpotlightRaw, normalizeSpotlight } from '../lib/spotlight';
 import picksJson from '../data/picks.json';
 import { site, href, KIND_LABEL, KINDS } from '../site';
 import { CATEGORIES, resolveCategory } from '../lib/taxonomy';
@@ -25,6 +27,9 @@ const picks = (picksJson as unknown as PickData[]).map((p) => {
   const tax = resolveCategory(p);
   return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
 });
+
+// the traction wire: hidden until the pipeline starts writing spotlight.json
+const spotItems = joinCurated(normalizeSpotlight(loadSpotlightRaw()).items, picks);
 
 const lead = picks[0] ?? null;
 const rest = lead ? picks.slice(1) : picks;
@@ -67,6 +72,8 @@ const fmt = (d: Date) =>
         </section>
       )}
 
+      {spotItems.length > 0 && <Spotlight items={spotItems} />}
+
       {sections.map((s) => (
         <section class="reveal" id={`s-${s.cat.slug}`} data-category={s.cat.slug} aria-label={s.cat.name}>
           <div class="rail">
@@ -89,11 +96,14 @@ const fmt = (d: Date) =>
     <Rail
       index={{
         title: 'In this edition',
-        items: sections.map((s) => ({
-          label: s.cat.name,
-          href: `#s-${s.cat.slug}`,
-          category: s.cat.slug,
-        })),
+        items: [
+          ...(spotItems.length > 0 ? [{ label: 'Spotlight', href: '#s-spotlight' }] : []),
+          ...sections.map((s) => ({
+            label: s.cat.name,
+            href: `#s-${s.cat.slug}`,
+            category: s.cat.slug,
+          })),
+        ],
       }}
       brief={latestDaily ? {
         title: latestDaily.data.title,
