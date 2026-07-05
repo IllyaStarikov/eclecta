@@ -158,11 +158,9 @@ DISPATCH_CASES = [
         {"what": "all", "push": True, "backfill_since": None},
     ),
     (
-        ["promote", "--week", "2026-W27", "--target", "prod", "--apply",
-         "--publish-now"],
+        ["promote", "--week", "2026-W27", "--target", "prod", "--apply", "--publish-now"],
         "signalpipe.promote.run",
-        {"week": "2026-W27", "target": "prod", "apply": True,
-         "publish_now": True},
+        {"week": "2026-W27", "target": "prod", "apply": True, "publish_now": True},
     ),
     (
         ["promote"],
@@ -202,11 +200,26 @@ DISPATCH_CASES = [
 ]
 
 DISPATCH_IDS = [
-    "ingest-args", "ingest-defaults", "score-show", "score-default",
-    "fetch", "curate-args", "curate-defaults", "digest-args", "digest-defaults",
-    "retag", "publish-picks-nopush", "publish-defaults", "promote-args",
-    "promote-defaults", "serve", "worker", "install-nostart", "install-default",
-    "sync-restart", "sync-default",
+    "ingest-args",
+    "ingest-defaults",
+    "score-show",
+    "score-default",
+    "fetch",
+    "curate-args",
+    "curate-defaults",
+    "digest-args",
+    "digest-defaults",
+    "retag",
+    "publish-picks-nopush",
+    "publish-defaults",
+    "promote-args",
+    "promote-defaults",
+    "serve",
+    "worker",
+    "install-nostart",
+    "install-default",
+    "sync-restart",
+    "sync-default",
 ]
 
 
@@ -227,24 +240,23 @@ def test_backfill_fetch(stub_load, monkeypatch):
     cfg = stub_load
     spy = _Spy()
     monkeypatch.setattr("signalpipe.backfill.fetch", spy)
-    rc = cli.main(["backfill", "fetch", "--since", "2026-01-01",
-                   "--until", "2026-02-01", "--top-n", "10"])
+    rc = cli.main(
+        ["backfill", "fetch", "--since", "2026-01-01", "--until", "2026-02-01", "--top-n", "10"]
+    )
     assert rc == SENTINEL
-    assert spy.calls == [
-        ((cfg,), {"since": "2026-01-01", "until": "2026-02-01", "top_n": 10})
-    ]
+    assert spy.calls == [((cfg,), {"since": "2026-01-01", "until": "2026-02-01", "top_n": 10})]
 
 
 def test_backfill_curate_defaults_top_n(stub_load, monkeypatch):
     cfg = stub_load
     spy = _Spy()
     monkeypatch.setattr("signalpipe.backfill.curate", spy)
-    rc = cli.main(["backfill", "curate", "--since", "2026-01-01",
-                   "--until", "2026-02-01", "--dry-run"])
+    rc = cli.main(
+        ["backfill", "curate", "--since", "2026-01-01", "--until", "2026-02-01", "--dry-run"]
+    )
     assert rc == SENTINEL
     assert spy.calls == [
-        ((cfg,), {"since": "2026-01-01", "until": "2026-02-01",
-                  "top_n": 40, "dry_run": True})
+        ((cfg,), {"since": "2026-01-01", "until": "2026-02-01", "top_n": 40, "dry_run": True})
     ]
 
 
@@ -286,8 +298,14 @@ SOURCES_CASES = [
     (
         ["sources", "bulk", "--entry", "foo", "--limit", "5", "--no-resume"],
         "signalpipe.ingest.bulk_import.run",
-        {"manifest_path": None, "only_entry": "foo", "wave_size": 200,
-         "max_workers": 16, "limit": 5, "no_resume": True},
+        {
+            "manifest_path": None,
+            "only_entry": "foo",
+            "wave_size": 200,
+            "max_workers": 16,
+            "limit": 5,
+            "no_resume": True,
+        },
     ),
 ]
 
@@ -327,12 +345,9 @@ def test_publish_backfill_kb_with_since_passes_through(stub_load, monkeypatch):
     cfg = stub_load
     spy = _Spy()
     monkeypatch.setattr("signalpipe.publish.run", spy)
-    rc = cli.main(["publish", "--what", "kb", "--backfill-kb",
-                   "--since", "2026-01-01"])
+    rc = cli.main(["publish", "--what", "kb", "--backfill-kb", "--since", "2026-01-01"])
     assert rc == SENTINEL
-    assert spy.calls == [
-        ((cfg,), {"what": "kb", "push": True, "backfill_since": "2026-01-01"})
-    ]
+    assert spy.calls == [((cfg,), {"what": "kb", "push": True, "backfill_since": "2026-01-01"})]
 
 
 # --------------------------------------------------------------------------- #
@@ -347,9 +362,7 @@ def test_backup_happy(stub_load, monkeypatch, capsys):
     rc = cli.main(["backup", "--dir", "/some/dir", "--keep", "3"])
     assert rc == 0
     # backup takes the DB path (not cfg) as the first positional.
-    assert spy.calls == [
-        ((cfg.db_path,), {"backup_dir": pathlib.Path("/some/dir"), "keep": 3})
-    ]
+    assert spy.calls == [((cfg.db_path,), {"backup_dir": pathlib.Path("/some/dir"), "keep": 3})]
     assert "backup -> /backups/signal-x.db" in capsys.readouterr().out
 
 
@@ -377,10 +390,8 @@ def test_cmd_pause_reports_and_unloads(stub_load, monkeypatch, capsys):
 
     fixed_until = 1_751_630_400.0
     monkeypatch.setattr("signalpipe.downtime.parse_duration", fake_parse)
-    monkeypatch.setattr("signalpipe.downtime.pause",
-                        lambda secs, reason="manual": fixed_until)
-    monkeypatch.setattr("signalpipe.downtime.ollama_unload",
-                        lambda c: ["qwen2.5:14b", "llama3"])
+    monkeypatch.setattr("signalpipe.downtime.pause", lambda secs, reason="manual": fixed_until)
+    monkeypatch.setattr("signalpipe.downtime.ollama_unload", lambda c: ["qwen2.5:14b", "llama3"])
     rc = cli.main(["pause", "2h"])
     out = capsys.readouterr().out
     assert rc == 0
@@ -399,8 +410,7 @@ def test_cmd_pause_default_duration_and_no_unload(stub_load, monkeypatch, capsys
         return 1800
 
     monkeypatch.setattr("signalpipe.downtime.parse_duration", fake_parse)
-    monkeypatch.setattr("signalpipe.downtime.pause",
-                        lambda secs, reason="manual": 1_751_630_400.0)
+    monkeypatch.setattr("signalpipe.downtime.pause", lambda secs, reason="manual": 1_751_630_400.0)
     monkeypatch.setattr("signalpipe.downtime.ollama_unload", lambda c: [])
     rc = cli.main(["pause"])
     out = capsys.readouterr().out
@@ -421,8 +431,9 @@ def test_cmd_resume(monkeypatch, capsys):
 
 
 def test_cmd_downtime_prints_status(stub_load, monkeypatch, capsys):
-    monkeypatch.setattr("signalpipe.downtime.status",
-                        lambda c: "downtime gate: OPEN — local stages may run")
+    monkeypatch.setattr(
+        "signalpipe.downtime.status", lambda c: "downtime gate: OPEN — local stages may run"
+    )
     rc = cli.main(["downtime"])
     out = capsys.readouterr().out
     assert rc == 0
@@ -435,19 +446,24 @@ def test_cmd_downtime_prints_status(stub_load, monkeypatch, capsys):
 @pytest.mark.parametrize(
     "argv",
     [
-        [],                               # no subcommand (required=True)
-        ["digest", "--kind", "hourly"],   # bad choice for --kind
-        ["publish", "--what", "bogus"],   # bad choice for --what
+        [],  # no subcommand (required=True)
+        ["digest", "--kind", "hourly"],  # bad choice for --kind
+        ["publish", "--what", "bogus"],  # bad choice for --what
         ["promote", "--target", "staging"],  # bad choice for --target
-        ["backfill"],                     # nested required subparser missing
-        ["backfill", "merge"],            # missing required --src
-        ["sources"],                      # nested required subparser missing
+        ["backfill"],  # nested required subparser missing
+        ["backfill", "merge"],  # missing required --src
+        ["sources"],  # nested required subparser missing
         ["score", "--show", "not-an-int"],  # int coercion failure
     ],
     ids=[
-        "no-subcommand", "digest-bad-kind", "publish-bad-what",
-        "promote-bad-target", "backfill-no-sub", "backfill-merge-no-src",
-        "sources-no-sub", "score-bad-int",
+        "no-subcommand",
+        "digest-bad-kind",
+        "publish-bad-what",
+        "promote-bad-target",
+        "backfill-no-sub",
+        "backfill-merge-no-src",
+        "sources-no-sub",
+        "score-bad-int",
     ],
 )
 def test_argparse_errors_exit_2(argv):
@@ -515,19 +531,19 @@ def test_cmd_status_happy_path(cfg, conn, seed, monkeypatch, capsys, tmp_path):
     out = capsys.readouterr().out
     assert rc == 0
     assert "signal %s" % signalpipe.__version__ in out
-    assert "(found)" in out                      # cli_bin exists
-    assert "routing: triage=" in out             # _tier_desc string builder
+    assert "(found)" in out  # cli_bin exists
+    assert "routing: triage=" in out  # _tier_desc string builder
     assert "digest=" in out
     assert "downtime gate: OPEN" in out
     # Every table in the COUNT loop is seeded exactly once; pin the %-10s layout
     # for each so a broken/renamed COUNT query can't hide behind a green run.
-    assert "sources    1" in out                 # table count, %-10s formatting
+    assert "sources    1" in out  # table count, %-10s formatting
     assert "items      1" in out
     assert "clusters   1" in out
     assert "articles   1" in out
     assert "curations  1" in out
     assert "digests    1" in out
-    assert "verified   1" in out                 # enabled AND verified_at NOT NULL
+    assert "verified   1" in out  # enabled AND verified_at NOT NULL
     assert "spend today: cli $1.2500  api $2.5000  (9 calls)" in out
     assert "recent health:" in out
     # Full health line: ts is truncated to [:19] (Z dropped) and rendered
@@ -555,8 +571,7 @@ def test_cmd_status_db_not_created(cfg, monkeypatch, capsys, tmp_path):
     # db_path points at a file that does not exist -> early "not created" return.
     cfg.data["db_path"] = str(tmp_path / "does-not-exist.db")
     monkeypatch.setattr(config_mod, "load", lambda p=None: cfg)
-    monkeypatch.setattr("signalpipe.downtime.is_open",
-                        lambda c: (False, "on battery"))
+    monkeypatch.setattr("signalpipe.downtime.is_open", lambda c: (False, "on battery"))
     rc = cli.main(["status"])
     out = capsys.readouterr().out
     assert rc == 0
@@ -594,14 +609,25 @@ def test_cmd_runs_happy(cfg, conn, seed, monkeypatch, capsys):
 
     rows = [
         # A nested dict/list value is dropped from the one-line summary.
-        {"ts": "2026-07-04T09:00:00Z", "job": "ingest",
-         "config_hash": "abc123def456",
-         "stats": '{"new": 5, "dupes": 2, "by_src": {"hn": 3}}'},
+        {
+            "ts": "2026-07-04T09:00:00Z",
+            "job": "ingest",
+            "config_hash": "abc123def456",
+            "stats": '{"new": 5, "dupes": 2, "by_src": {"hn": 3}}',
+        },
         # Malformed stats JSON -> summary falls back to empty (no crash).
-        {"ts": "2026-07-04T09:30:00Z", "job": "fetch",
-         "config_hash": "abc123def456", "stats": "not-json{"},
-        {"ts": "2026-07-04T10:00:00Z", "job": "score",
-         "config_hash": "zzz999zzz999", "stats": '{"finalists": 40}'},
+        {
+            "ts": "2026-07-04T09:30:00Z",
+            "job": "fetch",
+            "config_hash": "abc123def456",
+            "stats": "not-json{",
+        },
+        {
+            "ts": "2026-07-04T10:00:00Z",
+            "job": "score",
+            "config_hash": "zzz999zzz999",
+            "stats": '{"finalists": 40}',
+        },
     ]
     captured = {}
 
@@ -660,7 +686,8 @@ def test_status_end_to_end_live():
 
     proc = subprocess.run(
         [sys.executable, "-m", "signalpipe", "status"],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     assert proc.returncode == 0
     assert "routing:" in proc.stdout

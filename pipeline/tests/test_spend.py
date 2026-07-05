@@ -14,8 +14,7 @@ import types
 
 import pytest
 
-from signalpipe.llm import LLMError, SpendCapExceeded, UsageLimitExhausted
-from signalpipe.llm import spend
+from signalpipe.llm import LLMError, SpendCapExceeded, UsageLimitExhausted, spend
 
 
 # --------------------------------------------------------------------------- #
@@ -214,7 +213,7 @@ class TestRecord:
         spend.record(conn, "api", 0.2)
         spend.record(conn, "subscription", 0.3, kind="digest")
         row = _row(conn, day)
-        assert row["cli_usd"] == pytest.approx(0.4)   # 0.1 + 0.3
+        assert row["cli_usd"] == pytest.approx(0.4)  # 0.1 + 0.3
         assert row["api_usd"] == pytest.approx(0.2)
         assert row["digest_usd"] == pytest.approx(0.3)
         assert row["calls"] == 3
@@ -260,11 +259,11 @@ class TestTotals:
 
     def test_digest_sums_only_digest_kind(self, conn, freeze_today):
         freeze_today()
-        spend.record(conn, "subscription", 1.0)               # non-digest
+        spend.record(conn, "subscription", 1.0)  # non-digest
         spend.record(conn, "subscription", 0.4, kind="digest")
         spend.record(conn, "api", 0.6, kind="digest")
-        assert spend.today_digest(conn) == pytest.approx(1.0)   # 0.4 + 0.6
-        assert spend.today_total(conn) == pytest.approx(2.0)    # 1.0 + 0.4 + 0.6
+        assert spend.today_digest(conn) == pytest.approx(1.0)  # 0.4 + 0.6
+        assert spend.today_total(conn) == pytest.approx(2.0)  # 1.0 + 0.4 + 0.6
 
     def test_seeded_zero_row_returns_zero(self, conn, seed, freeze_today):
         # A present row whose columns are all 0 must read as 0.0 (the `and
@@ -332,7 +331,7 @@ class TestDailyCap:
         cfg = _Cfg({})  # no daily_cap_usd -> defaults to 5.0
         spend.record(conn, "subscription", 4.99)
         spend.assert_under_cap(conn, cfg)  # under 5.0, passes
-        spend.record(conn, "api", 0.01)    # total 5.0 -> at cap
+        spend.record(conn, "api", 0.01)  # total 5.0 -> at cap
         with pytest.raises(SpendCapExceeded) as ei:
             spend.assert_under_cap(conn, cfg)
         # The breach message must name the *default* cap of $5.00 (not some other

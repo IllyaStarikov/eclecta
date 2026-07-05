@@ -26,8 +26,8 @@ import signalpipe.config as config_mod
 import signalpipe.db as db_mod
 import signalpipe.downtime as downtime_mod
 import signalpipe.installer as installer_mod
-import signalpipe.publish as publish_mod
 import signalpipe.llm.quota as quota_mod
+import signalpipe.publish as publish_mod
 from signalpipe.ingest.fetch_http import FetchResult
 
 FIXTURES_DIR = pathlib.Path(__file__).parent / "fixtures"

@@ -29,7 +29,6 @@ import signalpipe.publish as publish_mod
 from signalpipe.llm import LLMError, SpendCapExceeded, UsageLimitExhausted
 from signalpipe.llm.schemas import STYLE_FALLBACK
 
-
 # --------------------------------------------------------------------------- #
 # Local helpers / doubles
 # --------------------------------------------------------------------------- #
@@ -83,11 +82,28 @@ def _fake_adapter(out=None, cost=0.12, raises=None):
     """Build a stand-in for ``adapter.complete_with_cost`` recording its calls."""
     calls = []
 
-    def fake(tier, system, prompt, schema, *, cfg=None, conn=None,
-             effort=None, cap_kind="daily", model_override=None):
-        calls.append(types.SimpleNamespace(
-            tier=tier, system=system, prompt=prompt, schema=schema,
-            effort=effort, cap_kind=cap_kind))
+    def fake(
+        tier,
+        system,
+        prompt,
+        schema,
+        *,
+        cfg=None,
+        conn=None,
+        effort=None,
+        cap_kind="daily",
+        model_override=None,
+    ):
+        calls.append(
+            types.SimpleNamespace(
+                tier=tier,
+                system=system,
+                prompt=prompt,
+                schema=schema,
+                effort=effort,
+                cap_kind=cap_kind,
+            )
+        )
         if raises is not None:
             raise raises
         return (dict(out or DIGEST_OUT), cost)
@@ -99,6 +115,7 @@ def _fake_adapter(out=None, cost=0.12, raises=None):
 def _boom_adapter():
     def fake(*a, **k):  # pragma: no cover - only hit on a bug
         raise AssertionError("adapter.complete_with_cost must not be called")
+
     return fake
 
 
@@ -133,17 +150,17 @@ def _digest_row(conn, kind="weekly", key="2026-W27"):
 
 def _seed_window_curation(seed, conn, **cur_over):
     """Seed a cluster + in-window done curation, return (cluster_id, story_id)."""
-    cid = seed.cluster(canonical_url="https://example.com/story-%d"
-                       % cur_over.pop("_n", 1),
-                       title=cur_over.pop("_title", "A curated story"))
-    seed.article(cluster_id=cid,
-                 read_url="https://example.com/read",
-                 source_url="https://example.com/src")
+    cid = seed.cluster(
+        canonical_url="https://example.com/story-%d" % cur_over.pop("_n", 1),
+        title=cur_over.pop("_title", "A curated story"),
+    )
+    seed.article(
+        cluster_id=cid, read_url="https://example.com/read", source_url="https://example.com/src"
+    )
     over = dict(curated_at=SINCE, relevance_score=8, status="done", skip=0)
     over.update(cur_over)
     seed.curation(cluster_id=cid, **over)
-    story = conn.execute("SELECT story_id FROM clusters WHERE id=?",
-                         (cid,)).fetchone()["story_id"]
+    story = conn.execute("SELECT story_id FROM clusters WHERE id=?", (cid,)).fetchone()["story_id"]
     return cid, story
 
 
@@ -188,23 +205,25 @@ def test_items_payload_null_notes_and_channels_default_to_empty_lists():
 
 def test_items_payload_url_prefers_read_then_source_then_empty():
     # read_url normal -> read_url wins
-    (a,) = digest._items_payload([_item_row(
-        read_url="https://a.example/x", source_url="https://b.example/y")])
+    (a,) = digest._items_payload(
+        [_item_row(read_url="https://a.example/x", source_url="https://b.example/y")]
+    )
     assert a["url"] == "https://a.example/x"
     # read_url is an archive mirror -> scrubbed, falls back to source_url
-    (b,) = digest._items_payload([_item_row(
-        read_url="https://archive.ph/zzz", source_url="https://b.example/y")])
+    (b,) = digest._items_payload(
+        [_item_row(read_url="https://archive.ph/zzz", source_url="https://b.example/y")]
+    )
     assert b["url"] == "https://b.example/y"
     # both archive.* -> ""
-    (c,) = digest._items_payload([_item_row(
-        read_url="https://archive.ph/zzz", source_url="https://archive.today/q")])
+    (c,) = digest._items_payload(
+        [_item_row(read_url="https://archive.ph/zzz", source_url="https://archive.today/q")]
+    )
     assert c["url"] == ""
     # both NULL -> ""
     (d,) = digest._items_payload([_item_row(read_url=None, source_url=None)])
     assert d["url"] == ""
     # empty read_url (falsy) falls through to source_url
-    (e,) = digest._items_payload([_item_row(
-        read_url="", source_url="https://b.example/y")])
+    (e,) = digest._items_payload([_item_row(read_url="", source_url="https://b.example/y")])
     assert e["url"] == "https://b.example/y"
 
 
@@ -212,8 +231,7 @@ def test_items_payload_url_prefers_read_then_source_then_empty():
 # _build_prompt
 # --------------------------------------------------------------------------- #
 def test_build_prompt_items_only_label_and_header():
-    p = digest._build_prompt("weekly", "2026-W27", SINCE, UNTIL,
-                             [_item_row()], [])
+    p = digest._build_prompt("weekly", "2026-W27", SINCE, UNTIL, [_item_row()], [])
     assert p.startswith("PERIOD: weekly 2026-W27 (2026-06-26 .. 2026-07-03)")
     assert "CURATED ITEMS (JSON, best first):" in p
     assert "TOP CURATIONS" not in p
@@ -226,18 +244,20 @@ def test_build_prompt_items_only_label_and_header():
 
 def test_build_prompt_header_slices_since_and_until_to_ten_chars():
     # Full ISO timestamps in, only the YYYY-MM-DD date out.
-    p = digest._build_prompt("daily", "2026-07-02",
-                             "2026-07-01T00:00:00+00:00",
-                             "2026-07-02T00:00:00+00:00",
-                             [_item_row()], [])
+    p = digest._build_prompt(
+        "daily",
+        "2026-07-02",
+        "2026-07-01T00:00:00+00:00",
+        "2026-07-02T00:00:00+00:00",
+        [_item_row()],
+        [],
+    )
     assert p.startswith("PERIOD: daily 2026-07-02 (2026-07-01 .. 2026-07-02)")
 
 
 def test_build_prompt_items_plus_subdigests_switches_label_and_adds_section():
-    subs = [_sub_row(kind="daily", period_key="2026-07-01",
-                     title="D1", body_md="body1")]
-    p = digest._build_prompt("weekly", "2026-W27", SINCE, UNTIL,
-                             [_item_row()], subs)
+    subs = [_sub_row(kind="daily", period_key="2026-07-01", title="D1", body_md="body1")]
+    p = digest._build_prompt("weekly", "2026-W27", SINCE, UNTIL, [_item_row()], subs)
     assert "TOP CURATIONS IN THE PERIOD (JSON, best first):" in p
     assert "CURATED ITEMS" not in p
     assert "LOWER-TIER DIGESTS IN THE PERIOD (oldest first):" in p
@@ -279,11 +299,11 @@ def test_staged_markdown_frontmatter_layout(monkeypatch):
         def today(cls):
             return _dt.date(2026, 7, 4)
 
-    monkeypatch.setattr(digest, "datetime",
-                        types.SimpleNamespace(date=_FixedDate))
+    monkeypatch.setattr(digest, "datetime", types.SimpleNamespace(date=_FixedDate))
 
     md = digest._staged_markdown(
-        "This week in tech", "A standfirst.", "## Body\n\nText.", "2026-W27")
+        "This week in tech", "A standfirst.", "## Body\n\nText.", "2026-W27"
+    )
 
     assert "NAME         Signal Digest 2026-W27" in md
     assert "PROJECT      Signal" in md
@@ -384,17 +404,20 @@ def test_gather_returns_in_window_done_curation(conn, seed):
 @pytest.mark.integration
 def test_gather_excludes_below_relevance_and_out_of_window(conn, seed):
     # in window, high relevance -> kept
-    _seed_window_curation(seed, conn, _n=1, _title="keep me", relevance_score=9,
-                          curated_at=SINCE)
+    _seed_window_curation(seed, conn, _n=1, _title="keep me", relevance_score=9, curated_at=SINCE)
     # in window but below min_relevance -> dropped
-    _seed_window_curation(seed, conn, _n=2, _title="too low", relevance_score=6,
-                          curated_at=SINCE)
+    _seed_window_curation(seed, conn, _n=2, _title="too low", relevance_score=6, curated_at=SINCE)
     # high relevance but curated BEFORE the window -> dropped
-    _seed_window_curation(seed, conn, _n=3, _title="too early", relevance_score=9,
-                          curated_at="2026-06-01T00:00:00+00:00")
+    _seed_window_curation(
+        seed,
+        conn,
+        _n=3,
+        _title="too early",
+        relevance_score=9,
+        curated_at="2026-06-01T00:00:00+00:00",
+    )
     # high relevance but curated AT `until` (half-open, excluded) -> dropped
-    _seed_window_curation(seed, conn, _n=4, _title="too late", relevance_score=9,
-                          curated_at=UNTIL)
+    _seed_window_curation(seed, conn, _n=4, _title="too late", relevance_score=9, curated_at=UNTIL)
     rows = digest._gather(conn, SINCE, UNTIL, 7, 40, "weekly", "2026-W27")
     assert [r["title"] for r in rows] == ["keep me"]
 
@@ -409,12 +432,16 @@ def test_gather_excludes_skipped_and_non_done(conn, seed):
 
 @pytest.mark.integration
 def test_gather_ordered_by_relevance_then_curated_at_desc(conn, seed):
-    _seed_window_curation(seed, conn, _n=1, _title="mid", relevance_score=8,
-                          curated_at=SINCE)
-    _seed_window_curation(seed, conn, _n=2, _title="top", relevance_score=10,
-                          curated_at=SINCE)
-    _seed_window_curation(seed, conn, _n=3, _title="late-high", relevance_score=10,
-                          curated_at="2026-07-02T00:00:00+00:00")
+    _seed_window_curation(seed, conn, _n=1, _title="mid", relevance_score=8, curated_at=SINCE)
+    _seed_window_curation(seed, conn, _n=2, _title="top", relevance_score=10, curated_at=SINCE)
+    _seed_window_curation(
+        seed,
+        conn,
+        _n=3,
+        _title="late-high",
+        relevance_score=10,
+        curated_at="2026-07-02T00:00:00+00:00",
+    )
     rows = digest._gather(conn, SINCE, UNTIL, 7, 40, "weekly", "2026-W27")
     # relevance DESC, then curated_at DESC within the same relevance
     assert [r["title"] for r in rows] == ["late-high", "top", "mid"]
@@ -423,8 +450,9 @@ def test_gather_ordered_by_relevance_then_curated_at_desc(conn, seed):
 @pytest.mark.integration
 def test_gather_limit_honored(conn, seed):
     for n in range(5):
-        _seed_window_curation(seed, conn, _n=n, _title="story %d" % n,
-                              relevance_score=9, curated_at=SINCE)
+        _seed_window_curation(
+            seed, conn, _n=n, _title="story %d" % n, relevance_score=9, curated_at=SINCE
+        )
     rows = digest._gather(conn, SINCE, UNTIL, 7, 2, "weekly", "2026-W27")
     assert len(rows) == 2
 
@@ -465,19 +493,14 @@ def test_gather_subdigests_window_filter_and_order(conn, seed):
     since = "2026-06-01T00:00:00+00:00"
     until = "2026-07-01T00:00:00+00:00"
     # in-window weekly (later) and daily (earlier)
-    seed.digest(kind="weekly", period_key="2026-W24",
-                window_start="2026-06-10T00:00:00+00:00")
-    seed.digest(kind="daily", period_key="2026-06-05",
-                window_start="2026-06-05T00:00:00+00:00")
+    seed.digest(kind="weekly", period_key="2026-W24", window_start="2026-06-10T00:00:00+00:00")
+    seed.digest(kind="daily", period_key="2026-06-05", window_start="2026-06-05T00:00:00+00:00")
     # out of window: before `since`
-    seed.digest(kind="daily", period_key="2026-05-20",
-                window_start="2026-05-20T00:00:00+00:00")
+    seed.digest(kind="daily", period_key="2026-05-20", window_start="2026-05-20T00:00:00+00:00")
     # out of window: at/after `until` (half-open)
-    seed.digest(kind="daily", period_key="2026-07-01",
-                window_start=until)
+    seed.digest(kind="daily", period_key="2026-07-01", window_start=until)
     # wrong tier for a monthly consumer (monthly not in LOWER_TIERS['monthly'])
-    seed.digest(kind="monthly", period_key="2026-05",
-                window_start="2026-06-15T00:00:00+00:00")
+    seed.digest(kind="monthly", period_key="2026-05", window_start="2026-06-15T00:00:00+00:00")
 
     rows = digest._gather_subdigests(conn, "monthly", since, until)
     # ordered by window_start, then kind — only the two in-window lower tiers
@@ -491,11 +514,9 @@ def test_gather_subdigests_window_filter_and_order(conn, seed):
 def test_gather_subdigests_quarterly_consumes_only_monthly(conn, seed):
     since = "2026-04-01T00:00:00+00:00"
     until = "2026-07-01T00:00:00+00:00"
-    seed.digest(kind="monthly", period_key="2026-04",
-                window_start="2026-04-01T00:00:00+00:00")
+    seed.digest(kind="monthly", period_key="2026-04", window_start="2026-04-01T00:00:00+00:00")
     # weekly is NOT a lower tier of quarterly -> excluded
-    seed.digest(kind="weekly", period_key="2026-W18",
-                window_start="2026-04-27T00:00:00+00:00")
+    seed.digest(kind="weekly", period_key="2026-W18", window_start="2026-04-27T00:00:00+00:00")
     rows = digest._gather_subdigests(conn, "quarterly", since, until)
     assert [r["kind"] for r in rows] == ["monthly"]
 
@@ -523,8 +544,7 @@ def test_run_no_items_and_no_subdigests_returns_1(cfg, conn, monkeypatch, capsys
 @pytest.mark.integration
 def test_run_existing_full_window_skips(cfg, conn, seed, monkeypatch, capsys):
     _, until = period_mod.parse_period("weekly", "2026-W27")
-    seed.digest(kind="weekly", period_key="2026-W27", window_end=until,
-                title="OLD TITLE")
+    seed.digest(kind="weekly", period_key="2026-W27", window_end=until, title="OLD TITLE")
     monkeypatch.setattr(digest.adapter, "complete_with_cost", _boom_adapter())
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 0
@@ -535,12 +555,10 @@ def test_run_existing_full_window_skips(cfg, conn, seed, monkeypatch, capsys):
 
 
 @pytest.mark.integration
-def test_run_existing_shorter_window_regenerates(cfg, conn, seed, monkeypatch,
-                                                 capsys):
+def test_run_existing_shorter_window_regenerates(cfg, conn, seed, monkeypatch, capsys):
     since, until = period_mod.parse_period("weekly", "2026-W27")
     # existing row covers a SHORTER window (ends at `since`, < due `until`)
-    seed.digest(kind="weekly", period_key="2026-W27", window_end=since,
-                title="OLD TITLE")
+    seed.digest(kind="weekly", period_key="2026-W27", window_end=since, title="OLD TITLE")
     _seed_window_curation(seed, conn, curated_at=since)
     fake = _fake_adapter(DIGEST_OUT, 0.20)
     monkeypatch.setattr(digest.adapter, "complete_with_cost", fake)
@@ -550,13 +568,12 @@ def test_run_existing_shorter_window_regenerates(cfg, conn, seed, monkeypatch,
     assert "regenerating with the full window" in capsys.readouterr().out
     assert len(fake.calls) == 1
     row = _digest_row(conn)
-    assert row["title"] == "This week in tech"     # upserted
-    assert row["window_end"] == until              # now the full window
+    assert row["title"] == "This week in tech"  # upserted
+    assert row["window_end"] == until  # now the full window
 
 
 @pytest.mark.integration
-def test_run_without_period_derives_key_and_window_from_today(cfg, conn, seed,
-                                                              monkeypatch):
+def test_run_without_period_derives_key_and_window_from_today(cfg, conn, seed, monkeypatch):
     import datetime as _dt
 
     run_date = _dt.date(2026, 7, 3)
@@ -567,8 +584,11 @@ def test_run_without_period_derives_key_and_window_from_today(cfg, conn, seed,
             return run_date
 
     # Freeze only digest's clock; period_mod uses its own datetime for the math.
-    monkeypatch.setattr(digest, "datetime", types.SimpleNamespace(
-        date=_FixedDate, datetime=_dt.datetime, timezone=_dt.timezone))
+    monkeypatch.setattr(
+        digest,
+        "datetime",
+        types.SimpleNamespace(date=_FixedDate, datetime=_dt.datetime, timezone=_dt.timezone),
+    )
 
     since, _until = period_mod.window("weekly", run_date)
     _seed_window_curation(seed, conn, curated_at=since)
@@ -589,8 +609,7 @@ def test_run_without_period_derives_key_and_window_from_today(cfg, conn, seed,
 @pytest.mark.integration
 def test_run_force_regenerates_full_window(cfg, conn, seed, monkeypatch):
     since, until = period_mod.parse_period("weekly", "2026-W27")
-    seed.digest(kind="weekly", period_key="2026-W27", window_end=until,
-                title="OLD TITLE")
+    seed.digest(kind="weekly", period_key="2026-W27", window_end=until, title="OLD TITLE")
     _seed_window_curation(seed, conn, curated_at=since)
     fake = _fake_adapter(DIGEST_OUT, 0.11)
     monkeypatch.setattr(digest.adapter, "complete_with_cost", fake)
@@ -607,8 +626,7 @@ def test_run_force_regenerates_full_window(cfg, conn, seed, monkeypatch):
 @pytest.mark.integration
 def test_run_weekly_happy_path(cfg, conn, seed, monkeypatch):
     since, until = period_mod.parse_period("weekly", "2026-W27")
-    cid, story = _seed_window_curation(seed, conn, curated_at=since,
-                                       relevance_score=9)
+    cid, story = _seed_window_curation(seed, conn, curated_at=since, relevance_score=9)
     fake = _fake_adapter(DIGEST_OUT, 0.12)
     monkeypatch.setattr(digest.adapter, "complete_with_cost", fake)
 
@@ -658,12 +676,13 @@ def test_run_weekly_happy_path(cfg, conn, seed, monkeypatch):
     assert DIGEST_OUT["body_md"] in body
 
     # ----- run bookkeeping: health info + run attribution + last_run -----
-    assert conn.execute(
-        "SELECT COUNT(*) FROM health WHERE job='digest' AND level='info'"
-    ).fetchone()[0] == 1
-    assert conn.execute(
-        "SELECT COUNT(*) FROM runs WHERE job='digest'"
-    ).fetchone()[0] == 1
+    assert (
+        conn.execute("SELECT COUNT(*) FROM health WHERE job='digest' AND level='info'").fetchone()[
+            0
+        ]
+        == 1
+    )
+    assert conn.execute("SELECT COUNT(*) FROM runs WHERE job='digest'").fetchone()[0] == 1
     assert cfg.data["last_run"]["job"] == "digest"
     assert cfg.data["last_run"]["stats"]["items"] == 1
 
@@ -674,8 +693,7 @@ def test_run_weekly_excerpt_falls_back_when_no_blurb(cfg, conn, seed, monkeypatc
     _seed_window_curation(seed, conn, curated_at=since)
     out = dict(DIGEST_OUT)
     out.pop("blurb")  # no standfirst -> excerpt uses the "best of..." fallback
-    monkeypatch.setattr(digest.adapter, "complete_with_cost",
-                        _fake_adapter(out, 0.05))
+    monkeypatch.setattr(digest.adapter, "complete_with_cost", _fake_adapter(out, 0.05))
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 0
     staged = cfg.staging_dir / "signal_digest_2026_w27.md"
@@ -691,10 +709,14 @@ def test_run_weekly_excerpt_falls_back_when_no_blurb(cfg, conn, seed, monkeypatc
 def test_run_monthly_over_subdigests_only(cfg, conn, seed, monkeypatch):
     since, until = period_mod.parse_period("monthly", "2026-06")
     # a lower-tier weekly whose window starts inside June, but NO curations
-    seed.digest(kind="weekly", period_key="2026-W24",
-                window_start="2026-06-10T00:00:00+00:00",
-                window_end="2026-06-17T00:00:00+00:00",
-                title="Week 24", body_md="## Wk24\n\nStuff happened.")
+    seed.digest(
+        kind="weekly",
+        period_key="2026-W24",
+        window_start="2026-06-10T00:00:00+00:00",
+        window_end="2026-06-17T00:00:00+00:00",
+        title="Week 24",
+        body_md="## Wk24\n\nStuff happened.",
+    )
     fake = _fake_adapter(DIGEST_OUT, 0.30)
     monkeypatch.setattr(digest.adapter, "complete_with_cost", fake)
 
@@ -710,10 +732,9 @@ def test_run_monthly_over_subdigests_only(cfg, conn, seed, monkeypatch):
     assert row is not None
     assert row["window_start"] == since
     assert row["window_end"] == until
-    assert json.loads(row["cluster_ids"]) == []      # no direct items
+    assert json.loads(row["cluster_ids"]) == []  # no direct items
     # no items -> no new ledger rows written
-    assert conn.execute(
-        "SELECT COUNT(*) FROM published_ledger").fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM published_ledger").fetchone()[0] == 0
 
 
 # --------------------------------------------------------------------------- #
@@ -723,16 +744,14 @@ def test_run_monthly_over_subdigests_only(cfg, conn, seed, monkeypatch):
 def test_run_refuses_archive_body(cfg, conn, seed, monkeypatch, capsys):
     since, _ = period_mod.parse_period("weekly", "2026-W27")
     _seed_window_curation(seed, conn, curated_at=since)
-    monkeypatch.setattr(digest.adapter, "complete_with_cost",
-                        _fake_adapter(ARCHIVE_OUT, 0.09))
+    monkeypatch.setattr(digest.adapter, "complete_with_cost", _fake_adapter(ARCHIVE_OUT, 0.09))
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 1
     assert "REFUSED" in capsys.readouterr().out
     # nothing stored, nothing staged
     assert _digest_count(conn) == 0
     assert not (cfg.staging_dir / "signal_digest_2026_w27.md").exists()
-    health = conn.execute(
-        "SELECT level, message FROM health WHERE job='digest'").fetchone()
+    health = conn.execute("SELECT level, message FROM health WHERE job='digest'").fetchone()
     assert health["level"] == "error"
     assert "archive link" in health["message"]
 
@@ -745,35 +764,36 @@ def test_run_usage_limit_defers_with_warn(cfg, conn, seed, monkeypatch, capsys):
     since, _ = period_mod.parse_period("weekly", "2026-W27")
     _seed_window_curation(seed, conn, curated_at=since)
     monkeypatch.setattr(
-        digest.adapter, "complete_with_cost",
-        _fake_adapter(raises=UsageLimitExhausted("quota exhausted")))
+        digest.adapter,
+        "complete_with_cost",
+        _fake_adapter(raises=UsageLimitExhausted("quota exhausted")),
+    )
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 1
     assert "digest deferred" in capsys.readouterr().out
     assert _digest_count(conn) == 0
-    health = conn.execute(
-        "SELECT level, message FROM health WHERE job='digest'").fetchone()
+    health = conn.execute("SELECT level, message FROM health WHERE job='digest'").fetchone()
     assert health["level"] == "warn"
     assert "quota exhausted" in health["message"]
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("exc", [
-    LLMError("backend blew up"),
-    SpendCapExceeded("digest cap reached"),
-])
-def test_run_llm_errors_return_1_and_log_error(cfg, conn, seed, monkeypatch,
-                                               capsys, exc):
+@pytest.mark.parametrize(
+    "exc",
+    [
+        LLMError("backend blew up"),
+        SpendCapExceeded("digest cap reached"),
+    ],
+)
+def test_run_llm_errors_return_1_and_log_error(cfg, conn, seed, monkeypatch, capsys, exc):
     since, _ = period_mod.parse_period("weekly", "2026-W27")
     _seed_window_curation(seed, conn, curated_at=since)
-    monkeypatch.setattr(digest.adapter, "complete_with_cost",
-                        _fake_adapter(raises=exc))
+    monkeypatch.setattr(digest.adapter, "complete_with_cost", _fake_adapter(raises=exc))
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 1
     assert "digest failed" in capsys.readouterr().out
     assert _digest_count(conn) == 0
-    health = conn.execute(
-        "SELECT level, message FROM health WHERE job='digest'").fetchone()
+    health = conn.execute("SELECT level, message FROM health WHERE job='digest'").fetchone()
     assert health["level"] == "error"
     assert str(exc) in health["message"]
 
@@ -787,8 +807,7 @@ def test_run_markdown_missing_falls_back_to_pre(cfg, conn, seed, monkeypatch):
     _seed_window_curation(seed, conn, curated_at=since)
     # Force `import markdown` to raise ImportError inside run().
     monkeypatch.setitem(sys.modules, "markdown", None)
-    monkeypatch.setattr(digest.adapter, "complete_with_cost",
-                        _fake_adapter(DIGEST_OUT, 0.07))
+    monkeypatch.setattr(digest.adapter, "complete_with_cost", _fake_adapter(DIGEST_OUT, 0.07))
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 0
     row = _digest_row(conn)
@@ -805,10 +824,8 @@ def test_run_publishes_when_site_push_enabled(cfg, conn, seed, monkeypatch):
     _seed_window_curation(seed, conn, curated_at=since)
     cfg.data["site"]["push"] = True
     calls = []
-    monkeypatch.setattr(publish_mod, "publish_digest",
-                        lambda *a, **k: calls.append((a, k)))
-    monkeypatch.setattr(digest.adapter, "complete_with_cost",
-                        _fake_adapter(DIGEST_OUT, 0.10))
+    monkeypatch.setattr(publish_mod, "publish_digest", lambda *a, **k: calls.append((a, k)))
+    monkeypatch.setattr(digest.adapter, "complete_with_cost", _fake_adapter(DIGEST_OUT, 0.10))
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     assert rc == 0
     assert len(calls) == 1
@@ -821,8 +838,7 @@ def test_run_publishes_when_site_push_enabled(cfg, conn, seed, monkeypatch):
 
 
 @pytest.mark.integration
-def test_run_publish_failure_does_not_kill_digest(cfg, conn, seed, monkeypatch,
-                                                  capsys):
+def test_run_publish_failure_does_not_kill_digest(cfg, conn, seed, monkeypatch, capsys):
     since, _ = period_mod.parse_period("weekly", "2026-W27")
     _seed_window_curation(seed, conn, curated_at=since)
     cfg.data["site"]["push"] = True
@@ -831,8 +847,7 @@ def test_run_publish_failure_does_not_kill_digest(cfg, conn, seed, monkeypatch,
         raise RuntimeError("git push rejected")
 
     monkeypatch.setattr(publish_mod, "publish_digest", boom)
-    monkeypatch.setattr(digest.adapter, "complete_with_cost",
-                        _fake_adapter(DIGEST_OUT, 0.10))
+    monkeypatch.setattr(digest.adapter, "complete_with_cost", _fake_adapter(DIGEST_OUT, 0.10))
     rc = digest.run(cfg, kind="weekly", period="2026-W27")
     # publish failure is swallowed: the digest itself still succeeds + persists
     assert rc == 0
@@ -842,7 +857,5 @@ def test_run_publish_failure_does_not_kill_digest(cfg, conn, seed, monkeypatch,
     assert row["title"] == "This week in tech"
     assert row["body_md"] == DIGEST_OUT["body_md"]
     assert "site publish failed" in capsys.readouterr().out
-    warn = conn.execute(
-        "SELECT message FROM health WHERE job='digest' AND level='warn'"
-    ).fetchone()
+    warn = conn.execute("SELECT message FROM health WHERE job='digest' AND level='warn'").fetchone()
     assert "site publish failed" in warn["message"]

@@ -291,15 +291,13 @@ def test_author_present_is_preserved(fake_client, make_result):
     [
         "2026-07-01T09:30:00.000-05:00",
         "2026-07-04T12:00:00Z",
-        "not-a-date",          # malformed flows straight through untouched
+        "not-a-date",  # malformed flows straight through untouched
         "2026-13-99T99:99:99",  # nonsense datetime survives verbatim
-        "",                    # empty string is NOT coerced to None (contrast with hn)
+        "",  # empty string is NOT coerced to None (contrast with hn)
     ],
 )
 def test_published_at_passes_through_raw(fake_client, make_result, created):
-    client = fake_client(
-        responses=_page_responses(make_result, {1: [_story(created_at=created)]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {1: [_story(created_at=created)]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["published_at"] == created
 
@@ -335,9 +333,7 @@ def test_zero_score_and_comment_count_are_preserved(fake_client, make_result):
 # extra.tags — default [] on absence; present values pass through unchanged
 # --------------------------------------------------------------------------- #
 def test_tags_absent_defaults_to_empty_list(fake_client, make_result):
-    client = fake_client(
-        responses=_page_responses(make_result, {1: [_story(_drop=["tags"])]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {1: [_story(_drop=["tags"])]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["extra"]["tags"] == []
 
@@ -350,9 +346,7 @@ def test_tags_none_passes_through_as_none(fake_client, make_result):
 
 
 def test_tags_list_passes_through(fake_client, make_result):
-    client = fake_client(
-        responses=_page_responses(make_result, {1: [_story(tags=["go", "rust"])]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {1: [_story(tags=["go", "rust"])]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["extra"]["tags"] == ["go", "rust"]
 
@@ -375,14 +369,12 @@ def test_empty_array_returns_empty(fake_client, make_result):
         (1, [1]),
         (2, [1, 2]),
         (3, [1, 2, 3]),
-        (0, [1]),    # max(1, 0) → single page 1
-        (-1, [1]),   # max(1, -1) → single page 1
+        (0, [1]),  # max(1, 0) → single page 1
+        (-1, [1]),  # max(1, -1) → single page 1
         (-5, [1]),
     ],
 )
-def test_pagination_is_one_indexed_and_clamped(
-    fake_client, make_result, pages, expected_pages
-):
+def test_pagination_is_one_indexed_and_clamped(fake_client, make_result, pages, expected_pages):
     # Every page returns an empty (but valid) array so no page fails.
     responses = _page_responses(make_result, {p: [] for p in expected_pages})
     client = fake_client(responses=responses)
@@ -415,18 +407,14 @@ def test_second_page_failure_aborts_and_discards_page_one(fake_client, make_resu
 
 
 def test_non_200_status_without_error_uses_http_message(fake_client, make_result):
-    client = fake_client(
-        responses={HOTTEST % 1: make_result(content=None, status=503, error=None)}
-    )
+    client = fake_client(responses={HOTTEST % 1: make_result(content=None, status=503, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 503$"):
         fetch_items(client, {}, pages=1)
 
 
 def test_error_message_is_preferred_over_http_status(fake_client, make_result):
     client = fake_client(
-        responses={
-            HOTTEST % 1: make_result(content=None, status=500, error="upstream exploded")
-        }
+        responses={HOTTEST % 1: make_result(content=None, status=500, error="upstream exploded")}
     )
     with pytest.raises(RuntimeError, match="upstream exploded"):
         fetch_items(client, {}, pages=1)
@@ -434,9 +422,7 @@ def test_error_message_is_preferred_over_http_status(fake_client, make_result):
 
 def test_empty_body_with_200_status_raises(fake_client, make_result):
     # status 200 but empty content → `not res.content` triggers; error None → "HTTP 200".
-    client = fake_client(
-        responses={HOTTEST % 1: make_result(content=b"", status=200, error=None)}
-    )
+    client = fake_client(responses={HOTTEST % 1: make_result(content=b"", status=200, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 200$"):
         fetch_items(client, {}, pages=1)
 

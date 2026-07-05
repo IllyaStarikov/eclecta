@@ -16,12 +16,12 @@ import hashlib
 import json
 import os
 import pathlib
-from typing import Any, Callable, Dict
+from typing import Any, Dict
 
 import pytest
 
 import signalpipe.config as config_mod
-from signalpipe.config import Config, ConfigError, DIGEST_DEFAULTS
+from signalpipe.config import DIGEST_DEFAULTS, Config, ConfigError
 
 
 # --------------------------------------------------------------------------- #
@@ -129,9 +129,7 @@ def test_load_valid_roundtrips_into_config(tmp_path):
 
 @pytest.mark.integration
 def test_example_config_roundtrips(tmp_path):
-    example = (
-        pathlib.Path(__file__).resolve().parent.parent / "config" / "signal.example.json"
-    )
+    example = pathlib.Path(__file__).resolve().parent.parent / "config" / "signal.example.json"
     dst = tmp_path / "signal.json"
     dst.write_text(example.read_text())
     cfg = config_mod.load(dst)
@@ -250,7 +248,10 @@ def test_repo_path_absolute_passthrough(tmp_path):
 def test_repo_path_relative_joins_repo_root(tmp_path, monkeypatch):
     monkeypatch.setattr(config_mod, "REPO_ROOT", tmp_path / "repo")
     cfg = _cfg(tmp_path)
-    assert cfg.repo_path("signalpipe/sources.json") == tmp_path / "repo" / "signalpipe" / "sources.json"
+    assert (
+        cfg.repo_path("signalpipe/sources.json")
+        == tmp_path / "repo" / "signalpipe" / "sources.json"
+    )
 
 
 def test_repo_path_home_expands_to_absolute(tmp_path):

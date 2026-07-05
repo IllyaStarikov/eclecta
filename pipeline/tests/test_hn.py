@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pytest
 
@@ -80,9 +80,7 @@ def test_single_hit_maps_every_field(fake_client, make_result):
 
 
 def test_discussion_url_uses_item_url_template(fake_client, make_result):
-    client = fake_client(
-        responses=_page_responses(make_result, {0: [_hit(objectID="9001")]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {0: [_hit(objectID="9001")]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["extra"]["discussion_url"] == "https://news.ycombinator.com/item?id=9001"
     assert item["guid"] == "hn-9001"
@@ -131,9 +129,7 @@ def test_fetch_is_unconditional(fake_client, make_result):
 # --------------------------------------------------------------------------- #
 def test_self_post_without_url_falls_back_to_discussion(fake_client, make_result):
     client = fake_client(
-        responses=_page_responses(
-            make_result, {0: [_hit(objectID="777", _drop=["url"])]}
-        )
+        responses=_page_responses(make_result, {0: [_hit(objectID="777", _drop=["url"])]})
     )
     (item,) = fetch_items(client, {}, pages=1)
     assert item["raw_url"] == "https://news.ycombinator.com/item?id=777"
@@ -142,18 +138,14 @@ def test_self_post_without_url_falls_back_to_discussion(fake_client, make_result
 
 def test_empty_string_url_falls_back_to_discussion(fake_client, make_result):
     # hit['url'] present but falsy ("") → `hit.get("url") or discussion` picks discussion.
-    client = fake_client(
-        responses=_page_responses(make_result, {0: [_hit(objectID="5", url="")]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {0: [_hit(objectID="5", url="")]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["raw_url"] == "https://news.ycombinator.com/item?id=5"
 
 
 def test_present_url_is_preferred_over_discussion(fake_client, make_result):
     client = fake_client(
-        responses=_page_responses(
-            make_result, {0: [_hit(url="https://real.example/post")]}
-        )
+        responses=_page_responses(make_result, {0: [_hit(url="https://real.example/post")]})
     )
     (item,) = fetch_items(client, {}, pages=1)
     assert item["raw_url"] == "https://real.example/post"
@@ -194,9 +186,7 @@ def test_none_title_is_dropped(fake_client, make_result):
 
 def test_title_is_stripped(fake_client, make_result):
     client = fake_client(
-        responses=_page_responses(
-            make_result, {0: [_hit(title="   Padded Title \n")]}
-        )
+        responses=_page_responses(make_result, {0: [_hit(title="   Padded Title \n")]})
     )
     (item,) = fetch_items(client, {}, pages=1)
     assert item["title"] == "Padded Title"
@@ -214,9 +204,7 @@ def test_empty_objectid_string_is_dropped(fake_client, make_result):
 # --------------------------------------------------------------------------- #
 def test_created_at_i_absent_yields_none_published(fake_client, make_result):
     client = fake_client(
-        responses=_page_responses(
-            make_result, {0: [_hit(_drop=["created_at_i"])]}
-        )
+        responses=_page_responses(make_result, {0: [_hit(_drop=["created_at_i"])]})
     )
     (item,) = fetch_items(client, {}, pages=1)
     assert item["published_at"] is None
@@ -224,9 +212,7 @@ def test_created_at_i_absent_yields_none_published(fake_client, make_result):
 
 def test_created_at_i_zero_yields_none_published(fake_client, make_result):
     # `if created` treats epoch 0 as falsy → published_at None (documented behavior).
-    client = fake_client(
-        responses=_page_responses(make_result, {0: [_hit(created_at_i=0)]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {0: [_hit(created_at_i=0)]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["published_at"] is None
 
@@ -240,9 +226,7 @@ def test_created_at_i_zero_yields_none_published(fake_client, make_result):
     ],
 )
 def test_epoch_to_iso_is_utc(fake_client, make_result, epoch, expected_iso):
-    client = fake_client(
-        responses=_page_responses(make_result, {0: [_hit(created_at_i=epoch)]})
-    )
+    client = fake_client(responses=_page_responses(make_result, {0: [_hit(created_at_i=epoch)]}))
     (item,) = fetch_items(client, {}, pages=1)
     assert item["published_at"] == expected_iso
 
@@ -276,9 +260,7 @@ def test_empty_hits_list_returns_empty(fake_client, make_result):
 
 
 def test_missing_hits_key_returns_empty(fake_client, make_result):
-    client = fake_client(
-        responses={ALGOLIA % 0: make_result(content=b'{"nope": 1}', status=200)}
-    )
+    client = fake_client(responses={ALGOLIA % 0: make_result(content=b'{"nope": 1}', status=200)})
     assert fetch_items(client, {}, pages=1) == []
 
 
@@ -292,14 +274,12 @@ def test_missing_hits_key_returns_empty(fake_client, make_result):
         (1, [0]),
         (2, [0, 1]),
         (3, [0, 1, 2]),
-        (0, [0]),   # max(1, 0) → single page 0
+        (0, [0]),  # max(1, 0) → single page 0
         (-1, [0]),  # max(1, -1) → single page 0
         (-5, [0]),
     ],
 )
-def test_pagination_is_zero_indexed_and_clamped(
-    fake_client, make_result, pages, expected_pages
-):
+def test_pagination_is_zero_indexed_and_clamped(fake_client, make_result, pages, expected_pages):
     # Every page returns an empty (but valid) body so no page 500s out.
     responses = _page_responses(make_result, {p: [] for p in expected_pages})
     client = fake_client(responses=responses)
@@ -332,20 +312,14 @@ def test_second_page_failure_aborts_and_discards_page_one(fake_client, make_resu
 
 
 def test_non_200_status_without_error_uses_http_message(fake_client, make_result):
-    client = fake_client(
-        responses={ALGOLIA % 0: make_result(content=None, status=503, error=None)}
-    )
+    client = fake_client(responses={ALGOLIA % 0: make_result(content=None, status=503, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 503$"):
         fetch_items(client, {}, pages=1)
 
 
 def test_error_message_is_preferred_over_http_status(fake_client, make_result):
     client = fake_client(
-        responses={
-            ALGOLIA % 0: make_result(
-                content=None, status=500, error="upstream exploded"
-            )
-        }
+        responses={ALGOLIA % 0: make_result(content=None, status=500, error="upstream exploded")}
     )
     with pytest.raises(RuntimeError, match="upstream exploded"):
         fetch_items(client, {}, pages=1)
@@ -353,9 +327,7 @@ def test_error_message_is_preferred_over_http_status(fake_client, make_result):
 
 def test_empty_body_with_200_status_raises(fake_client, make_result):
     # status is 200 but content is empty → `not res.content` triggers; error None → "HTTP 200".
-    client = fake_client(
-        responses={ALGOLIA % 0: make_result(content=b"", status=200, error=None)}
-    )
+    client = fake_client(responses={ALGOLIA % 0: make_result(content=b"", status=200, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 200$"):
         fetch_items(client, {}, pages=1)
 
@@ -363,9 +335,7 @@ def test_empty_body_with_200_status_raises(fake_client, make_result):
 def test_transport_error_status_zero_raises(fake_client, make_result):
     # status 0 (transport error) with an error string → error string surfaces.
     client = fake_client(
-        responses={
-            ALGOLIA % 0: make_result(content=None, status=0, error="ConnectError: boom")
-        }
+        responses={ALGOLIA % 0: make_result(content=None, status=0, error="ConnectError: boom")}
     )
     with pytest.raises(RuntimeError, match="ConnectError: boom"):
         fetch_items(client, {}, pages=1)

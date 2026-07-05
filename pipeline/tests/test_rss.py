@@ -19,13 +19,11 @@ Covered behavior (derived by READING the source + probing feedparser 6.0.12):
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import pytest
 
-from signalpipe.ingest import rss
 from signalpipe.ingest.rss import _entry_time, fetch_feed_items
-
 
 FEED_URL = "https://example.com/feed.xml"
 
@@ -282,14 +280,12 @@ def test_fetch_feed_items_under_cap_returns_all(fake_client, make_result):
     "status,unchanged",
     [
         (304, False),  # 304 alone
-        (200, True),   # body-hash short-circuit
-        (304, True),   # both
+        (200, True),  # body-hash short-circuit
+        (304, True),  # both
     ],
 )
 def test_fetch_feed_items_unchanged_returns_empty(fake_client, make_result, status, unchanged):
-    client = fake_client(
-        default=make_result(content=RSS_2_0, status=status, unchanged=unchanged)
-    )
+    client = fake_client(default=make_result(content=RSS_2_0, status=status, unchanged=unchanged))
     assert fetch_feed_items(client, _src()) == []
 
 
@@ -299,7 +295,7 @@ def test_fetch_feed_items_unchanged_returns_empty(fake_client, make_result, stat
         (dict(status=500, content=None, error="HTTP 500"), "HTTP 500"),
         (dict(status=0, content=None, error="ConnectError: boom"), "ConnectError: boom"),
         (dict(status=200, content=None, error=None), "HTTP 200"),  # empty body, no error
-        (dict(status=200, content=b"", error=None), "HTTP 200"),   # empty bytes
+        (dict(status=200, content=b"", error=None), "HTTP 200"),  # empty bytes
         (dict(status=503, content=None, error=None), "HTTP 503"),  # non-200, no error text
     ],
 )

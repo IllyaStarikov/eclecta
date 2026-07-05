@@ -77,20 +77,24 @@ Site = collections.namedtuple("Site", "repo bare")
 
 def _git_env():
     env = dict(os.environ)
-    env.update({
-        "GIT_AUTHOR_NAME": "Test Author",
-        "GIT_AUTHOR_EMAIL": "test@example.com",
-        "GIT_COMMITTER_NAME": "Test Author",
-        "GIT_COMMITTER_EMAIL": "test@example.com",
-        "GIT_TERMINAL_PROMPT": "0",
-    })
+    env.update(
+        {
+            "GIT_AUTHOR_NAME": "Test Author",
+            "GIT_AUTHOR_EMAIL": "test@example.com",
+            "GIT_COMMITTER_NAME": "Test Author",
+            "GIT_COMMITTER_EMAIL": "test@example.com",
+            "GIT_TERMINAL_PROMPT": "0",
+        }
+    )
     return env
 
 
 def _git(repo, *args):
     return subprocess.run(
         ["git", "-C", str(repo)] + list(args),
-        capture_output=True, text=True, env=_git_env(),
+        capture_output=True,
+        text=True,
+        env=_git_env(),
     )
 
 
@@ -155,27 +159,33 @@ def test_lock_path_is_redirected_to_tmp():
 # --------------------------------------------------------------------------- #
 # no_archive / _ARCHIVE_RE
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("url", [
-    "https://archive.ph/abc123",
-    "https://archive.today/xyz",
-    "https://archive.is/deadbeef",
-    "https://web.archive.org/web/2026/https://example.com",
-    "http://archive.org/details/foo",
-    "https://sub.archive.ph/path",           # host-label prefix via '.'
-    "https://example.com/read/archive.ph/x",  # path-embedded via '/'
-    "ARCHIVE.PH/loud",                        # case-insensitive, bare-start
-])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://archive.ph/abc123",
+        "https://archive.today/xyz",
+        "https://archive.is/deadbeef",
+        "https://web.archive.org/web/2026/https://example.com",
+        "http://archive.org/details/foo",
+        "https://sub.archive.ph/path",  # host-label prefix via '.'
+        "https://example.com/read/archive.ph/x",  # path-embedded via '/'
+        "ARCHIVE.PH/loud",  # case-insensitive, bare-start
+    ],
+)
 def test_no_archive_scrubs(url):
     assert publish.no_archive(url) is None
 
 
-@pytest.mark.parametrize("url", [
-    "https://example.com/archive-foo",        # hyphen, not a dot
-    "https://myarchive.photos/x",             # 'archive.pho...' not archive.ph/$
-    "https://archived.example.com/post",      # 'archived' — no dot after archive
-    "https://example.com/news/2026",
-    "https://news.ycombinator.com/item?id=1",
-])
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://example.com/archive-foo",  # hyphen, not a dot
+        "https://myarchive.photos/x",  # 'archive.pho...' not archive.ph/$
+        "https://archived.example.com/post",  # 'archived' — no dot after archive
+        "https://example.com/news/2026",
+        "https://news.ycombinator.com/item?id=1",
+    ],
+)
 def test_no_archive_keeps_legit(url):
     assert publish.no_archive(url) == url
 
@@ -231,16 +241,19 @@ def test_fm_quote_backslash_before_quote_order():
 # --------------------------------------------------------------------------- #
 # digest_display_date / digest_title
 # --------------------------------------------------------------------------- #
-@pytest.mark.parametrize("kind,key,expected", [
-    ("daily", "2026-07-04", datetime.date(2026, 7, 4)),
-    ("weekly", "2026-W27", datetime.date(2026, 6, 29)),   # Monday of ISO week 27
-    ("monthly", "2026-07", datetime.date(2026, 7, 1)),
-    ("quarterly", "2026-Q1", datetime.date(2026, 1, 1)),
-    ("quarterly", "2026-Q2", datetime.date(2026, 4, 1)),
-    ("quarterly", "2026-Q3", datetime.date(2026, 7, 1)),
-    ("quarterly", "2026-Q4", datetime.date(2026, 10, 1)),
-    ("yearly", "2026", datetime.date(2026, 1, 1)),
-])
+@pytest.mark.parametrize(
+    "kind,key,expected",
+    [
+        ("daily", "2026-07-04", datetime.date(2026, 7, 4)),
+        ("weekly", "2026-W27", datetime.date(2026, 6, 29)),  # Monday of ISO week 27
+        ("monthly", "2026-07", datetime.date(2026, 7, 1)),
+        ("quarterly", "2026-Q1", datetime.date(2026, 1, 1)),
+        ("quarterly", "2026-Q2", datetime.date(2026, 4, 1)),
+        ("quarterly", "2026-Q3", datetime.date(2026, 7, 1)),
+        ("quarterly", "2026-Q4", datetime.date(2026, 10, 1)),
+        ("yearly", "2026", datetime.date(2026, 1, 1)),
+    ],
+)
 def test_digest_display_date(kind, key, expected):
     assert publish.digest_display_date(kind, key) == expected
 
@@ -251,15 +264,18 @@ def test_digest_display_date_weekly_is_monday():
     assert d.isocalendar()[:2] == (2026, 27)
 
 
-@pytest.mark.parametrize("kind,key,expected", [
-    ("daily", "2026-07-04", "Saturday, July 4, 2026"),  # 2026-07-04 is a Saturday
-    ("weekly", "2026-W27", "Week of %s" % _human(datetime.date(2026, 6, 29))),
-    ("monthly", "2026-07", "July 2026"),
-    ("quarterly", "2026-Q1", "Q1 2026"),
-    ("quarterly", "2026-Q3", "Q3 2026"),
-    ("quarterly", "2026-Q4", "Q4 2026"),
-    ("yearly", "2026", "2026"),
-])
+@pytest.mark.parametrize(
+    "kind,key,expected",
+    [
+        ("daily", "2026-07-04", "Saturday, July 4, 2026"),  # 2026-07-04 is a Saturday
+        ("weekly", "2026-W27", "Week of %s" % _human(datetime.date(2026, 6, 29))),
+        ("monthly", "2026-07", "July 2026"),
+        ("quarterly", "2026-Q1", "Q1 2026"),
+        ("quarterly", "2026-Q3", "Q3 2026"),
+        ("quarterly", "2026-Q4", "Q4 2026"),
+        ("yearly", "2026", "2026"),
+    ],
+)
 def test_digest_title(kind, key, expected):
     assert publish.digest_title(kind, key) == expected
 
@@ -289,8 +305,12 @@ def test_digest_weekly_roundtrip_property():
 
 def test_digest_weekly_roundtrip_sample():
     # deterministic fallback so this path is covered without hypothesis
-    for d in (datetime.date(2026, 1, 1), datetime.date(2026, 7, 4),
-              datetime.date(2027, 3, 15), datetime.date(2024, 12, 30)):
+    for d in (
+        datetime.date(2026, 1, 1),
+        datetime.date(2026, 7, 4),
+        datetime.date(2027, 3, 15),
+        datetime.date(2024, 12, 30),
+    ):
         y, w, _ = d.isocalendar()
         key = "%04d-W%02d" % (y, w)
         got = publish.digest_display_date("weekly", key)
@@ -336,8 +356,11 @@ def test_site_config_expands_user_and_keeps_overrides(cfg, tmp_path, monkeypatch
     repo.mkdir()
     monkeypatch.setenv("HOME", str(tmp_path))
     cfg.data["site"] = {
-        "repo": "~/home_repo", "branch": "trunk", "remote": "upstream",
-        "picks_window_days": 3, "picks_limit": 5,
+        "repo": "~/home_repo",
+        "branch": "trunk",
+        "remote": "upstream",
+        "picks_window_days": 3,
+        "picks_limit": 5,
     }
     site = publish.site_config(cfg)
     assert site["repo_path"] == repo
@@ -358,17 +381,22 @@ def _digest_row(conn, kind, key):
 
 @pytest.mark.integration
 def test_write_digest_md_daily_shape(conn, seed, cfg):
-    seed.digest(kind="daily", period_key="2026-07-04", title="Some Title",
-                blurb="Custom blurb", cluster_ids=json.dumps([1, 2, 3]),
-                body_md="  # T\n\nbody text  \n")
+    seed.digest(
+        kind="daily",
+        period_key="2026-07-04",
+        title="Some Title",
+        blurb="Custom blurb",
+        cluster_ids=json.dumps([1, 2, 3]),
+        body_md="  # T\n\nbody text  \n",
+    )
     row = _digest_row(conn, "daily", "2026-07-04")
     relpath, content = publish.write_digest_md(cfg, row)
 
     assert relpath == "src/content/digests/daily/2026-07-04.md"
     assert 'title: "Saturday, July 4, 2026"\n' in content  # 2026-07-04 is a Saturday
     assert "kind: daily\n" in content
-    assert 'period: "2026-07-04"\n' in content       # period quoted (schema string)
-    assert "date: 2026-07-04\n" in content           # date left UNQUOTED
+    assert 'period: "2026-07-04"\n' in content  # period quoted (schema string)
+    assert "date: 2026-07-04\n" in content  # date left UNQUOTED
     assert 'blurb: "Custom blurb"\n' in content
     assert "items: 3\n" in content
     # body is stripped, then a single trailing newline appended
@@ -377,8 +405,9 @@ def test_write_digest_md_daily_shape(conn, seed, cfg):
 
 @pytest.mark.integration
 def test_write_digest_md_blurb_arg_overrides_row(conn, seed, cfg):
-    seed.digest(kind="daily", period_key="2026-07-04", blurb="Row blurb",
-                cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily", period_key="2026-07-04", blurb="Row blurb", cluster_ids=json.dumps([])
+    )
     row = _digest_row(conn, "daily", "2026-07-04")
     _, content = publish.write_digest_md(cfg, row, blurb="Arg blurb")
     assert 'blurb: "Arg blurb"\n' in content
@@ -387,8 +416,13 @@ def test_write_digest_md_blurb_arg_overrides_row(conn, seed, cfg):
 @pytest.mark.integration
 def test_write_digest_md_blurb_falls_back_to_title(conn, seed, cfg):
     # arg None + row blurb empty -> raw row title (not the composed digest title)
-    seed.digest(kind="daily", period_key="2026-07-04", blurb=None,
-                title="Fallback Title", cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily",
+        period_key="2026-07-04",
+        blurb=None,
+        title="Fallback Title",
+        cluster_ids=json.dumps([]),
+    )
     row = _digest_row(conn, "daily", "2026-07-04")
     _, content = publish.write_digest_md(cfg, row)
     assert 'blurb: "Fallback Title"\n' in content
@@ -396,12 +430,18 @@ def test_write_digest_md_blurb_falls_back_to_title(conn, seed, cfg):
 
 @pytest.mark.integration
 def test_write_digest_md_blurb_final_empty_and_null_body(conn, seed, cfg):
-    seed.digest(kind="daily", period_key="2026-07-04", blurb=None, title=None,
-                cluster_ids=None, body_md=None)
+    seed.digest(
+        kind="daily",
+        period_key="2026-07-04",
+        blurb=None,
+        title=None,
+        cluster_ids=None,
+        body_md=None,
+    )
     row = _digest_row(conn, "daily", "2026-07-04")
     _, content = publish.write_digest_md(cfg, row)
-    assert 'blurb: ""\n' in content       # None -> None -> None -> ""
-    assert "items: 0\n" in content        # cluster_ids NULL -> []
+    assert 'blurb: ""\n' in content  # None -> None -> None -> ""
+    assert "items: 0\n" in content  # cluster_ids NULL -> []
     assert content.endswith("---\n\n\n")  # NULL body -> empty body block
 
 
@@ -411,8 +451,8 @@ def test_write_digest_md_weekly_lowercases_key_and_quotes_period(conn, seed, cfg
     row = _digest_row(conn, "weekly", "2026-W27")
     relpath, content = publish.write_digest_md(cfg, row)
     assert relpath == "src/content/digests/weekly/2026-w27.md"  # key.lower()
-    assert 'period: "2026-W27"\n' in content                    # original case kept
-    assert "date: 2026-06-29\n" in content                      # Monday, unquoted
+    assert 'period: "2026-W27"\n' in content  # original case kept
+    assert "date: 2026-06-29\n" in content  # Monday, unquoted
     assert "items: 1\n" in content
 
 
@@ -432,7 +472,7 @@ def test_write_digest_md_yearly_period_quoted(conn, seed, cfg):
     relpath, content = publish.write_digest_md(cfg, row)
     assert relpath == "src/content/digests/yearly/2026.md"
     assert 'title: "2026"\n' in content
-    assert 'period: "2026"\n' in content   # would YAML-parse as a number unquoted
+    assert 'period: "2026"\n' in content  # would YAML-parse as a number unquoted
     assert "date: 2026-01-01\n" in content
 
 
@@ -451,13 +491,19 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
 
     # Cluster A: normal — distinct read_url yields a free_link; an archived
     # surface must be scrubbed out while the real one survives.
-    ca = seed.cluster(canonical_url="https://example.com/a",
-                      title="AI model breaks a benchmark record")
-    seed.curation(ca, category="ai", channels=json.dumps(["ai"]),
-                  relevance_score=9, curated_at=_iso(-1))
-    seed.article(ca, source_url="https://example.com/a",
-                 read_url="https://example.com/read-a", read_kind="primary",
-                 paywalled=1)
+    ca = seed.cluster(
+        canonical_url="https://example.com/a", title="AI model breaks a benchmark record"
+    )
+    seed.curation(
+        ca, category="ai", channels=json.dumps(["ai"]), relevance_score=9, curated_at=_iso(-1)
+    )
+    seed.article(
+        ca,
+        source_url="https://example.com/a",
+        read_url="https://example.com/read-a",
+        read_kind="primary",
+        paywalled=1,
+    )
     seed.surface(ca, hn, url="https://news.ycombinator.com/item?id=1", points=120)
     seed.surface(ca, other, url="https://archive.ph/scrubbed", points=200)
 
@@ -473,21 +519,28 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
     seed.surface(cc, hn, url="https://archive.is/c")
 
     # Cluster D: NULL category -> derived deterministically via topics.match_taxonomy.
-    cd = seed.cluster(canonical_url="https://example.com/d",
-                      title="New Rust compiler release ships faster builds")
-    seed.curation(cd, category=None, subcategories=None,
-                  channels=json.dumps(["devtools"]), relevance_score=8,
-                  curated_at=_iso(-1))
-    seed.article(cd, source_url="https://example.com/d",
-                 read_url="https://example.com/d")  # equal -> free_link None
+    cd = seed.cluster(
+        canonical_url="https://example.com/d", title="New Rust compiler release ships faster builds"
+    )
+    seed.curation(
+        cd,
+        category=None,
+        subcategories=None,
+        channels=json.dumps(["devtools"]),
+        relevance_score=8,
+        curated_at=_iso(-1),
+    )
+    seed.article(
+        cd, source_url="https://example.com/d", read_url="https://example.com/d"
+    )  # equal -> free_link None
 
     # Excluded rows.
     ce = seed.cluster(canonical_url="https://example.com/e", title="Below threshold")
-    seed.curation(ce, relevance_score=3, curated_at=_iso(-1))          # < min_rel(6)
+    seed.curation(ce, relevance_score=3, curated_at=_iso(-1))  # < min_rel(6)
     cf = seed.cluster(canonical_url="https://example.com/f", title="Too old")
-    seed.curation(cf, relevance_score=9, curated_at=_iso(-24 * 8))      # out of window
+    seed.curation(cf, relevance_score=9, curated_at=_iso(-24 * 8))  # out of window
     cg = seed.cluster(canonical_url="https://example.com/g", title="Skipped row")
-    seed.curation(cg, relevance_score=9, skip=1, curated_at=_iso(-1))   # skip=1
+    seed.curation(cg, relevance_score=9, skip=1, curated_at=_iso(-1))  # skip=1
     ch = seed.cluster(canonical_url="https://example.com/h", title="Pending row")
     seed.curation(ch, status="triaged", relevance_score=9, curated_at=_iso(-1))
 
@@ -500,7 +553,7 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
 
     a = _pick_by_id(picks, ca)
     assert a["source_url"] == "https://example.com/a"
-    assert a["free_link"] == "https://example.com/read-a"   # read != source
+    assert a["free_link"] == "https://example.com/read-a"  # read != source
     assert a["read_kind"] == "primary"
     assert a["paywalled"] is True
     assert a["state"] == "confident"
@@ -508,10 +561,14 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
     assert a["channels"] == ["ai"]
     assert a["notes"] == ["point one", "point two"]
     assert a["category"] == "ai"
-    assert a["surfaces"] == [{
-        "url": "https://news.ycombinator.com/item?id=1",
-        "points": 120, "comments": 42, "name": "Hacker News",
-    }]
+    assert a["surfaces"] == [
+        {
+            "url": "https://news.ycombinator.com/item?id=1",
+            "points": 120,
+            "comments": 42,
+            "name": "Hacker News",
+        }
+    ]
 
     b = _pick_by_id(picks, cb)
     assert b["source_url"] == "https://example.com/canon-b"  # canonical fallback
@@ -570,8 +627,9 @@ def test_export_picks_empty(conn, cfg, monkeypatch):
 @pytest.mark.integration
 def test_export_stats_shape(conn, seed, cfg, monkeypatch):
     _install_frozen_clock(monkeypatch)
-    s1 = seed.source(slug="s1", name="Source One", category="ai", tier=1,
-                     enabled=1, verified_at=_iso(-2))
+    s1 = seed.source(
+        slug="s1", name="Source One", category="ai", tier=1, enabled=1, verified_at=_iso(-2)
+    )
     seed.source(slug="s2", name="Source Two", category="devtools", tier=2, enabled=1)
     seed.source(slug="s3", name="Source Three", category="science", tier=3, enabled=0)
 
@@ -583,8 +641,7 @@ def test_export_stats_shape(conn, seed, cfg, monkeypatch):
     seed.surface(c1, s1, seen_at=_iso(-1))
 
     seed.digest(kind="weekly", period_key="2026-W27", generated_at=_iso(-2))
-    seed.digest(kind="daily", period_key="2026-07-04", generated_at=_iso(-1),
-                title="Daily latest")
+    seed.digest(kind="daily", period_key="2026-07-04", generated_at=_iso(-1), title="Daily latest")
 
     stats = publish.export_stats(conn, cfg)
 
@@ -608,8 +665,10 @@ def test_export_stats_shape(conn, seed, cfg, monkeypatch):
     assert stats["digests"]["total"] == 2
     assert stats["digests"]["by_kind"] == {"weekly": 1, "daily": 1}
     assert stats["digests"]["latest"] == {
-        "kind": "daily", "period": "2026-07-04",
-        "title": "Daily latest", "date": "2026-07-04",
+        "kind": "daily",
+        "period": "2026-07-04",
+        "title": "Daily latest",
+        "date": "2026-07-04",
     }
 
     slugs = [c["slug"] for c in stats["channels"]]
@@ -662,14 +721,16 @@ def test_export_stats_latest_none_when_no_digests(conn, seed, cfg, monkeypatch):
 # --------------------------------------------------------------------------- #
 @pytest.mark.integration
 def test_dirty_paths_parsing(monkeypatch):
-    porcelain = "\n".join([
-        " M src/data/picks.json",
-        "?? kb/new note.md",
-        "R  old.md -> src/content/digests/weekly/2026-w27.md",
-        'A  "quoted with space.md"',
-        "x",   # too short -> skipped
-        "",    # blank -> skipped
-    ])
+    porcelain = "\n".join(
+        [
+            " M src/data/picks.json",
+            "?? kb/new note.md",
+            "R  old.md -> src/content/digests/weekly/2026-w27.md",
+            'A  "quoted with space.md"',
+            "x",  # too short -> skipped
+            "",  # blank -> skipped
+        ]
+    )
 
     def fake_git(repo, *args):
         assert args == ("status", "--porcelain")
@@ -681,14 +742,15 @@ def test_dirty_paths_parsing(monkeypatch):
         (" M", "src/data/picks.json"),
         ("??", "kb/new note.md"),
         ("R ", "src/content/digests/weekly/2026-w27.md"),  # rename -> new path
-        ("A ", "quoted with space.md"),                    # quotes unwrapped
+        ("A ", "quoted with space.md"),  # quotes unwrapped
     ]
 
 
 @pytest.mark.integration
 def test_dirty_paths_clean(monkeypatch):
     monkeypatch.setattr(
-        publish, "_git",
+        publish,
+        "_git",
         lambda repo, *a: subprocess.CompletedProcess(list(a), 0, "", ""),
     )
     assert publish._dirty_paths(pathlib.Path("/x")) == []
@@ -710,9 +772,7 @@ def test_clean_pipeline_dirt_foreign_refuses(site_repo, conn):
         publish._clean_pipeline_dirt(site_repo.repo, conn)
     assert "dirty outside pipeline-owned" in str(ei.value)
     assert "README.md" in str(ei.value)
-    row = conn.execute(
-        "SELECT level, message FROM health WHERE job='publish'"
-    ).fetchone()
+    row = conn.execute("SELECT level, message FROM health WHERE job='publish'").fetchone()
     assert row["level"] == "error"
     assert "dirty outside pipeline-owned" in row["message"]
     # the foreign file is never touched
@@ -755,13 +815,11 @@ def test_clean_pipeline_dirt_discards_owned(site_repo, conn, capsys):
     publish._clean_pipeline_dirt(site_repo.repo, conn)
 
     assert (site_repo.repo / "src/data/picks.json").read_text() == "orig\n"  # restored
-    assert not untracked.exists()                                            # unlinked
-    assert (site_repo.repo / "src/content/digests/daily/keep.md").exists()   # untouched
+    assert not untracked.exists()  # unlinked
+    assert (site_repo.repo / "src/content/digests/daily/keep.md").exists()  # untouched
     assert _git(site_repo.repo, "status", "--porcelain").stdout.strip() == ""
     assert "[publish]" in capsys.readouterr().out
-    row = conn.execute(
-        "SELECT level, message FROM health WHERE job='publish'"
-    ).fetchone()
+    row = conn.execute("SELECT level, message FROM health WHERE job='publish'").fetchone()
     assert row["level"] == "warn"
     assert "discarded stale pipeline-owned changes" in row["message"]
 
@@ -772,8 +830,11 @@ def test_clean_pipeline_dirt_discards_owned(site_repo, conn, capsys):
 @pytest.mark.integration
 def test_git_publish_pushed(site_repo, cfg, conn):
     status = publish.git_publish(
-        cfg, "signal: picks", {"src/data/picks.json": "new content\n"},
-        push=True, conn=conn,
+        cfg,
+        "signal: picks",
+        {"src/data/picks.json": "new content\n"},
+        push=True,
+        conn=conn,
     )
     assert status == "pushed"
     assert (site_repo.repo / "src/data/picks.json").read_text() == "new content\n"
@@ -786,8 +847,11 @@ def test_git_publish_pushed(site_repo, cfg, conn):
 @pytest.mark.integration
 def test_git_publish_committed_local_when_no_push(site_repo, cfg, conn):
     status = publish.git_publish(
-        cfg, "signal: local only", {"src/data/picks.json": "local\n"},
-        push=False, conn=conn,
+        cfg,
+        "signal: local only",
+        {"src/data/picks.json": "local\n"},
+        push=False,
+        conn=conn,
     )
     assert status == "committed-local"
     assert _git(site_repo.repo, "log", "-1", "--format=%s").stdout.strip() == "signal: local only"
@@ -800,7 +864,11 @@ def test_git_publish_noop_when_no_diff(site_repo, cfg, conn):
     _commit_file(site_repo.repo, "src/data/picks.json", "same\n", push=True)
     before = _git(site_repo.repo, "rev-parse", "HEAD").stdout.strip()
     status = publish.git_publish(
-        cfg, "signal: noop", {"src/data/picks.json": "same\n"}, push=True, conn=conn,
+        cfg,
+        "signal: noop",
+        {"src/data/picks.json": "same\n"},
+        push=True,
+        conn=conn,
     )
     assert status == "noop"
     after = _git(site_repo.repo, "rev-parse", "HEAD").stdout.strip()
@@ -814,8 +882,11 @@ def test_git_publish_skipped_lock(site_repo, cfg, conn):
     fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
     try:
         status = publish.git_publish(
-            cfg, "signal: contended", {"src/data/picks.json": "x\n"},
-            push=True, conn=conn,
+            cfg,
+            "signal: contended",
+            {"src/data/picks.json": "x\n"},
+            push=True,
+            conn=conn,
         )
         assert status == "skipped-lock"
     finally:
@@ -823,9 +894,7 @@ def test_git_publish_skipped_lock(site_repo, cfg, conn):
         holder.close()
     # nothing written / committed under contention
     assert not (site_repo.repo / "src/data/picks.json").exists()
-    row = conn.execute(
-        "SELECT level, message FROM health WHERE job='publish'"
-    ).fetchone()
+    row = conn.execute("SELECT level, message FROM health WHERE job='publish'").fetchone()
     assert row["level"] == "info"
     assert "lock held by another run" in row["message"]
 
@@ -838,7 +907,11 @@ def test_git_publish_skipped_lock_no_conn(site_repo, cfg):
     fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)
     try:
         status = publish.git_publish(
-            cfg, "signal: x", {"src/data/picks.json": "x\n"}, push=True, conn=None,
+            cfg,
+            "signal: x",
+            {"src/data/picks.json": "x\n"},
+            push=True,
+            conn=None,
         )
         assert status == "skipped-lock"
     finally:
@@ -849,10 +922,16 @@ def test_git_publish_skipped_lock_no_conn(site_repo, cfg):
 @pytest.mark.integration
 def test_git_publish_offline_no_conn(site_repo, cfg, tmp_path):
     # conn=None variant of the fetch-fail + push-fail path (no health logging).
-    assert _git(site_repo.repo, "remote", "set-url", "origin",
-                str(tmp_path / "gone.git")).returncode == 0
+    assert (
+        _git(site_repo.repo, "remote", "set-url", "origin", str(tmp_path / "gone.git")).returncode
+        == 0
+    )
     status = publish.git_publish(
-        cfg, "signal: offline", {"src/data/picks.json": "x\n"}, push=True, conn=None,
+        cfg,
+        "signal: offline",
+        {"src/data/picks.json": "x\n"},
+        push=True,
+        conn=None,
     )
     assert status == "push-failed"
     assert _git(site_repo.repo, "log", "-1", "--format=%s").stdout.strip() == "signal: offline"
@@ -869,8 +948,7 @@ def test_git_publish_rebase_conflict_no_conn(site_repo, cfg, tmp_path):
     _commit_file(site_repo.repo, "conflict.txt", "local\n", message="local")
 
     with pytest.raises(publish.PublishError):
-        publish.git_publish(cfg, "signal: x", {"src/data/picks.json": "x\n"},
-                            push=True, conn=None)
+        publish.git_publish(cfg, "signal: x", {"src/data/picks.json": "x\n"}, push=True, conn=None)
     assert _git(site_repo.repo, "status", "--porcelain").stdout.strip() == ""
 
 
@@ -878,8 +956,7 @@ def test_git_publish_rebase_conflict_no_conn(site_repo, cfg, tmp_path):
 def test_git_publish_wrong_branch_preflight(site_repo, cfg, conn):
     assert _git(site_repo.repo, "checkout", "-b", "feature").returncode == 0
     with pytest.raises(publish.PublishError) as ei:
-        publish.git_publish(cfg, "signal: x", {"src/data/picks.json": "x\n"},
-                            push=True, conn=conn)
+        publish.git_publish(cfg, "signal: x", {"src/data/picks.json": "x\n"}, push=True, conn=conn)
     assert "expected 'main'" in str(ei.value)
     assert "feature" in str(ei.value)
 
@@ -908,8 +985,7 @@ def test_git_publish_rebase_conflict_aborts(site_repo, cfg, conn, tmp_path):
     _commit_file(site_repo.repo, "conflict.txt", "local side\n", message="local change")
 
     with pytest.raises(publish.PublishError) as ei:
-        publish.git_publish(cfg, "signal: x", {"src/data/picks.json": "x\n"},
-                            push=True, conn=conn)
+        publish.git_publish(cfg, "signal: x", {"src/data/picks.json": "x\n"}, push=True, conn=conn)
     assert "conflicted" in str(ei.value)
     # rebase --abort leaves a clean tree back on main
     assert _git(site_repo.repo, "status", "--porcelain").stdout.strip() == ""
@@ -925,10 +1001,16 @@ def test_git_publish_rebase_conflict_aborts(site_repo, cfg, conn, tmp_path):
 def test_git_publish_offline_fetch_and_push_fail(site_repo, cfg, conn, tmp_path):
     # Point origin at a nonexistent path: fetch fails (offline branch), the local
     # commit is kept, and push ultimately fails -> 'push-failed'.
-    assert _git(site_repo.repo, "remote", "set-url", "origin",
-                str(tmp_path / "gone.git")).returncode == 0
+    assert (
+        _git(site_repo.repo, "remote", "set-url", "origin", str(tmp_path / "gone.git")).returncode
+        == 0
+    )
     status = publish.git_publish(
-        cfg, "signal: offline", {"src/data/picks.json": "x\n"}, push=True, conn=conn,
+        cfg,
+        "signal: offline",
+        {"src/data/picks.json": "x\n"},
+        push=True,
+        conn=conn,
     )
     assert status == "push-failed"
     assert _git(site_repo.repo, "log", "-1", "--format=%s").stdout.strip() == "signal: offline"
@@ -961,7 +1043,11 @@ def test_git_publish_push_retry_succeeds(site_repo, cfg, conn, tmp_path, monkeyp
 
     monkeypatch.setattr(publish, "_git", wrapper)
     status = publish.git_publish(
-        cfg, "signal: raced", {"src/data/picks.json": "mine\n"}, push=True, conn=conn,
+        cfg,
+        "signal: raced",
+        {"src/data/picks.json": "mine\n"},
+        push=True,
+        conn=conn,
     )
     assert status == "pushed"
     assert state["advanced"]
@@ -1011,7 +1097,11 @@ def test_git_publish_commit_only_dirt_is_cleaned_first(site_repo, cfg, conn):
     stale = site_repo.repo / "src/content/digests/daily/stale.md"
     stale.write_text("stale\n")
     status = publish.git_publish(
-        cfg, "signal: picks", {"src/data/picks.json": "fresh\n"}, push=True, conn=conn,
+        cfg,
+        "signal: picks",
+        {"src/data/picks.json": "fresh\n"},
+        push=True,
+        conn=conn,
     )
     assert status == "pushed"
     assert not stale.exists()  # discarded
@@ -1024,8 +1114,13 @@ def test_git_publish_commit_only_dirt_is_cleaned_first(site_repo, cfg, conn):
 @pytest.mark.integration
 @pytest.mark.parametrize("status", ["pushed", "committed-local", "noop"])
 def test_publish_digest_success_sets_published_at(conn, seed, cfg, monkeypatch, status):
-    seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                publish_error="stale error", cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily",
+        period_key="2026-07-04",
+        published_at=None,
+        publish_error="stale error",
+        cluster_ids=json.dumps([]),
+    )
     monkeypatch.setattr(publish, "git_publish", lambda *a, **k: status)
     rc = publish.publish_digest(cfg, conn, "daily", "2026-07-04")
     assert rc == 0
@@ -1036,8 +1131,9 @@ def test_publish_digest_success_sets_published_at(conn, seed, cfg, monkeypatch, 
 
 @pytest.mark.integration
 def test_publish_digest_push_failed(conn, seed, cfg, monkeypatch):
-    seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
     monkeypatch.setattr(publish, "git_publish", lambda *a, **k: "push-failed")
     rc = publish.publish_digest(cfg, conn, "daily", "2026-07-04")
     assert rc == 1
@@ -1048,8 +1144,9 @@ def test_publish_digest_push_failed(conn, seed, cfg, monkeypatch):
 
 @pytest.mark.integration
 def test_publish_digest_skipped_lock(conn, seed, cfg, monkeypatch):
-    seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
     monkeypatch.setattr(publish, "git_publish", lambda *a, **k: "skipped-lock")
     rc = publish.publish_digest(cfg, conn, "daily", "2026-07-04")
     assert rc == 1
@@ -1060,8 +1157,9 @@ def test_publish_digest_skipped_lock(conn, seed, cfg, monkeypatch):
 
 @pytest.mark.integration
 def test_publish_digest_publish_error(conn, seed, cfg, monkeypatch, capsys):
-    seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
 
     def boom(*a, **k):
         raise publish.PublishError("boom detail")
@@ -1102,10 +1200,12 @@ def test_run_all_assembles_writes_and_backfills(conn, seed, cfg, monkeypatch):
     rec = _GitPublishRecorder("pushed")
     monkeypatch.setattr(publish, "git_publish", rec)
     monkeypatch.setattr(kb, "readme", lambda: ("kb/README.md", "readme\n"))
-    monkeypatch.setattr(kb, "daily_ledger",
-                        lambda c, cf, d: ("kb/days/%s.md" % d.isoformat(), "ledger\n"))
-    did = seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                      cluster_ids=json.dumps([]))
+    monkeypatch.setattr(
+        kb, "daily_ledger", lambda c, cf, d: ("kb/days/%s.md" % d.isoformat(), "ledger\n")
+    )
+    did = seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
 
     rc = publish.run(cfg, what="all", push=True)
     assert rc == 0
@@ -1128,8 +1228,9 @@ def test_run_picks_only_no_digest_backfill(conn, seed, cfg, monkeypatch):
     _install_frozen_clock(monkeypatch)
     rec = _GitPublishRecorder("pushed")
     monkeypatch.setattr(publish, "git_publish", rec)
-    did = seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                      cluster_ids=json.dumps([]))
+    did = seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
 
     rc = publish.run(cfg, what="picks", push=True)
     assert rc == 0
@@ -1160,9 +1261,7 @@ def test_run_publish_error_returns_1(conn, seed, cfg, monkeypatch, capsys):
     rc = publish.run(cfg, what="picks")
     assert rc == 1
     assert "publish failed: preflight boom" in capsys.readouterr().out
-    row = conn.execute(
-        "SELECT level, message FROM health WHERE job='publish'"
-    ).fetchone()
+    row = conn.execute("SELECT level, message FROM health WHERE job='publish'").fetchone()
     assert row["level"] == "error"
     assert "preflight boom" in row["message"]
 
@@ -1173,8 +1272,9 @@ def test_run_push_failed_returns_1_without_backfill(conn, seed, cfg, monkeypatch
     monkeypatch.setattr(publish, "git_publish", _GitPublishRecorder("push-failed"))
     monkeypatch.setattr(kb, "readme", lambda: ("kb/README.md", "r\n"))
     monkeypatch.setattr(kb, "daily_ledger", lambda c, cf, d: ("kb/days/x.md", "l\n"))
-    did = seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                      cluster_ids=json.dumps([]))
+    did = seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
     rc = publish.run(cfg, what="all")
     assert rc == 1
     row = conn.execute("SELECT published_at FROM digests WHERE id=?", (did,)).fetchone()
@@ -1190,14 +1290,21 @@ def test_run_kb_backfill_since(conn, cfg, monkeypatch):
         raise AssertionError("daily_ledger must not run when backfill_since is set")
 
     monkeypatch.setattr(kb, "daily_ledger", no_ledger)
-    monkeypatch.setattr(kb, "backfill", lambda c, cf, since: {
-        "kb/days/2026-07-01.md": "a\n", "kb/days/2026-07-02.md": "b\n",
-    })
+    monkeypatch.setattr(
+        kb,
+        "backfill",
+        lambda c, cf, since: {
+            "kb/days/2026-07-01.md": "a\n",
+            "kb/days/2026-07-02.md": "b\n",
+        },
+    )
     rc = publish.run(cfg, what="kb", backfill_since="2026-07-01")
     assert rc == 0
     call = publish.git_publish.calls[0]
     assert set(call["writes"]) == {
-        "kb/README.md", "kb/days/2026-07-01.md", "kb/days/2026-07-02.md",
+        "kb/README.md",
+        "kb/days/2026-07-01.md",
+        "kb/days/2026-07-02.md",
     }
 
 
@@ -1212,9 +1319,7 @@ def test_refresh_publish_error_returns_1(conn, seed, cfg, monkeypatch, capsys):
     rc = publish.refresh(cfg)
     assert rc == 1
     assert "publish refresh failed: refresh boom" in capsys.readouterr().out
-    row = conn.execute(
-        "SELECT level, message FROM health WHERE job='publish'"
-    ).fetchone()
+    row = conn.execute("SELECT level, message FROM health WHERE job='publish'").fetchone()
     assert row["level"] == "error"
     assert "refresh boom" in row["message"]
 
@@ -1224,8 +1329,9 @@ def test_refresh_retries_unpublished_digest(conn, seed, cfg, monkeypatch):
     _install_frozen_clock(monkeypatch)
     rec = _GitPublishRecorder("pushed")
     monkeypatch.setattr(publish, "git_publish", rec)
-    did = seed.digest(kind="daily", period_key="2026-07-04", published_at=None,
-                      cluster_ids=json.dumps([]))
+    did = seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=None, cluster_ids=json.dumps([])
+    )
 
     rc = publish.refresh(cfg)
     assert rc == 0
@@ -1243,8 +1349,9 @@ def test_refresh_no_unpublished_skips_digest_writes(conn, seed, cfg, monkeypatch
     _install_frozen_clock(monkeypatch)
     rec = _GitPublishRecorder("noop")
     monkeypatch.setattr(publish, "git_publish", rec)
-    seed.digest(kind="daily", period_key="2026-07-04", published_at=_iso(-1),
-                cluster_ids=json.dumps([]))
+    seed.digest(
+        kind="daily", period_key="2026-07-04", published_at=_iso(-1), cluster_ids=json.dumps([])
+    )
     rc = publish.refresh(cfg)
     assert rc == 0
     assert set(rec.calls[0]["writes"]) == {"src/data/picks.json", "src/data/stats.json"}
@@ -1256,8 +1363,9 @@ def test_publish_kb_daily_default_yesterday(conn, cfg, monkeypatch):
     rec = _GitPublishRecorder("pushed")
     monkeypatch.setattr(publish, "git_publish", rec)
     monkeypatch.setattr(kb, "readme", lambda: ("kb/README.md", "r\n"))
-    monkeypatch.setattr(kb, "daily_ledger",
-                        lambda c, cf, d: ("kb/days/%s.md" % d.isoformat(), "l\n"))
+    monkeypatch.setattr(
+        kb, "daily_ledger", lambda c, cf, d: ("kb/days/%s.md" % d.isoformat(), "l\n")
+    )
 
     rc = publish.publish_kb_daily(cfg)
     assert rc == 0
@@ -1266,20 +1374,25 @@ def test_publish_kb_daily_default_yesterday(conn, cfg, monkeypatch):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("dates,expected_days,label", [
-    ("2026-07-01", ["2026-07-01"], "2026-07-01"),
-    (datetime.date(2026, 7, 2), ["2026-07-02"], "2026-07-02"),
-    (["2026-07-01", "2026-07-02", "2026-07-03"],
-     ["2026-07-01", "2026-07-02", "2026-07-03"],
-     "2026-07-01, 2026-07-02, 2026-07-03"),
-])
-def test_publish_kb_daily_date_normalization(conn, cfg, monkeypatch, dates,
-                                             expected_days, label):
+@pytest.mark.parametrize(
+    "dates,expected_days,label",
+    [
+        ("2026-07-01", ["2026-07-01"], "2026-07-01"),
+        (datetime.date(2026, 7, 2), ["2026-07-02"], "2026-07-02"),
+        (
+            ["2026-07-01", "2026-07-02", "2026-07-03"],
+            ["2026-07-01", "2026-07-02", "2026-07-03"],
+            "2026-07-01, 2026-07-02, 2026-07-03",
+        ),
+    ],
+)
+def test_publish_kb_daily_date_normalization(conn, cfg, monkeypatch, dates, expected_days, label):
     rec = _GitPublishRecorder("pushed")
     monkeypatch.setattr(publish, "git_publish", rec)
     monkeypatch.setattr(kb, "readme", lambda: ("kb/README.md", "r\n"))
-    monkeypatch.setattr(kb, "daily_ledger",
-                        lambda c, cf, d: ("kb/days/%s.md" % d.isoformat(), "l\n"))
+    monkeypatch.setattr(
+        kb, "daily_ledger", lambda c, cf, d: ("kb/days/%s.md" % d.isoformat(), "l\n")
+    )
 
     rc = publish.publish_kb_daily(cfg, dates=dates)
     assert rc == 0
@@ -1291,8 +1404,11 @@ def test_publish_kb_daily_date_normalization(conn, cfg, monkeypatch, dates,
 
 @pytest.mark.integration
 def test_publish_kb_daily_publish_error(conn, cfg, monkeypatch, capsys):
-    monkeypatch.setattr(publish, "git_publish",
-                        lambda *a, **k: (_ for _ in ()).throw(publish.PublishError("kbfail")))
+    monkeypatch.setattr(
+        publish,
+        "git_publish",
+        lambda *a, **k: (_ for _ in ()).throw(publish.PublishError("kbfail")),
+    )
     monkeypatch.setattr(kb, "readme", lambda: ("kb/README.md", "r\n"))
     monkeypatch.setattr(kb, "daily_ledger", lambda c, cf, d: ("kb/days/x.md", "l\n"))
     rc = publish.publish_kb_daily(cfg, dates="2026-07-01")
@@ -1335,9 +1451,7 @@ def test_publish_trends_exception_logged(conn, cfg, monkeypatch, capsys):
     rc = publish.publish_trends(cfg)
     assert rc == 1
     assert "kb trends failed: model exploded" in capsys.readouterr().out
-    row = conn.execute(
-        "SELECT level, message FROM health WHERE job='publish'"
-    ).fetchone()
+    row = conn.execute("SELECT level, message FROM health WHERE job='publish'").fetchone()
     assert row["level"] == "error"
     assert "kb trends failed" in row["message"]
 

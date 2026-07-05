@@ -95,9 +95,7 @@ def _feed(*items: str) -> bytes:
 
 def _run(fake_client, make_result, feed_bytes, *, resolver=None, resolve_top=25, slug="gn-topic"):
     client = fake_client(responses={FEED_URL: make_result(content=feed_bytes)}, resolver=resolver)
-    items = googlenews.fetch_items(
-        client, {"url": FEED_URL, "slug": slug}, resolve_top=resolve_top
-    )
+    items = googlenews.fetch_items(client, {"url": FEED_URL, "slug": slug}, resolve_top=resolve_top)
     return client, items
 
 
@@ -315,9 +313,7 @@ def test_resolve_top_boundary_stops_network(fake_client, make_result, capsys):
     # resolve_top=2 -> only idx 0,1 are eligible; misses never reach give-up.
     links = [_newfmt_link("b%d" % i) for i in range(5)]
     feed = _feed(*[_item("Story %d" % i, links[i], guid="G%d" % i) for i in range(5)])
-    client, items = _run(
-        fake_client, make_result, feed, resolver=lambda u: MISS_URL, resolve_top=2
-    )
+    client, items = _run(fake_client, make_result, feed, resolver=lambda u: MISS_URL, resolve_top=2)
 
     assert client.resolved == links[:2]  # entries 2..4 never resolved
     assert "gnews:" not in capsys.readouterr().err
@@ -425,9 +421,7 @@ def test_fetch_items_end_to_end_real_feedparser(polite_client_factory, load_byte
 
     def handler(request):
         requested.append(str(request.url))
-        return httpx.Response(
-            200, content=feed, headers={"Content-Type": "application/rss+xml"}
-        )
+        return httpx.Response(200, content=feed, headers={"Content-Type": "application/rss+xml"})
 
     client = polite_client_factory(handler)
     source_row = {"url": "https://news.google.com/rss/topic/top", "slug": "top-stories"}

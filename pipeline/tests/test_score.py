@@ -116,7 +116,7 @@ def test_engagement_nonpositive_is_zero(points, comments):
 def test_engagement_points_saturate_at_weight():
     # log10(1001)/3 > 1 -> p_score capped at 1.0 -> 0.7 * 1.0
     assert score._engagement(1000, 0) == pytest.approx(0.7)
-    assert score._engagement(10 ** 6, 0) == pytest.approx(0.7)
+    assert score._engagement(10**6, 0) == pytest.approx(0.7)
 
 
 def test_engagement_comments_saturate_at_weight():
@@ -136,8 +136,8 @@ def test_engagement_points_only_partial():
 
 
 def test_engagement_bounded_over_grid():
-    for p in (-5, 0, 1, 5, 50, 500, 5000, 10 ** 7):
-        for c in (-5, 0, 1, 5, 50, 500, 5000, 10 ** 7):
+    for p in (-5, 0, 1, 5, 50, 500, 5000, 10**7):
+        for c in (-5, 0, 1, 5, 50, 500, 5000, 10**7):
             v = score._engagement(p, c)
             assert 0.0 <= v <= 1.0
 
@@ -148,7 +148,7 @@ def test_engagement_property_bounded():
     from hypothesis import given, settings
     from hypothesis import strategies as st
 
-    ints = st.one_of(st.none(), st.integers(min_value=-(10 ** 9), max_value=10 ** 9))
+    ints = st.one_of(st.none(), st.integers(min_value=-(10**9), max_value=10**9))
 
     @settings(max_examples=300)
     @given(ints, ints)
@@ -246,9 +246,7 @@ NONLATIN_TITLE = "人工知能のニュース"
 
 
 @pytest.mark.integration
-def test_run_scores_window_gates_nonlatin_and_topic_branches(
-    cfg, conn, seed, monkeypatch, capsys
-):
+def test_run_scores_window_gates_nonlatin_and_topic_branches(cfg, conn, seed, monkeypatch, capsys):
     _freeze_clock(monkeypatch)
 
     # Guard the topic-branch assumptions this test's deltas rely on, so a
@@ -271,24 +269,29 @@ def test_run_scores_window_gates_nonlatin_and_topic_branches(
     )
     seed.surface(exact, src, points=100, comments=42)
 
-    topic0 = seed.cluster(canonical_url="https://ex.com/t0", title=TOPIC0_TITLE,
-                          surface_count=1, last_seen=iso(-1))
-    topic07 = seed.cluster(canonical_url="https://ex.com/t07", title=TOPIC07_TITLE,
-                           surface_count=1, last_seen=iso(-1))
-    topic10 = seed.cluster(canonical_url="https://ex.com/t10", title=TOPIC10_TITLE,
-                           surface_count=1, last_seen=iso(-1))
-    nonlatin = seed.cluster(canonical_url="https://ex.com/jp", title=NONLATIN_TITLE,
-                            surface_count=1, last_seen=iso(-1))
-    out = seed.cluster(canonical_url="https://ex.com/old",
-                       title="Old story about jam recipes",
-                       surface_count=1, last_seen=iso(-100))
+    topic0 = seed.cluster(
+        canonical_url="https://ex.com/t0", title=TOPIC0_TITLE, surface_count=1, last_seen=iso(-1)
+    )
+    topic07 = seed.cluster(
+        canonical_url="https://ex.com/t07", title=TOPIC07_TITLE, surface_count=1, last_seen=iso(-1)
+    )
+    topic10 = seed.cluster(
+        canonical_url="https://ex.com/t10", title=TOPIC10_TITLE, surface_count=1, last_seen=iso(-1)
+    )
+    nonlatin = seed.cluster(
+        canonical_url="https://ex.com/jp", title=NONLATIN_TITLE, surface_count=1, last_seen=iso(-1)
+    )
+    out = seed.cluster(
+        canonical_url="https://ex.com/old",
+        title="Old story about jam recipes",
+        surface_count=1,
+        last_seen=iso(-100),
+    )
 
     assert score.run(cfg, show=5) == 0
 
     def get(cid):
-        return conn.execute(
-            "SELECT score, score_at FROM clusters WHERE id=?", (cid,)
-        ).fetchone()
+        return conn.execute("SELECT score, score_at FROM clusters WHERE id=?", (cid,)).fetchone()
 
     # Non-latin title: gated to exactly 0.0 but still time-stamped this run.
     r = get(nonlatin)
@@ -330,9 +333,7 @@ def test_run_scores_window_gates_nonlatin_and_topic_branches(
 
 
 @pytest.mark.integration
-def test_run_batches_over_500_and_records_side_effects(
-    cfg, conn, seed, monkeypatch, capsys
-):
+def test_run_batches_over_500_and_records_side_effects(cfg, conn, seed, monkeypatch, capsys):
     _freeze_clock(monkeypatch)
     n = 501  # crosses the BATCH=500 boundary -> two write transactions
     for i in range(n):
@@ -345,18 +346,12 @@ def test_run_batches_over_500_and_records_side_effects(
 
     assert score.run(cfg, show=0) == 0
 
-    scored = conn.execute(
-        "SELECT COUNT(*) FROM clusters WHERE score IS NOT NULL"
-    ).fetchone()[0]
+    scored = conn.execute("SELECT COUNT(*) FROM clusters WHERE score IS NOT NULL").fetchone()[0]
     assert scored == n
 
     # Orchestration side effects: health log, attributable run, last_run file.
-    assert conn.execute(
-        "SELECT COUNT(*) FROM health WHERE job='score'"
-    ).fetchone()[0] >= 1
-    assert conn.execute(
-        "SELECT COUNT(*) FROM runs WHERE job='score'"
-    ).fetchone()[0] == 1
+    assert conn.execute("SELECT COUNT(*) FROM health WHERE job='score'").fetchone()[0] >= 1
+    assert conn.execute("SELECT COUNT(*) FROM runs WHERE job='score'").fetchone()[0] == 1
 
     saved = json.loads(cfg.path.read_text())
     assert saved["last_run"]["job"] == "score"
@@ -368,9 +363,7 @@ def test_run_batches_over_500_and_records_side_effects(
 
 
 @pytest.mark.integration
-def test_run_scores_cluster_without_surfaces_using_defaults(
-    cfg, conn, seed, monkeypatch
-):
+def test_run_scores_cluster_without_surfaces_using_defaults(cfg, conn, seed, monkeypatch):
     # A cluster with no surfaces: MAX(...) aggregates are NULL, so reputation
     # falls back to 1.0/1.5 and engagement to 0. Still scored (never NULL).
     _freeze_clock(monkeypatch)
@@ -385,7 +378,7 @@ def test_run_scores_cluster_without_surfaces_using_defaults(
     row = conn.execute("SELECT score FROM clusters WHERE id=?", (cid,)).fetchone()
     w = cfg.score_weights
     expected01 = (
-        float(w["consensus"]) * score._consensus(1)          # 0.0
+        float(w["consensus"]) * score._consensus(1)  # 0.0
         + float(w["engagement"]) * score._engagement(None, None)  # 0.0
         + float(w["reputation"]) * min(1.0, 1.0 / 1.5)
         + float(w["recency"]) * score._recency(iso(-1), 18.0, FIXED_TS)
@@ -402,20 +395,16 @@ def test_run_scores_cluster_without_surfaces_using_defaults(
 # ═══════════════════════════════════════════════════════════════════════════
 @pytest.mark.integration
 def test_finalists_threshold_and_uncurated(cfg, conn, seed):
-    hi = seed.cluster(canonical_url="https://ex.com/hi", title="High score story",
-                      score=8.0)
-    seed.cluster(canonical_url="https://ex.com/lo", title="Low score story",
-                 score=2.0)
+    hi = seed.cluster(canonical_url="https://ex.com/hi", title="High score story", score=8.0)
+    seed.cluster(canonical_url="https://ex.com/lo", title="Low score story", score=2.0)
     ids = [r["id"] for r in score.finalists(conn, cfg)]
     assert ids == [hi]  # min_score_to_curate = 3.5
 
 
 @pytest.mark.integration
 def test_finalists_score_boundary_is_inclusive(cfg, conn, seed):
-    at = seed.cluster(canonical_url="https://ex.com/at", title="At boundary",
-                      score=3.5)
-    below = seed.cluster(canonical_url="https://ex.com/bl", title="Below boundary",
-                         score=3.499)
+    at = seed.cluster(canonical_url="https://ex.com/at", title="At boundary", score=3.5)
+    below = seed.cluster(canonical_url="https://ex.com/bl", title="Below boundary", score=3.499)
     ids = [r["id"] for r in score.finalists(conn, cfg)]
     assert at in ids
     assert below not in ids
@@ -425,26 +414,24 @@ def test_finalists_score_boundary_is_inclusive(cfg, conn, seed):
 def test_finalists_curation_states_and_retry_window(cfg, conn, seed, monkeypatch):
     _freeze_clock(monkeypatch)  # retry_before = FIXED_NOW - 6h = iso(-6)
 
-    done = seed.cluster(canonical_url="https://ex.com/d", title="Done curated",
-                        score=9.0)
+    done = seed.cluster(canonical_url="https://ex.com/d", title="Done curated", score=9.0)
     seed.curation(done, status="done", curated_at=iso(-1))
 
-    failed_old = seed.cluster(canonical_url="https://ex.com/fo", title="Failed old",
-                              score=7.0)
+    failed_old = seed.cluster(canonical_url="https://ex.com/fo", title="Failed old", score=7.0)
     seed.curation(failed_old, status="failed", curated_at=iso(-7))  # > 6h ago
 
-    failed_recent = seed.cluster(canonical_url="https://ex.com/fr",
-                                 title="Failed recent", score=6.0)
+    failed_recent = seed.cluster(
+        canonical_url="https://ex.com/fr", title="Failed recent", score=6.0
+    )
     seed.curation(failed_recent, status="failed", curated_at=iso(-1))  # < 6h ago
 
-    uncur = seed.cluster(canonical_url="https://ex.com/u", title="Never curated",
-                         score=5.0)
+    uncur = seed.cluster(canonical_url="https://ex.com/u", title="Never curated", score=5.0)
 
     ids = [r["id"] for r in score.finalists(conn, cfg)]
-    assert done not in ids            # succeeded -> not a finalist
-    assert failed_recent not in ids   # failed too recently -> not yet retried
-    assert failed_old in ids          # failed > 6h ago -> retried
-    assert uncur in ids               # never curated -> eligible
+    assert done not in ids  # succeeded -> not a finalist
+    assert failed_recent not in ids  # failed too recently -> not yet retried
+    assert failed_old in ids  # failed > 6h ago -> retried
+    assert uncur in ids  # never curated -> eligible
     # ordering is by score DESC: failed_old (7.0) precedes uncur (5.0)
     assert ids.index(failed_old) < ids.index(uncur)
 
@@ -457,11 +444,9 @@ def test_finalists_excludes_non_english_article(cfg, conn, seed):
     seed.article(fr, lang="fr")
     nolang = seed.cluster(canonical_url="https://ex.com/nl", title="No lang", score=7.0)
     seed.article(nolang, lang=None)
-    emptylang = seed.cluster(canonical_url="https://ex.com/el", title="Empty lang",
-                             score=6.0)
+    emptylang = seed.cluster(canonical_url="https://ex.com/el", title="Empty lang", score=6.0)
     seed.article(emptylang, lang="")
-    noart = seed.cluster(canonical_url="https://ex.com/na", title="No article",
-                         score=5.0)
+    noart = seed.cluster(canonical_url="https://ex.com/na", title="No article", score=5.0)
 
     ids = {r["id"] for r in score.finalists(conn, cfg)}
     assert fr not in ids  # detected non-English -> excluded before LLM spend
@@ -488,10 +473,8 @@ def test_finalists_defaults_when_funnel_keys_missing(conn, seed):
     # finalists only touches cfg.funnel; an empty funnel exercises the .get
     # defaults (min_score_to_curate=3.5, daily_finalists=40).
     fake_cfg = types.SimpleNamespace(funnel={})
-    at = seed.cluster(canonical_url="https://ex.com/x", title="At default",
-                      score=3.5)
-    below = seed.cluster(canonical_url="https://ex.com/y", title="Below default",
-                         score=3.4)
+    at = seed.cluster(canonical_url="https://ex.com/x", title="At default", score=3.5)
+    below = seed.cluster(canonical_url="https://ex.com/y", title="Below default", score=3.4)
     ids = [r["id"] for r in score.finalists(conn, fake_cfg)]
     assert at in ids
     assert below not in ids

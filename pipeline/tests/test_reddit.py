@@ -16,7 +16,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, List, Tuple
 
 import pytest
 
@@ -55,10 +55,10 @@ def _listing(children: List[dict]) -> dict:
     [
         ("reddit-python", "python"),
         ("reddit-r-place", "r-place"),
-        ("programming", "programming"),          # no marker -> unchanged
-        ("reddit-", ""),                          # marker with empty remainder
-        ("my-reddit-sub", "sub"),                # marker not anchored at start
-        ("reddit-a-reddit-b", "a-reddit-b"),     # splits on FIRST marker only
+        ("programming", "programming"),  # no marker -> unchanged
+        ("reddit-", ""),  # marker with empty remainder
+        ("my-reddit-sub", "sub"),  # marker not anchored at start
+        ("reddit-a-reddit-b", "a-reddit-b"),  # splits on FIRST marker only
     ],
 )
 def test_sub_from_source(slug, expected):
@@ -84,9 +84,7 @@ def test_oauth_mode_from_row_raises(row_mode):
 def test_oauth_mode_from_arg_when_row_mode_none():
     # row mode is None -> the arg ('oauth') supplies the mode.
     with pytest.raises(RuntimeError) as ei:
-        reddit.fetch_items(
-            object(), {"mode": None, "slug": "reddit-x", "url": "u"}, mode="oauth"
-        )
+        reddit.fetch_items(object(), {"mode": None, "slug": "reddit-x", "url": "u"}, mode="oauth")
     msg = str(ei.value)
     assert "reddit.com/prefs/apps" in msg
     assert "ingest.reddit_mode" in msg
@@ -106,9 +104,7 @@ def test_row_mode_overrides_arg(monkeypatch):
 def test_both_none_defaults_to_public_json(make_result):
     # arg None + row None -> the 'public_json' literal fallback: fetch IS called.
     client = RecordingClient(make_result(content=b'{"data":{"children":[]}}'))
-    items = reddit.fetch_items(
-        client, {"mode": None, "url": "u", "slug": "reddit-x"}, mode=None
-    )
+    items = reddit.fetch_items(client, {"mode": None, "url": "u", "slug": "reddit-x"}, mode=None)
     assert items == []
     assert client.calls == [("u", False)]
 
@@ -133,8 +129,8 @@ def test_rss_mode_rewrites_url_and_delegates(monkeypatch):
     source_row = {"mode": "rss", "slug": "reddit-python", "url": "https://original/feed"}
     result = reddit.fetch_items(client, source_row)
 
-    assert result is sentinel                      # passthrough of delegate return
-    assert captured["client"] is client            # same client handed to the feed path
+    assert result is sentinel  # passthrough of delegate return
+    assert captured["client"] is client  # same client handed to the feed path
     assert captured["row"]["url"] == "https://www.reddit.com/r/python/top/.rss?t=day"
     assert captured["row"]["url"].endswith("/r/python/top/.rss?t=day")
     # the row passed to rss is a COPY — original source_row is untouched.
@@ -145,15 +141,10 @@ def test_rss_mode_url_uses_parsed_sub(monkeypatch):
     from signalpipe.ingest import rss as rss_mod
 
     captured: dict = {}
-    monkeypatch.setattr(
-        rss_mod, "fetch_feed_items", lambda c, row: captured.update(row=row) or []
-    )
+    monkeypatch.setattr(rss_mod, "fetch_feed_items", lambda c, row: captured.update(row=row) or [])
     # slug WITHOUT the reddit- prefix is used verbatim as the subreddit.
     reddit.fetch_items(object(), {"mode": "rss", "slug": "MachineLearning", "url": "x"})
-    assert (
-        captured["row"]["url"]
-        == "https://www.reddit.com/r/MachineLearning/top/.rss?t=day"
-    )
+    assert captured["row"]["url"] == "https://www.reddit.com/r/MachineLearning/top/.rss?t=day"
 
 
 # --------------------------------------------------------------------------- #
@@ -175,11 +166,11 @@ def test_public_json_happy_path(make_result, load_json):
     assert self_post == {
         "guid": "t3_self1",
         "raw_url": "https://www.reddit.com/r/python/comments/self1/a_self_post/",
-        "title": "A self post that needs stripping",       # stripped
+        "title": "A self post that needs stripping",  # stripped
         "author": "alice",
-        "published_at": "2023-11-14T22:13:20+00:00",         # created_utc -> ISO UTC
-        "points": 321,                                        # <- score
-        "comments": 45,                                       # <- num_comments
+        "published_at": "2023-11-14T22:13:20+00:00",  # created_utc -> ISO UTC
+        "points": 321,  # <- score
+        "comments": 45,  # <- num_comments
         "extra": {
             "discussion_url": "https://www.reddit.com/r/python/comments/self1/a_self_post/",
             "subreddit": "python",
@@ -193,10 +184,10 @@ def test_public_json_happy_path(make_result, load_json):
     # covered (not just the self-post path above).
     assert link_post == {
         "guid": "t3_link1",
-        "raw_url": "https://example.com/article",              # <- external url, not permalink
+        "raw_url": "https://example.com/article",  # <- external url, not permalink
         "title": "External link post",
         "author": "bob",
-        "published_at": "2023-11-14T08:20:00+00:00",           # 1699950000 -> ISO UTC
+        "published_at": "2023-11-14T08:20:00+00:00",  # 1699950000 -> ISO UTC
         "points": 210,
         "comments": 12,
         "extra": {
@@ -213,14 +204,24 @@ def test_public_json_happy_path(make_result, load_json):
     [
         # self post -> permalink regardless of the url field
         (
-            {"name": "t3_a", "title": "self", "is_self": True,
-             "permalink": "/p/", "url": "https://ext/x"},
+            {
+                "name": "t3_a",
+                "title": "self",
+                "is_self": True,
+                "permalink": "/p/",
+                "url": "https://ext/x",
+            },
             "https://www.reddit.com/p/",
         ),
         # link post -> the url field
         (
-            {"name": "t3_b", "title": "link", "is_self": False,
-             "permalink": "/p/", "url": "https://ext/x"},
+            {
+                "name": "t3_b",
+                "title": "link",
+                "is_self": False,
+                "permalink": "/p/",
+                "url": "https://ext/x",
+            },
             "https://ext/x",
         ),
         # link post with no url -> falls back to permalink
@@ -244,10 +245,10 @@ def test_raw_url_resolution(make_result, data, expected_raw):
 def test_skips_malformed_children_and_handles_defaults(make_result):
     payload = _listing(
         [
-            {"data": {"title": "no name", "permalink": "/x"}},          # missing name -> skip
+            {"data": {"title": "no name", "permalink": "/x"}},  # missing name -> skip
             {"data": {"name": "t3_nt", "title": "   ", "permalink": "/y"}},  # blank title -> skip
-            {"data": {}},                                               # empty data -> skip
-            {},                                                         # child.get('data') None -> skip
+            {"data": {}},  # empty data -> skip
+            {},  # child.get('data') None -> skip
             {"data": {"name": "t3_ok", "title": "Kept", "permalink": "/r/py/comments/ok/"}},
         ]
     )
@@ -256,10 +257,10 @@ def test_skips_malformed_children_and_handles_defaults(make_result):
 
     assert [it["guid"] for it in items] == ["t3_ok"]
     kept = items[0]
-    assert kept["published_at"] is None       # no created_utc
-    assert kept["points"] is None             # no score
-    assert kept["comments"] is None           # no num_comments
-    assert kept["author"] is None             # no author
+    assert kept["published_at"] is None  # no created_utc
+    assert kept["points"] is None  # no score
+    assert kept["comments"] is None  # no num_comments
+    assert kept["author"] is None  # no author
     assert kept["raw_url"] == "https://www.reddit.com/r/py/comments/ok/"
     assert kept["extra"] == {
         "discussion_url": "https://www.reddit.com/r/py/comments/ok/",
@@ -299,9 +300,9 @@ def test_empty_or_missing_listing_yields_no_items(make_result, body):
 @pytest.mark.parametrize(
     "kw,expected_msg",
     [
-        (dict(status=500, content=b"x", error=None), "HTTP 500"),        # non-200, no error string
+        (dict(status=500, content=b"x", error=None), "HTTP 500"),  # non-200, no error string
         (dict(status=503, content=b"", error="upstream down"), "upstream down"),  # error wins
-        (dict(status=200, content=b"", error=None), "HTTP 200"),          # 200 but empty body
+        (dict(status=200, content=b"", error=None), "HTTP 200"),  # 200 but empty body
         (dict(status=200, content=b"", error="empty body"), "empty body"),
     ],
 )
@@ -365,9 +366,7 @@ def test_rss_mode_end_to_end_real_feedparser(polite_client_factory, load_bytes):
 
     def handler(request):
         seen["url"] = str(request.url)
-        return httpx.Response(
-            200, content=atom, headers={"Content-Type": "application/atom+xml"}
-        )
+        return httpx.Response(200, content=atom, headers={"Content-Type": "application/atom+xml"})
 
     client = polite_client_factory(handler)
     source_row = {

@@ -49,11 +49,30 @@ class FakeComplete:
         self._handler = handler
         self.calls = []
 
-    def __call__(self, tier, system, prompt, schema, *, cfg=None, conn=None,
-                 effort=None, cap_kind="daily", model_override=None):
-        self.calls.append(SimpleNamespace(
-            tier=tier, system=system, prompt=prompt, schema=schema,
-            effort=effort, cap_kind=cap_kind, model_override=model_override))
+    def __call__(
+        self,
+        tier,
+        system,
+        prompt,
+        schema,
+        *,
+        cfg=None,
+        conn=None,
+        effort=None,
+        cap_kind="daily",
+        model_override=None,
+    ):
+        self.calls.append(
+            SimpleNamespace(
+                tier=tier,
+                system=system,
+                prompt=prompt,
+                schema=schema,
+                effort=effort,
+                cap_kind=cap_kind,
+                model_override=model_override,
+            )
+        )
         return self._handler(prompt)
 
 
@@ -61,15 +80,23 @@ def _seed_curatable(seed, first_seen, score, title):
     """Seed a cluster with a non-empty English article (a curate candidate)."""
     cid = seed.cluster(
         canonical_url="https://ex.com/%d" % next(_CANON),
-        first_seen=first_seen, score=score, title=title)
+        first_seen=first_seen,
+        score=score,
+        title=title,
+    )
     seed.article(cid, text="Article body for %s." % title)
     return cid
 
 
 def _done_out(**over):
     out = {
-        "relevance_score": 8, "why_it_matters": "matters", "notes": ["x", "y"],
-        "summary": "s", "channels": ["ai"], "novelty": "n", "audience": "a",
+        "relevance_score": 8,
+        "why_it_matters": "matters",
+        "notes": ["x", "y"],
+        "summary": "s",
+        "channels": ["ai"],
+        "novelty": "n",
+        "audience": "a",
         "skip": False,
     }
     out.update(over)
@@ -79,14 +106,19 @@ def _done_out(**over):
 def _insert(conn, table, **vals):
     cols = list(vals)
     conn.execute(
-        "INSERT INTO %s(%s) VALUES(%s)"
-        % (table, ",".join(cols), ",".join("?" for _ in cols)),
+        "INSERT INTO %s(%s) VALUES(%s)" % (table, ",".join(cols), ",".join("?" for _ in cols)),
         [vals[c] for c in cols],
     )
 
 
-def _ins_cluster(conn, cid, title="Story about AI", canonical=None, score=1.0,
-                 first_seen="2026-05-01T00:00:00+00:00"):
+def _ins_cluster(
+    conn,
+    cid,
+    title="Story about AI",
+    canonical=None,
+    score=1.0,
+    first_seen="2026-05-01T00:00:00+00:00",
+):
     from signalpipe.dedup import story_id, title_key
 
     canonical = canonical if canonical is not None else "https://ex.com/%d" % cid
@@ -94,15 +126,13 @@ def _ins_cluster(conn, cid, title="Story about AI", canonical=None, score=1.0,
     conn.execute(
         "INSERT INTO clusters(id, canonical_url, title, title_key, first_seen, "
         "last_seen, surface_count, score, story_id) VALUES(?,?,?,?,?,?,?,?,?)",
-        (cid, canonical, title, tk, first_seen, first_seen, 1, score,
-         story_id(canonical, tk)),
+        (cid, canonical, title, tk, first_seen, first_seen, 1, score, story_id(canonical, tk)),
     )
 
 
 def _health(conn, level):
     return conn.execute(
-        "SELECT message, stats FROM health WHERE job='backfill' AND level=? "
-        "ORDER BY id",
+        "SELECT message, stats FROM health WHERE job='backfill' AND level=? ORDER BY id",
         (level,),
     ).fetchall()
 
@@ -150,8 +180,7 @@ def test_days_property_half_open():
 
     @settings(max_examples=80, deadline=None)
     @given(
-        st.dates(min_value=datetime.date(2000, 1, 1),
-                 max_value=datetime.date(2100, 1, 1)),
+        st.dates(min_value=datetime.date(2000, 1, 1), max_value=datetime.date(2100, 1, 1)),
         st.integers(min_value=-5, max_value=45),
     )
     def inner(start, delta):
@@ -175,25 +204,22 @@ def test_days_property_half_open():
 def test_select_refetch_ids_selection_rules(conn, seed):
     fs = "2026-05-01T%02d:00:00+00:00"
     # selected: no article row at all
-    a = seed.cluster(canonical_url="https://ex.com/a", first_seen=fs % 10,
-                     score=5.0)
+    a = seed.cluster(canonical_url="https://ex.com/a", first_seen=fs % 10, score=5.0)
     # selected: article present but text IS NULL
-    b = seed.cluster(canonical_url="https://ex.com/b", first_seen=fs % 11,
-                     score=9.0)
+    b = seed.cluster(canonical_url="https://ex.com/b", first_seen=fs % 11, score=9.0)
     seed.article(b, text=None)
     # selected: article present but text == ''
-    c = seed.cluster(canonical_url="https://ex.com/c", first_seen=fs % 9,
-                     score=3.0)
+    c = seed.cluster(canonical_url="https://ex.com/c", first_seen=fs % 9, score=3.0)
     seed.article(c, text="")
     # excluded: already has text
-    d = seed.cluster(canonical_url="https://ex.com/d", first_seen=fs % 8,
-                     score=8.0)
+    d = seed.cluster(canonical_url="https://ex.com/d", first_seen=fs % 8, score=8.0)
     seed.article(d, text="Full body")
     # excluded: canonical_url IS NULL
     seed.cluster(canonical_url=None, first_seen=fs % 7, score=10.0)
     # excluded: outside the day window
-    seed.cluster(canonical_url="https://ex.com/f",
-                 first_seen="2026-05-02T10:00:00+00:00", score=10.0)
+    seed.cluster(
+        canonical_url="https://ex.com/f", first_seen="2026-05-02T10:00:00+00:00", score=10.0
+    )
 
     ids = backfill.select_refetch_ids(conn, "2026-05-01", "2026-05-02", top_n=40)
     # ordered by score DESC among the selected: b(9) > a(5) > c(3)
@@ -203,10 +229,8 @@ def test_select_refetch_ids_selection_rules(conn, seed):
 @pytest.mark.integration
 def test_select_refetch_ids_top_n_per_day(conn, seed):
     fs = "2026-05-01T%02d:00:00+00:00"
-    b = seed.cluster(canonical_url="https://ex.com/tb", first_seen=fs % 11,
-                     score=9.0)
-    a = seed.cluster(canonical_url="https://ex.com/ta", first_seen=fs % 10,
-                     score=5.0)
+    b = seed.cluster(canonical_url="https://ex.com/tb", first_seen=fs % 11, score=9.0)
+    a = seed.cluster(canonical_url="https://ex.com/ta", first_seen=fs % 10, score=5.0)
     seed.cluster(canonical_url="https://ex.com/tc", first_seen=fs % 9, score=3.0)
     ids = backfill.select_refetch_ids(conn, "2026-05-01", "2026-05-02", top_n=2)
     assert ids == [b, a]  # only the top 2 by score for the day
@@ -214,10 +238,12 @@ def test_select_refetch_ids_top_n_per_day(conn, seed):
 
 @pytest.mark.integration
 def test_select_refetch_ids_spans_days_in_order(conn, seed):
-    d1 = seed.cluster(canonical_url="https://ex.com/d1",
-                      first_seen="2026-05-01T10:00:00+00:00", score=4.0)
-    d2 = seed.cluster(canonical_url="https://ex.com/d2",
-                      first_seen="2026-05-02T10:00:00+00:00", score=9.0)
+    d1 = seed.cluster(
+        canonical_url="https://ex.com/d1", first_seen="2026-05-01T10:00:00+00:00", score=4.0
+    )
+    d2 = seed.cluster(
+        canonical_url="https://ex.com/d2", first_seen="2026-05-02T10:00:00+00:00", score=9.0
+    )
     ids = backfill.select_refetch_ids(conn, "2026-05-01", "2026-05-03", top_n=40)
     # day-01 ids first, then day-02 (extend per day, not globally sorted)
     assert ids == [d1, d2]
@@ -225,10 +251,10 @@ def test_select_refetch_ids_spans_days_in_order(conn, seed):
 
 @pytest.mark.integration
 def test_select_refetch_ids_empty_window(conn, seed):
-    seed.cluster(canonical_url="https://ex.com/z",
-                 first_seen="2026-06-01T10:00:00+00:00", score=9.0)
-    assert backfill.select_refetch_ids(
-        conn, "2026-05-01", "2026-05-03", top_n=40) == []
+    seed.cluster(
+        canonical_url="https://ex.com/z", first_seen="2026-06-01T10:00:00+00:00", score=9.0
+    )
+    assert backfill.select_refetch_ids(conn, "2026-05-01", "2026-05-03", top_n=40) == []
 
 
 # --------------------------------------------------------------------------- #
@@ -244,8 +270,7 @@ def test_persist_done(conn, seed):
     skipped = backfill._persist(conn, c, _done_out(), "claude-opus-4-8", when)
 
     assert skipped is False
-    row = conn.execute(
-        "SELECT * FROM curations WHERE cluster_id=?", (cid,)).fetchone()
+    row = conn.execute("SELECT * FROM curations WHERE cluster_id=?", (cid,)).fetchone()
     assert row["status"] == "done"
     assert row["tier_used"] == "opus-backfill"
     assert row["backend_used"] == "subscription"
@@ -266,8 +291,7 @@ def test_persist_done(conn, seed):
 
 @pytest.mark.integration
 def test_persist_skip(conn, seed):
-    cid = seed.cluster(canonical_url="https://ex.com/p2",
-                       title="Thin marketing rewrite")
+    cid = seed.cluster(canonical_url="https://ex.com/p2", title="Thin marketing rewrite")
     c = {"id": cid, "title": "Thin marketing rewrite"}
     when = "2026-05-02T00:00:00+00:00"
     out = {"skip": True, "skip_reason": "fluff", "channels": []}
@@ -277,7 +301,9 @@ def test_persist_skip(conn, seed):
     assert skipped is True
     row = conn.execute(
         "SELECT status, skip, skip_reason, relevance_score, curated_at "
-        "FROM curations WHERE cluster_id=?", (cid,)).fetchone()
+        "FROM curations WHERE cluster_id=?",
+        (cid,),
+    ).fetchone()
     assert row["status"] == "skipped"
     assert row["skip"] == 1
     assert row["skip_reason"] == "fluff"
@@ -290,16 +316,21 @@ def test_persist_updates_existing_pending_row(conn, seed):
     """INSERT OR IGNORE claims 'pending' then UPDATE finalizes it; a pre-existing
     pending claim is finalized in place (one row, not two)."""
     cid = seed.cluster(canonical_url="https://ex.com/p3", title="Rust release")
-    conn.execute(
-        "INSERT INTO curations(cluster_id, status) VALUES(?, 'pending')", (cid,))
-    backfill._persist(conn, {"id": cid, "title": "Rust release"},
-                      _done_out(), "claude-opus-4-8", "2026-05-03T00:00:00+00:00")
-    assert conn.execute(
-        "SELECT COUNT(*) FROM curations WHERE cluster_id=?", (cid,)
-    ).fetchone()[0] == 1
-    assert conn.execute(
-        "SELECT status FROM curations WHERE cluster_id=?", (cid,)
-    ).fetchone()["status"] == "done"
+    conn.execute("INSERT INTO curations(cluster_id, status) VALUES(?, 'pending')", (cid,))
+    backfill._persist(
+        conn,
+        {"id": cid, "title": "Rust release"},
+        _done_out(),
+        "claude-opus-4-8",
+        "2026-05-03T00:00:00+00:00",
+    )
+    assert (
+        conn.execute("SELECT COUNT(*) FROM curations WHERE cluster_id=?", (cid,)).fetchone()[0] == 1
+    )
+    assert (
+        conn.execute("SELECT status FROM curations WHERE cluster_id=?", (cid,)).fetchone()["status"]
+        == "done"
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -307,12 +338,9 @@ def test_persist_updates_existing_pending_row(conn, seed):
 # --------------------------------------------------------------------------- #
 @pytest.mark.integration
 def test_curate_multiday_done_and_skipped(conn, seed, cfg, monkeypatch):
-    a = _seed_curatable(seed, "2026-05-01T10:00:00+00:00", 9.0,
-                        "OpenAI ships GPT frontier model")
-    b = _seed_curatable(seed, "2026-05-01T09:00:00+00:00", 5.0,
-                        "Marketing fluff nobody needs")
-    c = _seed_curatable(seed, "2026-05-02T10:00:00+00:00", 7.0,
-                        "Rust compiler gets faster")
+    a = _seed_curatable(seed, "2026-05-01T10:00:00+00:00", 9.0, "OpenAI ships GPT frontier model")
+    b = _seed_curatable(seed, "2026-05-01T09:00:00+00:00", 5.0, "Marketing fluff nobody needs")
+    c = _seed_curatable(seed, "2026-05-02T10:00:00+00:00", 7.0, "Rust compiler gets faster")
 
     def handler(prompt):
         if "fluff" in prompt.lower():
@@ -338,18 +366,18 @@ def test_curate_multiday_done_and_skipped(conn, seed, cfg, monkeypatch):
 
     # curated_at is stamped to the cluster's first_seen midnight (its real day).
     ra = conn.execute(
-        "SELECT status, curated_at FROM curations WHERE cluster_id=?",
-        (a,)).fetchone()
+        "SELECT status, curated_at FROM curations WHERE cluster_id=?", (a,)
+    ).fetchone()
     assert ra["status"] == "done"
     assert ra["curated_at"] == "2026-05-01T00:00:00+00:00"
     rb = conn.execute(
-        "SELECT status, curated_at FROM curations WHERE cluster_id=?",
-        (b,)).fetchone()
+        "SELECT status, curated_at FROM curations WHERE cluster_id=?", (b,)
+    ).fetchone()
     assert rb["status"] == "skipped"
     assert rb["curated_at"] == "2026-05-01T00:00:00+00:00"
     rc2 = conn.execute(
-        "SELECT status, curated_at FROM curations WHERE cluster_id=?",
-        (c,)).fetchone()
+        "SELECT status, curated_at FROM curations WHERE cluster_id=?", (c,)
+    ).fetchone()
     assert rc2["status"] == "done"
     assert rc2["curated_at"] == "2026-05-02T00:00:00+00:00"
 
@@ -385,12 +413,9 @@ def test_curate_spend_cap_stops_batch(conn, seed, cfg, monkeypatch):
 
 
 @pytest.mark.integration
-def test_curate_llm_error_marks_failed_and_continues(conn, seed, cfg,
-                                                     monkeypatch):
-    h = _seed_curatable(seed, "2026-05-01T10:00:00+00:00", 9.0,
-                        "BOOM failing item")
-    lo = _seed_curatable(seed, "2026-05-01T09:00:00+00:00", 5.0,
-                         "Rust compiler faster")
+def test_curate_llm_error_marks_failed_and_continues(conn, seed, cfg, monkeypatch):
+    h = _seed_curatable(seed, "2026-05-01T10:00:00+00:00", 9.0, "BOOM failing item")
+    lo = _seed_curatable(seed, "2026-05-01T09:00:00+00:00", 5.0, "Rust compiler faster")
 
     def handler(prompt):
         if "BOOM" in prompt:
@@ -403,12 +428,13 @@ def test_curate_llm_error_marks_failed_and_continues(conn, seed, cfg,
     assert rc == 0
 
     # the surviving item is persisted; the failed one wrote no curation.
-    assert conn.execute(
-        "SELECT status FROM curations WHERE cluster_id=?", (lo,)
-    ).fetchone()["status"] == "done"
-    assert conn.execute(
-        "SELECT COUNT(*) FROM curations WHERE cluster_id=?", (h,)
-    ).fetchone()[0] == 0
+    assert (
+        conn.execute("SELECT status FROM curations WHERE cluster_id=?", (lo,)).fetchone()["status"]
+        == "done"
+    )
+    assert (
+        conn.execute("SELECT COUNT(*) FROM curations WHERE cluster_id=?", (h,)).fetchone()[0] == 0
+    )
 
     stats = json.loads(_health(conn, "info")[-1]["stats"])
     assert stats["failed"] == 1
@@ -422,16 +448,14 @@ def test_curate_llm_error_marks_failed_and_continues(conn, seed, cfg,
 
 @pytest.mark.integration
 def test_curate_dry_run_writes_nothing(conn, seed, cfg, monkeypatch, capsys):
-    _seed_curatable(seed, "2026-05-01T10:00:00+00:00", 9.0,
-                    "OpenAI ships GPT frontier model")
+    _seed_curatable(seed, "2026-05-01T10:00:00+00:00", 9.0, "OpenAI ships GPT frontier model")
 
     def handler(prompt):  # pragma: no cover - must never run in dry_run
         raise AssertionError("adapter.complete must not run in dry_run")
 
     monkeypatch.setattr(backfill.adapter, "complete", FakeComplete(handler))
 
-    rc = backfill.curate(cfg, "2026-05-01", "2026-05-02", top_n=30,
-                         dry_run=True)
+    rc = backfill.curate(cfg, "2026-05-01", "2026-05-02", top_n=30, dry_run=True)
     assert rc == 0
     assert conn.execute("SELECT COUNT(*) FROM curations").fetchone()[0] == 0
     # dry_run touches no health rows either.
@@ -452,8 +476,8 @@ def test_fetch_empty_ids_short_circuits(conn, cfg, monkeypatch):
     calls = []
     monkeypatch.setattr(backfill, "select_refetch_ids", lambda *a, **k: [])
     monkeypatch.setattr(
-        fetch_article, "run",
-        lambda *a, **k: calls.append((a, k)) or 99)  # pragma: no cover
+        fetch_article, "run", lambda *a, **k: calls.append((a, k)) or 99
+    )  # pragma: no cover
 
     rc = backfill.fetch(cfg, "2026-05-01", "2026-05-02")
     assert rc == 0
@@ -465,8 +489,7 @@ def test_fetch_delegates_selected_ids(conn, cfg, monkeypatch):
     from signalpipe import fetch_article
 
     captured = {}
-    monkeypatch.setattr(backfill, "select_refetch_ids",
-                        lambda *a, **k: [11, 22, 33])
+    monkeypatch.setattr(backfill, "select_refetch_ids", lambda *a, **k: [11, 22, 33])
 
     def fake_run(cfg_arg, cluster_ids=None):
         captured["cfg"] = cfg_arg
@@ -493,48 +516,137 @@ def test_merge_into_live(cfg, tmp_path):
     live = db_mod.connect_rw(live_path)
     for cid in (1, 2, 3, 4):
         _ins_cluster(live, cid)
-    _insert(live, "curations", cluster_id=1, status="done", tier_used="triage",
-            backend_used="subscription", model_used="claude-haiku-4-5",
-            why_it_matters="LIVE ORIGINAL", skip=0,
-            curated_at="2026-06-10T00:00:00+00:00")
-    _insert(live, "articles", cluster_id=1, source_url="https://ex.com/1",
-            read_url="https://ex.com/1", read_kind="primary", paywalled=0,
-            text="", lang="en", fetch_status="ok")
+    _insert(
+        live,
+        "curations",
+        cluster_id=1,
+        status="done",
+        tier_used="triage",
+        backend_used="subscription",
+        model_used="claude-haiku-4-5",
+        why_it_matters="LIVE ORIGINAL",
+        skip=0,
+        curated_at="2026-06-10T00:00:00+00:00",
+    )
+    _insert(
+        live,
+        "articles",
+        cluster_id=1,
+        source_url="https://ex.com/1",
+        read_url="https://ex.com/1",
+        read_kind="primary",
+        paywalled=0,
+        text="",
+        lang="en",
+        fetch_status="ok",
+    )
     live.close()
 
     # --- SRC (backfill copy): same clusters + opus-backfill rows
     src = db_mod.connect_rw(src_path)
     for cid in (1, 2, 3, 4):
         _ins_cluster(src, cid)
-    _insert(src, "curations", cluster_id=1, status="done",
-            tier_used="opus-backfill", why_it_matters="BACKFILL 1", skip=0)
-    _insert(src, "curations", cluster_id=2, status="done",
-            tier_used="opus-backfill", why_it_matters="BACKFILL 2", skip=0)
-    _insert(src, "curations", cluster_id=3, status="done",
-            tier_used="triage", why_it_matters="not backfill", skip=0)
-    _insert(src, "curations", cluster_id=4, status="done",
-            tier_used="opus-backfill", why_it_matters="BACKFILL 4", skip=0)
-    _insert(src, "articles", cluster_id=1, source_url="https://ex.com/1",
-            read_url="https://ex.com/1", text="Recovered 1", lang="en",
-            fetch_status="ok")
-    _insert(src, "articles", cluster_id=2, source_url="https://ex.com/2",
-            read_url="https://ex.com/2", text="Recovered 2", lang="en",
-            fetch_status="ok")
-    _insert(src, "articles", cluster_id=3, source_url="https://ex.com/3",
-            read_url="https://ex.com/3", text="Recovered 3", lang="en",
-            fetch_status="ok")
-    _insert(src, "articles", cluster_id=4, source_url="https://ex.com/4",
-            read_url="https://ex.com/4", text="", lang="en", fetch_status="ok")
-    _insert(src, "digests", kind="daily", period_key="2026-05-01",
-            window_start="2026-05-01T00:00:00+00:00",
-            window_end="2026-05-02T00:00:00+00:00",
-            generated_at="2026-05-02T00:00:00+00:00",
-            model_used="claude-opus-4-8", title="May 1", blurb="b",
-            body_md="md", body_html="<p>html</p>",
-            cluster_ids=json.dumps([1, 2]), promoted=0)
-    _insert(src, "published_ledger", story_id="story-xyz", surface="daily",
-            edition_key="2026-05-01", cluster_id=1,
-            first_at="2026-05-02T00:00:00+00:00")
+    _insert(
+        src,
+        "curations",
+        cluster_id=1,
+        status="done",
+        tier_used="opus-backfill",
+        why_it_matters="BACKFILL 1",
+        skip=0,
+    )
+    _insert(
+        src,
+        "curations",
+        cluster_id=2,
+        status="done",
+        tier_used="opus-backfill",
+        why_it_matters="BACKFILL 2",
+        skip=0,
+    )
+    _insert(
+        src,
+        "curations",
+        cluster_id=3,
+        status="done",
+        tier_used="triage",
+        why_it_matters="not backfill",
+        skip=0,
+    )
+    _insert(
+        src,
+        "curations",
+        cluster_id=4,
+        status="done",
+        tier_used="opus-backfill",
+        why_it_matters="BACKFILL 4",
+        skip=0,
+    )
+    _insert(
+        src,
+        "articles",
+        cluster_id=1,
+        source_url="https://ex.com/1",
+        read_url="https://ex.com/1",
+        text="Recovered 1",
+        lang="en",
+        fetch_status="ok",
+    )
+    _insert(
+        src,
+        "articles",
+        cluster_id=2,
+        source_url="https://ex.com/2",
+        read_url="https://ex.com/2",
+        text="Recovered 2",
+        lang="en",
+        fetch_status="ok",
+    )
+    _insert(
+        src,
+        "articles",
+        cluster_id=3,
+        source_url="https://ex.com/3",
+        read_url="https://ex.com/3",
+        text="Recovered 3",
+        lang="en",
+        fetch_status="ok",
+    )
+    _insert(
+        src,
+        "articles",
+        cluster_id=4,
+        source_url="https://ex.com/4",
+        read_url="https://ex.com/4",
+        text="",
+        lang="en",
+        fetch_status="ok",
+    )
+    _insert(
+        src,
+        "digests",
+        kind="daily",
+        period_key="2026-05-01",
+        window_start="2026-05-01T00:00:00+00:00",
+        window_end="2026-05-02T00:00:00+00:00",
+        generated_at="2026-05-02T00:00:00+00:00",
+        model_used="claude-opus-4-8",
+        title="May 1",
+        blurb="b",
+        body_md="md",
+        body_html="<p>html</p>",
+        cluster_ids=json.dumps([1, 2]),
+        promoted=0,
+    )
+    _insert(
+        src,
+        "published_ledger",
+        story_id="story-xyz",
+        surface="daily",
+        edition_key="2026-05-01",
+        cluster_id=1,
+        first_at="2026-05-02T00:00:00+00:00",
+    )
     src.close()
 
     rc = backfill.merge(cfg, str(src_path))
@@ -555,38 +667,35 @@ def test_merge_into_live(cfg, tmp_path):
         assert c2["tier_used"] == "opus-backfill"
         assert c2["why_it_matters"] == "BACKFILL 2"
         # #3's src curation is NOT opus-backfill -> excluded.
-        assert out.execute(
-            "SELECT COUNT(*) FROM curations WHERE cluster_id=3"
-        ).fetchone()[0] == 0
+        assert out.execute("SELECT COUNT(*) FROM curations WHERE cluster_id=3").fetchone()[0] == 0
         # #4's opus-backfill curation merges even though its text is empty.
-        assert out.execute(
-            "SELECT tier_used FROM curations WHERE cluster_id=4"
-        ).fetchone()["tier_used"] == "opus-backfill"
+        assert (
+            out.execute("SELECT tier_used FROM curations WHERE cluster_id=4").fetchone()[
+                "tier_used"
+            ]
+            == "opus-backfill"
+        )
 
         # Articles: bounded to opus-backfill clusters WITH text.
-        assert out.execute(
-            "SELECT text FROM articles WHERE cluster_id=1"
-        ).fetchone()["text"] == "Recovered 1"  # replaced the empty live row
-        assert out.execute(
-            "SELECT text FROM articles WHERE cluster_id=2"
-        ).fetchone()["text"] == "Recovered 2"
+        assert (
+            out.execute("SELECT text FROM articles WHERE cluster_id=1").fetchone()["text"]
+            == "Recovered 1"
+        )  # replaced the empty live row
+        assert (
+            out.execute("SELECT text FROM articles WHERE cluster_id=2").fetchone()["text"]
+            == "Recovered 2"
+        )
         # #3 (not backfill) and #4 (empty text) contribute no article.
-        assert out.execute(
-            "SELECT COUNT(*) FROM articles WHERE cluster_id=3"
-        ).fetchone()[0] == 0
-        assert out.execute(
-            "SELECT COUNT(*) FROM articles WHERE cluster_id=4"
-        ).fetchone()[0] == 0
+        assert out.execute("SELECT COUNT(*) FROM articles WHERE cluster_id=3").fetchone()[0] == 0
+        assert out.execute("SELECT COUNT(*) FROM articles WHERE cluster_id=4").fetchone()[0] == 0
 
         assert out.execute("SELECT COUNT(*) FROM digests").fetchone()[0] == 1
-        assert out.execute(
-            "SELECT COUNT(*) FROM published_ledger").fetchone()[0] == 1
+        assert out.execute("SELECT COUNT(*) FROM published_ledger").fetchone()[0] == 1
 
         # counts recorded in the health log.
         msg = _health(out, "info")[-1]["message"]
         payload = json.loads(msg.split("merge -> live: ", 1)[1])
-        assert payload == {"articles": 2, "curations": 2,
-                           "digests": 1, "ledger": 1}
+        assert payload == {"articles": 2, "curations": 2, "digests": 1, "ledger": 1}
     finally:
         out.close()
 
@@ -637,6 +746,5 @@ def test_merge_detaches_bf_on_error(cfg, tmp_path, monkeypatch):
     assert any(s.startswith("ATTACH DATABASE") for s in calls)
     assert "DETACH DATABASE bf" in calls
     # DETACH ran AFTER the failing insert (i.e. in the finally, on the error).
-    fail_at = max(i for i, s in enumerate(calls)
-                  if "INSERT OR IGNORE INTO digests" in s)
+    fail_at = max(i for i, s in enumerate(calls) if "INSERT OR IGNORE INTO digests" in s)
     assert calls.index("DETACH DATABASE bf") > fail_at

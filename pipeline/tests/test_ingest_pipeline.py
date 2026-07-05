@@ -93,9 +93,7 @@ _FETCHERS = [
 
 def _recorder(records, key):
     def _rec(client, source_row, **kwargs):
-        records.append(
-            {"key": key, "client": client, "source_row": source_row, "kwargs": kwargs}
-        )
+        records.append({"key": key, "client": client, "source_row": source_row, "kwargs": kwargs})
         return [{"marker": key}]
 
     return _rec
@@ -197,9 +195,7 @@ def test_dispatch_reddit_prefix_matches_any_subreddit(patched_fetchers, fake_cli
 
 def test_dispatch_unknown_slug_and_type_raises(patched_fetchers, fake_client):
     with pytest.raises(RuntimeError) as exc:
-        pipeline._fetch_for_source(
-            fake_client(), {"slug": "mystery", "type": "json"}, FakeCfg()
-        )
+        pipeline._fetch_for_source(fake_client(), {"slug": "mystery", "type": "json"}, FakeCfg())
     assert "no fetcher for type=json slug=mystery" in str(exc.value)
     # No fetcher was dispatched.
     assert patched_fetchers == []
@@ -232,9 +228,7 @@ def test_store_new_item_inserts_item_cluster_and_surface(conn, seed, freeze_now_
         stats = pipeline._store_items(conn, {"id": sid}, [it], FakeCfg())
 
     assert stats == {"new": 1, "updated": 0}
-    row = conn.execute(
-        "SELECT * FROM items WHERE source_id=? AND guid='g1'", (sid,)
-    ).fetchone()
+    row = conn.execute("SELECT * FROM items WHERE source_id=? AND guid='g1'", (sid,)).fetchone()
     assert row["raw_url"] == "https://example.com/story"
     # Pin the literal (not canonicalize(...)) so a canonicalizer regression is caught.
     assert row["canonical_url"] == "https://example.com/story"
@@ -243,9 +237,7 @@ def test_store_new_item_inserts_item_cluster_and_surface(conn, seed, freeze_now_
     assert row["published_at"] == "2026-06-01T00:00:00+00:00"
     assert row["ingested_at"] == frozen
     assert row["points"] == 10 and row["comments"] == 5
-    assert json.loads(row["extra"]) == {
-        "discussion_url": "https://news.ycombinator.com/item?id=7"
-    }
+    assert json.loads(row["extra"]) == {"discussion_url": "https://news.ycombinator.com/item?id=7"}
     assert row["cluster_id"] is not None
 
     assert _n(conn, "SELECT COUNT(*) FROM clusters") == 1
@@ -259,9 +251,7 @@ def test_store_new_item_inserts_item_cluster_and_surface(conn, seed, freeze_now_
 
 
 @pytest.mark.integration
-def test_store_surface_url_falls_back_to_raw_url_without_discussion(
-    conn, seed, freeze_now_iso
-):
+def test_store_surface_url_falls_back_to_raw_url_without_discussion(conn, seed, freeze_now_iso):
     freeze_now_iso(pipeline)
     sid = seed.source(slug="src")
     it = _item(raw_url="https://blog.example/post", extra={})
@@ -272,9 +262,7 @@ def test_store_surface_url_falls_back_to_raw_url_without_discussion(
     cid = conn.execute(
         "SELECT cluster_id FROM items WHERE source_id=? AND guid='g1'", (sid,)
     ).fetchone()["cluster_id"]
-    surf = conn.execute(
-        "SELECT url FROM surfaces WHERE cluster_id=?", (cid,)
-    ).fetchone()
+    surf = conn.execute("SELECT url FROM surfaces WHERE cluster_id=?", (cid,)).fetchone()
     assert surf["url"] == "https://blog.example/post"
 
 
@@ -338,8 +326,7 @@ def test_store_empty_raw_url_yields_null_canonical(conn, seed, freeze_now_iso):
 
     assert stats == {"new": 1, "updated": 0}
     row = conn.execute(
-        "SELECT raw_url, canonical_url, cluster_id FROM items "
-        "WHERE source_id=? AND guid='g1'",
+        "SELECT raw_url, canonical_url, cluster_id FROM items WHERE source_id=? AND guid='g1'",
         (sid,),
     ).fetchone()
     assert row["raw_url"] == ""
@@ -371,8 +358,7 @@ def test_store_existing_item_updates_and_preserves_cluster(conn, seed, freeze_no
     assert second == {"new": 0, "updated": 1}
 
     now = conn.execute(
-        "SELECT id, cluster_id, points, comments FROM items "
-        "WHERE source_id=? AND guid='g1'",
+        "SELECT id, cluster_id, points, comments FROM items WHERE source_id=? AND guid='g1'",
         (sid,),
     ).fetchone()
     assert now["id"] == orig["id"]
@@ -482,14 +468,11 @@ def test_run_happy_path(cfg, conn, seed, monkeypatch, capsys, freeze_now_iso):
     sid_b = seed.source(slug="src-b", cadence_min=60)
     items = {
         "src-a": [
-            _item(guid="a1", raw_url="https://a.example/1",
-                  title="Alpha article about databases")
+            _item(guid="a1", raw_url="https://a.example/1", title="Alpha article about databases")
         ],
         "src-b": [
-            _item(guid="b1", raw_url="https://b.example/1",
-                  title="Beta article about compilers"),
-            _item(guid="b2", raw_url="https://b.example/2",
-                  title="Gamma article about kernels"),
+            _item(guid="b1", raw_url="https://b.example/1", title="Beta article about compilers"),
+            _item(guid="b2", raw_url="https://b.example/2", title="Gamma article about kernels"),
         ],
     }
     instances = _install(monkeypatch, items)
@@ -502,8 +485,7 @@ def test_run_happy_path(cfg, conn, seed, monkeypatch, capsys, freeze_now_iso):
 
     for sid in (sid_a, sid_b):
         s = conn.execute(
-            "SELECT last_fetch, verified_at, error_count, last_error "
-            "FROM sources WHERE id=?",
+            "SELECT last_fetch, verified_at, error_count, last_error FROM sources WHERE id=?",
             (sid,),
         ).fetchone()
         assert s["last_fetch"] == frozen
@@ -532,7 +514,10 @@ def test_run_happy_path(cfg, conn, seed, monkeypatch, capsys, freeze_now_iso):
     # cfg.write_last_run persisted the totals.
     assert cfg.data["last_run"]["job"] == "ingest"
     assert cfg.data["last_run"]["stats"] == {
-        "sources": 2, "errors": 0, "new": 3, "updated": 0,
+        "sources": 2,
+        "errors": 0,
+        "new": 3,
+        "updated": 0,
     }
 
     # client was constructed once and closed.
@@ -575,8 +560,7 @@ def test_run_only_known_slug_processes_just_that_source(
     sid_b = seed.source(slug="src-b")
     _install(
         monkeypatch,
-        {"src-a": [_item(guid="a1", raw_url="https://a.example/1",
-                         title="Alpha about databases")]},
+        {"src-a": [_item(guid="a1", raw_url="https://a.example/1", title="Alpha about databases")]},
     )
 
     rc = pipeline.run(cfg, only="src-a")
@@ -626,8 +610,7 @@ def test_run_per_source_isolation_and_error_truncation(
     long_msg = "x" * 400
     _install(
         monkeypatch,
-        {"src-b": [_item(guid="b1", raw_url="https://b.example/1",
-                         title="Beta about compilers")]},
+        {"src-b": [_item(guid="b1", raw_url="https://b.example/1", title="Beta about compilers")]},
         fail={"src-a": RuntimeError(long_msg)},
     )
 
@@ -647,9 +630,7 @@ def test_run_per_source_isolation_and_error_truncation(
     assert len(a["last_error"]) == 300
     assert a["last_fetch"] is None  # never succeeded
 
-    b = conn.execute(
-        "SELECT last_fetch, error_count FROM sources WHERE id=?", (sid_b,)
-    ).fetchone()
+    b = conn.execute("SELECT last_fetch, error_count FROM sources WHERE id=?", (sid_b,)).fetchone()
     assert b["last_fetch"] == frozen
     assert b["error_count"] == 0
     assert _n(conn, "SELECT COUNT(*) FROM items") == 1
@@ -663,15 +644,11 @@ def test_run_auto_disable_at_threshold(cfg, conn, seed, monkeypatch):
     rc = pipeline.run(cfg)
     assert rc == 0
 
-    s = conn.execute(
-        "SELECT error_count, enabled FROM sources WHERE id=?", (sid,)
-    ).fetchone()
+    s = conn.execute("SELECT error_count, enabled FROM sources WHERE id=?", (sid,)).fetchone()
     assert s["error_count"] == 10
     assert s["enabled"] == 0
 
-    h = conn.execute(
-        "SELECT message FROM health WHERE job='ingest' AND level='warn'"
-    ).fetchone()
+    h = conn.execute("SELECT message FROM health WHERE job='ingest' AND level='warn'").fetchone()
     assert h is not None
     assert "auto-disabled" in h["message"]
     assert "src-a" in h["message"]
@@ -710,9 +687,7 @@ def test_run_store_phase_failure_rolls_back_and_isolates(
 
 
 @pytest.mark.integration
-def test_run_limit_processes_only_first_n(
-    cfg, conn, seed, monkeypatch, capsys, freeze_now_iso
-):
+def test_run_limit_processes_only_first_n(cfg, conn, seed, monkeypatch, capsys, freeze_now_iso):
     frozen = freeze_now_iso(pipeline)
     # Distinct past last_fetch values make the ORDER BY last_fetch ASC deterministic.
     sid_old = seed.source(slug="src-old", last_fetch="2020-01-01T00:00:00+00:00", cadence_min=60)
@@ -725,15 +700,24 @@ def test_run_limit_processes_only_first_n(
     assert "ingest: 2 sources ok, 0 errors, 0 new items, 0 updated" in capsys.readouterr().out
 
     # The two oldest were processed; the newest was left untouched.
-    assert conn.execute(
-        "SELECT last_fetch FROM sources WHERE id=?", (sid_old,)
-    ).fetchone()["last_fetch"] == frozen
-    assert conn.execute(
-        "SELECT last_fetch FROM sources WHERE id=?", (sid_mid,)
-    ).fetchone()["last_fetch"] == frozen
-    assert conn.execute(
-        "SELECT last_fetch FROM sources WHERE id=?", (sid_new,)
-    ).fetchone()["last_fetch"] == "2022-01-01T00:00:00+00:00"
+    assert (
+        conn.execute("SELECT last_fetch FROM sources WHERE id=?", (sid_old,)).fetchone()[
+            "last_fetch"
+        ]
+        == frozen
+    )
+    assert (
+        conn.execute("SELECT last_fetch FROM sources WHERE id=?", (sid_mid,)).fetchone()[
+            "last_fetch"
+        ]
+        == frozen
+    )
+    assert (
+        conn.execute("SELECT last_fetch FROM sources WHERE id=?", (sid_new,)).fetchone()[
+            "last_fetch"
+        ]
+        == "2022-01-01T00:00:00+00:00"
+    )
 
 
 @pytest.mark.integration
@@ -745,9 +729,10 @@ def test_run_far_past_last_fetch_is_due(cfg, conn, seed, monkeypatch, freeze_now
 
     rc = pipeline.run(cfg)
     assert rc == 0
-    assert conn.execute(
-        "SELECT last_fetch FROM sources WHERE id=?", (sid,)
-    ).fetchone()["last_fetch"] == frozen
+    assert (
+        conn.execute("SELECT last_fetch FROM sources WHERE id=?", (sid,)).fetchone()["last_fetch"]
+        == frozen
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -818,8 +803,11 @@ def test_live_run_cycle(cfg, conn, seed):  # pragma: no cover - network
     if not os.environ.get("SIGNAL_LIVE"):
         pytest.skip("live test: set SIGNAL_LIVE=1 to run a real ingest cycle")
     seed.source(
-        slug="hacker-news", name="Hacker News", type="json",
-        url="https://hn.algolia.com/api/v1/search", cadence_min=60,
+        slug="hacker-news",
+        name="Hacker News",
+        type="json",
+        url="https://hn.algolia.com/api/v1/search",
+        cadence_min=60,
     )
     assert pipeline.run(cfg, only="hacker-news") == 0
     assert _n(conn, "SELECT COUNT(*) FROM items") > 0

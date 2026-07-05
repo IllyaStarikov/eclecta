@@ -332,9 +332,7 @@ def test_creation_date_zero_yields_none_published(fake_client, make_result):
 # points / comments / extra passthrough
 # --------------------------------------------------------------------------- #
 def test_absent_score_and_answer_count_become_none(fake_client, make_result):
-    client = _client(
-        fake_client, make_result, [_q(_drop=["score", "answer_count"])]
-    )
+    client = _client(fake_client, make_result, [_q(_drop=["score", "answer_count"])])
     (item,) = fetch_items(client, {})
     assert item["points"] is None
     assert item["comments"] is None
@@ -442,9 +440,7 @@ def test_backoff_with_multiple_questions_returns_all(fake_client, make_result, c
         _q(question_id=1, title="one", link="https://so/1"),
         _q(question_id=2, title="two", link="https://so/2"),
     ]
-    client = _client(
-        fake_client, make_result, qs, backoff=10, quota_remaining=0, quota_max=300
-    )
+    client = _client(fake_client, make_result, qs, backoff=10, quota_remaining=0, quota_max=300)
     items = fetch_items(client, {})
     assert [i["guid"] for i in items] == ["so-1", "so-2"]
     assert "backoff of 10s" in capsys.readouterr().err
@@ -454,18 +450,14 @@ def test_backoff_with_multiple_questions_returns_all(fake_client, make_result, c
 # Failure handling — non-200 / empty body raise RuntimeError
 # --------------------------------------------------------------------------- #
 def test_non_200_without_error_uses_http_message(fake_client, make_result):
-    client = fake_client(
-        responses={HOT_URL: make_result(content=None, status=503, error=None)}
-    )
+    client = fake_client(responses={HOT_URL: make_result(content=None, status=503, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 503$"):
         fetch_items(client, {})
 
 
 def test_error_message_is_preferred_over_http_status(fake_client, make_result):
     client = fake_client(
-        responses={
-            HOT_URL: make_result(content=None, status=500, error="upstream exploded")
-        }
+        responses={HOT_URL: make_result(content=None, status=500, error="upstream exploded")}
     )
     with pytest.raises(RuntimeError, match="upstream exploded"):
         fetch_items(client, {})
@@ -473,18 +465,14 @@ def test_error_message_is_preferred_over_http_status(fake_client, make_result):
 
 def test_empty_body_with_200_raises(fake_client, make_result):
     # status 200 but empty content → `not res.content` triggers; error None → "HTTP 200".
-    client = fake_client(
-        responses={HOT_URL: make_result(content=b"", status=200, error=None)}
-    )
+    client = fake_client(responses={HOT_URL: make_result(content=b"", status=200, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 200$"):
         fetch_items(client, {})
 
 
 def test_transport_error_status_zero_surfaces_error(fake_client, make_result):
     client = fake_client(
-        responses={
-            HOT_URL: make_result(content=None, status=0, error="ConnectError: boom")
-        }
+        responses={HOT_URL: make_result(content=None, status=0, error="ConnectError: boom")}
     )
     with pytest.raises(RuntimeError, match="ConnectError: boom"):
         fetch_items(client, {})
@@ -493,9 +481,7 @@ def test_transport_error_status_zero_surfaces_error(fake_client, make_result):
 def test_non_200_with_content_still_raises(fake_client, make_result):
     # A 429 that carries a body still fails the `status != 200` guard.
     client = fake_client(
-        responses={
-            HOT_URL: make_result(content=_body([_q()]), status=429, error=None)
-        }
+        responses={HOT_URL: make_result(content=_body([_q()]), status=429, error=None)}
     )
     with pytest.raises(RuntimeError, match=r"^HTTP 429$"):
         fetch_items(client, {})

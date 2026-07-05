@@ -30,12 +30,10 @@ import email.utils
 import types
 import xml.etree.ElementTree as ET
 from typing import Any, Dict
-from xml.sax.saxutils import escape
 
 import pytest
 
 from signalpipe import feed
-
 
 # --------------------------------------------------------------------------- #
 # Clock freezing helper
@@ -83,11 +81,11 @@ def frozen_clock(monkeypatch):
     [
         ("7d", datetime.timedelta(days=7)),
         ("24h", datetime.timedelta(hours=24)),
-        ("30m", datetime.timedelta(minutes=30)),   # m == minutes, not months
+        ("30m", datetime.timedelta(minutes=30)),  # m == minutes, not months
         ("2w", datetime.timedelta(weeks=2)),
         ("1h", datetime.timedelta(hours=1)),
         ("0h", datetime.timedelta(hours=0)),
-        ("  7D ", datetime.timedelta(days=7)),      # stripped + lowercased
+        ("  7D ", datetime.timedelta(days=7)),  # stripped + lowercased
     ],
 )
 def test_parse_since_relative_window(frozen_clock, raw, delta):
@@ -244,7 +242,7 @@ def test_render_rss_uncurated_prefix_and_excerpt_and_no_dc_source(cfg, frozen_cl
         "excerpt": "An excerpt",
         "why_it_matters": None,
         "link": "https://ex.com/b",
-        "source_url": "https://ex.com/b",   # equal to link -> dc:source suppressed
+        "source_url": "https://ex.com/b",  # equal to link -> dc:source suppressed
         "last_seen": "2026-07-03T09:00:00+00:00",
         "curated_at": None,
     }
@@ -279,9 +277,9 @@ def test_render_rss_desc_truncated_and_no_link_and_dc_source_when_link_empty(cfg
         "title": "Long",
         "curated": True,
         "why_it_matters": "z" * 600,
-        "link": "",                     # falsy -> no <link> for this item
+        "link": "",  # falsy -> no <link> for this item
         "source_url": "https://src.example/z",
-        "curated_at": None,             # pub None -> _rfc822(None) -> frozen now
+        "curated_at": None,  # pub None -> _rfc822(None) -> frozen now
         "last_seen": None,
     }
     xml = feed.render_rss([it], {}, cfg, SELF_URL)
@@ -294,7 +292,7 @@ def test_render_rss_desc_truncated_and_no_link_and_dc_source_when_link_empty(cfg
     assert "<pubDate>%s</pubDate>" % email.utils.format_datetime(FROZEN) in xml
     # The item block for id 3 has no <link>; grab just that <item>...</item>.
     guid3 = "tag:starikov.co,2026:signal/3"
-    block = xml[xml.index("<item>", xml.index(guid3) - 400):]
+    block = xml[xml.index("<item>", xml.index(guid3) - 400) :]
     block = block[: block.index("</item>") + len("</item>")]
     assert "<link>" not in block
 
@@ -304,7 +302,7 @@ def test_render_rss_is_well_formed_xml(cfg, frozen_clock):
         _curated_item(),
         {
             "id": 2,
-            "title": "GPU <chips> & \"more\"",
+            "title": 'GPU <chips> & "more"',
             "curated": False,
             "score": 7.5,
             "excerpt": "An excerpt with < & >",
@@ -348,10 +346,20 @@ def test_surfaces_for_orders_points_desc_nulls_last(conn, seed):
 # --------------------------------------------------------------------------- #
 # query_items — helpers
 # --------------------------------------------------------------------------- #
-def _seed_curated(seed, cid_url, *, source_id, relevance=8, channels='["ai"]',
-                  curated_at=None, score=None, with_article=True,
-                  read_url="https://read.example/free",
-                  canonical="https://canon.example/x", **cluster_over):
+def _seed_curated(
+    seed,
+    cid_url,
+    *,
+    source_id,
+    relevance=8,
+    channels='["ai"]',
+    curated_at=None,
+    score=None,
+    with_article=True,
+    read_url="https://read.example/free",
+    canonical="https://canon.example/x",
+    **cluster_over,
+):
     """Seed a fully curated cluster surfaced by ``source_id``; return cluster id."""
     over: Dict[str, Any] = dict(canonical_url=canonical)
     if score is not None:
@@ -399,7 +407,9 @@ def test_query_items_limit_clamped_to_feed_max(conn, cfg, seed):
     src = seed.source(slug="hn")
     for i in range(3):
         _seed_curated(
-            seed, "c%d" % i, source_id=src,
+            seed,
+            "c%d" % i,
+            source_id=src,
             canonical="https://canon.example/%d" % i,
             curated_at="2026-07-04T0%d:00:00+00:00" % i,
         )
@@ -414,7 +424,9 @@ def test_query_items_default_limit_used_when_absent(conn, cfg, seed):
     src = seed.source(slug="hn")
     for i in range(3):
         _seed_curated(
-            seed, "c%d" % i, source_id=src,
+            seed,
+            "c%d" % i,
+            source_id=src,
             canonical="https://canon.example/%d" % i,
             curated_at="2026-07-04T0%d:00:00+00:00" % i,
         )
@@ -429,7 +441,9 @@ def test_query_items_default_limit_used_when_absent(conn, cfg, seed):
 def test_query_items_curated_shape(conn, cfg, seed):
     src = seed.source(slug="hn", name="Hacker News", homepage="https://news.ycombinator.com")
     cid = _seed_curated(
-        seed, "c1", source_id=src,
+        seed,
+        "c1",
+        source_id=src,
         canonical="https://canon.example/x",
         read_url="https://read.example/free",
     )
@@ -446,7 +460,12 @@ def test_query_items_curated_shape(conn, cfg, seed):
     # surfaces expanded to plain dicts with joined source metadata.
     assert isinstance(d["surfaces"], list) and d["surfaces"]
     assert set(d["surfaces"][0].keys()) == {
-        "url", "points", "comments", "name", "slug", "homepage",
+        "url",
+        "points",
+        "comments",
+        "name",
+        "slug",
+        "homepage",
     }
     assert d["surfaces"][0]["slug"] == "hn"
     # archive_url is never selected/rendered.
@@ -457,9 +476,11 @@ def test_query_items_curated_shape(conn, cfg, seed):
 def test_query_items_curated_link_falls_back_to_canonical(conn, cfg, seed):
     src = seed.source(slug="hn")
     _seed_curated(
-        seed, "c1", source_id=src,
+        seed,
+        "c1",
+        source_id=src,
         canonical="https://canon.example/only",
-        with_article=False,   # no article row -> read_url is NULL
+        with_article=False,  # no article row -> read_url is NULL
     )
     out = feed.query_items(conn, cfg, {})
     assert len(out) == 1
@@ -507,10 +528,8 @@ def test_query_items_excludes_skipped_and_non_done(conn, cfg, seed):
 @pytest.mark.integration
 def test_query_items_channel_like_filter(conn, cfg, seed):
     src = seed.source(slug="hn")
-    ai = _seed_curated(seed, "ai", source_id=src, canonical="https://c/ai",
-                       channels='["ai"]')
-    _seed_curated(seed, "sec", source_id=src, canonical="https://c/sec",
-                  channels='["security"]')
+    ai = _seed_curated(seed, "ai", source_id=src, canonical="https://c/ai", channels='["ai"]')
+    _seed_curated(seed, "sec", source_id=src, canonical="https://c/sec", channels='["security"]')
     out = feed.query_items(conn, cfg, {"channel": "ai"})
     assert [d["id"] for d in out] == [ai]
 
@@ -518,10 +537,20 @@ def test_query_items_channel_like_filter(conn, cfg, seed):
 @pytest.mark.integration
 def test_query_items_since_filter(conn, cfg, seed):
     src = seed.source(slug="hn")
-    new = _seed_curated(seed, "new", source_id=src, canonical="https://c/new",
-                        curated_at="2026-07-04T10:00:00+00:00")
-    _seed_curated(seed, "old", source_id=src, canonical="https://c/old",
-                  curated_at="2026-07-01T00:00:00+00:00")
+    new = _seed_curated(
+        seed,
+        "new",
+        source_id=src,
+        canonical="https://c/new",
+        curated_at="2026-07-04T10:00:00+00:00",
+    )
+    _seed_curated(
+        seed,
+        "old",
+        source_id=src,
+        canonical="https://c/old",
+        curated_at="2026-07-01T00:00:00+00:00",
+    )
     out = feed.query_items(conn, cfg, {"since": "2026-07-03"})
     assert [d["id"] for d in out] == [new]
 
@@ -542,10 +571,16 @@ def test_query_items_min_score_filter_curated(conn, cfg, seed):
 def test_query_items_source_filter(conn, cfg, seed):
     hn = seed.source(slug="hn", name="HN")
     lob = seed.source(slug="lob", name="Lobsters")
-    c_hn = _seed_curated(seed, "hn", source_id=hn, canonical="https://c/hn",
-                         curated_at="2026-07-04T10:00:00+00:00")
-    c_lob = _seed_curated(seed, "lob", source_id=lob, canonical="https://c/lob",
-                          curated_at="2026-07-04T09:00:00+00:00")
+    c_hn = _seed_curated(
+        seed, "hn", source_id=hn, canonical="https://c/hn", curated_at="2026-07-04T10:00:00+00:00"
+    )
+    c_lob = _seed_curated(
+        seed,
+        "lob",
+        source_id=lob,
+        canonical="https://c/lob",
+        curated_at="2026-07-04T09:00:00+00:00",
+    )
 
     only_hn = feed.query_items(conn, cfg, {"sources": "hn"})
     assert [d["id"] for d in only_hn] == [c_hn]
@@ -575,8 +610,8 @@ def test_query_items_uncurated_fallback_shape(conn, cfg, seed):
     d = out[0]
     assert d["curated"] is False
     assert d["notes_list"] == []
-    assert d["channel_list"] == ["devtools"]      # topic-derived, sorted
-    assert d["link"] == "https://c/rust"          # canonical wins
+    assert d["channel_list"] == ["devtools"]  # topic-derived, sorted
+    assert d["link"] == "https://c/rust"  # canonical wins
     assert d["source_url"] == "https://c/rust"
     assert d["paywalled"] == 0
     assert d["read_kind"] is None
@@ -587,8 +622,10 @@ def test_query_items_uncurated_fallback_shape(conn, cfg, seed):
 def test_query_items_uncurated_link_from_surface_when_no_canonical(conn, cfg, seed):
     src = seed.source(slug="hn")
     cid = seed.cluster(
-        canonical_url=None, story_id="sid-nocanon",
-        title="Rust programming language release", score=6.0,
+        canonical_url=None,
+        story_id="sid-nocanon",
+        title="Rust programming language release",
+        score=6.0,
     )
     seed.surface(cid, src, url="https://surface/only")
     out = feed.query_items(conn, cfg, {})
@@ -614,11 +651,13 @@ def test_query_items_uncurated_min_score_defaults_to_five(conn, cfg, seed):
 @pytest.mark.integration
 def test_query_items_uncurated_channel_filter_drops_nonmatching(conn, cfg, seed):
     src = seed.source(slug="hn")
-    ai = seed.cluster(canonical_url="https://c/ai",
-                      title="OpenAI releases new GPT model", score=8.0)
+    ai = seed.cluster(
+        canonical_url="https://c/ai", title="OpenAI releases new GPT model", score=8.0
+    )
     seed.surface(ai, src, url="https://surface/ai")
-    dev = seed.cluster(canonical_url="https://c/dev",
-                       title="Rust programming language release", score=9.0)
+    dev = seed.cluster(
+        canonical_url="https://c/dev", title="Rust programming language release", score=9.0
+    )
     seed.surface(dev, src, url="https://surface/dev")
     # channel 'ai' keeps only the title whose topics include 'ai'.
     out = feed.query_items(conn, cfg, {"channel": "ai"})
@@ -628,11 +667,19 @@ def test_query_items_uncurated_channel_filter_drops_nonmatching(conn, cfg, seed)
 @pytest.mark.integration
 def test_query_items_uncurated_since_filter_on_last_seen(conn, cfg, seed):
     src = seed.source(slug="hn")
-    new = seed.cluster(canonical_url="https://c/new", title="Fresh story", score=8.0,
-                       last_seen="2026-07-04T10:00:00+00:00")
+    new = seed.cluster(
+        canonical_url="https://c/new",
+        title="Fresh story",
+        score=8.0,
+        last_seen="2026-07-04T10:00:00+00:00",
+    )
     seed.surface(new, src, url="https://surface/new")
-    old = seed.cluster(canonical_url="https://c/old", title="Stale story", score=9.0,
-                       last_seen="2026-07-01T00:00:00+00:00")
+    old = seed.cluster(
+        canonical_url="https://c/old",
+        title="Stale story",
+        score=9.0,
+        last_seen="2026-07-01T00:00:00+00:00",
+    )
     seed.surface(old, src, url="https://surface/old")
     # Fallback path filters on c.last_seen >= since.
     out = feed.query_items(conn, cfg, {"since": "2026-07-03"})

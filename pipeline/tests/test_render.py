@@ -567,7 +567,7 @@ def test_dashboard_no_digest_section_when_absent():
 @pytest.mark.integration
 def test_dashboard_escapes_item_title():
     ctx = _dashboard_ctx()
-    ctx["items"][0]["title"] = '<script>alert(1)</script> & more'
+    ctx["items"][0]["title"] = "<script>alert(1)</script> & more"
     html = render.render_dashboard(ctx)
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html

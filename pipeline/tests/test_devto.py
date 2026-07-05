@@ -77,13 +77,13 @@ def test_tags_list_passthrough_returns_copy():
 @pytest.mark.parametrize(
     "raw,expected",
     [
-        ("a, b ,c", ["a", "b", "c"]),          # historical comma-string form
-        ("a,,b, ,c", ["a", "b", "c"]),         # empties (blank between commas) dropped
-        (" a , ,b, ", ["a", "b"]),             # leading/trailing padding + blanks
-        ("solo", ["solo"]),                    # single tag, no comma
-        (",,,", []),                           # only separators → nothing survives
-        ("   ", []),                           # whitespace-only → nothing survives
-        ("", []),                              # empty string is falsy → falls through to []
+        ("a, b ,c", ["a", "b", "c"]),  # historical comma-string form
+        ("a,,b, ,c", ["a", "b", "c"]),  # empties (blank between commas) dropped
+        (" a , ,b, ", ["a", "b"]),  # leading/trailing padding + blanks
+        ("solo", ["solo"]),  # single tag, no comma
+        (",,,", []),  # only separators → nothing survives
+        ("   ", []),  # whitespace-only → nothing survives
+        ("", []),  # empty string is falsy → falls through to []
     ],
 )
 def test_tags_comma_string_is_split_and_trimmed(raw, expected):
@@ -123,7 +123,8 @@ def test_tags_tag_list_preferred_over_tags():
 @pytest.mark.property
 def test_tags_list_passthrough_property():
     pytest.importorskip("hypothesis")
-    from hypothesis import given, strategies as st
+    from hypothesis import given
+    from hypothesis import strategies as st
 
     @given(st.lists(st.text()))
     def check(lst):
@@ -136,7 +137,8 @@ def test_tags_list_passthrough_property():
 @pytest.mark.property
 def test_tags_comma_string_roundtrip_property():
     pytest.importorskip("hypothesis")
-    from hypothesis import given, strategies as st
+    from hypothesis import given
+    from hypothesis import strategies as st
 
     # Clean tags: non-empty after strip, no commas. Joining with ", " then splitting
     # on "," and trimming must round-trip back to the original clean list.
@@ -281,9 +283,7 @@ def test_null_id_is_skipped(fake_client, make_result):
 # fetch_items — author (None-safe on missing/null user)
 # --------------------------------------------------------------------------- #
 def test_author_from_user_username(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, [_article(user={"username": "alice"})])
-    )
+    client = fake_client(responses=_responses(make_result, [_article(user={"username": "alice"})]))
     (item,) = fetch_items(client, {})
     assert item["author"] == "alice"
 
@@ -326,18 +326,14 @@ def test_published_at_used_when_timestamp_absent(fake_client, make_result):
 
 def test_published_at_used_when_timestamp_falsy(fake_client, make_result):
     # published_timestamp == "" is falsy → `ts or published_at` picks published_at.
-    client = fake_client(
-        responses=_responses(make_result, [_article(published_timestamp="")])
-    )
+    client = fake_client(responses=_responses(make_result, [_article(published_timestamp="")]))
     (item,) = fetch_items(client, {})
     assert item["published_at"] == "2026-07-01T09:00:00Z"
 
 
 def test_published_at_none_when_both_absent(fake_client, make_result):
     client = fake_client(
-        responses=_responses(
-            make_result, [_article(_drop=["published_timestamp", "published_at"])]
-        )
+        responses=_responses(make_result, [_article(_drop=["published_timestamp", "published_at"])])
     )
     (item,) = fetch_items(client, {})
     assert item["published_at"] is None
@@ -406,9 +402,7 @@ def test_absent_reading_time_becomes_none(fake_client, make_result):
 
 
 def test_absent_tags_yield_empty_tag_list(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, [_article(_drop=["tag_list"])])
-    )
+    client = fake_client(responses=_responses(make_result, [_article(_drop=["tag_list"])]))
     (item,) = fetch_items(client, {})
     assert item["extra"]["tags"] == []
 
@@ -440,9 +434,7 @@ def test_non_200_without_error_uses_http_message(fake_client, make_result):
 
 def test_error_message_preferred_over_http_status(fake_client, make_result):
     client = fake_client(
-        responses={
-            ARTICLES_URL: make_result(content=None, status=500, error="upstream exploded")
-        }
+        responses={ARTICLES_URL: make_result(content=None, status=500, error="upstream exploded")}
     )
     with pytest.raises(RuntimeError, match="upstream exploded"):
         fetch_items(client, {})
@@ -450,9 +442,7 @@ def test_error_message_preferred_over_http_status(fake_client, make_result):
 
 def test_empty_body_with_200_raises(fake_client, make_result):
     # status 200 but content empty → `not res.content` triggers; error None → "HTTP 200".
-    client = fake_client(
-        responses={ARTICLES_URL: make_result(content=b"", status=200, error=None)}
-    )
+    client = fake_client(responses={ARTICLES_URL: make_result(content=b"", status=200, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 200$"):
         fetch_items(client, {})
 
@@ -467,9 +457,7 @@ def test_none_body_with_200_raises(fake_client, make_result):
 
 def test_transport_error_status_zero_raises(fake_client, make_result):
     client = fake_client(
-        responses={
-            ARTICLES_URL: make_result(content=None, status=0, error="ConnectError: boom")
-        }
+        responses={ARTICLES_URL: make_result(content=None, status=0, error="ConnectError: boom")}
     )
     with pytest.raises(RuntimeError, match="ConnectError: boom"):
         fetch_items(client, {})

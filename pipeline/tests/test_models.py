@@ -233,15 +233,11 @@ def test_validate_property_membership():
     )
     @settings(max_examples=75)
     def valid_specs_pass(access_type, tier, topics, slug, name, url):
-        spec = SourceSpec(
-            slug=slug, name=name, type=access_type, url=url, tier=tier, topics=topics
-        )
+        spec = SourceSpec(slug=slug, name=name, type=access_type, url=url, tier=tier, topics=topics)
         assert spec.validate() is None
 
     @given(
-        bad_type=st.text(min_size=1, max_size=12).filter(
-            lambda t: t not in VALID_ACCESS_TYPES
-        ),
+        bad_type=st.text(min_size=1, max_size=12).filter(lambda t: t not in VALID_ACCESS_TYPES),
     )
     @settings(max_examples=50)
     def bad_type_specs_fail(bad_type):

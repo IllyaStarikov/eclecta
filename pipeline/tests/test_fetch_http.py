@@ -63,9 +63,15 @@ class _FakeTime:
         self.slept.append(seconds)
 
 
-def _seed_cache_row(conn, url, etag=None, last_modified=None,
-                    body_sha256=None, fetched_at="2020-01-01T00:00:00+00:00",
-                    status=200):
+def _seed_cache_row(
+    conn,
+    url,
+    etag=None,
+    last_modified=None,
+    body_sha256=None,
+    fetched_at="2020-01-01T00:00:00+00:00",
+    status=200,
+):
     conn.execute(
         "INSERT INTO fetch_cache(url, etag, last_modified, body_sha256, "
         "fetched_at, status) VALUES(?,?,?,?,?,?)",
@@ -74,9 +80,7 @@ def _seed_cache_row(conn, url, etag=None, last_modified=None,
 
 
 def _cache_row(conn, url):
-    return conn.execute(
-        "SELECT * FROM fetch_cache WHERE url=?", (url,)
-    ).fetchone()
+    return conn.execute("SELECT * FROM fetch_cache WHERE url=?", (url,)).fetchone()
 
 
 # --------------------------------------------------------------------------- #
@@ -123,14 +127,18 @@ def test_init_defaults_when_ingest_empty():
 
 
 def test_init_reads_cfg_knobs_and_merges_host_intervals():
-    pc = PoliteClient(_FakeCfg({
-        "per_host_min_interval_sec": 1.5,
-        "max_body_bytes": 123,
-        "fetch_deadline_sec": 9.0,
-        "http_timeout_sec": 7,
-        "max_redirects": 3,
-        "host_min_interval": {"foo.example": 42.0, "arxiv.org": 99.0},
-    }))
+    pc = PoliteClient(
+        _FakeCfg(
+            {
+                "per_host_min_interval_sec": 1.5,
+                "max_body_bytes": 123,
+                "fetch_deadline_sec": 9.0,
+                "http_timeout_sec": 7,
+                "max_redirects": 3,
+                "host_min_interval": {"foo.example": 42.0, "arxiv.org": 99.0},
+            }
+        )
+    )
     try:
         assert pc.default_interval == 1.5
         assert pc.max_body_bytes == 123
@@ -179,15 +187,11 @@ def test_fetch_200_happy_path_and_cache_upsert(polite_client_factory, conn):
     assert row["last_modified"] == "Wed, 01 Jan 2020 00:00:00 GMT"
     # Concrete literal (sha256 of b"hello world"), not a mirror of the SUT's
     # own hashing expression — pins the exact stored digest.
-    assert (
-        row["body_sha256"]
-        == "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
-    )
+    assert row["body_sha256"] == "b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9"
     assert row["status"] == 200
 
 
-def test_fetch_writes_fetched_at_from_now_iso(polite_client_factory, conn,
-                                              freeze_now_iso):
+def test_fetch_writes_fetched_at_from_now_iso(polite_client_factory, conn, freeze_now_iso):
     frozen = freeze_now_iso(fetch_http)
     url = "https://example.com/tstamp"
 
@@ -208,7 +212,8 @@ def test_fetch_304_conditional_get(polite_client_factory, conn, freeze_now_iso):
     frozen = freeze_now_iso(fetch_http)
     url = "https://example.com/cond"
     _seed_cache_row(
-        conn, url,
+        conn,
+        url,
         etag='"etag1"',
         last_modified="Wed, 01 Jan 2020 00:00:00 GMT",
         body_sha256="oldsha",
@@ -244,8 +249,7 @@ def test_fetch_304_conditional_get(polite_client_factory, conn, freeze_now_iso):
 
 def test_fetch_conditional_false_skips_cache_headers(polite_client_factory, conn):
     url = "https://example.com/nocond"
-    _seed_cache_row(conn, url, etag='"etag1"',
-                    last_modified="Wed, 01 Jan 2020 00:00:00 GMT")
+    _seed_cache_row(conn, url, etag='"etag1"', last_modified="Wed, 01 Jan 2020 00:00:00 GMT")
     seen = {}
 
     def handler(request):
@@ -304,10 +308,7 @@ def test_fetch_changed_body_is_not_unchanged(polite_client_factory, conn):
     # The stale cached hash was overwritten with the new body's hash
     # (concrete literal: sha256 of b"brand new content").
     row = _cache_row(conn, url)
-    assert (
-        row["body_sha256"]
-        == "5513aea5c15197e2a26ffb463e7859200ada061938f7c64acce7c6efac146d3b"
-    )
+    assert row["body_sha256"] == "5513aea5c15197e2a26ffb463e7859200ada061938f7c64acce7c6efac146d3b"
 
 
 def test_fetch_empty_body_hash_is_none(polite_client_factory, conn):
@@ -335,8 +336,7 @@ def test_fetch_http_error_status(polite_client_factory, conn):
 
     def handler(request):
         # Body present but must never be buffered on an error status.
-        return httpx.Response(404, content=b"not found body",
-                              headers={"ETag": '"e404"'})
+        return httpx.Response(404, content=b"not found body", headers={"ETag": '"e404"'})
 
     pc = polite_client_factory(handler)
     res = pc.fetch(url)
@@ -382,6 +382,7 @@ def test_fetch_streamed_body_exceeds_cap(polite_client_factory, conn):
             yield b"aaaa"
             yield b"bbbb"
             yield b"cccc"
+
         return httpx.Response(200, content=gen())  # no Content-Length
 
     pc = polite_client_factory(handler)
@@ -506,6 +507,7 @@ def test_resolve_405_falls_back_to_get(polite_client_factory):
         def gen():
             body_consumed["n"] += 1
             yield b"should-not-be-read"
+
         return httpx.Response(200, content=gen())
 
     pc = polite_client_factory(handler)
@@ -535,8 +537,7 @@ def test_resolve_http_error_returns_none(polite_client_factory):
     " expected_slept, expected_last_hit",
     [
         # Per-host override drives a positive wait.
-        ("a.example", {"a.example": 5.0}, 2.0, 100.0, [102.0, 105.0],
-         [3.0], 105.0),
+        ("a.example", {"a.example": 5.0}, 2.0, 100.0, [102.0, 105.0], [3.0], 105.0),
         # Negative wait -> never sleeps.
         ("n.example", {}, 2.0, 10.0, [100.0, 100.0], [], 100.0),
         # Default interval drives a positive wait when no host override.
@@ -544,8 +545,15 @@ def test_resolve_http_error_returns_none(polite_client_factory):
     ],
 )
 def test_respect_rate_limit_wait_computation(
-    cfg, monkeypatch, host, host_intervals, default_interval, last_hit,
-    monotonic_seq, expected_slept, expected_last_hit
+    cfg,
+    monkeypatch,
+    host,
+    host_intervals,
+    default_interval,
+    last_hit,
+    monotonic_seq,
+    expected_slept,
+    expected_last_hit,
 ):
     pc = PoliteClient(cfg)
     try:
@@ -575,11 +583,11 @@ def test_respect_rate_limit_second_same_host_call_waits(cfg, monkeypatch):
         monkeypatch.setattr(fetch_http, "time", fake)
 
         pc._respect_rate_limit("https://s.example/a")
-        assert fake.slept == []          # first hit never waits
+        assert fake.slept == []  # first hit never waits
         assert pc._last_hit["s.example"] == 1000.0
 
         pc._respect_rate_limit("https://s.example/b")
-        assert fake.slept == [2.5]       # second same-host call waits ~interval
+        assert fake.slept == [2.5]  # second same-host call waits ~interval
         assert pc._last_hit["s.example"] == 1003.0
     finally:
         pc.close()
@@ -649,9 +657,7 @@ def test_fetch_cache_upsert_roundtrip(polite_client_factory, conn, monkeypatch):
     def handler(request):
         i = calls["n"]
         calls["n"] += 1
-        return httpx.Response(
-            200, content=bodies[i], headers={"ETag": '"v%d"' % i}
-        )
+        return httpx.Response(200, content=bodies[i], headers={"ETag": '"v%d"' % i})
 
     times = iter(["2026-07-04T00:00:01+00:00", "2026-07-04T00:00:02+00:00"])
     monkeypatch.setattr(fetch_http, "_now_iso", lambda: next(times))
@@ -660,18 +666,15 @@ def test_fetch_cache_upsert_roundtrip(polite_client_factory, conn, monkeypatch):
     pc.fetch(url)
     pc.fetch(url)
 
-    count = conn.execute(
-        "SELECT COUNT(*) AS c FROM fetch_cache WHERE url=?", (url,)
-    ).fetchone()["c"]
+    count = conn.execute("SELECT COUNT(*) AS c FROM fetch_cache WHERE url=?", (url,)).fetchone()[
+        "c"
+    ]
     assert count == 1  # ON CONFLICT(url) DO UPDATE, not a second row
 
     row = _cache_row(conn, url)
     assert row["etag"] == '"v1"'  # latest fetch won
     # Concrete literal: sha256 of b"second-version" (the winning body).
-    assert (
-        row["body_sha256"]
-        == "0bf4f0c2fe256440721e138b839d11642d6529b99be0b9d7c1752cc954cb0b40"
-    )
+    assert row["body_sha256"] == "0bf4f0c2fe256440721e138b839d11642d6529b99be0b9d7c1752cc954cb0b40"
     assert row["fetched_at"] == "2026-07-04T00:00:02+00:00"
 
 

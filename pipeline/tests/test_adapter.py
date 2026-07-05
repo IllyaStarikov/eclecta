@@ -18,8 +18,7 @@ from typing import Any, Optional
 
 import pytest
 
-from signalpipe.llm import (LLMError, SpendCapExceeded, UsageLimitExhausted,
-                            adapter)
+from signalpipe.llm import LLMError, SpendCapExceeded, UsageLimitExhausted, adapter
 
 SCHEMA = {
     "type": "object",
@@ -108,7 +107,8 @@ def test_local_single_model_returns_zero_cost_and_skips_cap(cfg, fake_conn, leav
     leaves.local_run.result = ({"verdict": "keep"}, 0.0)
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn
+    )
 
     assert obj == {"verdict": "keep"}
     assert cost == 0.0
@@ -129,7 +129,8 @@ def test_local_multiple_models_fuse_via_consensus(cfg, fake_conn, leaves):
     leaves.consensus.result = {"fused": True}
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn
+    )
 
     assert obj == {"fused": True}
     assert cost == 0.0
@@ -149,7 +150,8 @@ def test_local_failure_degrades_to_subscription_fallback(cfg, fake_conn, leaves)
     leaves.cli_run.result = ({"src": "cli"}, 0.11)
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn
+    )
 
     assert obj == {"src": "cli"}
     assert cost == 0.11
@@ -171,7 +173,8 @@ def test_local_failure_degrades_to_api_fallback(cfg, fake_conn, leaves):
     leaves.api_run.result = ({"src": "api"}, 0.3)
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn
+    )
 
     assert obj == {"src": "api"}
     assert cost == 0.3
@@ -193,8 +196,7 @@ def test_local_failure_reraises_when_no_cloud_fallback(cfg, fake_conn, leaves, f
     leaves.local_run.exc = LLMError("ollama down", cost_usd=0.0)
 
     with pytest.raises(LLMError, match="ollama down"):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     # no cloud dispatch, no ledger write on a local-only failure
     assert not leaves.cli_run.called
@@ -210,8 +212,7 @@ def test_usage_limit_hold_fast_fails_without_spawn(cfg, fake_conn, leaves):
     leaves.status.result = (True, "usage limit hit until 15:00")
 
     with pytest.raises(UsageLimitExhausted) as ei:
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert ei.value.cost_usd == 0.0
     assert "usage limit hit until 15:00" in str(ei.value)
@@ -225,8 +226,7 @@ def test_spend_cap_blocks_dispatch(cfg, fake_conn, leaves):
     leaves.assert_cap.exc = SpendCapExceeded("daily spend cap hit")
 
     with pytest.raises(SpendCapExceeded, match="daily spend cap hit"):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     # cap gate is BEFORE dispatch: no call, no record
     assert not leaves.cli_run.called
@@ -237,7 +237,8 @@ def test_success_subscription_records_backend_and_cost(cfg, fake_conn, leaves):
     leaves.cli_run.result = ({"ok": True}, 0.42)
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, effort="high")
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, effort="high"
+    )
 
     assert (obj, cost) == ({"ok": True}, 0.42)
     # resolved the subscription model id + forwarded the whole call, in order
@@ -263,7 +264,8 @@ def test_success_api_records_backend_and_cost(cfg, fake_conn, leaves):
     leaves.api_run.result = ({"ok": True}, 0.7)
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn
+    )
 
     assert (obj, cost) == ({"ok": True}, 0.7)
     # api backend resolves the api model id and skips the subscription-only hold
@@ -284,7 +286,8 @@ def test_cap_kind_propagates_to_gate_and_record(cfg, fake_conn, leaves):
     leaves.cli_run.result = ({"ok": True}, 0.05)
 
     obj, cost = adapter.complete_with_cost(
-        "digest", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, cap_kind="digest")
+        "digest", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, cap_kind="digest"
+    )
 
     assert (obj, cost) == ({"ok": True}, 0.05)
     # the digest tier resolves the opus subscription model
@@ -303,8 +306,7 @@ def test_failed_call_unknown_cost_records_estimate(cfg, fake_conn, leaves):
     leaves.cli_run.exc = LLMError("boom")
 
     with pytest.raises(LLMError, match="boom"):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert len(leaves.record.calls) == 1
     rec_args = leaves.record.calls[0][0]
@@ -317,8 +319,7 @@ def test_failed_call_zero_cost_records_nothing(cfg, fake_conn, leaves):
     leaves.cli_run.exc = LLMError("binary missing", cost_usd=0.0)
 
     with pytest.raises(LLMError, match="binary missing"):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert not leaves.record.called
 
@@ -327,8 +328,7 @@ def test_failed_call_reported_cost_is_recorded(cfg, fake_conn, leaves):
     leaves.cli_run.exc = LLMError("half a call", cost_usd=0.5)
 
     with pytest.raises(LLMError, match="half a call"):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert len(leaves.record.calls) == 1
     assert leaves.record.calls[0][0][1] == "subscription"
@@ -341,8 +341,7 @@ def test_failed_api_call_records_against_api_backend(cfg, fake_conn, leaves):
     leaves.api_run.exc = LLMError("api boom", cost_usd=0.25)
 
     with pytest.raises(LLMError, match="api boom"):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert leaves.record.calls[0][0][1] == "api"
     assert leaves.record.calls[0][0][2] == 0.25
@@ -356,8 +355,8 @@ def test_model_override_forces_subscription_even_for_local_tier(cfg, fake_conn, 
     leaves.cli_run.result = ({"ok": True}, 0.9)
 
     obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA,
-        cfg=cfg, conn=fake_conn, model_override="claude-opus-4-8")
+        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn, model_override="claude-opus-4-8"
+    )
 
     assert (obj, cost) == ({"ok": True}, 0.9)
     # local arena is bypassed entirely
@@ -374,8 +373,14 @@ def test_model_override_is_still_cap_gated(cfg, fake_conn, leaves):
 
     with pytest.raises(SpendCapExceeded):
         adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA,
-            cfg=cfg, conn=fake_conn, model_override="claude-opus-4-8")
+            "triage",
+            "sys",
+            "prompt",
+            SCHEMA,
+            cfg=cfg,
+            conn=fake_conn,
+            model_override="claude-opus-4-8",
+        )
 
     assert not leaves.cli_run.called
     assert not leaves.record.called
@@ -387,8 +392,7 @@ def test_model_override_is_still_cap_gated(cfg, fake_conn, leaves):
 def test_complete_returns_dict_only(cfg, fake_conn, leaves):
     leaves.cli_run.result = ({"payload": 1}, 0.3)
 
-    result = adapter.complete(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+    result = adapter.complete("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
     assert result == {"payload": 1}  # dict, not the (dict, cost) tuple
     assert leaves.record.calls[0][0][2] == 0.3
@@ -398,8 +402,7 @@ def test_complete_propagates_errors(cfg, fake_conn, leaves):
     leaves.assert_cap.exc = SpendCapExceeded("nope")
 
     with pytest.raises(SpendCapExceeded, match="nope"):
-        adapter.complete(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
+        adapter.complete("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=fake_conn)
 
 
 # --------------------------------------------------------------------------- #
@@ -472,19 +475,16 @@ def test_end_to_end_cap_enforcement(cfg, conn, monkeypatch):
     monkeypatch.setattr(adapter.backend_cli, "run", cli)
 
     # First call: under cap -> dispatches and records.
-    obj, cost = adapter.complete_with_cost(
-        "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=conn)
+    obj, cost = adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=conn)
     assert (obj, cost) == ({"ok": True}, 1.0)
     assert adapter.spend.today_total(conn) == 1.0
     assert len(cli.calls) == 1
 
     # Second call: cap now reached (spent 1.0 >= cap 1.0) -> blocked before dispatch.
     with pytest.raises(SpendCapExceeded):
-        adapter.complete_with_cost(
-            "triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=conn)
+        adapter.complete_with_cost("triage", "sys", "prompt", SCHEMA, cfg=cfg, conn=conn)
 
     assert len(cli.calls) == 1  # no second spawn
-    row = conn.execute(
-        "SELECT cli_usd, calls FROM spend WHERE day='2026-07-04'").fetchone()
+    row = conn.execute("SELECT cli_usd, calls FROM spend WHERE day='2026-07-04'").fetchone()
     assert row["cli_usd"] == 1.0
     assert row["calls"] == 1

@@ -99,12 +99,12 @@ def all_open(monkeypatch):
         ("2h", 7200),
         ("30m", 1800),
         ("90s", 90),
-        ("45", 2700),          # bare number == minutes
+        ("45", 2700),  # bare number == minutes
         ("2.5h", 9000),
         ("1.5m", 90),
-        ("0.5s", 0),           # int(float(0.5)) == 0
-        ("2H", 7200),          # case-insensitive
-        ("  2h ", 7200),       # trimmed
+        ("0.5s", 0),  # int(float(0.5)) == 0
+        ("2H", 7200),  # case-insensitive
+        ("  2h ", 7200),  # trimmed
         ("0", 0),
     ],
 )
@@ -127,10 +127,11 @@ def test_parse_duration_custom_default_only_on_bad_input():
 @pytest.mark.property
 def test_parse_duration_numeric_suffixed_never_raises():
     hypothesis = pytest.importorskip("hypothesis")
-    from hypothesis import given, strategies as st
+    from hypothesis import given
+    from hypothesis import strategies as st
 
     @given(
-        st.integers(min_value=0, max_value=10 ** 7),
+        st.integers(min_value=0, max_value=10**7),
         st.sampled_from(["h", "m", "s", ""]),
     )
     def _check(n, suffix):
@@ -165,7 +166,9 @@ def test_mem_available_gb_apple_silicon_16k_pages(patch_run):
     # free+inactive+speculative = 160000 pages @ 16384 bytes
     out = _vm_stat(
         "Mach Virtual Memory Statistics: (page size of 16384 bytes)",
-        free=100_000, inactive=50_000, speculative=10_000,
+        free=100_000,
+        inactive=50_000,
+        speculative=10_000,
     )
     patch_run(out)
     expected = 160_000 * 16384 / 1_000_000_000.0  # 2.62144
@@ -175,7 +178,9 @@ def test_mem_available_gb_apple_silicon_16k_pages(patch_run):
 def test_mem_available_gb_defaults_to_4096_when_page_line_absent(patch_run):
     out = _vm_stat(
         "Mach Virtual Memory Statistics:",  # no 'page size of'
-        free=100_000, inactive=50_000, speculative=10_000,
+        free=100_000,
+        inactive=50_000,
+        speculative=10_000,
     )
     patch_run(out)
     expected = 160_000 * 4096 / 1_000_000_000.0  # 0.65536
@@ -185,7 +190,9 @@ def test_mem_available_gb_defaults_to_4096_when_page_line_absent(patch_run):
 def test_mem_available_gb_malformed_page_size_falls_back_to_4096(patch_run):
     out = _vm_stat(
         "Mach Virtual Memory Statistics: (page size of NOPE bytes)",
-        free=1000, inactive=0, speculative=0,
+        free=1000,
+        inactive=0,
+        speculative=0,
     )
     patch_run(out)
     assert downtime.mem_available_gb() == pytest.approx(1000 * 4096 / 1e9)
@@ -396,9 +403,9 @@ def test_ollama_up_errors_are_false(monkeypatch, exc):
 # ollama_unload
 # --------------------------------------------------------------------------- #
 def test_ollama_unload_unloads_all_running_models(monkeypatch):
-    ps_body = json.dumps(
-        {"models": [{"name": "llama3.1:70b"}, {"model": "qwen2.5:14b"}]}
-    ).encode("utf-8")
+    ps_body = json.dumps({"models": [{"name": "llama3.1:70b"}, {"model": "qwen2.5:14b"}]}).encode(
+        "utf-8"
+    )
     gen_calls = []
 
     def fake_urlopen(req, timeout=None):
@@ -419,9 +426,9 @@ def test_ollama_unload_unloads_all_running_models(monkeypatch):
 
 
 def test_ollama_unload_skips_nameless_and_failed_models(monkeypatch):
-    ps_body = json.dumps(
-        {"models": [{"foo": "bar"}, {"name": "good"}, {"name": "bad"}]}
-    ).encode("utf-8")
+    ps_body = json.dumps({"models": [{"foo": "bar"}, {"name": "good"}, {"name": "bad"}]}).encode(
+        "utf-8"
+    )
 
     def fake_urlopen(req, timeout=None):
         if req.full_url.endswith("/api/ps"):

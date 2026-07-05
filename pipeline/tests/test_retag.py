@@ -67,15 +67,17 @@ def _freeze_retag_clock(monkeypatch, iso="2026-07-04T12:00:00+00:00"):
 
 # Titles chosen so match_taxonomy lands on a distinct, non-trivial category each.
 _ROW_SPECS = [
-    ("https://ex.com/c1", "New frontier model benchmark from OpenAI", []),          # ai
-    ("https://ex.com/c2", "Rust compiler gets much faster", ["devtools"]),          # software
-    ("https://ex.com/c3", "CVE zero-day exploit in popular npm package",            # security
-     ["security"]),
+    ("https://ex.com/c1", "New frontier model benchmark from OpenAI", []),  # ai
+    ("https://ex.com/c2", "Rust compiler gets much faster", ["devtools"]),  # software
+    (
+        "https://ex.com/c3",
+        "CVE zero-day exploit in popular npm package",  # security
+        ["security"],
+    ),
 ]
 
 
-def _seed_rows(seed, specs=_ROW_SPECS, category="SENTINEL",
-               subcategories='["SENTINEL_SUB"]'):
+def _seed_rows(seed, specs=_ROW_SPECS, category="SENTINEL", subcategories='["SENTINEL_SUB"]'):
     """Seed one cluster + one curation per spec; return list of (cid, title, chans)."""
     out = []
     for url, title, chans in specs:
@@ -111,7 +113,9 @@ def test_run_write_updates_every_curation(cfg, conn, seed, capsys):
     assert _curation(conn, rows[1][0])["category"] == "software"
     assert _curation(conn, rows[2][0])["category"] == "security"
     assert json.loads(_curation(conn, rows[2][0])["subcategories"]) == [
-        "vulns", "research", "supplychain",
+        "vulns",
+        "research",
+        "supplychain",
     ]
 
     out = capsys.readouterr().out
@@ -174,8 +178,9 @@ def test_run_is_idempotent(cfg, conn, seed):
     rows = _seed_rows(seed)
 
     assert retag.run(cfg) == 0
-    first = {cid: (r["category"], r["subcategories"])
-             for cid, *_ in rows for r in [_curation(conn, cid)]}
+    first = {
+        cid: (r["category"], r["subcategories"]) for cid, *_ in rows for r in [_curation(conn, cid)]
+    }
     # Guard the idempotency claim against a no-op regression: a run that never
     # wrote would leave every row at SENTINEL and STILL satisfy first == second.
     # Anchor the first run to the concrete taxonomy it must have produced.
@@ -185,8 +190,9 @@ def test_run_is_idempotent(cfg, conn, seed):
     assert "SENTINEL" not in {cat for cat, _ in first.values()}
 
     assert retag.run(cfg) == 0
-    second = {cid: (r["category"], r["subcategories"])
-              for cid, *_ in rows for r in [_curation(conn, cid)]}
+    second = {
+        cid: (r["category"], r["subcategories"]) for cid, *_ in rows for r in [_curation(conn, cid)]
+    }
 
     assert first == second
 
@@ -238,10 +244,13 @@ def test_run_dry_run_writes_nothing(cfg, conn, seed, capsys):
 
 
 def test_run_dry_run_distribution_output(cfg, seed, capsys):
-    _seed_rows(seed, specs=[
-        ("https://ex.com/a", "AI models from OpenAI", []),
-        ("https://ex.com/b", "Anthropic ships a new Claude model", []),
-    ])
+    _seed_rows(
+        seed,
+        specs=[
+            ("https://ex.com/a", "AI models from OpenAI", []),
+            ("https://ex.com/b", "Anthropic ships a new Claude model", []),
+        ],
+    )
     rc = retag.run(cfg, dry_run=True)
     assert rc == 0
 
@@ -270,9 +279,7 @@ def test_run_limit_processes_only_first_k(cfg, conn, seed, capsys):
     rc = retag.run(cfg, limit=2)
     assert rc == 0
 
-    updated = sum(
-        1 for cid, *_ in rows if _curation(conn, cid)["category"] != "SENTINEL"
-    )
+    updated = sum(1 for cid, *_ in rows if _curation(conn, cid)["category"] != "SENTINEL")
     assert updated == 2  # exactly `limit` rows re-tagged (order-agnostic)
 
     out = capsys.readouterr().out
@@ -291,9 +298,7 @@ def test_run_limit_zero_is_falsy_and_processes_all(cfg, conn, seed, capsys):
     rc = retag.run(cfg, limit=0)  # `if limit:` is False -> no slice -> all rows
     assert rc == 0
 
-    updated = sum(
-        1 for cid, *_ in rows if _curation(conn, cid)["category"] != "SENTINEL"
-    )
+    updated = sum(1 for cid, *_ in rows if _curation(conn, cid)["category"] != "SENTINEL")
     assert updated == 2
     assert "retag: 2 curations" in capsys.readouterr().out
 
@@ -303,14 +308,12 @@ def test_run_limit_zero_is_falsy_and_processes_all(cfg, conn, seed, capsys):
 # --------------------------------------------------------------------------- #
 def test_run_seeds_ledger_from_digests(cfg, conn, seed, capsys, monkeypatch):
     iso = _freeze_retag_clock(monkeypatch)
-    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story",
-                     story_id="s_alpha")
-    b = seed.cluster(canonical_url="https://ex.com/b", title="Beta story",
-                     story_id="s_beta")
-    c = seed.cluster(canonical_url="https://ex.com/c", title="Gamma story",
-                     story_id=None)  # no story_id -> skipped
-    seed.digest(kind="weekly", period_key="2026-W27",
-                cluster_ids=json.dumps([a, b, c]))
+    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story", story_id="s_alpha")
+    b = seed.cluster(canonical_url="https://ex.com/b", title="Beta story", story_id="s_beta")
+    c = seed.cluster(
+        canonical_url="https://ex.com/c", title="Gamma story", story_id=None
+    )  # no story_id -> skipped
+    seed.digest(kind="weekly", period_key="2026-W27", cluster_ids=json.dumps([a, b, c]))
 
     rc = retag.run(cfg)
     assert rc == 0
@@ -321,10 +324,10 @@ def test_run_seeds_ledger_from_digests(cfg, conn, seed, capsys, monkeypatch):
     assert set(by_story) == {"s_alpha", "s_beta"}
 
     ra = by_story["s_alpha"]
-    assert ra["surface"] == "weekly"          # kind -> surface
-    assert ra["edition_key"] == "2026-W27"    # period_key -> edition_key
-    assert ra["cluster_id"] == a              # cluster id -> cluster_id
-    assert ra["first_at"] == iso              # frozen clock
+    assert ra["surface"] == "weekly"  # kind -> surface
+    assert ra["edition_key"] == "2026-W27"  # period_key -> edition_key
+    assert ra["cluster_id"] == a  # cluster id -> cluster_id
+    assert ra["first_at"] == iso  # frozen clock
 
     assert "retag: seeded ledger with 2 edition-story rows" in capsys.readouterr().out
 
@@ -337,8 +340,7 @@ def test_run_ledger_skips_null_empty_malformed_and_missing(cfg, conn, seed, caps
     # malformed JSON -> guarded (ValueError) -> [].
     seed.digest(kind="daily", period_key="2026-07-03", cluster_ids="{oops")
     # valid ids but no such clusters -> fetchone() None -> skipped.
-    seed.digest(kind="daily", period_key="2026-07-04",
-                cluster_ids=json.dumps([9991, 9992]))
+    seed.digest(kind="daily", period_key="2026-07-04", cluster_ids=json.dumps([9991, 9992]))
 
     rc = retag.run(cfg)
     assert rc == 0
@@ -347,8 +349,7 @@ def test_run_ledger_skips_null_empty_malformed_and_missing(cfg, conn, seed, caps
 
 
 def test_run_ledger_insert_or_ignore_is_idempotent(cfg, conn, seed):
-    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story",
-                     story_id="s_alpha")
+    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story", story_id="s_alpha")
     seed.digest(kind="weekly", period_key="2026-W27", cluster_ids=json.dumps([a]))
 
     assert retag.run(cfg) == 0
@@ -364,11 +365,15 @@ def test_run_ledger_insert_or_ignore_is_idempotent(cfg, conn, seed):
 
 
 def test_run_ledger_respects_preexisting_row(cfg, conn, seed):
-    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story",
-                     story_id="s_alpha")
+    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story", story_id="s_alpha")
     # A ledger row already published for this (story, surface, edition).
-    seed.ledger("s_alpha", "weekly", edition_key="2026-W27", cluster_id=a,
-                first_at="2020-01-01T00:00:00+00:00")
+    seed.ledger(
+        "s_alpha",
+        "weekly",
+        edition_key="2026-W27",
+        cluster_id=a,
+        first_at="2020-01-01T00:00:00+00:00",
+    )
     seed.digest(kind="weekly", period_key="2026-W27", cluster_ids=json.dumps([a]))
 
     assert retag.run(cfg) == 0
@@ -379,8 +384,7 @@ def test_run_ledger_respects_preexisting_row(cfg, conn, seed):
 
 
 def test_run_ledger_same_story_across_editions_is_two_rows(cfg, conn, seed):
-    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story",
-                     story_id="s_alpha")
+    a = seed.cluster(canonical_url="https://ex.com/a", title="Alpha story", story_id="s_alpha")
     seed.digest(kind="weekly", period_key="2026-W26", cluster_ids=json.dumps([a]))
     seed.digest(kind="weekly", period_key="2026-W27", cluster_ids=json.dumps([a]))
 

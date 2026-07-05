@@ -24,9 +24,9 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from signalpipe.ingest.sources_misc import (
+    _GH_STARS_TODAY_RE,
     GH_TRENDING,
     HF_DAILY,
-    _GH_STARS_TODAY_RE,
     fetch_github_trending,
     fetch_hf_daily_papers,
 )
@@ -146,9 +146,7 @@ def test_hf_requests_hf_daily_non_conditional(make_result):
 
 
 def test_hf_source_row_is_ignored(fake_client, make_result):
-    client = fake_client(
-        responses={HF_DAILY: make_result(content=_hf_body([_hf_row()]))}
-    )
+    client = fake_client(responses={HF_DAILY: make_result(content=_hf_body([_hf_row()]))})
     items = fetch_hf_daily_papers(client, {"url": "ignored", "mode": "x", "junk": object()})
     assert len(items) == 1
     assert client.requested == [HF_DAILY]
@@ -172,15 +170,15 @@ def test_hf_title_stripped_before_replace(fake_client, make_result):
 @pytest.mark.parametrize(
     "row",
     [
-        _hf_row(pid=_MISSING),          # no paper.id key
-        _hf_row(pid=None),              # id present but null
-        _hf_row(pid=""),                # empty id -> falsy
-        _hf_row(title=_MISSING),        # no paper.title key
-        _hf_row(title=None),            # (None or "") -> ""
-        _hf_row(title=""),              # empty title
-        _hf_row(title="   \n  "),       # whitespace-only -> "" after strip
-        {},                              # no "paper" key at all -> {} -> no id
-        {"paper": None},                # paper explicitly null -> `or {}` -> {}
+        _hf_row(pid=_MISSING),  # no paper.id key
+        _hf_row(pid=None),  # id present but null
+        _hf_row(pid=""),  # empty id -> falsy
+        _hf_row(title=_MISSING),  # no paper.title key
+        _hf_row(title=None),  # (None or "") -> ""
+        _hf_row(title=""),  # empty title
+        _hf_row(title="   \n  "),  # whitespace-only -> "" after strip
+        {},  # no "paper" key at all -> {} -> no id
+        {"paper": None},  # paper explicitly null -> `or {}` -> {}
     ],
 )
 def test_hf_skips_incomplete_rows(fake_client, make_result, row):
@@ -201,7 +199,7 @@ def test_hf_optional_fields_default_none(fake_client, make_result):
     (item,) = fetch_hf_daily_papers(client, {})
     assert item["author"] is None
     assert item["comments"] is None
-    assert item["points"] is None        # upvotes absent -> None
+    assert item["points"] is None  # upvotes absent -> None
     assert item["published_at"] is None  # publishedAt absent -> None
 
 
@@ -235,7 +233,7 @@ def test_hf_empty_list_returns_empty(fake_client, make_result):
         (500, None, None, r"^HTTP 500$"),
         (0, None, "ConnectError: boom", r"ConnectError: boom"),
         (500, None, "upstream exploded", r"upstream exploded"),
-        (200, b"", None, r"^HTTP 200$"),   # 200 but empty body -> not res.content
+        (200, b"", None, r"^HTTP 200$"),  # 200 but empty body -> not res.content
         (200, None, None, r"^HTTP 200$"),  # 200 but null body
     ],
 )
@@ -282,7 +280,9 @@ def test_gh_repos_authors_and_stars_from_fixture(fake_client, make_result, load_
     assert [i["points"] for i in items] == [1234, 56, 1]  # last is "1 star today" (singular)
 
 
-def test_gh_description_tags_stripped_and_whitespace_collapsed(fake_client, make_result, load_bytes):
+def test_gh_description_tags_stripped_and_whitespace_collapsed(
+    fake_client, make_result, load_bytes
+):
     html = load_bytes("sources_misc_github_trending.html")
     client = fake_client(responses={GH_TRENDING: make_result(content=html)})
     items = fetch_github_trending(client, {})
@@ -291,11 +291,15 @@ def test_gh_description_tags_stripped_and_whitespace_collapsed(fake_client, make
 
 
 def test_gh_requests_gh_trending_non_conditional(make_result):
-    rec = _RecClient(make_result(content=_gh_html([_gh_card(owner="own", repo="rep")]).encode("utf-8")))
+    rec = _RecClient(
+        make_result(content=_gh_html([_gh_card(owner="own", repo="rep")]).encode("utf-8"))
+    )
     items = fetch_github_trending(rec, {})
     assert rec.requested == [GH_TRENDING]
     assert rec.conditionals == [False]
-    assert [i["guid"] for i in items] == ["ghtrend-own/rep"]  # the recorded body was actually parsed
+    assert [i["guid"] for i in items] == [
+        "ghtrend-own/rep"
+    ]  # the recorded body was actually parsed
 
 
 def test_gh_source_row_is_ignored(fake_client, make_result):
@@ -313,7 +317,7 @@ def test_gh_source_row_is_ignored(fake_client, make_result):
     "text,expected,expected_num",
     [
         ("1,234 stars today", "1,234", 1234),
-        ("1 star today", "1", 1),           # singular
+        ("1 star today", "1", 1),  # singular
         ("56 stars today", "56", 56),
         ("12,345,678 stars today", "12,345,678", 12345678),
         ("0 stars today", "0", 0),
@@ -330,10 +334,10 @@ def test_gh_stars_regex_matches(text, expected, expected_num):
 @pytest.mark.parametrize(
     "text",
     [
-        "12 stars this week",   # wrong window
-        "trending today",       # no count
-        "stars today",          # no leading number
-        "1,234 forks today",    # wrong noun
+        "12 stars this week",  # wrong window
+        "trending today",  # no count
+        "stars today",  # no leading number
+        "1,234 forks today",  # wrong noun
         "",
     ],
 )
@@ -429,10 +433,7 @@ def test_gh_no_article_marker_returns_empty(fake_client, make_result):
 def test_gh_pre_article_content_is_discarded(fake_client, make_result):
     # Everything before the FIRST article marker (chunks[0]) is dropped by [1:],
     # so a stray href/stars in the page chrome never becomes an item.
-    header = (
-        '<html><body><a href="/some/nav/link">nav</a>'
-        "<span>999 stars today</span>"
-    )
+    header = '<html><body><a href="/some/nav/link">nav</a><span>999 stars today</span>'
     html = _gh_html([_gh_card(owner="real", repo="repo")], header=header).encode("utf-8")
     client = fake_client(responses={GH_TRENDING: make_result(content=html)})
     items = fetch_github_trending(client, {})
@@ -465,7 +466,7 @@ def test_gh_decode_utf8_ignores_invalid_bytes(fake_client, make_result):
         (503, None, "HTTP 503", r"HTTP 503"),
         (0, None, "ConnectError: down", r"ConnectError: down"),
         (429, None, "rate limited", r"rate limited"),
-        (200, b"", None, r"^HTTP 200$"),   # 200 but empty body
+        (200, b"", None, r"^HTTP 200$"),  # 200 but empty body
         (200, None, None, r"^HTTP 200$"),  # 200 but null body
     ],
 )

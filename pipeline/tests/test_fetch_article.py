@@ -58,9 +58,7 @@ def _install_client(monkeypatch, client):
 
 
 def _article(conn, cluster_id):
-    return conn.execute(
-        "SELECT * FROM articles WHERE cluster_id=?", (cluster_id,)
-    ).fetchone()
+    return conn.execute("SELECT * FROM articles WHERE cluster_id=?", (cluster_id,)).fetchone()
 
 
 class FakeCfg:
@@ -278,9 +276,12 @@ def test_extract_trafilatura_empty_text_falls_through_but_keeps_meta(monkeypatch
 
     def bare_extraction(html, url=None, include_comments=False, favor_precision=True):
         return {
-            "text": None, "raw_text": None,
-            "author": "A. Writer", "date": "2026-01-01",
-            "language": "en", "sitename": "Example",
+            "text": None,
+            "raw_text": None,
+            "author": "A. Writer",
+            "date": "2026-01-01",
+            "language": "en",
+            "sitename": "Example",
         }
 
     fake.bare_extraction = bare_extraction
@@ -289,8 +290,10 @@ def test_extract_trafilatura_empty_text_falls_through_but_keeps_meta(monkeypatch
     text, meta = fa._extract(ARTICLE_HTML, "https://example.com/post")
     assert text and "<" not in text  # supplied by readability fallback
     assert meta == {
-        "author": "A. Writer", "date": "2026-01-01",
-        "lang": "en", "sitename": "Example",
+        "author": "A. Writer",
+        "date": "2026-01-01",
+        "lang": "en",
+        "sitename": "Example",
     }
 
 
@@ -365,9 +368,7 @@ def test_run_skips_clusters_below_score_gate(conn, cfg, seed, make_result, monke
 # run() — publication-free (ok)
 # --------------------------------------------------------------------------- #
 @pytest.mark.integration
-def test_run_publication_free_ok(
-    conn, cfg, seed, make_result, monkeypatch, capsys, freeze_now_iso
-):
+def test_run_publication_free_ok(conn, cfg, seed, make_result, monkeypatch, capsys, freeze_now_iso):
     url = "https://blog.example.com/post"
     cid = seed.cluster(canonical_url=url, score=5.0)
     client = LocalFakeClient({url: make_result(content=b"<html>body</html>", status=200)})
@@ -620,9 +621,9 @@ def test_run_null_canonical_is_skipped(conn, cfg, seed, monkeypatch, capsys):
 # --------------------------------------------------------------------------- #
 @pytest.mark.integration
 def test_run_mixed_batch_stats_and_tail(conn, cfg, seed, make_result, monkeypatch, capsys):
-    a = "https://goodblog.example.com/a"   # publication-free ok
-    b = "https://www.nytimes.com/b"        # paywalled -> canonical-fallback
-    c = "https://fail.example.com/c"       # failed (503)
+    a = "https://goodblog.example.com/a"  # publication-free ok
+    b = "https://www.nytimes.com/b"  # paywalled -> canonical-fallback
+    c = "https://fail.example.com/c"  # failed (503)
     seed.cluster(canonical_url=a, score=9.0)
     seed.cluster(canonical_url=b, score=8.0)
     seed.cluster(canonical_url=c, score=7.0)
@@ -669,7 +670,10 @@ def test_run_mixed_batch_stats_and_tail(conn, cfg, seed, make_result, monkeypatc
     import json as _json
 
     assert _json.loads(run_row["stats"]) == {
-        "fetched": 1, "paywalled": 1, "failed": 1, "skipped": 1,
+        "fetched": 1,
+        "paywalled": 1,
+        "failed": 1,
+        "skipped": 1,
     }
     assert cfg.data["last_run"]["job"] == "fetch"
     assert cfg.data["last_run"]["stats"]["fetched"] == 1

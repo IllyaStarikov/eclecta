@@ -21,13 +21,12 @@ import json
 import os
 import subprocess
 import types
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import pytest
 
 import signalpipe.llm.backend_cli as bc
 from signalpipe.llm import LLMError, UsageLimitExhausted
-
 
 # --------------------------------------------------------------------------- #
 # Local helpers / stubs
@@ -158,9 +157,7 @@ class TestParseResetEpoch:
         assert bc._parse_reset_epoch("resets at 2026-07-04T03:00:00Z") == 1783134000.0
 
     def test_epoch_wins_over_iso_when_both_present(self):
-        got = bc._parse_reset_epoch(
-            "usage limit|1751652000 resets at 2026-07-04T03:00:00+00:00"
-        )
+        got = bc._parse_reset_epoch("usage limit|1751652000 resets at 2026-07-04T03:00:00+00:00")
         assert got == 1751652000.0
 
     def test_malformed_iso_returns_none(self):
@@ -264,11 +261,11 @@ class TestExtractJson:
         assert bc._extract_json("") is None
 
     def test_fenced_json_block(self):
-        text = "Here you go:\n```json\n{\"a\": 1, \"b\": 2}\n```\nthanks"
+        text = 'Here you go:\n```json\n{"a": 1, "b": 2}\n```\nthanks'
         assert bc._extract_json(text) == {"a": 1, "b": 2}
 
     def test_fenced_without_lang_tag(self):
-        text = "```\n{\"a\": 1}\n```"
+        text = '```\n{"a": 1}\n```'
         assert bc._extract_json(text) == {"a": 1}
 
     def test_brace_match_without_fence(self):
@@ -348,13 +345,20 @@ class TestRunArgv:
         assert argv == [
             "claude",
             "-p",
-            "--model", "claude-haiku-4-5",
-            "--output-format", "json",
-            "--json-schema", json.dumps(SCHEMA),
-            "--max-turns", "4",
-            "--permission-mode", "dontAsk",
-            "--disallowedTools", "Bash Edit Write WebFetch WebSearch Task",
-            "--system-prompt", "SYS",
+            "--model",
+            "claude-haiku-4-5",
+            "--output-format",
+            "json",
+            "--json-schema",
+            json.dumps(SCHEMA),
+            "--max-turns",
+            "4",
+            "--permission-mode",
+            "dontAsk",
+            "--disallowedTools",
+            "Bash Edit Write WebFetch WebSearch Task",
+            "--system-prompt",
+            "SYS",
         ]
         # STDIN carries the prompt (never argv).
         assert fake.calls[0].input == "PROMPT"
@@ -441,7 +445,7 @@ class TestRunSuccess:
 
     def test_result_fallback_when_structured_output_missing(self, patch_run, monkeypatch):
         monkeypatch.setattr(bc.quota, "clear", _ClearRecorder())
-        result_text = "Sure:\n```json\n{\"relevance\": 5}\n```"
+        result_text = 'Sure:\n```json\n{"relevance": 5}\n```'
         fake = patch_run(_proc(0, _envelope(result=result_text, total_cost_usd=0.1)))
         obj, cost = bc.run("m", "s", "p", SCHEMA, _Cfg())
         assert obj == {"relevance": 5}
@@ -475,7 +479,7 @@ class TestRunRepair:
         clear = _ClearRecorder()
         monkeypatch.setattr(bc.quota, "clear", clear)
         # 1st: fenced JSON with wrong type -> validation fails.
-        bad_result = "```json\n{\"relevance\": \"nope\"}\n```"
+        bad_result = '```json\n{"relevance": "nope"}\n```'
         first = _proc(0, _envelope(result=bad_result, total_cost_usd=0.1))
         second = _proc(0, _envelope(structured_output={"relevance": 9}, total_cost_usd=0.2))
         fake = patch_run(first, second)
@@ -505,8 +509,9 @@ class TestRunRepair:
     def test_invalid_after_retry_raises_llmerror(self, patch_run, monkeypatch):
         monkeypatch.setattr(bc.quota, "clear", _ClearRecorder())
         bad = _proc(0, _envelope(structured_output={"relevance": "x"}, total_cost_usd=0.2))
-        fake = patch_run(bad, _proc(0, _envelope(structured_output={"relevance": "y"},
-                                                 total_cost_usd=0.2)))
+        fake = patch_run(
+            bad, _proc(0, _envelope(structured_output={"relevance": "y"}, total_cost_usd=0.2))
+        )
         with pytest.raises(LLMError) as ei:
             bc.run("m", "s", "p", SCHEMA, _Cfg())
         assert "invalid after retry" in str(ei.value)

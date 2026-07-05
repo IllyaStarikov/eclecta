@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import quote, unquote
 
 import pytest
@@ -47,8 +47,9 @@ def _body(topics: Any) -> bytes:
     return json.dumps({"topics": topics}).encode("utf-8")
 
 
-def _client(fake_client, make_result, *, content: Any, status: int = 200,
-            error: Optional[str] = None):
+def _client(
+    fake_client, make_result, *, content: Any, status: int = 200, error: Optional[str] = None
+):
     """Build a FakePoliteClient with a single canned response keyed on ``TRENDS_URL``."""
     return fake_client(
         responses={TRENDS_URL: make_result(content=content, status=status, error=error)}
@@ -114,7 +115,8 @@ def test_happy_path_is_silent_on_stderr(fake_client, make_result, capsys):
 # --------------------------------------------------------------------------- #
 def test_display_name_missing_title_falls_back_to_topic(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic="Rust", _drop=["displayName"])]),
     )
     (item,) = fetch_items(client, {})
@@ -125,7 +127,8 @@ def test_display_name_missing_title_falls_back_to_topic(fake_client, make_result
 def test_display_name_empty_string_falls_back_to_topic(fake_client, make_result):
     # displayName "" is falsy → `t.get("displayName") or topic` picks the topic.
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic="Go", displayName="")]),
     )
     (item,) = fetch_items(client, {})
@@ -134,7 +137,8 @@ def test_display_name_empty_string_falls_back_to_topic(fake_client, make_result)
 
 def test_display_name_none_falls_back_to_topic(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic="Elixir", displayName=None)]),
     )
     (item,) = fetch_items(client, {})
@@ -143,7 +147,8 @@ def test_display_name_none_falls_back_to_topic(fake_client, make_result):
 
 def test_display_name_is_stripped(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(displayName="  Padded News \n")]),
     )
     (item,) = fetch_items(client, {})
@@ -152,7 +157,8 @@ def test_display_name_is_stripped(fake_client, make_result):
 
 def test_topic_is_stripped_for_guid_and_raw_url(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic="  Padded  ", displayName="Name")]),
     )
     (item,) = fetch_items(client, {})
@@ -164,7 +170,8 @@ def test_topic_is_stripped_for_guid_and_raw_url(fake_client, make_result):
 def test_topic_lower_normalizes_guid_casing(fake_client, make_result):
     # guid uses topic.lower(); raw_url preserves the original casing (quote is case-preserving).
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic="MixedCASE", displayName="D")]),
     )
     (item,) = fetch_items(client, {})
@@ -186,7 +193,8 @@ def test_skips_non_dict_and_empty_entries_keeps_valid(fake_client, make_result):
 
 def test_entry_missing_topic_is_dropped(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([{"displayName": "Only a name, no topic"}]),
     )
     assert fetch_items(client, {}) == []
@@ -195,7 +203,8 @@ def test_entry_missing_topic_is_dropped(fake_client, make_result):
 @pytest.mark.parametrize("blank", ["", "   ", "\t\n ", "\xa0"])
 def test_whitespace_or_empty_topic_is_dropped(fake_client, make_result, blank):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic=blank, displayName="Has a name")]),
     )
     assert fetch_items(client, {}) == []
@@ -203,7 +212,8 @@ def test_whitespace_or_empty_topic_is_dropped(fake_client, make_result, blank):
 
 def test_topic_none_is_dropped(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic=None, displayName="Name")]),
     )
     assert fetch_items(client, {}) == []
@@ -214,7 +224,8 @@ def test_whitespace_only_display_name_drops_entry(fake_client, make_result, blan
     # A truthy-but-blank displayName wins over the topic fallback, then strips to ""
     # → `not title` drops the entry even though a real topic exists.
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic="Valid", displayName=blank_title)]),
     )
     assert fetch_items(client, {}) == []
@@ -239,7 +250,8 @@ def test_empty_topics_list_returns_empty_without_warning(fake_client, make_resul
 # --------------------------------------------------------------------------- #
 def test_feed_link_prefixes_bsky_host(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(link="/topic/ai")]),
     )
     (item,) = fetch_items(client, {})
@@ -248,7 +260,8 @@ def test_feed_link_prefixes_bsky_host(fake_client, make_result):
 
 def test_feed_link_none_when_link_absent(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(_drop=["link"])]),
     )
     (item,) = fetch_items(client, {})
@@ -257,7 +270,8 @@ def test_feed_link_none_when_link_absent(fake_client, make_result):
 
 def test_feed_link_none_when_link_empty_string(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(link="")]),
     )
     (item,) = fetch_items(client, {})
@@ -266,7 +280,8 @@ def test_feed_link_none_when_link_empty_string(fake_client, make_result):
 
 def test_feed_link_none_when_link_null(fake_client, make_result):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(link=None)]),
     )
     (item,) = fetch_items(client, {})
@@ -297,7 +312,8 @@ def test_extra_marks_aggregator_self_link(fake_client, make_result):
 )
 def test_special_chars_are_url_encoded(fake_client, make_result, topic, encoded):
     client = _client(
-        fake_client, make_result,
+        fake_client,
+        make_result,
         content=_body([_topic(topic=topic, displayName="D")]),
     )
     (item,) = fetch_items(client, {})
@@ -319,8 +335,10 @@ def test_non_200_returns_empty_and_warns(fake_client, make_result, capsys):
 def test_non_200_short_circuits_even_with_a_body(fake_client, make_result, capsys):
     # A 404 carrying a valid-looking body still degrades (status guard fires first).
     client = _client(
-        fake_client, make_result,
-        content=_body([_topic()]), status=404,
+        fake_client,
+        make_result,
+        content=_body([_topic()]),
+        status=404,
     )
     assert fetch_items(client, {}) == []
     assert "HTTP 404" in capsys.readouterr().err
@@ -328,8 +346,11 @@ def test_non_200_short_circuits_even_with_a_body(fake_client, make_result, capsy
 
 def test_error_message_is_preferred_over_http_status(fake_client, make_result, capsys):
     client = _client(
-        fake_client, make_result,
-        content=None, status=0, error="ConnectError: boom",
+        fake_client,
+        make_result,
+        content=None,
+        status=0,
+        error="ConnectError: boom",
     )
     assert fetch_items(client, {}) == []
     err = capsys.readouterr().err
@@ -375,9 +396,7 @@ def test_missing_topics_key_returns_empty_and_warns(fake_client, make_result, ca
     "topics_value",
     ['{"a": 1}', '"a string"', "5", "null", "true"],
 )
-def test_topics_not_a_list_returns_empty_and_warns(
-    fake_client, make_result, capsys, topics_value
-):
+def test_topics_not_a_list_returns_empty_and_warns(fake_client, make_result, capsys, topics_value):
     content = ('{"topics": %s}' % topics_value).encode("utf-8")
     client = _client(fake_client, make_result, content=content)
     assert fetch_items(client, {}) == []
@@ -447,9 +466,7 @@ def test_fetch_is_unconditional(fake_client, make_result):
 # Module constants
 # --------------------------------------------------------------------------- #
 def test_module_constants_shape():
-    assert TRENDS_URL == (
-        "https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics"
-    )
+    assert TRENDS_URL == ("https://public.api.bsky.app/xrpc/app.bsky.unspecced.getTrendingTopics")
     assert SEARCH_URL == "https://bsky.app/search?q=%s"
     assert SEARCH_URL % "hello" == "https://bsky.app/search?q=hello"
 

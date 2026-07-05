@@ -43,4 +43,7 @@ select = ["E", "F", "W", "I"]
 ignore = ["E501"]  # long lines exist in the codebase; don't churn them
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["E402", "F811"]  # fixtures + late imports are fine in tests
+# Tests get a lenient ruleset: late imports (E402), fixture redefinition (F811),
+# unused locals (F841 — the `x = pytest.importorskip(...)` idiom + seed() side-effect
+# calls), and single-char loop names (E741) are all fine and common in tests.
+"tests/**" = ["E402", "F811", "F841", "E741"]

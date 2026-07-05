@@ -121,11 +121,11 @@ VALID_OBJ = {"relevant": True, "score": 8, "summary": "ok"}
 # =========================================================================== #
 class TestExtractJson:
     def test_fenced_json_block(self):
-        text = "Sure!\n```json\n{\"a\": 1, \"b\": [2, 3]}\n```\nDone."
+        text = 'Sure!\n```json\n{"a": 1, "b": [2, 3]}\n```\nDone.'
         assert backend_local._extract_json(text) == {"a": 1, "b": [2, 3]}
 
     def test_fenced_without_language_tag(self):
-        text = "```\n{\"x\": true}\n```"
+        text = '```\n{"x": true}\n```'
         assert backend_local._extract_json(text) == {"x": True}
 
     def test_bare_object_with_surrounding_prose(self):
@@ -163,7 +163,7 @@ class TestExtractJson:
 
     def test_fence_takes_precedence_over_trailing_braces(self):
         # The fenced group is chosen first, then brace-matched inside it.
-        text = "```json\n{\"in\": 1}\n```\nand a stray {\"out\": 2}"
+        text = '```json\n{"in": 1}\n```\nand a stray {"out": 2}'
         assert backend_local._extract_json(text) == {"in": 1}
 
     def test_nested_object_brace_matching(self):
@@ -190,9 +190,7 @@ class TestValidate:
 
     def test_wrong_type_string_prop(self):
         # summary declared string, given an int.
-        err = backend_local._validate(
-            {"relevant": True, "score": 1, "summary": 5}, RUN_SCHEMA
-        )
+        err = backend_local._validate({"relevant": True, "score": 1, "summary": 5}, RUN_SCHEMA)
         assert err == "key 'summary' has wrong type"
 
     def test_none_value_is_skipped(self):
@@ -209,7 +207,7 @@ class TestValidate:
         [
             (True, True),
             (False, True),
-            (1, False),      # int is NOT a bool
+            (1, False),  # int is NOT a bool
             ("yes", False),
         ],
     )
@@ -222,8 +220,8 @@ class TestValidate:
         "value, ok",
         [
             (3, True),
-            (True, True),    # bool is a subtype of int -> accepted
-            (3.0, False),    # a float is not an integer
+            (True, True),  # bool is a subtype of int -> accepted
+            (3.0, False),  # a float is not an integer
             ("3", False),
         ],
     )
@@ -235,7 +233,7 @@ class TestValidate:
     @pytest.mark.parametrize(
         "value, ok",
         [
-            (3, True),       # int accepted for number
+            (3, True),  # int accepted for number
             (3.5, True),
             ("3.5", False),
         ],
@@ -279,7 +277,7 @@ class TestCliParity:
         ("no json", None),
         ("[1, 2, 3]", None),
         ('{"a": 1}', {"a": 1}),
-        ("```json\n{\"k\": [1, 2]}\n```", {"k": [1, 2]}),
+        ('```json\n{"k": [1, 2]}\n```', {"k": [1, 2]}),
         ('prose {"x": {"y": 2}} more', {"x": {"y": 2}}),
         ("} {", None),
         ("{invalid}", None),
@@ -289,8 +287,8 @@ class TestCliParity:
     def test_extract_json_parity(self, text, expected):
         local = backend_local._extract_json(text)
         cli = backend_cli._extract_json(text)
-        assert local == expected      # pins the real value...
-        assert cli == expected        # ...for BOTH copies (also proves parity)
+        assert local == expected  # pins the real value...
+        assert cli == expected  # ...for BOTH copies (also proves parity)
 
     VALIDATE_CASES = [
         ({"relevant": True, "score": 1}, RUN_SCHEMA, None),
@@ -314,30 +312,56 @@ class TestOllamaChat:
     def test_returns_message_content(self, install_urlopen):
         install_urlopen([_envelope("hello world")])
         out = backend_local._ollama_chat(
-            "http://127.0.0.1:11434", "m", "sys", "prompt",
-            RUN_SCHEMA, 10, 16384, "15m",
+            "http://127.0.0.1:11434",
+            "m",
+            "sys",
+            "prompt",
+            RUN_SCHEMA,
+            10,
+            16384,
+            "15m",
         )
         assert out == "hello world"
 
     def test_missing_message_yields_empty_string(self, install_urlopen):
         install_urlopen([json.dumps({})])
         out = backend_local._ollama_chat(
-            "http://127.0.0.1:11434", "m", "sys", "p", RUN_SCHEMA, 10, 16384, "15m",
+            "http://127.0.0.1:11434",
+            "m",
+            "sys",
+            "p",
+            RUN_SCHEMA,
+            10,
+            16384,
+            "15m",
         )
         assert out == ""
 
     def test_none_content_yields_empty_string(self, install_urlopen):
         install_urlopen([json.dumps({"message": {"content": None}})])
         out = backend_local._ollama_chat(
-            "http://127.0.0.1:11434", "m", "sys", "p", RUN_SCHEMA, 10, 16384, "15m",
+            "http://127.0.0.1:11434",
+            "m",
+            "sys",
+            "p",
+            RUN_SCHEMA,
+            10,
+            16384,
+            "15m",
         )
         assert out == ""
 
     def test_request_body_and_url(self, install_urlopen):
         fake = install_urlopen([_envelope("{}")])
         backend_local._ollama_chat(
-            "http://127.0.0.1:11434", "llama3", "SYSTEM", "PROMPT",
-            RUN_SCHEMA, 42, 8192, "30m",
+            "http://127.0.0.1:11434",
+            "llama3",
+            "SYSTEM",
+            "PROMPT",
+            RUN_SCHEMA,
+            42,
+            8192,
+            "30m",
         )
         req = fake.requests[0]
         assert req.full_url == "http://127.0.0.1:11434/api/chat"
@@ -358,7 +382,14 @@ class TestOllamaChat:
     def test_base_url_trailing_slash_is_stripped(self, install_urlopen):
         fake = install_urlopen([_envelope("{}")])
         backend_local._ollama_chat(
-            "http://localhost:11434/", "m", "s", "p", RUN_SCHEMA, 5, 1024, "1m",
+            "http://localhost:11434/",
+            "m",
+            "s",
+            "p",
+            RUN_SCHEMA,
+            5,
+            1024,
+            "1m",
         )
         assert fake.requests[0].full_url == "http://localhost:11434/api/chat"
 
@@ -366,7 +397,14 @@ class TestOllamaChat:
         install_urlopen([urllib.error.URLError("connection refused")])
         with pytest.raises(LLMError) as ei:
             backend_local._ollama_chat(
-                "http://127.0.0.1:11434", "m", "s", "p", RUN_SCHEMA, 5, 1024, "1m",
+                "http://127.0.0.1:11434",
+                "m",
+                "s",
+                "p",
+                RUN_SCHEMA,
+                5,
+                1024,
+                "1m",
             )
         assert "unreachable" in str(ei.value)
         assert ei.value.cost_usd == 0.0
@@ -377,7 +415,14 @@ class TestOllamaChat:
         install_urlopen([err])
         with pytest.raises(LLMError) as ei:
             backend_local._ollama_chat(
-                "http://x", "m", "s", "p", RUN_SCHEMA, 5, 1024, "1m",
+                "http://x",
+                "m",
+                "s",
+                "p",
+                RUN_SCHEMA,
+                5,
+                1024,
+                "1m",
             )
         assert "unreachable" in str(ei.value)
         assert ei.value.cost_usd == 0.0
@@ -386,7 +431,14 @@ class TestOllamaChat:
         install_urlopen([b"<html>not json</html>"])
         with pytest.raises(LLMError) as ei:
             backend_local._ollama_chat(
-                "http://127.0.0.1:11434", "m", "s", "p", RUN_SCHEMA, 5, 1024, "1m",
+                "http://127.0.0.1:11434",
+                "m",
+                "s",
+                "p",
+                RUN_SCHEMA,
+                5,
+                1024,
+                "1m",
             )
         assert "bad response" in str(ei.value)
         assert ei.value.cost_usd == 0.0
@@ -395,7 +447,14 @@ class TestOllamaChat:
         install_urlopen([OSError("socket exploded")])
         with pytest.raises(LLMError) as ei:
             backend_local._ollama_chat(
-                "http://127.0.0.1:11434", "m", "s", "p", RUN_SCHEMA, 5, 1024, "1m",
+                "http://127.0.0.1:11434",
+                "m",
+                "s",
+                "p",
+                RUN_SCHEMA,
+                5,
+                1024,
+                "1m",
             )
         assert "bad response" in str(ei.value)
         assert ei.value.cost_usd == 0.0
@@ -404,7 +463,14 @@ class TestOllamaChat:
         install_urlopen([json.dumps({"error": "model 'x' not found"})])
         with pytest.raises(LLMError) as ei:
             backend_local._ollama_chat(
-                "http://127.0.0.1:11434", "m", "s", "p", RUN_SCHEMA, 5, 1024, "1m",
+                "http://127.0.0.1:11434",
+                "m",
+                "s",
+                "p",
+                RUN_SCHEMA,
+                5,
+                1024,
+                "1m",
             )
         assert "ollama error" in str(ei.value)
         assert "model 'x' not found" in str(ei.value)
@@ -551,18 +617,27 @@ class TestConsensusCore:
     def test_core_type_fusion(self):
         objs = [
             {  # primary
-                "flag": True, "score": 7, "conf": 0.5,
-                "channels": ["ai", "robotics"], "facts": ["a", "b"],
+                "flag": True,
+                "score": 7,
+                "conf": 0.5,
+                "channels": ["ai", "robotics"],
+                "facts": ["a", "b"],
                 "label": "primary-label",
             },
             {
-                "flag": True, "score": 9, "conf": 0.9,
-                "channels": ["ai", "policy"], "facts": ["b", "c"],
+                "flag": True,
+                "score": 9,
+                "conf": 0.9,
+                "channels": ["ai", "policy"],
+                "facts": ["b", "c"],
                 "label": "second",
             },
             {
-                "flag": False, "score": 5, "conf": 0.1,
-                "channels": ["ai"], "facts": ["c", "d"],
+                "flag": False,
+                "score": 5,
+                "conf": 0.1,
+                "channels": ["ai"],
+                "facts": ["c", "d"],
                 "label": "third",
             },
         ]
@@ -584,18 +659,14 @@ class TestConsensusCore:
         schema = {
             "properties": {"n": {"type": "integer"}, "x": {"type": "number"}},
         }
-        out = backend_local.consensus(
-            [{"n": 7, "x": 1.0}, {"n": 9, "x": 3.0}], schema
-        )
-        assert out["n"] == 8            # median(7, 9) = 8.0 -> int 8
-        assert out["x"] == 2.0          # median(1.0, 3.0) = 2.0
+        out = backend_local.consensus([{"n": 7, "x": 1.0}, {"n": 9, "x": 3.0}], schema)
+        assert out["n"] == 8  # median(7, 9) = 8.0 -> int 8
+        assert out["x"] == 2.0  # median(1.0, 3.0) = 2.0
         assert isinstance(out["x"], float)
 
     def test_union_array_respects_maxitems_cap(self):
         schema = {"properties": {"facts": {"type": "array", "maxItems": 2}}}
-        out = backend_local.consensus(
-            [{"facts": ["a", "b"]}, {"facts": ["c", "d"]}], schema
-        )
+        out = backend_local.consensus([{"facts": ["a", "b"]}, {"facts": ["c", "d"]}], schema)
         assert out["facts"] == ["a", "b"]
 
     def test_union_array_preserves_first_seen_order(self):
@@ -693,12 +764,8 @@ class TestConsensusEdges:
     def test_boolean_two_voters_both_agree(self):
         schema = {"properties": {"flag": {"type": "boolean"}}}
         # n=2 requires BOTH to be true (trues*2 > len -> 4 > 2).
-        assert backend_local.consensus(
-            [{"flag": True}, {"flag": True}], schema
-        )["flag"] is True
-        assert backend_local.consensus(
-            [{"flag": False}, {"flag": False}], schema
-        )["flag"] is False
+        assert backend_local.consensus([{"flag": True}, {"flag": True}], schema)["flag"] is True
+        assert backend_local.consensus([{"flag": False}, {"flag": False}], schema)["flag"] is False
 
     def test_channels_no_majority_falls_back_to_primary_list(self):
         schema = {"properties": {"channels": {"type": "array", "maxItems": 3}}}
@@ -763,9 +830,7 @@ class TestConsensusEdges:
 
     def test_no_maxitems_returns_full_union(self):
         schema = {"properties": {"facts": {"type": "array"}}}  # no cap
-        out = backend_local.consensus(
-            [{"facts": ["a", "b", "c"]}, {"facts": ["d"]}], schema
-        )
+        out = backend_local.consensus([{"facts": ["a", "b", "c"]}, {"facts": ["d"]}], schema)
         assert out["facts"] == ["a", "b", "c", "d"]
 
     def test_output_only_contains_schema_keys(self):
@@ -802,13 +867,10 @@ class TestConsensusProperties:
                 d["score"] = draw(st.integers(min_value=-1000, max_value=1000))
             if draw(st.booleans()):
                 d["conf"] = draw(
-                    st.floats(min_value=-1e6, max_value=1e6,
-                              allow_nan=False, allow_infinity=False)
+                    st.floats(min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False)
                 )
             if draw(st.booleans()):
-                d["channels"] = draw(
-                    st.lists(st.sampled_from(channel_vocab), max_size=4)
-                )
+                d["channels"] = draw(st.lists(st.sampled_from(channel_vocab), max_size=4))
             if draw(st.booleans()):
                 d["facts"] = draw(st.lists(st.text(max_size=4), max_size=4))
             if draw(st.booleans()):
@@ -863,7 +925,7 @@ def test_live_ollama_round_trip():
         "properties": {"ok": {"type": "boolean"}},
     }
     obj, cost = backend_local.run(
-        model, "Reply with a JSON object.", "Return {\"ok\": true}.", schema, cfg
+        model, "Reply with a JSON object.", 'Return {"ok": true}.', schema, cfg
     )
     assert isinstance(obj, dict) and obj.get("ok") in (True, False)
     assert cost == 0.0

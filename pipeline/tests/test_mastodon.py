@@ -85,15 +85,15 @@ def _responses(make_result, bodies: Dict[str, Any]) -> Dict[str, Any]:
         (0, 0),
         ("0", 0),
         ("-5", -5),
-        (" 7 ", 7),          # int() strips surrounding whitespace
-        (1.9, 1),            # float truncates toward zero
-        (None, None),        # TypeError
-        ("abc", None),       # ValueError
-        ("", None),          # ValueError
-        ("1.0", None),       # ValueError (decimal string)
-        ("1e3", None),       # ValueError (scientific string)
-        ([], None),          # TypeError (non-numeric type)
-        ({}, None),          # TypeError
+        (" 7 ", 7),  # int() strips surrounding whitespace
+        (1.9, 1),  # float truncates toward zero
+        (None, None),  # TypeError
+        ("abc", None),  # ValueError
+        ("", None),  # ValueError
+        ("1.0", None),  # ValueError (decimal string)
+        ("1e3", None),  # ValueError (scientific string)
+        ([], None),  # TypeError (non-numeric type)
+        ({}, None),  # TypeError
     ],
 )
 def test_to_int_tolerance(value, expected):
@@ -104,7 +104,8 @@ def test_to_int_tolerance(value, expected):
 def test_to_int_property_roundtrip():
     """Ints pass through unchanged; pure-decimal strings parse to their int value."""
     pytest.importorskip("hypothesis")
-    from hypothesis import given, strategies as st
+    from hypothesis import given
+    from hypothesis import strategies as st
 
     @given(st.integers())
     def _check(n):
@@ -118,9 +119,7 @@ def test_to_int_property_roundtrip():
 # Happy path & field mapping
 # --------------------------------------------------------------------------- #
 def test_single_instance_maps_every_field(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, {"mastodon.social": [_link()]})
-    )
+    client = fake_client(responses=_responses(make_result, {"mastodon.social": [_link()]}))
     items = fetch_items(client, {}, instances=["mastodon.social"])
 
     assert len(items) == 1
@@ -145,9 +144,7 @@ def test_single_instance_maps_every_field(fake_client, make_result):
 
 def test_default_instance_when_none(fake_client, make_result):
     """``instances=None`` falls back to the single default ``mastodon.social``."""
-    client = fake_client(
-        responses=_responses(make_result, {"mastodon.social": [_link()]})
-    )
+    client = fake_client(responses=_responses(make_result, {"mastodon.social": [_link()]}))
     items = fetch_items(client, {}, instances=None)
 
     assert client.requested == [TRENDS_URL % "mastodon.social"]
@@ -156,9 +153,7 @@ def test_default_instance_when_none(fake_client, make_result):
 
 def test_default_instance_when_empty_list(fake_client, make_result):
     """A falsy (empty) ``instances`` also falls back to the default."""
-    client = fake_client(
-        responses=_responses(make_result, {"mastodon.social": [_link()]})
-    )
+    client = fake_client(responses=_responses(make_result, {"mastodon.social": [_link()]}))
     items = fetch_items(client, {}, instances=[])
     assert client.requested == [TRENDS_URL % "mastodon.social"]
     # The default instance's entry is actually parsed and returned (not just requested).
@@ -180,33 +175,25 @@ def test_url_and_title_are_stripped(fake_client, make_result):
 
 
 def test_missing_author_name_becomes_none(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(_drop=["author_name"])]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(_drop=["author_name"])]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["author"] is None
 
 
 def test_empty_author_name_becomes_none(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(author_name="")]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(author_name="")]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["author"] is None
 
 
 def test_missing_provider_is_none(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(_drop=["provider_name"])]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(_drop=["provider_name"])]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["extra"]["provider"] is None
 
 
 def test_published_at_passed_through_raw_none(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(_drop=["published_at"])]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(_drop=["published_at"])]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["published_at"] is None
 
@@ -216,9 +203,7 @@ def test_published_at_passed_through_raw_none(fake_client, make_result):
 # --------------------------------------------------------------------------- #
 def test_empty_history_yields_none_counts(fake_client, make_result):
     """``history=[]`` -> ``[{}]`` guard -> uses/accounts both ``None``."""
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(history=[])]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(history=[])]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["points"] is None
     assert items[0]["extra"]["accounts"] is None
@@ -226,18 +211,14 @@ def test_empty_history_yields_none_counts(fake_client, make_result):
 
 def test_none_history_yields_none_counts(fake_client, make_result):
     """``history=None`` -> ``[{}]`` guard -> uses/accounts both ``None``."""
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(history=None)]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(history=None)]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["points"] is None
     assert items[0]["extra"]["accounts"] is None
 
 
 def test_missing_history_key_yields_none_counts(fake_client, make_result):
-    client = fake_client(
-        responses=_responses(make_result, {"m": [_link(_drop=["history"])]})
-    )
+    client = fake_client(responses=_responses(make_result, {"m": [_link(_drop=["history"])]}))
     items = fetch_items(client, {}, instances=["m"])
     assert items[0]["points"] is None
     assert items[0]["extra"]["accounts"] is None
@@ -281,8 +262,12 @@ def test_entry_missing_title_skipped(fake_client, make_result):
     client = fake_client(
         responses=_responses(
             make_result,
-            {"m": [_link(url="https://drop.me/2", _drop=["title"]),
-                   _link(url="https://keep.me/2")]},
+            {
+                "m": [
+                    _link(url="https://drop.me/2", _drop=["title"]),
+                    _link(url="https://keep.me/2"),
+                ]
+            },
         )
     )
     items = fetch_items(client, {}, instances=["m"])
@@ -540,16 +525,12 @@ def test_all_instances_fail_raises(fake_client, make_result, capsys):
 
 def test_single_instance_failure_raises(fake_client, make_result):
     """One instance, non-200: errors non-empty, by_guid empty -> raise."""
-    client = fake_client(
-        responses={TRENDS_URL % "only.example": make_result(status=404)}
-    )
+    client = fake_client(responses={TRENDS_URL % "only.example": make_result(status=404)})
     with pytest.raises(RuntimeError, match="all mastodon instances failed"):
         fetch_items(client, {}, instances=["only.example"])
 
 
-def test_success_with_no_qualifying_entries_and_a_failure_raises(
-    fake_client, make_result
-):
+def test_success_with_no_qualifying_entries_and_a_failure_raises(fake_client, make_result):
     """errors non-empty AND by_guid empty (all entries filtered out) -> raise.
 
     The 200 instance returns only entries missing a title, so it contributes nothing;

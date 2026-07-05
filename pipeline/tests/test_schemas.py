@@ -35,12 +35,23 @@ EXPECTED_KINDS = {"daily", "weekly", "monthly", "quarterly", "yearly"}
 # is a same-object tautology that can never catch an edit to the domain itself.
 # Pinning the literal set here makes an accidental rename/reorder/drop fail loudly.
 EXPECTED_CHANNELS = [
-    "ai", "ml-research", "devtools", "security", "hardware", "startups",
+    "ai",
+    "ml-research",
+    "devtools",
+    "security",
+    "hardware",
+    "startups",
     "science",
 ]
 EXPECTED_GLOSSARY_CATEGORIES = [
-    "ai-ml", "computer-science", "software-engineering", "mathematics",
-    "systems", "security", "hardware", "other",
+    "ai-ml",
+    "computer-science",
+    "software-engineering",
+    "mathematics",
+    "systems",
+    "security",
+    "hardware",
+    "other",
 ]
 
 # A distinctive substring that appears ONLY in that kind's block text.
@@ -246,16 +257,12 @@ def test_judge_channels_enum_matches_channels():
 
 
 def test_glossary_extract_category_enum_matches_categories():
-    term_props = (
-        schemas.GLOSSARY_EXTRACT_SCHEMA["properties"]["terms"]["items"]["properties"]
-    )
+    term_props = schemas.GLOSSARY_EXTRACT_SCHEMA["properties"]["terms"]["items"]["properties"]
     assert term_props["category"]["enum"] == EXPECTED_GLOSSARY_CATEGORIES
 
 
 def test_glossary_define_category_enum_matches_categories():
-    def_props = (
-        schemas.GLOSSARY_DEFINE_SCHEMA["properties"]["definitions"]["items"]["properties"]
-    )
+    def_props = schemas.GLOSSARY_DEFINE_SCHEMA["properties"]["definitions"]["items"]["properties"]
     assert def_props["category"]["enum"] == EXPECTED_GLOSSARY_CATEGORIES
 
 

@@ -131,8 +131,8 @@ def test_canonicalize_combined_port_www_query_fragment():
     "url, expected",
     [
         ("https://ex.com//a///b/", "https://ex.com/a/b"),
-        ("https://ex.com/", "https://ex.com/"),   # root slash preserved
-        ("https://ex.com", "https://ex.com/"),    # empty path -> "/"
+        ("https://ex.com/", "https://ex.com/"),  # root slash preserved
+        ("https://ex.com", "https://ex.com/"),  # empty path -> "/"
         ("https://ex.com/a/", "https://ex.com/a"),  # trailing slash trimmed
         ("https://ex.com/a//b//c/", "https://ex.com/a/b/c"),
     ],
@@ -191,10 +191,10 @@ def test_canonicalize_non_cdn_amp_path_not_unwrapped():
 @pytest.mark.parametrize(
     "url, expected",
     [
-        ("https://ex.com/x#section", "https://ex.com/x"),   # plain fragment dropped
+        ("https://ex.com/x#section", "https://ex.com/x"),  # plain fragment dropped
         ("https://ex.com/x#!bang", "https://ex.com/x#!bang"),  # hashbang kept
         ("https://ex.com/x?a=1#!bang", "https://ex.com/x?a=1#!bang"),
-        ("https://ex.com/x#", "https://ex.com/x"),          # empty fragment dropped
+        ("https://ex.com/x#", "https://ex.com/x"),  # empty fragment dropped
     ],
 )
 def test_canonicalize_fragment(url, expected):
@@ -213,10 +213,10 @@ def test_canonicalize_fragment(url, expected):
         "ftp://x/y",
         "mailto:a@b",
         "javascript:alert(1)",
-        "https://",          # no host
-        "http:///path",      # empty host
-        "//ex.com/x",        # scheme-relative -> empty scheme
-        "http://[::1",       # urlsplit raises ValueError -> caught -> None
+        "https://",  # no host
+        "http:///path",  # empty host
+        "//ex.com/x",  # scheme-relative -> empty scheme
+        "http://[::1",  # urlsplit raises ValueError -> caught -> None
         "not a url at all",  # no scheme
     ],
 )
@@ -230,17 +230,12 @@ def test_canonicalize_rejects_returns_none(url):
 @pytest.mark.parametrize(
     "url, expected",
     [
-        ("https://youtube.com/watch?v=abc&si=xyz&feature=share",
-         "https://youtube.com/watch?v=abc"),
-        ("https://www.youtube.com/watch?v=abc&si=xyz",
-         "https://youtube.com/watch?v=abc"),
+        ("https://youtube.com/watch?v=abc&si=xyz&feature=share", "https://youtube.com/watch?v=abc"),
+        ("https://www.youtube.com/watch?v=abc&si=xyz", "https://youtube.com/watch?v=abc"),
         ("https://youtu.be/abc?si=xyz", "https://youtu.be/abc"),
-        ("https://open.spotify.com/track/123?si=xyz",
-         "https://open.spotify.com/track/123"),
-        ("https://twitter.com/u/status/1?s=20&t=abc",
-         "https://twitter.com/u/status/1"),
-        ("https://x.com/u/status/1?s=20&t=abc",
-         "https://x.com/u/status/1"),
+        ("https://open.spotify.com/track/123?si=xyz", "https://open.spotify.com/track/123"),
+        ("https://twitter.com/u/status/1?s=20&t=abc", "https://twitter.com/u/status/1"),
+        ("https://x.com/u/status/1?s=20&t=abc", "https://x.com/u/status/1"),
     ],
 )
 def test_canonicalize_host_specific_stripping(url, expected):
@@ -303,8 +298,10 @@ def test_filter_params_table(host, query, expected):
         # non-amp URL passes through untouched
         ("https://ex.com/x", "https://ex.com/x"),
         # slash before cdn means no match -> unchanged
-        ("https://www.google.com/amp/s/cdn.ampproject.org/c/s/ex.com/x",
-         "https://www.google.com/amp/s/cdn.ampproject.org/c/s/ex.com/x"),
+        (
+            "https://www.google.com/amp/s/cdn.ampproject.org/c/s/ex.com/x",
+            "https://www.google.com/amp/s/cdn.ampproject.org/c/s/ex.com/x",
+        ),
     ],
 )
 def test_strip_amp(url, expected):
@@ -346,15 +343,15 @@ def test_registered_domain(value, expected):
         ("https://lobste.rs/s/x", True),
         ("https://reddit.com/r/x", True),
         ("https://old.reddit.com/r/x", True),
-        ("https://www.reddit.com/r/x", True),   # www stripped -> reddit.com
-        ("https://REDDIT.COM/r/x", True),        # host lowercased
-        ("https://foo.reddit.com/x", True),      # endswith .reddit.com
+        ("https://www.reddit.com/r/x", True),  # www stripped -> reddit.com
+        ("https://REDDIT.COM/r/x", True),  # host lowercased
+        ("https://foo.reddit.com/x", True),  # endswith .reddit.com
         ("https://news.google.com/topstories", True),
         ("https://techmeme.com/", True),
         ("https://example.com/x", False),
-        ("https://sub.techmeme.com/", False),    # only exact techmeme.com listed
-        ("http://[::1", False),                  # ValueError caught -> False
-        ("not a url", False),                    # no host -> "" -> False
+        ("https://sub.techmeme.com/", False),  # only exact techmeme.com listed
+        ("http://[::1", False),  # ValueError caught -> False
+        ("not a url", False),  # no host -> "" -> False
         ("", False),
     ],
 )

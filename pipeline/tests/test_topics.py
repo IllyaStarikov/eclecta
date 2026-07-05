@@ -49,8 +49,8 @@ def test_build_or_load_ignores_cfg_argument(cfg_arg):
 # not perturbed by unrelated real-lexicon terms.
 CUSTOM_DATA = {
     "channels": {
-        "ai": ["ai"],                    # len 2 -> boundary-only
-        "security": ["security"],        # len 8 -> substring allowed
+        "ai": ["ai"],  # len 2 -> boundary-only
+        "security": ["security"],  # len 8 -> substring allowed
         "devtools": ["programming", "rust"],  # 'rust' len 4 -> boundary-only
     }
 }
@@ -87,9 +87,9 @@ def test_match_channels_empty_or_none_title_is_empty_set(title):
 @pytest.mark.parametrize(
     "data",
     [
-        {},                    # no 'channels' key at all
-        {"channels": None},    # explicit None -> `or {}` fallback
-        {"channels": {}},      # empty mapping
+        {},  # no 'channels' key at all
+        {"channels": None},  # explicit None -> `or {}` fallback
+        {"channels": {}},  # empty mapping
     ],
 )
 def test_match_channels_missing_or_empty_channels_key(data):
@@ -151,10 +151,35 @@ def test_match_channels_matches_reference_over_random_titles():
     data = topics.build_or_load(None)
     # Word pool: real lexicon terms + noise words that embed short tokens as
     # substrings (email/trusted/gpus) to stress the boundary rule.
-    pool = ["ai", "llm", "gpt", "email", "rust", "trusted", "gpus", "security",
-            "cybersecurity", "kubernetes", "the", "a", "new", "quantum", "chip",
-            "startup", "funding", "paper", "benchmark", "nvidia", "programming",
-            "metaprogramming", "docker", "python", "and", "of", "for"]
+    pool = [
+        "ai",
+        "llm",
+        "gpt",
+        "email",
+        "rust",
+        "trusted",
+        "gpus",
+        "security",
+        "cybersecurity",
+        "kubernetes",
+        "the",
+        "a",
+        "new",
+        "quantum",
+        "chip",
+        "startup",
+        "funding",
+        "paper",
+        "benchmark",
+        "nvidia",
+        "programming",
+        "metaprogramming",
+        "docker",
+        "python",
+        "and",
+        "of",
+        "for",
+    ]
     rng = random.Random(20260704)
     for _ in range(500):
         n = rng.randint(0, 6)
@@ -166,16 +191,29 @@ def test_match_channels_returned_channels_all_have_a_satisfying_term():
     """Every channel in the result must have >=1 term satisfying the rule."""
     data = topics.build_or_load(None)
     rng = random.Random(1234)
-    pool = ["ai", "security", "cybersecurity", "gpu", "gpus", "rust", "trusted",
-            "kubernetes", "startup", "quantum", "the", "new", "model", "chip"]
+    pool = [
+        "ai",
+        "security",
+        "cybersecurity",
+        "gpu",
+        "gpus",
+        "rust",
+        "trusted",
+        "kubernetes",
+        "startup",
+        "quantum",
+        "the",
+        "new",
+        "model",
+        "chip",
+    ]
     for _ in range(300):
         title = " ".join(rng.choice(pool) for _ in range(rng.randint(0, 5)))
         padded = " " + title.lower() + " "
         for channel in topics.match_channels(title, data):
             terms = topics.BASE_LEXICON[channel]
             assert any(
-                (" " + term + " ") in padded or (len(term) > 4 and term in padded)
-                for term in terms
+                (" " + term + " ") in padded or (len(term) > 4 and term in padded) for term in terms
             ), (channel, title)
 
 
@@ -192,8 +230,7 @@ def test_match_channels_returned_channels_all_have_a_satisfying_term():
         # drives ai past the bare 'security' match despite security's priority.
         ("agent security", None, "ai", ["agents"]),
         # Five subcategory hits -> subcategories truncated to the first 3.
-        ("multimodal agent benchmark alignment copilot", None, "ai",
-         ["models", "agents", "evals"]),
+        ("multimodal agent benchmark alignment copilot", None, "ai", ["models", "agents", "evals"]),
         # Bare match with no subcategory hits -> empty subcategories list.
         ("startup", None, "industry", []),
         # Tie-break priority overrides insertion order: hardware(idx2) beats
@@ -361,6 +398,5 @@ def test_match_taxonomy_ts_parity(tmp_path):
         pytest.skip("Node harness failed (TS runtime unavailable?): %s" % proc.stderr)
 
     ts_results = json.loads(proc.stdout)
-    py_results = [topics.match_taxonomy(title, channels)
-                  for title, channels in _PARITY_CORPUS]
+    py_results = [topics.match_taxonomy(title, channels) for title, channels in _PARITY_CORPUS]
     assert ts_results == py_results

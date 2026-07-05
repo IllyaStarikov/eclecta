@@ -21,7 +21,7 @@ import hashlib
 import json
 import os
 import string
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import pytest
 
@@ -55,9 +55,7 @@ def _expected_guid(text: str, day: datetime.date = DAY) -> str:
 
 def _parse_body(html: str) -> bytes:
     """A MediaWiki parse-API success envelope carrying ``html`` in ``parse.text.*``."""
-    return json.dumps({"parse": {"title": "T", "pageid": 1, "text": {"*": html}}}).encode(
-        "utf-8"
-    )
+    return json.dumps({"parse": {"title": "T", "pageid": 1, "text": {"*": html}}}).encode("utf-8")
 
 
 def _err_body(code: str) -> bytes:
@@ -196,8 +194,7 @@ def test_bullet_citation_first_raw_url_and_field_mapping():
     item = items[0]
 
     expected_text = (
-        "Diplomats from Geneva broker a landmark ceasefire agreement "
-        "between the two nations"
+        "Diplomats from Geneva broker a landmark ceasefire agreement between the two nations"
     )
     assert item == {
         "guid": _expected_guid(expected_text),
@@ -224,9 +221,7 @@ def test_bullet_title_strips_citation_anchor_and_markup():
     # The "(Source)" external anchor text is gone; no residual markup.
     assert "(Source)" not in item["title"]
     assert "<a" not in item["title"] and "href" not in item["title"]
-    assert item["title"] == (
-        "Something notable and sufficiently long happens in the world"
-    )
+    assert item["title"] == ("Something notable and sufficiently long happens in the world")
 
 
 def test_bullet_wiki_fallback_when_no_external_citation():
@@ -238,8 +233,7 @@ def test_bullet_wiki_fallback_when_no_external_citation():
     assert item["raw_url"] == "https://en.wikipedia.org/wiki/Fusion_power"
     assert item["extra"]["wiki_url"] == "https://en.wikipedia.org/wiki/Fusion_power"
     assert item["title"] == (
-        "An international coalition of scientists announces a breakthrough "
-        "in fusion power research"
+        "An international coalition of scientists announces a breakthrough in fusion power research"
     )
 
 
@@ -336,9 +330,7 @@ def test_bullet_text_entities_unescaped_in_title():
     assert "&amp;" not in item["title"]
     assert "Company X & Company Y" in item["title"]
     # Pin the full normalized title: entity decoded, citation anchor gone.
-    assert item["title"] == (
-        "Company X & Company Y announce a merger valued in the billions today"
-    )
+    assert item["title"] == ("Company X & Company Y announce a merger valued in the billions today")
     # guid hashes that same decoded text.
     assert item["guid"] == _expected_guid(
         "Company X & Company Y announce a merger valued in the billions today"
@@ -355,9 +347,7 @@ def test_bullet_trailing_dash_and_punct_stripped():
     assert not item["title"].endswith("—")
     # The trailing " —" is fully stripped (strip set includes space + dashes),
     # leaving no dangling separator.
-    assert item["title"] == (
-        "An event of great significance occurred in the capital today"
-    )
+    assert item["title"] == ("An event of great significance occurred in the capital today")
 
 
 def test_bullet_no_links_is_skipped():
@@ -420,9 +410,11 @@ def test_bullet_same_text_different_day_differs_only_in_date_prefix():
     assert g1 != g2
     assert g1.startswith("wiki-20260609-") and g2.startswith("wiki-20260610-")
     # Same normalized text -> identical sha1 suffix on both days.
-    assert g1.split("-")[-1] == g2.split("-")[-1] == hashlib.sha1(
-        text.encode("utf-8")
-    ).hexdigest()[:12]
+    assert (
+        g1.split("-")[-1]
+        == g2.split("-")[-1]
+        == hashlib.sha1(text.encode("utf-8")).hexdigest()[:12]
+    )
 
 
 # --------------------------------------------------------------------------- #
@@ -516,9 +508,7 @@ def test_fetch_source_row_is_never_dereferenced(make_result):
     resp = {api_url(today): make_result(content=_parse_body(html))}
     # None and a junk dict both work: source_row is accepted but ignored.
     items_none = fetch_items(_FakeClient(responses=resp), None, days=1, today=today)
-    items_junk = fetch_items(
-        _FakeClient(responses=resp), {"weird": object()}, days=1, today=today
-    )
+    items_junk = fetch_items(_FakeClient(responses=resp), {"weird": object()}, days=1, today=today)
     assert len(items_none) == 1 and len(items_junk) == 1
     assert items_none[0]["raw_url"] == "https://ex.com/x"
 
@@ -585,9 +575,7 @@ def test_fetch_all_days_fail_raises_aggregated(make_result, capsys):
 
 def test_fetch_empty_body_reports_http_status(make_result):
     today = datetime.date(2026, 6, 10)
-    client = _FakeClient(
-        responses={api_url(today): make_result(content=b"", status=200)}
-    )
+    client = _FakeClient(responses={api_url(today): make_result(content=b"", status=200)})
     with pytest.raises(RuntimeError, match="2026-06-10: HTTP 200"):
         fetch_items(client, {}, days=1, today=today)
 
@@ -595,9 +583,7 @@ def test_fetch_empty_body_reports_http_status(make_result):
 def test_fetch_error_string_preferred_over_status(make_result):
     today = datetime.date(2026, 6, 10)
     client = _FakeClient(
-        responses={
-            api_url(today): make_result(content=None, status=0, error="ConnectError: boom")
-        }
+        responses={api_url(today): make_result(content=None, status=0, error="ConnectError: boom")}
     )
     with pytest.raises(RuntimeError, match="ConnectError: boom"):
         fetch_items(client, {}, days=1, today=today)
@@ -605,9 +591,7 @@ def test_fetch_error_string_preferred_over_status(make_result):
 
 def test_fetch_error_key_alone_raises(make_result):
     today = datetime.date(2026, 6, 10)
-    client = _FakeClient(
-        responses={api_url(today): make_result(content=_err_body("missingtitle"))}
-    )
+    client = _FakeClient(responses={api_url(today): make_result(content=_err_body("missingtitle"))})
     with pytest.raises(RuntimeError, match="missingtitle"):
         fetch_items(client, {}, days=1, today=today)
 
@@ -669,9 +653,7 @@ def test_fetch_success_prints_nothing_to_stderr(make_result, capsys):
 def test_fetch_recorded_day_page_end_to_end(load_text, make_result):
     day = datetime.date(2026, 6, 9)
     html = load_text("wikipedia_events_day.html")
-    client = _FakeClient(
-        responses={api_url(day): make_result(content=_parse_body(html))}
-    )
+    client = _FakeClient(responses={api_url(day): make_result(content=_parse_body(html))})
     items = fetch_items(client, {}, days=1, today=day)
 
     # Three event bullets survive; the "Russian invasion of Ukraine" topic header
@@ -706,8 +688,7 @@ def test_fetch_recorded_day_page_end_to_end(load_text, make_result):
     assert cabinet["extra"]["wiki_url"] == "https://en.wikipedia.org/wiki/Government_of_Example"
     # &#39; -> ' unescaping across the whole title.
     assert cabinet["title"] == (
-        "The Government of Example announces a new cabinet following "
-        "last week's general election"
+        "The Government of Example announces a new cabinet following last week's general election"
     )
 
     angler = items[2]

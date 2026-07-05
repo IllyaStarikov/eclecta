@@ -36,10 +36,7 @@ def test_cfg_fixture_is_valid(cfg):
 
 
 def test_conn_fixture_has_schema_and_row_factory(conn):
-    tables = {
-        r[0]
-        for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-    }
+    tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
     assert {"sources", "clusters", "items", "curations", "digests", "spend"} <= tables
     row = conn.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()
     # row_factory is sqlite3.Row → keyed access works (spend.py depends on this).

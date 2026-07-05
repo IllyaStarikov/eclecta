@@ -72,9 +72,7 @@ def promo_cfg(cfg, tmp_path):
 
 
 def _digest_row(conn, digest_id):
-    return conn.execute(
-        "SELECT * FROM digests WHERE id=?", (digest_id,)
-    ).fetchone()
+    return conn.execute("SELECT * FROM digests WHERE id=?", (digest_id,)).fetchone()
 
 
 # --------------------------------------------------------------------------- #
@@ -130,8 +128,7 @@ def test_run_no_digest_returns_1(promo_cfg, monkeypatch, capsys):
     assert "no staged digest" in capsys.readouterr().err
 
 
-def test_run_staged_file_missing_returns_1(promo_cfg, conn, seed, tmp_path,
-                                           monkeypatch, capsys):
+def test_run_staged_file_missing_returns_1(promo_cfg, conn, seed, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     missing = tmp_path / "nope.md"
     seed.digest(period_key="2026-W27", staged_path=str(missing))
@@ -142,14 +139,12 @@ def test_run_staged_file_missing_returns_1(promo_cfg, conn, seed, tmp_path,
     assert str(missing) in err
 
 
-def test_run_archive_refusal(promo_cfg, conn, seed, tmp_path,
-                             monkeypatch, capsys):
+def test_run_archive_refusal(promo_cfg, conn, seed, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     staged = _write_staged(tmp_path, body=ARCHIVE_BODY)
     seed.digest(period_key="2026-W27", staged_path=str(staged))
 
-    rc = promote.run(promo_cfg, week=None, target="prod", apply=True,
-                     publish_now=True)
+    rc = promote.run(promo_cfg, week=None, target="prod", apply=True, publish_now=True)
     assert rc == 1
     assert "REFUSED" in capsys.readouterr().err
     # Refusal happens before the copy, so no repo artifact is written.
@@ -160,12 +155,10 @@ def test_run_archive_refusal(promo_cfg, conn, seed, tmp_path,
 # --------------------------------------------------------------------------- #
 # run — dry run (apply=False): command construction + rendering
 # --------------------------------------------------------------------------- #
-def test_run_dry_run_local_command_shape(promo_cfg, conn, seed, tmp_path,
-                                         monkeypatch, capsys):
+def test_run_dry_run_local_command_shape(promo_cfg, conn, seed, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     staged = _write_staged(tmp_path, name="signal_2026_W27.md")
-    seed.digest(period_key="2026-W27", title="This week in tech",
-                staged_path=str(staged))
+    seed.digest(period_key="2026-W27", title="This week in tech", staged_path=str(staged))
 
     rc = promote.run(promo_cfg, week=None, target="local", apply=False)
     assert rc == 0
@@ -182,9 +175,9 @@ def test_run_dry_run_local_command_shape(promo_cfg, conn, seed, tmp_path,
     assert "'This week in tech'" in out
 
 
-def test_run_dry_run_prod_prints_replace_and_draft_hint(promo_cfg, conn, seed,
-                                                        tmp_path, monkeypatch,
-                                                        capsys):
+def test_run_dry_run_prod_prints_replace_and_draft_hint(
+    promo_cfg, conn, seed, tmp_path, monkeypatch, capsys
+):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     staged = _write_staged(tmp_path)
     seed.digest(period_key="2026-W27", staged_path=str(staged))
@@ -202,15 +195,14 @@ def test_run_dry_run_prod_prints_replace_and_draft_hint(promo_cfg, conn, seed,
     assert cmd_line.rstrip().endswith("--replace")
 
 
-def test_run_dry_run_prod_publish_now_appends_publish(promo_cfg, conn, seed,
-                                                      tmp_path, monkeypatch,
-                                                      capsys):
+def test_run_dry_run_prod_publish_now_appends_publish(
+    promo_cfg, conn, seed, tmp_path, monkeypatch, capsys
+):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     staged = _write_staged(tmp_path)
     seed.digest(period_key="2026-W27", staged_path=str(staged))
 
-    rc = promote.run(promo_cfg, week=None, target="prod", apply=False,
-                     publish_now=True)
+    rc = promote.run(promo_cfg, week=None, target="prod", apply=False, publish_now=True)
     assert rc == 0
     out = capsys.readouterr().out
     # --publish appended to the command line itself, after --replace
@@ -218,8 +210,7 @@ def test_run_dry_run_prod_publish_now_appends_publish(promo_cfg, conn, seed,
     assert "--replace --publish" in cmd_line
 
 
-def test_run_dry_run_title_fallback_and_slug(promo_cfg, conn, seed, tmp_path,
-                                             monkeypatch, capsys):
+def test_run_dry_run_title_fallback_and_slug(promo_cfg, conn, seed, tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     staged = _write_staged(tmp_path, name="signal_2026_W27.md")
     # NULL title -> fallback "Signal Digest <period_key>"
@@ -229,11 +220,10 @@ def test_run_dry_run_title_fallback_and_slug(promo_cfg, conn, seed, tmp_path,
     assert rc == 0
     out = capsys.readouterr().out
     assert "'Signal Digest 2026-W27'" in out  # fallback title, space-quoted
-    assert "signal-2026-W27" in out           # slug = stem with _ -> -
+    assert "signal-2026-W27" in out  # slug = stem with _ -> -
 
 
-def test_run_dry_run_copies_into_repo(promo_cfg, conn, seed, tmp_path,
-                                      monkeypatch):
+def test_run_dry_run_copies_into_repo(promo_cfg, conn, seed, tmp_path, monkeypatch):
     monkeypatch.setattr(promote, "subprocess", NoSub())
     staged = _write_staged(tmp_path)
     seed.digest(period_key="2026-W27", staged_path=str(staged))
@@ -244,8 +234,7 @@ def test_run_dry_run_copies_into_repo(promo_cfg, conn, seed, tmp_path,
     assert repo_md.read_text() == SAFE_BODY
 
 
-def test_run_dry_run_no_copy_when_paths_equal(promo_cfg, conn, seed,
-                                              monkeypatch, capsys):
+def test_run_dry_run_no_copy_when_paths_equal(promo_cfg, conn, seed, monkeypatch, capsys):
     # Stage the file directly where the repo copy would land: the equal-path
     # branch must skip the write + the "copied" message.
     repo_draft = promo_cfg.blog_repo / "markdown" / "draft"
@@ -265,14 +254,13 @@ def test_run_dry_run_no_copy_when_paths_equal(promo_cfg, conn, seed,
 # --------------------------------------------------------------------------- #
 # run — apply=True (subprocess recorded; DB side effects)
 # --------------------------------------------------------------------------- #
-def test_run_apply_local_publishes_and_leaves_unpromoted(promo_cfg, conn, seed,
-                                                         tmp_path, monkeypatch,
-                                                         capsys):
+def test_run_apply_local_publishes_and_leaves_unpromoted(
+    promo_cfg, conn, seed, tmp_path, monkeypatch, capsys
+):
     rec = SubRecorder(returncode=0)
     monkeypatch.setattr(promote, "subprocess", rec)
     staged = _write_staged(tmp_path, name="signal_2026_W27.md")
-    did = seed.digest(period_key="2026-W27", title="This week in tech",
-                      staged_path=str(staged))
+    did = seed.digest(period_key="2026-W27", title="This week in tech", staged_path=str(staged))
 
     rc = promote.run(promo_cfg, week=None, target="local", apply=True)
     assert rc == 0
@@ -295,26 +283,22 @@ def test_run_apply_local_publishes_and_leaves_unpromoted(promo_cfg, conn, seed,
 
     # local never promotes and never logs a PUBLISHED health line
     assert _digest_row(conn, did)["promoted"] == 0
-    assert conn.execute(
-        "SELECT COUNT(*) FROM health WHERE job='digest'"
-    ).fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM health WHERE job='digest'").fetchone()[0] == 0
 
     out = capsys.readouterr().out
     assert "copied staged digest" in out
     assert "localhost:2368" in out
 
 
-def test_run_apply_prod_publish_now_sets_promoted_and_logs(promo_cfg, conn, seed,
-                                                           tmp_path, monkeypatch,
-                                                           capsys):
+def test_run_apply_prod_publish_now_sets_promoted_and_logs(
+    promo_cfg, conn, seed, tmp_path, monkeypatch, capsys
+):
     rec = SubRecorder(returncode=0)
     monkeypatch.setattr(promote, "subprocess", rec)
     staged = _write_staged(tmp_path, name="signal_2026_W27.md")
-    did = seed.digest(period_key="2026-W27", title="This week in tech",
-                      staged_path=str(staged))
+    did = seed.digest(period_key="2026-W27", title="This week in tech", staged_path=str(staged))
 
-    rc = promote.run(promo_cfg, week=None, target="prod", apply=True,
-                     publish_now=True)
+    rc = promote.run(promo_cfg, week=None, target="prod", apply=True, publish_now=True)
     assert rc == 0
 
     assert len(rec.calls) == 1
@@ -331,9 +315,7 @@ def test_run_apply_prod_publish_now_sets_promoted_and_logs(promo_cfg, conn, seed
 
     # prod + publish_now flips promoted and logs an info health line
     assert _digest_row(conn, did)["promoted"] == 1
-    health = conn.execute(
-        "SELECT job, level, message FROM health WHERE job='digest'"
-    ).fetchone()
+    health = conn.execute("SELECT job, level, message FROM health WHERE job='digest'").fetchone()
     assert health["level"] == "info"
     assert "PUBLISHED to prod" in health["message"]
     # message pins the exact /signal/ route (the separation contract)
@@ -343,8 +325,9 @@ def test_run_apply_prod_publish_now_sets_promoted_and_logs(promo_cfg, conn, seed
     assert "starikov.co" in out
 
 
-def test_run_apply_prod_draft_default_does_not_promote(promo_cfg, conn, seed,
-                                                       tmp_path, monkeypatch):
+def test_run_apply_prod_draft_default_does_not_promote(
+    promo_cfg, conn, seed, tmp_path, monkeypatch
+):
     rec = SubRecorder(returncode=0)
     monkeypatch.setattr(promote, "subprocess", rec)
     staged = _write_staged(tmp_path)
@@ -362,33 +345,27 @@ def test_run_apply_prod_draft_default_does_not_promote(promo_cfg, conn, seed,
     assert "--publish" not in cmd  # draft: no --publish
     # draft: promoted stays 0, no PUBLISHED health line
     assert _digest_row(conn, did)["promoted"] == 0
-    assert conn.execute(
-        "SELECT COUNT(*) FROM health WHERE job='digest'"
-    ).fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM health WHERE job='digest'").fetchone()[0] == 0
 
 
-def test_run_apply_publisher_failure_propagates_returncode(promo_cfg, conn, seed,
-                                                           tmp_path, monkeypatch,
-                                                           capsys):
+def test_run_apply_publisher_failure_propagates_returncode(
+    promo_cfg, conn, seed, tmp_path, monkeypatch, capsys
+):
     rec = SubRecorder(returncode=3)
     monkeypatch.setattr(promote, "subprocess", rec)
     staged = _write_staged(tmp_path)
     did = seed.digest(period_key="2026-W27", staged_path=str(staged))
 
-    rc = promote.run(promo_cfg, week=None, target="prod", apply=True,
-                     publish_now=True)
+    rc = promote.run(promo_cfg, week=None, target="prod", apply=True, publish_now=True)
     # returncode is propagated verbatim; promotion is skipped on failure
     assert rc == 3
     assert len(rec.calls) == 1
     assert _digest_row(conn, did)["promoted"] == 0
-    assert conn.execute(
-        "SELECT COUNT(*) FROM health WHERE job='digest'"
-    ).fetchone()[0] == 0
+    assert conn.execute("SELECT COUNT(*) FROM health WHERE job='digest'").fetchone()[0] == 0
     assert "publisher failed (3)" in capsys.readouterr().err
 
 
-def test_run_apply_explicit_week_selects_that_digest(promo_cfg, conn, seed,
-                                                     tmp_path, monkeypatch):
+def test_run_apply_explicit_week_selects_that_digest(promo_cfg, conn, seed, tmp_path, monkeypatch):
     rec = SubRecorder(returncode=0)
     monkeypatch.setattr(promote, "subprocess", rec)
     older = _write_staged(tmp_path, name="signal_2026_W25.md")

@@ -26,9 +26,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from signalpipe.llm import LLMError
 import signalpipe.llm.backend_api as backend_api
-
+from signalpipe.llm import LLMError
 
 # --------------------------------------------------------------------------- #
 # Local helpers
@@ -210,9 +209,7 @@ class TestRunHappy:
         resp = SimpleNamespace(usage=usage, content=[_tool_block(data=payload)])
         install_fake_anthropic(monkeypatch, response=resp)
 
-        data, cost = backend_api.run(
-            "claude-haiku-4-5", "sys", "prompt", SCHEMA, cfg
-        )
+        data, cost = backend_api.run("claude-haiku-4-5", "sys", "prompt", SCHEMA, cfg)
         assert data == payload
         assert cost == pytest.approx(0.003825)
 
@@ -233,16 +230,19 @@ class TestRunHappy:
         payload = {"relevance_score": 1, "summary": "x"}
         resp = SimpleNamespace(usage=_usage(input_tokens=5), content=[_tool_block(data=payload)])
         cap = install_fake_anthropic(monkeypatch, response=resp)
-        data, _ = backend_api.run(
-            "claude-haiku-4-5", "sys", "p", SCHEMA, cfg, effort="high"
-        )
+        data, _ = backend_api.run("claude-haiku-4-5", "sys", "p", SCHEMA, cfg, effort="high")
         assert data == payload
         # "ignored" must mean it never leaks into the request. Pin the exact key
         # set so a regression that forwarded effort (or dropped/added any kwarg)
         # is caught here, not silently swallowed by the fake.
         assert "effort" not in cap["create"]
         assert set(cap["create"]) == {
-            "model", "max_tokens", "system", "messages", "tools", "tool_choice"
+            "model",
+            "max_tokens",
+            "system",
+            "messages",
+            "tools",
+            "tool_choice",
         }
 
 
@@ -250,8 +250,14 @@ class TestRunHappy:
 # run — request construction (kwargs, tool, system branch, retries)
 # --------------------------------------------------------------------------- #
 class TestRunRequestShape:
-    def _run_capture(self, cfg, monkeypatch, model="claude-haiku-4-5",
-                     system="the system rubric", prompt="the prompt"):
+    def _run_capture(
+        self,
+        cfg,
+        monkeypatch,
+        model="claude-haiku-4-5",
+        system="the system rubric",
+        prompt="the prompt",
+    ):
         resp = SimpleNamespace(
             usage=_usage(input_tokens=1),
             content=[_tool_block(data={"relevance_score": 1, "summary": "s"})],
@@ -261,8 +267,7 @@ class TestRunRequestShape:
         return captured
 
     def test_core_kwargs(self, cfg, monkeypatch):
-        cap = self._run_capture(cfg, monkeypatch, model="claude-sonnet-4-6",
-                                prompt="hello world")
+        cap = self._run_capture(cfg, monkeypatch, model="claude-sonnet-4-6", prompt="hello world")
         kw = cap["create"]
         assert kw["model"] == "claude-sonnet-4-6"
         assert kw["max_tokens"] == 16000
@@ -392,9 +397,7 @@ class TestGoldenRecordedResponse:
         msg = self._validated_message(load_json)
         install_fake_anthropic(monkeypatch, response=msg)
 
-        data, cost = backend_api.run(
-            "claude-haiku-4-5", "sys", "p", SCHEMA, cfg
-        )
+        data, cost = backend_api.run("claude-haiku-4-5", "sys", "p", SCHEMA, cfg)
         assert data == {
             "relevance_score": 8,
             "why_it_matters": "It advances the state of the art.",

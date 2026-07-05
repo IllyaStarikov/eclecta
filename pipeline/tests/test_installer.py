@@ -23,7 +23,6 @@ import pytest
 
 import signalpipe.installer as installer
 
-
 PY = sys.executable
 BINDIR = os.path.dirname(sys.executable)
 LOCAL_BIN = os.path.expanduser("~/.local/bin")
@@ -176,9 +175,7 @@ def test_git_rev_returncode_table(monkeypatch, rc, stdout, expected):
     assert installer._git_rev(pathlib.Path("/tmp/repo")) == expected
 
 
-@pytest.mark.parametrize(
-    "exc", [OSError("no git"), subprocess.SubprocessError("boom")]
-)
+@pytest.mark.parametrize("exc", [OSError("no git"), subprocess.SubprocessError("boom")])
 def test_git_rev_swallows_exceptions(monkeypatch, exc):
     def fake_run(cmd, **kw):
         raise exc
@@ -276,8 +273,7 @@ def test_write_plists_round_trips_via_plistlib(capsys):
     assert "KeepAlive" not in watchdog
 
     out = capsys.readouterr().out
-    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER,
-                  installer.LABEL_WATCHDOG):
+    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER, installer.LABEL_WATCHDOG):
         assert "wrote %s" % (installer.AGENTS_DIR / ("%s.plist" % label)) in out
 
 
@@ -285,9 +281,7 @@ def test_write_plists_round_trips_via_plistlib(capsys):
 # _copy_runtime
 # --------------------------------------------------------------------------- #
 @pytest.mark.integration
-def test_copy_runtime_copies_config_doc_and_writes_manifest(
-    monkeypatch, tmp_path, capsys
-):
+def test_copy_runtime_copies_config_doc_and_writes_manifest(monkeypatch, tmp_path, capsys):
     repo = _make_repo(tmp_path, with_optional=True)
     monkeypatch.setattr(installer, "_git_rev", lambda r: "cafef00")
 
@@ -398,16 +392,14 @@ def test_bootstrap_bootout_then_bootstrap_per_label_started(monkeypatch, capsys)
     uid = os.getuid()
     domain = "gui/%d" % uid
     expected = []
-    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER,
-                  installer.LABEL_WATCHDOG):
+    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER, installer.LABEL_WATCHDOG):
         path = installer.AGENTS_DIR / ("%s.plist" % label)
         expected.append(("bootout", "%s/%s" % (domain, label)))
         expected.append(("bootstrap", domain, str(path)))
     assert calls == expected
 
     out = capsys.readouterr().out
-    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER,
-                  installer.LABEL_WATCHDOG):
+    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER, installer.LABEL_WATCHDOG):
         assert "%s: started" % label in out
 
 
@@ -418,8 +410,7 @@ def test_bootstrap_reports_failure_on_nonzero_bootstrap(monkeypatch, capsys):
 
     out = capsys.readouterr().out
     # Every label bootstraps independently -> each reports its own rc-3 failure.
-    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER,
-                  installer.LABEL_WATCHDOG):
+    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER, installer.LABEL_WATCHDOG):
         assert "%s: FAILED (rc 3)" % label in out
     assert out.count("FAILED (rc 3)") == 3
     assert "started" not in out
@@ -507,9 +498,7 @@ def test_install_start_true_uses_default_port(monkeypatch, capsys):
 
 
 @pytest.mark.integration
-def test_install_end_to_end_writes_files_without_launchd(
-    monkeypatch, tmp_path, capsys
-):
+def test_install_end_to_end_writes_files_without_launchd(monkeypatch, tmp_path, capsys):
     repo = _make_repo(tmp_path, with_optional=True)
     monkeypatch.setattr(installer, "_git_rev", lambda r: "e2e1234")
     monkeypatch.setattr(installer.shutil, "copytree", lambda src, dst, ignore=None: None)
@@ -527,8 +516,7 @@ def test_install_end_to_end_writes_files_without_launchd(
     assert installer.WRAPPER.exists()
     assert installer.WATCHDOG.exists()
     assert installer.SIGNAL_SHIM.exists()
-    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER,
-                  installer.LABEL_WATCHDOG):
+    for label in (installer.LABEL_SERVER, installer.LABEL_WORKER, installer.LABEL_WATCHDOG):
         assert (installer.AGENTS_DIR / ("%s.plist" % label)).exists()
     assert (installer.APP_DIR / "sync_manifest.json").exists()
     assert "plists written" in capsys.readouterr().out

@@ -803,9 +803,7 @@ def test_run_logs_health_on_stale_runtime_config(cfg, conn, monkeypatch, capsys)
     # The stale warning is persisted to the health table (real sqlite write).
     ro = db_mod.connect_ro(cfg.db_path)
     try:
-        rows = ro.execute(
-            "SELECT job, level, message FROM health WHERE job='worker'"
-        ).fetchall()
+        rows = ro.execute("SELECT job, level, message FROM health WHERE job='worker'").fetchall()
     finally:
         ro.close()
     assert any(r["level"] == "warn" and stale_msg in r["message"] for r in rows)

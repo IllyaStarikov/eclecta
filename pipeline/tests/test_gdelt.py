@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from urllib.parse import parse_qs, urlsplit
 
 import pytest
@@ -151,13 +151,13 @@ def test_seendate_iso_valid(value, expected):
 @pytest.mark.parametrize(
     "value",
     [
-        None,               # TypeError inside strptime → None
-        "",                 # ValueError (empty) → None
-        "not-a-date",       # ValueError (unparseable) → None
+        None,  # TypeError inside strptime → None
+        "",  # ValueError (empty) → None
+        "not-a-date",  # ValueError (unparseable) → None
         "20260610T083000",  # missing trailing Z → ValueError → None
         "20261301T083000Z",  # month 13 → ValueError → None
         "2026-06-10T08:30:00Z",  # wrong separators → ValueError → None
-        12345,              # non-str → TypeError → None
+        12345,  # non-str → TypeError → None
     ],
 )
 def test_seendate_iso_invalid_returns_none(value):
@@ -217,9 +217,7 @@ def test_urls_for_source_host_present_but_no_query_uses_default():
 # fetch_items — host-interval pin side effect
 # --------------------------------------------------------------------------- #
 def test_fetch_items_pins_host_interval(fake_client, make_result):
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([_art()]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([_art()]))})
     fetch_items(client, _full_source())
     assert client.host_intervals["api.gdeltproject.org"] == 6.0
 
@@ -247,9 +245,7 @@ def test_fetch_items_maps_every_field(fake_client, make_result):
         sourcecountry="United States",
         language="English",
     )
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([art]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([art]))})
     items = fetch_items(client, _full_source())
     assert items == [
         {
@@ -281,9 +277,7 @@ def test_fetch_items_guid_prefix(fake_client, make_result):
 
 def test_fetch_items_strips_url_and_title(fake_client, make_result):
     art = _art(url="  https://ex.com/pad  ", title="  Padded Title \n")
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([art]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([art]))})
     (item,) = fetch_items(client, _full_source())
     assert item["raw_url"] == "https://ex.com/pad"
     assert item["guid"] == "gdelt-https://ex.com/pad"
@@ -292,9 +286,7 @@ def test_fetch_items_strips_url_and_title(fake_client, make_result):
 
 def test_fetch_items_extra_fields_default_none_when_absent(fake_client, make_result):
     art = _art(_drop=["domain", "sourcecountry", "language"])
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([art]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([art]))})
     (item,) = fetch_items(client, _full_source())
     assert item["extra"] == {
         "surface": "gdelt",
@@ -306,34 +298,26 @@ def test_fetch_items_extra_fields_default_none_when_absent(fake_client, make_res
 
 def test_fetch_items_published_at_none_when_seendate_absent(fake_client, make_result):
     art = _art(_drop=["seendate"])
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([art]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([art]))})
     (item,) = fetch_items(client, _full_source())
     assert item["published_at"] is None
 
 
 def test_fetch_items_published_at_none_when_seendate_malformed(fake_client, make_result):
     art = _art(seendate="garbage")
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([art]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([art]))})
     (item,) = fetch_items(client, _full_source())
     assert item["published_at"] is None
 
 
 def test_fetch_items_full_url_is_single_fetch(fake_client, make_result):
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([_art()]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([_art()]))})
     fetch_items(client, _full_source())
     assert client.requested == [FULL_URL]
 
 
 def test_fetch_items_empty_articles_list_returns_empty(fake_client, make_result):
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([]))})
     assert fetch_items(client, _full_source()) == []
 
 
@@ -344,9 +328,7 @@ def test_fetch_items_empty_articles_list_returns_empty(fake_client, make_result)
 def test_fetch_items_skips_blank_or_null_url(fake_client, make_result, bad_url):
     good = _art(url="https://ex.com/keep", title="keep")
     bad = _art(url=bad_url, title="has title but no url")
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([bad, good]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([bad, good]))})
     items = fetch_items(client, _full_source())
     assert [i["raw_url"] for i in items] == ["https://ex.com/keep"]
 
@@ -355,9 +337,7 @@ def test_fetch_items_skips_blank_or_null_url(fake_client, make_result, bad_url):
 def test_fetch_items_skips_blank_or_null_title(fake_client, make_result, bad_title):
     good = _art(url="https://ex.com/keep", title="keep")
     bad = _art(url="https://ex.com/notitle", title=bad_title)
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([good, bad]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([good, bad]))})
     items = fetch_items(client, _full_source())
     assert [i["raw_url"] for i in items] == ["https://ex.com/keep"]
 
@@ -365,9 +345,7 @@ def test_fetch_items_skips_blank_or_null_title(fake_client, make_result, bad_tit
 def test_fetch_items_skips_missing_url_key(fake_client, make_result):
     good = _art(url="https://ex.com/keep", title="keep")
     bad = _art(_drop=["url"], title="no url key")
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([bad, good]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([bad, good]))})
     items = fetch_items(client, _full_source())
     assert [i["raw_url"] for i in items] == ["https://ex.com/keep"]
 
@@ -375,9 +353,7 @@ def test_fetch_items_skips_missing_url_key(fake_client, make_result):
 def test_fetch_items_skips_missing_title_key(fake_client, make_result):
     good = _art(url="https://ex.com/keep", title="keep")
     bad = _art(url="https://ex.com/notitle", _drop=["title"])
-    client = _client(
-        fake_client, responses={FULL_URL: make_result(content=_payload([good, bad]))}
-    )
+    client = _client(fake_client, responses={FULL_URL: make_result(content=_payload([good, bad]))})
     items = fetch_items(client, _full_source())
     assert [i["raw_url"] for i in items] == ["https://ex.com/keep"]
 

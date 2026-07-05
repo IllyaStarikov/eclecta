@@ -90,13 +90,13 @@ def test_day_iso_always_utc_midnight(d):
 @pytest.mark.parametrize(
     "y,m,expected",
     [
-        (2023, 1, D(2023, 1, 2)),   # Jan 1 = Sunday -> Jan 2 (Mon)
-        (2024, 1, D(2024, 1, 1)),   # Jan 1 = Monday -> itself
-        (2026, 2, D(2026, 2, 2)),   # Feb 1 = Sunday -> Feb 2 (Mon)
-        (2023, 4, D(2023, 4, 3)),   # Apr 1 = Saturday -> Apr 3 (Mon)
-        (2023, 7, D(2023, 7, 3)),   # Jul 1 = Saturday -> Jul 3 (Mon)
-        (2026, 7, D(2026, 7, 1)),   # Jul 1 = Wednesday -> itself
-        (2026, 1, D(2026, 1, 1)),   # Jan 1 = Thursday -> itself
+        (2023, 1, D(2023, 1, 2)),  # Jan 1 = Sunday -> Jan 2 (Mon)
+        (2024, 1, D(2024, 1, 1)),  # Jan 1 = Monday -> itself
+        (2026, 2, D(2026, 2, 2)),  # Feb 1 = Sunday -> Feb 2 (Mon)
+        (2023, 4, D(2023, 4, 3)),  # Apr 1 = Saturday -> Apr 3 (Mon)
+        (2023, 7, D(2023, 7, 3)),  # Jul 1 = Saturday -> Jul 3 (Mon)
+        (2026, 7, D(2026, 7, 1)),  # Jul 1 = Wednesday -> itself
+        (2026, 1, D(2026, 1, 1)),  # Jan 1 = Thursday -> itself
     ],
 )
 def test_first_weekday_table(y, m, expected):
@@ -108,8 +108,8 @@ def test_first_weekday_table(y, m, expected):
 def test_first_weekday_invariants(y, m):
     fw = period._first_weekday(y, m)
     assert fw.year == y and fw.month == m
-    assert fw.weekday() < 5          # never a Sat/Sun
-    assert 1 <= fw.day <= 3          # first weekday can only be the 1st..3rd
+    assert fw.weekday() < 5  # never a Sat/Sun
+    assert 1 <= fw.day <= 3  # first weekday can only be the 1st..3rd
 
 
 # --------------------------------------------------------------------------- #
@@ -118,10 +118,18 @@ def test_first_weekday_invariants(y, m):
 @pytest.mark.parametrize(
     "month,expected",
     [
-        (1, 1), (2, 1), (3, 1),
-        (4, 4), (5, 4), (6, 4),
-        (7, 7), (8, 7), (9, 7),
-        (10, 10), (11, 10), (12, 10),
+        (1, 1),
+        (2, 1),
+        (3, 1),
+        (4, 4),
+        (5, 4),
+        (6, 4),
+        (7, 7),
+        (8, 7),
+        (9, 7),
+        (10, 10),
+        (11, 10),
+        (12, 10),
     ],
 )
 def test_quarter_start_month(month, expected):
@@ -138,9 +146,9 @@ def test_period_key_daily():
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2026, 7, 10), "2026-W28"),   # Friday, ISO week 28
-        (D(2026, 7, 4), "2026-W27"),    # Saturday, ISO week 27
-        (D(2021, 1, 1), "2020-W53"),    # ISO year rolls back to 2020
+        (D(2026, 7, 10), "2026-W28"),  # Friday, ISO week 28
+        (D(2026, 7, 4), "2026-W27"),  # Saturday, ISO week 27
+        (D(2021, 1, 1), "2020-W53"),  # ISO year rolls back to 2020
         (D(2020, 12, 31), "2020-W53"),
     ],
 )
@@ -151,9 +159,9 @@ def test_period_key_weekly(run, expected):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2026, 7, 6), "2026-06"),    # previous month
-        (D(2026, 1, 5), "2025-12"),    # crosses year boundary
-        (D(2024, 3, 10), "2024-02"),   # previous month is leap Feb
+        (D(2026, 7, 6), "2026-06"),  # previous month
+        (D(2026, 1, 5), "2025-12"),  # crosses year boundary
+        (D(2024, 3, 10), "2024-02"),  # previous month is leap Feb
         (D(2026, 12, 20), "2026-11"),
     ],
 )
@@ -164,11 +172,11 @@ def test_period_key_monthly(run, expected):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2026, 1, 5), "2025-Q4"),    # Q1 run -> previous Q4 of last year
+        (D(2026, 1, 5), "2025-Q4"),  # Q1 run -> previous Q4 of last year
         (D(2026, 4, 6), "2026-Q1"),
         (D(2026, 7, 6), "2026-Q2"),
         (D(2026, 10, 6), "2026-Q3"),
-        (D(2026, 8, 15), "2026-Q2"),   # mid-Q3 still names the previous full quarter (Q2)
+        (D(2026, 8, 15), "2026-Q2"),  # mid-Q3 still names the previous full quarter (Q2)
     ],
 )
 def test_period_key_quarterly(run, expected):
@@ -206,10 +214,10 @@ def test_window_daily_monday_covers_fri_sat_sun():
 @pytest.mark.parametrize(
     "run,since_d",
     [
-        (D(2026, 7, 7), D(2026, 7, 6)),    # Tuesday
-        (D(2026, 7, 8), D(2026, 7, 7)),    # Wednesday
-        (D(2026, 7, 9), D(2026, 7, 8)),    # Thursday
-        (D(2026, 7, 10), D(2026, 7, 9)),   # Friday
+        (D(2026, 7, 7), D(2026, 7, 6)),  # Tuesday
+        (D(2026, 7, 8), D(2026, 7, 7)),  # Wednesday
+        (D(2026, 7, 9), D(2026, 7, 8)),  # Thursday
+        (D(2026, 7, 10), D(2026, 7, 9)),  # Friday
     ],
 )
 def test_window_daily_tue_to_fri_is_prev_day(run, since_d):
@@ -234,9 +242,9 @@ def test_window_weekly_trailing_seven_days():
 @pytest.mark.parametrize(
     "run,since_d,until_d",
     [
-        (D(2026, 7, 6), D(2026, 6, 1), D(2026, 7, 1)),     # covers June
-        (D(2026, 1, 5), D(2025, 12, 1), D(2026, 1, 1)),    # Jan run -> Dec, cross year
-        (D(2024, 3, 10), D(2024, 2, 1), D(2024, 3, 1)),    # leap Feb boundary
+        (D(2026, 7, 6), D(2026, 6, 1), D(2026, 7, 1)),  # covers June
+        (D(2026, 1, 5), D(2025, 12, 1), D(2026, 1, 1)),  # Jan run -> Dec, cross year
+        (D(2024, 3, 10), D(2024, 2, 1), D(2024, 3, 1)),  # leap Feb boundary
     ],
 )
 def test_window_monthly(run, since_d, until_d):
@@ -248,11 +256,11 @@ def test_window_monthly(run, since_d, until_d):
 @pytest.mark.parametrize(
     "run,since_d,until_d",
     [
-        (D(2026, 1, 5), D(2025, 10, 1), D(2026, 1, 1)),    # Q1 run -> prev Q4, cross year
-        (D(2026, 4, 6), D(2026, 1, 1), D(2026, 4, 1)),     # Q2 run -> Q1
-        (D(2026, 7, 6), D(2026, 4, 1), D(2026, 7, 1)),     # Q3 run -> Q2
-        (D(2026, 10, 6), D(2026, 7, 1), D(2026, 10, 1)),   # Q4 run -> Q3
-        (D(2026, 8, 15), D(2026, 4, 1), D(2026, 7, 1)),    # mid-Q3 still full prev quarter
+        (D(2026, 1, 5), D(2025, 10, 1), D(2026, 1, 1)),  # Q1 run -> prev Q4, cross year
+        (D(2026, 4, 6), D(2026, 1, 1), D(2026, 4, 1)),  # Q2 run -> Q1
+        (D(2026, 7, 6), D(2026, 4, 1), D(2026, 7, 1)),  # Q3 run -> Q2
+        (D(2026, 10, 6), D(2026, 7, 1), D(2026, 10, 1)),  # Q4 run -> Q3
+        (D(2026, 8, 15), D(2026, 4, 1), D(2026, 7, 1)),  # mid-Q3 still full prev quarter
     ],
 )
 def test_window_quarterly(run, since_d, until_d):
@@ -283,11 +291,11 @@ def test_window_unknown_kind():
 @pytest.mark.parametrize(
     "kind,since_d,until_d",
     [
-        ("daily", D(2026, 7, 9), D(2026, 7, 10)),     # Friday -> prev day
-        ("weekly", D(2026, 7, 3), D(2026, 7, 10)),    # trailing 7 days
-        ("monthly", D(2026, 6, 1), D(2026, 7, 1)),    # full previous month
+        ("daily", D(2026, 7, 9), D(2026, 7, 10)),  # Friday -> prev day
+        ("weekly", D(2026, 7, 3), D(2026, 7, 10)),  # trailing 7 days
+        ("monthly", D(2026, 6, 1), D(2026, 7, 1)),  # full previous month
         ("quarterly", D(2026, 4, 1), D(2026, 7, 1)),  # full previous quarter (Q2)
-        ("yearly", D(2025, 1, 1), D(2026, 1, 1)),     # full previous year
+        ("yearly", D(2025, 1, 1), D(2026, 1, 1)),  # full previous year
     ],
 )
 def test_window_is_half_open_and_utc(kind, since_d, until_d):
@@ -306,13 +314,13 @@ def test_window_is_half_open_and_utc(kind, since_d, until_d):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2026, 7, 6), True),    # Mon
-        (D(2026, 7, 7), True),    # Tue
-        (D(2026, 7, 8), True),    # Wed
-        (D(2026, 7, 9), True),    # Thu
-        (D(2026, 7, 10), True),   # Fri
-        (D(2026, 7, 4), False),   # Sat
-        (D(2026, 7, 5), False),   # Sun
+        (D(2026, 7, 6), True),  # Mon
+        (D(2026, 7, 7), True),  # Tue
+        (D(2026, 7, 8), True),  # Wed
+        (D(2026, 7, 9), True),  # Thu
+        (D(2026, 7, 10), True),  # Fri
+        (D(2026, 7, 4), False),  # Sat
+        (D(2026, 7, 5), False),  # Sun
     ],
 )
 def test_is_due_daily(run, expected):
@@ -322,10 +330,10 @@ def test_is_due_daily(run, expected):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2026, 7, 10), True),   # Friday
-        (D(2026, 7, 9), False),   # Thursday
+        (D(2026, 7, 10), True),  # Friday
+        (D(2026, 7, 9), False),  # Thursday
         (D(2026, 7, 11), False),  # Saturday
-        (D(2026, 7, 6), False),   # Monday
+        (D(2026, 7, 6), False),  # Monday
     ],
 )
 def test_is_due_weekly(run, expected):
@@ -335,10 +343,10 @@ def test_is_due_weekly(run, expected):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2026, 2, 2), True),    # first weekday of Feb 2026
-        (D(2026, 2, 1), False),   # Sunday, the 1st but a weekend
-        (D(2026, 2, 3), False),   # not the anchor
-        (D(2026, 7, 1), True),    # Jul 1 2026 = Wednesday = first weekday
+        (D(2026, 2, 2), True),  # first weekday of Feb 2026
+        (D(2026, 2, 1), False),  # Sunday, the 1st but a weekend
+        (D(2026, 2, 3), False),  # not the anchor
+        (D(2026, 7, 1), True),  # Jul 1 2026 = Wednesday = first weekday
         (D(2026, 7, 2), False),
     ],
 )
@@ -349,13 +357,13 @@ def test_is_due_monthly(run, expected):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2023, 1, 2), True),    # first weekday Jan (Q1 start month)
-        (D(2023, 4, 3), True),    # first weekday Apr
-        (D(2023, 7, 3), True),    # first weekday Jul
-        (D(2023, 10, 2), True),   # first weekday Oct
-        (D(2023, 4, 4), False),   # right month, not the anchor day
-        (D(2026, 2, 2), False),   # first weekday but month not a quarter start
-        (D(2026, 5, 1), False),   # month 5 not in {1,4,7,10}
+        (D(2023, 1, 2), True),  # first weekday Jan (Q1 start month)
+        (D(2023, 4, 3), True),  # first weekday Apr
+        (D(2023, 7, 3), True),  # first weekday Jul
+        (D(2023, 10, 2), True),  # first weekday Oct
+        (D(2023, 4, 4), False),  # right month, not the anchor day
+        (D(2026, 2, 2), False),  # first weekday but month not a quarter start
+        (D(2026, 5, 1), False),  # month 5 not in {1,4,7,10}
     ],
 )
 def test_is_due_quarterly(run, expected):
@@ -365,11 +373,11 @@ def test_is_due_quarterly(run, expected):
 @pytest.mark.parametrize(
     "run,expected",
     [
-        (D(2023, 1, 2), True),    # first weekday of Jan 2023
-        (D(2024, 1, 1), True),    # Jan 1 2024 = Monday = first weekday
-        (D(2023, 1, 3), False),   # not the anchor
-        (D(2026, 2, 2), False),   # first weekday but not January
-        (D(2026, 7, 1), False),   # first weekday of July, not January
+        (D(2023, 1, 2), True),  # first weekday of Jan 2023
+        (D(2024, 1, 1), True),  # Jan 1 2024 = Monday = first weekday
+        (D(2023, 1, 3), False),  # not the anchor
+        (D(2026, 2, 2), False),  # first weekday but not January
+        (D(2026, 7, 1), False),  # first weekday of July, not January
     ],
 )
 def test_is_due_yearly(run, expected):
@@ -405,11 +413,11 @@ def test_due_run_date_monthly_cross_month_first_weekday():
 @pytest.mark.parametrize(
     "today,expected",
     [
-        (D(2026, 1, 20), D(2026, 1, 1)),    # Jan is a quarter start
-        (D(2026, 4, 20), D(2026, 4, 1)),    # Apr 1 2026 = Wednesday
+        (D(2026, 1, 20), D(2026, 1, 1)),  # Jan is a quarter start
+        (D(2026, 4, 20), D(2026, 4, 1)),  # Apr 1 2026 = Wednesday
         (D(2026, 7, 20), D(2026, 7, 1)),
         (D(2026, 10, 20), D(2026, 10, 1)),
-        (D(2026, 2, 10), None),             # not a quarter-start month
+        (D(2026, 2, 10), None),  # not a quarter-start month
         (D(2026, 8, 15), None),
         (D(2026, 12, 31), None),
     ],
@@ -421,9 +429,9 @@ def test_due_run_date_quarterly(today, expected):
 @pytest.mark.parametrize(
     "today,expected",
     [
-        (D(2026, 1, 20), D(2026, 1, 1)),    # Jan -> first weekday
-        (D(2023, 1, 31), D(2023, 1, 2)),    # Jan 1 2023 = Sunday -> Jan 2
-        (D(2026, 3, 5), None),              # not January
+        (D(2026, 1, 20), D(2026, 1, 1)),  # Jan -> first weekday
+        (D(2023, 1, 31), D(2023, 1, 2)),  # Jan 1 2023 = Sunday -> Jan 2
+        (D(2026, 3, 5), None),  # not January
         (D(2026, 12, 1), None),
     ],
 )
@@ -482,8 +490,8 @@ def test_parse_period_weekly_iso_year_rollover():
     "key,since_d,until_d",
     [
         ("2026-06", D(2026, 6, 1), D(2026, 7, 1)),
-        ("2025-12", D(2025, 12, 1), D(2026, 1, 1)),    # cross-year
-        ("2024-02", D(2024, 2, 1), D(2024, 3, 1)),     # leap Feb -> Mar
+        ("2025-12", D(2025, 12, 1), D(2026, 1, 1)),  # cross-year
+        ("2024-02", D(2024, 2, 1), D(2024, 3, 1)),  # leap Feb -> Mar
         ("2026-01", D(2026, 1, 1), D(2026, 2, 1)),
     ],
 )
@@ -500,7 +508,7 @@ def test_parse_period_monthly(key, since_d, until_d):
         ("2026-Q1", D(2026, 1, 1), D(2026, 4, 1)),
         ("2026-Q2", D(2026, 4, 1), D(2026, 7, 1)),
         ("2026-Q3", D(2026, 7, 1), D(2026, 10, 1)),
-        ("2026-Q4", D(2026, 10, 1), D(2027, 1, 1)),   # Q4 rolls into next year
+        ("2026-Q4", D(2026, 10, 1), D(2027, 1, 1)),  # Q4 rolls into next year
     ],
 )
 def test_parse_period_quarterly(key, since_d, until_d):
@@ -591,12 +599,12 @@ def test_parse_period_error_message_carries_context():
 @pytest.mark.parametrize(
     "kind,run",
     [
-        ("daily", D(2026, 7, 6)),      # Monday (3-day window)
-        ("daily", D(2026, 7, 8)),      # midweek
+        ("daily", D(2026, 7, 6)),  # Monday (3-day window)
+        ("daily", D(2026, 7, 8)),  # midweek
         ("monthly", D(2026, 7, 15)),
-        ("monthly", D(2026, 1, 15)),   # cross-year
+        ("monthly", D(2026, 1, 15)),  # cross-year
         ("quarterly", D(2026, 8, 15)),
-        ("quarterly", D(2026, 1, 15)), # cross-year
+        ("quarterly", D(2026, 1, 15)),  # cross-year
         ("yearly", D(2026, 6, 1)),
     ],
 )

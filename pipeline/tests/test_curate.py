@@ -48,10 +48,20 @@ class FakeAdapter:
         self._handler = handler
         self.calls = []
 
-    def __call__(self, tier, system, prompt, schema, *, cfg=None, conn=None,
-                 effort=None, cap_kind="daily", model_override=None):
-        self.calls.append(SimpleNamespace(tier=tier, system=system,
-                                          prompt=prompt, schema=schema))
+    def __call__(
+        self,
+        tier,
+        system,
+        prompt,
+        schema,
+        *,
+        cfg=None,
+        conn=None,
+        effort=None,
+        cap_kind="daily",
+        model_override=None,
+    ):
+        self.calls.append(SimpleNamespace(tier=tier, system=system, prompt=prompt, schema=schema))
         return self._handler(tier, prompt)
 
     @property
@@ -66,13 +76,11 @@ def _finalist(seed, score, title="Example story about AI models", **over):
 
 
 def _curation(conn, cid):
-    return conn.execute(
-        "SELECT * FROM curations WHERE cluster_id=?", (cid,)).fetchone()
+    return conn.execute("SELECT * FROM curations WHERE cluster_id=?", (cid,)).fetchone()
 
 
 def _count(conn, table, where="1", args=()):
-    return conn.execute(
-        "SELECT COUNT(*) FROM %s WHERE %s" % (table, where), args).fetchone()[0]
+    return conn.execute("SELECT COUNT(*) FROM %s WHERE %s" % (table, where), args).fetchone()[0]
 
 
 def _last_run(cfg):
@@ -140,8 +148,8 @@ def test_write_prompt_missing_keys_use_none_and_empties():
     # relevance_score absent -> 'None/10'; channels/novelty/facts absent.
     out = curate._write_prompt("BODY", {})
     assert "relevance: None/10" in out
-    assert "channels: " in out          # ", ".join([]) -> ""
-    assert "novelty: " in out           # (None or "") -> ""
+    assert "channels: " in out  # ", ".join([]) -> ""
+    assert "novelty: " in out  # (None or "") -> ""
     assert "extracted facts:" not in out
 
 
@@ -180,8 +188,7 @@ def test_model_label_non_local_uses_model_for_seam():
         calls.append((tier, backend))
         return "cloud-x"
 
-    fake = SimpleNamespace(local_models_for=lambda tier: ["unused"],
-                           model_for=model_for)
+    fake = SimpleNamespace(local_models_for=lambda tier: ["unused"], model_for=model_for)
     assert curate._model_label(fake, "write", "api") == "cloud-x"
     assert calls == [("write", "api")]
 
@@ -195,9 +202,13 @@ def _cluster_row(conn, cid):
 
 @pytest.mark.integration
 def test_build_prompt_header_full_text_and_surfaces(cfg, conn, seed):
-    cid = _finalist(seed, 7.5, surface_count=3,
-                    first_seen="2026-07-04T06:30:00+00:00",
-                    canonical_url="https://ex.com/story-full")
+    cid = _finalist(
+        seed,
+        7.5,
+        surface_count=3,
+        first_seen="2026-07-04T06:30:00+00:00",
+        canonical_url="https://ex.com/story-full",
+    )
     src1 = seed.source(slug="hn", name="Hacker News")
     src2 = seed.source(slug="lob", name="Lobsters")
     src3 = seed.source(slug="rd", name="Reddit")
@@ -218,8 +229,8 @@ def test_build_prompt_header_full_text_and_surfaces(cfg, conn, seed):
     # ordering: points DESC with NULLs last
     assert out.index("Hacker News") < out.index("Lobsters") < out.index("Reddit")
     assert "- Hacker News, 200 points, 10 comments" in out
-    assert "- Lobsters, 50 points" in out          # comments None -> omitted
-    assert "- Reddit" in out                        # no points/comments
+    assert "- Lobsters, 50 points" in out  # comments None -> omitted
+    assert "- Reddit" in out  # no points/comments
     # the no-metrics surface has no trailing ", N points/comments"
     assert "- Reddit," not in out
 
@@ -286,10 +297,10 @@ def test_build_prompt_no_article_row_and_discussion_only_url(conn):
     }
     out = curate._build_prompt(conn, cluster)
     assert "URL: (discussion-only)" in out
-    assert "DETERMINISTIC SCORE: 0.0/10" in out     # score None -> 0
+    assert "DETERMINISTIC SCORE: 0.0/10" in out  # score None -> 0
     assert "SURFACES: 0" in out
     assert "NO ARTICLE TEXT AVAILABLE" in out
-    assert "WHERE IT SURFACED:" not in out          # no surfaces
+    assert "WHERE IT SURFACED:" not in out  # no surfaces
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -326,8 +337,13 @@ def test_mark_triaged_out_reason_truncated_and_default(cfg, conn, seed, patched)
 
 @pytest.mark.integration
 def test_mark_judge_skip_triaged_and_untriaged_tiers(cfg, conn, seed, patched):
-    judged = {"relevance_score": 7, "channels": ["ai", "devtools"],
-              "novelty": "nv", "audience": "au", "skip_reason": "duplicate"}
+    judged = {
+        "relevance_score": 7,
+        "channels": ["ai", "devtools"],
+        "novelty": "nv",
+        "audience": "au",
+        "skip_reason": "duplicate",
+    }
 
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/js1")
     seed.curation(cid, status="pending")
@@ -356,22 +372,28 @@ def test_mark_judge_skip_none_relevance_coerced_to_zero(cfg, conn, seed, patched
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/js3")
     seed.curation(cid, status="pending")
     curate._mark_judge_skip(
-        conn, {"id": cid},
-        {"relevance_score": None, "channels": None, "novelty": None,
-         "audience": None, "skip_reason": None},
-        cfg, triaged=False)
+        conn,
+        {"id": cid},
+        {
+            "relevance_score": None,
+            "channels": None,
+            "novelty": None,
+            "audience": None,
+            "skip_reason": None,
+        },
+        cfg,
+        triaged=False,
+    )
     row = _curation(conn, cid)
     assert row["relevance_score"] == 0
-    assert json.loads(row["channels"]) == []   # None -> []
-    assert row["skip_reason"] == ""             # None -> ""
+    assert json.loads(row["channels"]) == []  # None -> []
+    assert row["skip_reason"] == ""  # None -> ""
 
 
 @pytest.mark.integration
 def test_persist_done_sets_full_row(cfg, conn, seed, patched):
-    judged = {"relevance_score": 9, "channels": ["ai"], "novelty": "nv",
-              "audience": "au"}
-    written = {"why_it_matters": "it matters", "notes": ["a", "b"],
-               "summary": "the summary"}
+    judged = {"relevance_score": 9, "channels": ["ai"], "novelty": "nv", "audience": "au"}
+    written = {"why_it_matters": "it matters", "notes": ["a", "b"], "summary": "the summary"}
 
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/pd1")
     seed.curation(cid, status="pending")
@@ -403,11 +425,13 @@ def test_persist_done_notes_none_becomes_empty_json_array(cfg, conn, seed, patch
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/pd3")
     seed.curation(cid, status="pending")
     curate._persist_done(
-        conn, {"id": cid},
-        {"relevance_score": None, "channels": None, "novelty": None,
-         "audience": None},
+        conn,
+        {"id": cid},
+        {"relevance_score": None, "channels": None, "novelty": None, "audience": None},
         {"why_it_matters": None, "notes": None, "summary": None},
-        cfg, triaged=True)
+        cfg,
+        triaged=True,
+    )
     row = _curation(conn, cid)
     assert row["relevance_score"] == 0
     assert json.loads(row["notes"]) == []
@@ -440,8 +464,11 @@ def test_run_defers_when_ollama_down_for_local_judge(
     freeze_now_iso(curate)
     cfg.data["backend"]["tier_overrides"] = {"judge": "local"}
     monkeypatch.setattr(curate.downtime, "ollama_up", lambda cfg: False)
-    monkeypatch.setattr(curate.adapter, "complete", lambda *a, **k: (_ for _ in ()).throw(
-        AssertionError("no LLM call on deferral")))
+    monkeypatch.setattr(
+        curate.adapter,
+        "complete",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("no LLM call on deferral")),
+    )
     _finalist(seed, 8.0, canonical_url="https://ex.com/deferol")
 
     assert curate.run(cfg) == 0
@@ -456,14 +483,15 @@ def test_run_defers_when_ollama_down_for_local_judge(
 
 
 @pytest.mark.integration
-def test_run_defers_when_quota_hold_active(
-    cfg, conn, seed, monkeypatch, capsys, freeze_now_iso
-):
+def test_run_defers_when_quota_hold_active(cfg, conn, seed, monkeypatch, capsys, freeze_now_iso):
     freeze_now_iso(curate)
     monkeypatch.setattr(curate.downtime, "ollama_up", lambda cfg: True)
     monkeypatch.setattr(curate.quota, "status", lambda: (True, "usage limit"))
-    monkeypatch.setattr(curate.adapter, "complete", lambda *a, **k: (_ for _ in ()).throw(
-        AssertionError("no LLM call on deferral")))
+    monkeypatch.setattr(
+        curate.adapter,
+        "complete",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("no LLM call on deferral")),
+    )
     _finalist(seed, 8.0, canonical_url="https://ex.com/deferq")
 
     assert curate.run(cfg) == 0
@@ -485,17 +513,19 @@ def test_run_dry_run_skips_gates_and_writes_nothing(
     cfg.data["backend"]["tier_overrides"] = {"judge": "local"}
     monkeypatch.setattr(curate.downtime, "ollama_up", lambda cfg: False)
     monkeypatch.setattr(curate.quota, "status", lambda: (True, "held"))
-    monkeypatch.setattr(curate.adapter, "complete", lambda *a, **k: (_ for _ in ()).throw(
-        AssertionError("dry-run must not call the LLM")))
-    _finalist(seed, 8.0, title="Dry run candidate",
-              canonical_url="https://ex.com/dry")
+    monkeypatch.setattr(
+        curate.adapter,
+        "complete",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("dry-run must not call the LLM")),
+    )
+    _finalist(seed, 8.0, title="Dry run candidate", canonical_url="https://ex.com/dry")
 
     assert curate.run(cfg, dry_run=True) == 0
 
     out = capsys.readouterr().out
     assert "would curate 1 clusters" in out
     assert "Dry run candidate" in out
-    assert _count(conn, "curations") == 0            # nothing claimed
+    assert _count(conn, "curations") == 0  # nothing claimed
     assert _count(conn, "health", "job='curate'") == 0
 
 
@@ -503,27 +533,27 @@ def test_run_dry_run_skips_gates_and_writes_nothing(
 # run()  — orphan sweep + no-finalists
 # ═══════════════════════════════════════════════════════════════════════════
 @pytest.mark.integration
-def test_run_sweeps_orphaned_pending_claims(
-    cfg, conn, seed, patched, monkeypatch, capsys
-):
+def test_run_sweeps_orphaned_pending_claims(cfg, conn, seed, patched, monkeypatch, capsys):
     # A leftover 'pending' claim from a crashed run, on a below-threshold cluster
     # (so it is NOT itself re-selected as a finalist).
     orphan = _finalist(seed, 2.0, canonical_url="https://ex.com/orphan")
     seed.curation(orphan, status="pending")
     # No finalists exist, so the adapter must never be reached.
-    _patch_adapter(monkeypatch, lambda t, p: (_ for _ in ()).throw(
-        AssertionError("no LLM call with zero finalists")))
+    _patch_adapter(
+        monkeypatch,
+        lambda t, p: (_ for _ in ()).throw(AssertionError("no LLM call with zero finalists")),
+    )
 
     assert curate.run(cfg) == 0
 
-    assert _curation(conn, orphan) is None           # swept
+    assert _curation(conn, orphan) is None  # swept
     out = capsys.readouterr().out
     assert "orphaned pending claim" in out
     assert "no uncurated finalists" in out
     # exactly one warn (the sweep); the no-finalists early return logs nothing.
-    assert _count(
-        conn, "health",
-        "job='curate' AND level='warn' AND message LIKE '%orphaned%'") == 1
+    assert (
+        _count(conn, "health", "job='curate' AND level='warn' AND message LIKE '%orphaned%'") == 1
+    )
     assert _count(conn, "health", "job='curate'") == 1
 
 
@@ -543,19 +573,21 @@ def _keep_handler(tier, prompt):
     if tier == "triage":
         return {"keep": True, "reason": "worth a read"}
     if tier == "judge":
-        return {"skip": False, "relevance_score": 8, "channels": ["ai"],
-                "novelty": "genuinely new", "audience": "engineers",
-                "facts": ["fact one", "fact two"]}
+        return {
+            "skip": False,
+            "relevance_score": 8,
+            "channels": ["ai"],
+            "novelty": "genuinely new",
+            "audience": "engineers",
+            "facts": ["fact one", "fact two"],
+        }
     if tier == "write":
-        return {"why_it_matters": "it matters", "notes": ["n1", "n2"],
-                "summary": "the summary"}
+        return {"why_it_matters": "it matters", "notes": ["n1", "n2"], "summary": "the summary"}
     raise AssertionError("unexpected tier %r" % tier)
 
 
 @pytest.mark.integration
-def test_run_happy_path_in_band_triage_judge_write(
-    cfg, conn, seed, patched, monkeypatch, capsys
-):
+def test_run_happy_path_in_band_triage_judge_write(cfg, conn, seed, patched, monkeypatch, capsys):
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/happy")  # in band
     seed.article(cid, text="Full article about a new model.")
     fake = _patch_adapter(monkeypatch, _keep_handler)
@@ -604,8 +636,8 @@ def test_run_above_band_skips_triage(cfg, conn, seed, patched, monkeypatch):
 
     row = _curation(conn, cid)
     assert row["status"] == "done"
-    assert row["tier_used"] == "judge+write"          # no triage prefix
-    assert fake.tiers == ["judge", "write"]           # triage skipped
+    assert row["tier_used"] == "judge+write"  # no triage prefix
+    assert fake.tiers == ["judge", "write"]  # triage skipped
 
 
 @pytest.mark.integration
@@ -649,9 +681,15 @@ def test_run_judge_skip_triaged(cfg, conn, seed, patched, monkeypatch):
         if tier == "triage":
             return {"keep": True, "reason": "ok"}
         if tier == "judge":
-            return {"skip": True, "skip_reason": "duplicate coverage",
-                    "relevance_score": 4, "channels": ["ai"],
-                    "novelty": "n", "audience": "a", "facts": ["x", "y"]}
+            return {
+                "skip": True,
+                "skip_reason": "duplicate coverage",
+                "relevance_score": 4,
+                "channels": ["ai"],
+                "novelty": "n",
+                "audience": "a",
+                "facts": ["x", "y"],
+            }
         raise AssertionError("write must not run after a judge-skip")
 
     fake = _patch_adapter(monkeypatch, handler)
@@ -674,9 +712,15 @@ def test_run_judge_skip_untriaged(cfg, conn, seed, patched, monkeypatch):
 
     def handler(tier, prompt):
         if tier == "judge":
-            return {"skip": True, "skip_reason": "thin rewrite",
-                    "relevance_score": 3, "channels": ["ai"],
-                    "novelty": None, "audience": None, "facts": ["x", "y"]}
+            return {
+                "skip": True,
+                "skip_reason": "thin rewrite",
+                "relevance_score": 3,
+                "channels": ["ai"],
+                "novelty": None,
+                "audience": None,
+                "facts": ["x", "y"],
+            }
         raise AssertionError("only judge should run")
 
     fake = _patch_adapter(monkeypatch, handler)
@@ -684,12 +728,12 @@ def test_run_judge_skip_untriaged(cfg, conn, seed, patched, monkeypatch):
     assert curate.run(cfg) == 0
     row = _curation(conn, cid)
     assert row["status"] == "skipped"
-    assert row["tier_used"] == "judge"          # no triage prefix (above band)
+    assert row["tier_used"] == "judge"  # no triage prefix (above band)
     assert row["skip"] == 1
     assert row["skip_reason"] == "thin rewrite"
     assert row["relevance_score"] == 3
     assert json.loads(row["channels"]) == ["ai"]
-    assert row["novelty"] is None               # None passed through as NULL
+    assert row["novelty"] is None  # None passed through as NULL
     assert row["audience"] is None
     assert fake.tiers == ["judge"]
     assert _last_run(cfg)["stats"]["skipped"] == 1
@@ -699,9 +743,7 @@ def test_run_judge_skip_untriaged(cfg, conn, seed, patched, monkeypatch):
 # run()  — limits + idempotency
 # ═══════════════════════════════════════════════════════════════════════════
 @pytest.mark.integration
-def test_run_explicit_limit_curates_top_n_only(
-    cfg, conn, seed, patched, monkeypatch
-):
+def test_run_explicit_limit_curates_top_n_only(cfg, conn, seed, patched, monkeypatch):
     hi = _finalist(seed, 9.0, canonical_url="https://ex.com/l9")
     mid = _finalist(seed, 8.0, canonical_url="https://ex.com/l8")
     lo = _finalist(seed, 7.0, canonical_url="https://ex.com/l7")
@@ -710,14 +752,16 @@ def test_run_explicit_limit_curates_top_n_only(
     assert curate.run(cfg, limit=2) == 0
     assert _curation(conn, hi)["status"] == "done"
     assert _curation(conn, mid)["status"] == "done"
-    assert _curation(conn, lo) is None                # below the limit
+    assert _curation(conn, lo) is None  # below the limit
 
 
 @pytest.mark.integration
 def test_run_default_limit_is_curate_batch(cfg, conn, seed, patched, monkeypatch):
     # signal.min.json funnel.curate_batch == 3; seed 5 finalists above the band.
-    ids = [_finalist(seed, s, canonical_url="https://ex.com/b%d" % i)
-           for i, s in enumerate([9.0, 8.5, 8.0, 7.5, 7.0])]
+    ids = [
+        _finalist(seed, s, canonical_url="https://ex.com/b%d" % i)
+        for i, s in enumerate([9.0, 8.5, 8.0, 7.5, 7.0])
+    ]
     _patch_adapter(monkeypatch, _keep_handler)
 
     assert curate.run(cfg) == 0
@@ -728,20 +772,21 @@ def test_run_default_limit_is_curate_batch(cfg, conn, seed, patched, monkeypatch
 
 
 @pytest.mark.integration
-def test_run_is_idempotent_for_already_done_cluster(
-    cfg, conn, seed, patched, monkeypatch
-):
+def test_run_is_idempotent_for_already_done_cluster(cfg, conn, seed, patched, monkeypatch):
     cid = _finalist(seed, 8.0, canonical_url="https://ex.com/idem")
-    seed.curation(cid, status="done", curated_at="2000-01-01T00:00:00+00:00",
-                  why_it_matters="original text")
+    seed.curation(
+        cid, status="done", curated_at="2000-01-01T00:00:00+00:00", why_it_matters="original text"
+    )
     # Any adapter call would be a bug (a done cluster is not a finalist).
-    _patch_adapter(monkeypatch, lambda t, p: (_ for _ in ()).throw(
-        AssertionError("done cluster must not be re-curated")))
+    _patch_adapter(
+        monkeypatch,
+        lambda t, p: (_ for _ in ()).throw(AssertionError("done cluster must not be re-curated")),
+    )
 
     assert curate.run(cfg) == 0
     row = _curation(conn, cid)
     assert row["status"] == "done"
-    assert row["why_it_matters"] == "original text"   # untouched
+    assert row["why_it_matters"] == "original text"  # untouched
     assert row["curated_at"] == "2000-01-01T00:00:00+00:00"
 
 
@@ -773,9 +818,7 @@ def test_run_phase1_usage_limit_stops_without_marking_failed(
 
 
 @pytest.mark.integration
-def test_run_phase1_llm_error_marks_item_failed(
-    cfg, conn, seed, patched, monkeypatch
-):
+def test_run_phase1_llm_error_marks_item_failed(cfg, conn, seed, patched, monkeypatch):
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/p1e")  # in band
 
     def handler(tier, prompt):
@@ -793,14 +836,13 @@ def test_run_phase1_llm_error_marks_item_failed(
 
 
 @pytest.mark.integration
-def test_run_phase1_spend_cap_marks_item_failed_not_stopped(
-    cfg, conn, seed, patched, monkeypatch
-):
+def test_run_phase1_spend_cap_marks_item_failed_not_stopped(cfg, conn, seed, patched, monkeypatch):
     # Phase 1 has no SpendCapExceeded handler, so it is caught as an LLMError
     # subclass and the item is marked failed (documented actual behavior).
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/p1c")  # in band
-    _patch_adapter(monkeypatch, lambda t, p: (_ for _ in ()).throw(
-        SpendCapExceeded("cap during triage")))
+    _patch_adapter(
+        monkeypatch, lambda t, p: (_ for _ in ()).throw(SpendCapExceeded("cap during triage"))
+    )
 
     assert curate.run(cfg) == 0
     row = _curation(conn, cid)
@@ -808,7 +850,7 @@ def test_run_phase1_spend_cap_marks_item_failed_not_stopped(
     assert row["skip_reason"] == "cap during triage"
     lr = _last_run(cfg)
     assert lr["stats"]["failed"] == 1
-    assert lr["stats"]["cap_stopped"] == 0            # NOT a clean cap stop
+    assert lr["stats"]["cap_stopped"] == 0  # NOT a clean cap stop
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -818,7 +860,7 @@ def test_run_phase1_spend_cap_marks_item_failed_not_stopped(
 def test_run_phase2_spend_cap_deletes_claim_and_stops(
     cfg, conn, seed, patched, monkeypatch, capsys
 ):
-    hi = _finalist(seed, 9.0, canonical_url="https://ex.com/p2c1")   # above band
+    hi = _finalist(seed, 9.0, canonical_url="https://ex.com/p2c1")  # above band
     lo = _finalist(seed, 7.0, canonical_url="https://ex.com/p2c2")
 
     def handler(tier, prompt):
@@ -838,16 +880,17 @@ def test_run_phase2_spend_cap_deletes_claim_and_stops(
     lr = _last_run(cfg)
     assert lr["stats"]["cap_stopped"] == 1
     assert lr["stats"]["done"] == 0
-    assert _count(
-        conn, "health",
-        "job='curate' AND level='warn' AND message LIKE '%cap reached%'") == 1
+    assert (
+        _count(conn, "health", "job='curate' AND level='warn' AND message LIKE '%cap reached%'")
+        == 1
+    )
 
 
 @pytest.mark.integration
 def test_run_phase2_usage_limit_deletes_claim_and_stops(
     cfg, conn, seed, patched, monkeypatch, capsys
 ):
-    hi = _finalist(seed, 9.0, canonical_url="https://ex.com/p2q1")   # above band
+    hi = _finalist(seed, 9.0, canonical_url="https://ex.com/p2q1")  # above band
     lo = _finalist(seed, 7.0, canonical_url="https://ex.com/p2q2")
 
     def handler(tier, prompt):
@@ -867,20 +910,22 @@ def test_run_phase2_usage_limit_deletes_claim_and_stops(
 
 
 @pytest.mark.integration
-def test_run_phase2_llm_error_fails_one_and_continues(
-    cfg, conn, seed, patched, monkeypatch
-):
-    c1 = _finalist(seed, 9.0, title="FailMe please break here",
-                   canonical_url="https://ex.com/p2e1")
-    c2 = _finalist(seed, 7.0, title="Second good story works",
-                   canonical_url="https://ex.com/p2e2")
+def test_run_phase2_llm_error_fails_one_and_continues(cfg, conn, seed, patched, monkeypatch):
+    c1 = _finalist(seed, 9.0, title="FailMe please break here", canonical_url="https://ex.com/p2e1")
+    c2 = _finalist(seed, 7.0, title="Second good story works", canonical_url="https://ex.com/p2e2")
 
     def handler(tier, prompt):
         if tier == "judge":
             if "FailMe" in prompt:
                 raise LLMError("judge boom")
-            return {"skip": False, "relevance_score": 6, "channels": ["ai"],
-                    "novelty": "n", "audience": "a", "facts": ["x", "y"]}
+            return {
+                "skip": False,
+                "relevance_score": 6,
+                "channels": ["ai"],
+                "novelty": "n",
+                "audience": "a",
+                "facts": ["x", "y"],
+            }
         if tier == "write":
             return {"why_it_matters": "w", "notes": ["a", "b"], "summary": "s"}
         raise AssertionError("unexpected tier")
@@ -888,7 +933,7 @@ def test_run_phase2_llm_error_fails_one_and_continues(
     _patch_adapter(monkeypatch, handler)
 
     assert curate.run(cfg) == 0
-    assert _curation(conn, c1)["status"] == "failed"      # no bleed
+    assert _curation(conn, c1)["status"] == "failed"  # no bleed
     assert _curation(conn, c1)["skip_reason"] == "judge boom"
     assert _curation(conn, c2)["status"] == "done"
     lr = _last_run(cfg)

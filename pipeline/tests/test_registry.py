@@ -97,9 +97,7 @@ def _source_dict(**over):
 def _db_row(cfg, slug):
     conn = db_mod.connect_ro(cfg.db_path)
     try:
-        return conn.execute(
-            "SELECT * FROM sources WHERE slug=?", (slug,)
-        ).fetchone()
+        return conn.execute("SELECT * FROM sources WHERE slug=?", (slug,)).fetchone()
     finally:
         conn.close()
 
@@ -145,9 +143,10 @@ def test_slugify_truncates_to_64():
 
 def test_slugify_property():
     hypothesis = pytest.importorskip("hypothesis")
+    import re as _re
+
     from hypothesis import given, settings
     from hypothesis import strategies as st
-    import re as _re
 
     @given(st.text(max_size=120))
     @settings(max_examples=200)
@@ -157,9 +156,7 @@ def test_slugify_property():
         # "source" fallback, else lowercase alnum + single internal dashes,
         # never a leading dash. (A trailing dash CAN appear via [:64] truncation.)
         assert out == "source" or (
-            _re.match(r"^[a-z0-9-]+$", out)
-            and not out.startswith("-")
-            and "--" not in out
+            _re.match(r"^[a-z0-9-]+$", out) and not out.startswith("-") and "--" not in out
         )
 
     check()
@@ -218,9 +215,7 @@ def test_parse_opml_bare_ampersand_escape_retry():
         b'xmlUrl="https://c.example/feed" htmlUrl="https://c.example/"/>'
         b"</body></opml>"
     )
-    assert reg.parse_opml(amp) == [
-        ("Tom & Jerry", "https://c.example/feed", "https://c.example/")
-    ]
+    assert reg.parse_opml(amp) == [("Tom & Jerry", "https://c.example/feed", "https://c.example/")]
 
 
 def test_parse_opml_regex_fallback_on_raw_html_in_attr():
@@ -233,9 +228,7 @@ def test_parse_opml_regex_fallback_on_raw_html_in_attr():
         b"</body></opml>"
     )
     # &amp; is unescaped by the regex path; raw '<' survives verbatim.
-    assert reg.parse_opml(bad) == [
-        ("A & B < C", "https://d.example/feed", "https://d.example/")
-    ]
+    assert reg.parse_opml(bad) == [("A & B < C", "https://d.example/feed", "https://d.example/")]
 
 
 def test_parse_opml_title_text_fallback_ordering():
@@ -265,22 +258,17 @@ def test_parse_opml_skips_non_outline_children():
 
 def test_parse_opml_rootless_walk():
     # No <body>: walk from root.
-    nobody = (
-        b'<?xml version="1.0"?><opml>'
-        b'<outline xmlUrl="https://g.example/f" text="G"/></opml>'
-    )
+    nobody = b'<?xml version="1.0"?><opml><outline xmlUrl="https://g.example/f" text="G"/></opml>'
     assert reg.parse_opml(nobody) == [("G", "https://g.example/f", None)]
 
 
 def test_parse_opml_regex_direct_skips_missing_xmlurl_and_unescapes():
     content = (
         b'<outline text="x" htmlUrl="https://z.example/"/>'  # no xmlUrl -> skipped
-        b'<outline type="rss" xmlUrl="" title="Empty"/>'     # empty xmlUrl -> skipped
+        b'<outline type="rss" xmlUrl="" title="Empty"/>'  # empty xmlUrl -> skipped
         b'<outline title="R &amp; D" xmlUrl="https://h.example/feed"/>'
     )
-    assert reg._parse_opml_regex(content) == [
-        ("R & D", "https://h.example/feed", None)
-    ]
+    assert reg._parse_opml_regex(content) == [("R & D", "https://h.example/feed", None)]
 
 
 # --------------------------------------------------------------------------- #
@@ -330,9 +318,7 @@ def test_discover_feed_links_returns_only_feed_resolved_absolute():
 
 
 def test_discover_feed_links_atom_type():
-    html = (
-        b'<link rel="alternate" type="application/atom+xml" href="atom.xml">'
-    )
+    html = b'<link rel="alternate" type="application/atom+xml" href="atom.xml">'
     assert reg._discover_feed_links(html, "https://site.example/blog/") == [
         "https://site.example/blog/atom.xml"
     ]
@@ -364,9 +350,16 @@ def test_load_specs_applies_defaults_and_slug_fallback(cfg, tmp_path):
         cfg,
         [
             # minimal row: no slug -> slugify(name); coercions applied
-            {"name": "My Feed", "url": "https://f.example/rss",
-             "reputation": "1.5", "tier": "1", "cadence_min": "30",
-             "paywalled": 1, "enabled": 0, "topics": ["ai", "science"]},
+            {
+                "name": "My Feed",
+                "url": "https://f.example/rss",
+                "reputation": "1.5",
+                "tier": "1",
+                "cadence_min": "30",
+                "paywalled": 1,
+                "enabled": 0,
+                "topics": ["ai", "science"],
+            },
         ],
     )
     specs = reg.load_specs(cfg)
@@ -388,15 +381,33 @@ def test_save_specs_round_trip_and_sorted(cfg, tmp_path, freeze_now_iso):
     freeze_now_iso(reg)
     _use_tmp_registry(cfg, tmp_path)
     specs = [
-        SourceSpec(slug="zeta", name="Zeta", type="rss",
-                   url="https://z.example/feed", category="news", tier=2,
-                   topics=["news"]),
-        SourceSpec(slug="alpha", name="Alpha", type="atom",
-                   url="https://a.example/feed", category="ai", tier=1,
-                   topics=["ai"]),
-        SourceSpec(slug="beta", name="Beta", type="json",
-                   url="https://b.example/api", category="ai", tier=2,
-                   topics=["ai"]),
+        SourceSpec(
+            slug="zeta",
+            name="Zeta",
+            type="rss",
+            url="https://z.example/feed",
+            category="news",
+            tier=2,
+            topics=["news"],
+        ),
+        SourceSpec(
+            slug="alpha",
+            name="Alpha",
+            type="atom",
+            url="https://a.example/feed",
+            category="ai",
+            tier=1,
+            topics=["ai"],
+        ),
+        SourceSpec(
+            slug="beta",
+            name="Beta",
+            type="json",
+            url="https://b.example/api",
+            category="ai",
+            tier=2,
+            topics=["ai"],
+        ),
     ]
     reg.save_specs(cfg, specs)
 
@@ -419,17 +430,42 @@ def test_write_opml_only_enabled_rss_atom_grouped_and_escaped(cfg, tmp_path, fre
     frozen = freeze_now_iso(reg)
     _use_tmp_registry(cfg, tmp_path)
     specs = [
-        SourceSpec(slug="a", name='Alice & "Bob"', type="rss",
-                   url="https://a.example/feed", homepage="https://a.example",
-                   category="ai", tier=2, topics=["ai"]),
-        SourceSpec(slug="b", name="Bee", type="atom",
-                   url="https://b.example/feed", category="ai", tier=1,
-                   topics=["ai"]),
-        SourceSpec(slug="c", name="Jsony", type="json",
-                   url="https://c.example/api", category="ai", topics=["ai"]),
-        SourceSpec(slug="d", name="Disabled", type="rss",
-                   url="https://d.example/feed", category="ai", enabled=False,
-                   topics=["ai"]),
+        SourceSpec(
+            slug="a",
+            name='Alice & "Bob"',
+            type="rss",
+            url="https://a.example/feed",
+            homepage="https://a.example",
+            category="ai",
+            tier=2,
+            topics=["ai"],
+        ),
+        SourceSpec(
+            slug="b",
+            name="Bee",
+            type="atom",
+            url="https://b.example/feed",
+            category="ai",
+            tier=1,
+            topics=["ai"],
+        ),
+        SourceSpec(
+            slug="c",
+            name="Jsony",
+            type="json",
+            url="https://c.example/api",
+            category="ai",
+            topics=["ai"],
+        ),
+        SourceSpec(
+            slug="d",
+            name="Disabled",
+            type="rss",
+            url="https://d.example/feed",
+            category="ai",
+            enabled=False,
+            topics=["ai"],
+        ),
     ]
     reg.write_opml(cfg, specs)
     opml = cfg.sources_opml.read_text()
@@ -445,7 +481,7 @@ def test_write_opml_only_enabled_rss_atom_grouped_and_escaped(cfg, tmp_path, fre
     assert "&amp;" in opml
     assert "Alice &amp;" in opml
     # single category group present
-    assert "<outline text=\"ai\">" in opml
+    assert '<outline text="ai">' in opml
 
 
 # --------------------------------------------------------------------------- #
@@ -457,17 +493,17 @@ def test_existing_keys_collects_feed_urls_and_domains(cfg, tmp_path):
     _write_registry(
         cfg,
         [
-            _source_dict(slug="one", url="https://www.one.example/feed",
-                         homepage="https://one.example"),
-            _source_dict(slug="two", url="https://sub.two.example/rss",
-                         homepage=None),
+            _source_dict(
+                slug="one", url="https://www.one.example/feed", homepage="https://one.example"
+            ),
+            _source_dict(slug="two", url="https://sub.two.example/rss", homepage=None),
         ],
     )
     feed_keys, domains = reg._existing_keys(cfg)
-    assert "https://one.example/feed" in feed_keys       # www stripped, https forced
+    assert "https://one.example/feed" in feed_keys  # www stripped, https forced
     assert "https://sub.two.example/rss" in feed_keys
     assert "one.example" in domains
-    assert "two.example" in domains                      # homepage None -> url domain
+    assert "two.example" in domains  # homepage None -> url domain
 
 
 @pytest.mark.integration
@@ -490,9 +526,16 @@ def test_merge_adds_new_and_returns_count(cfg, tmp_path, freeze_now_iso):
     _use_tmp_registry(cfg, tmp_path)
     _write_registry(cfg, [])
     verified = [
-        {"name": "New One", "slug": "new-one", "type": "json",
-         "url": "https://new.example/feed", "homepage": "https://new.example",
-         "category": "ai", "topics": ["ai"], "tier": 2},
+        {
+            "name": "New One",
+            "slug": "new-one",
+            "type": "json",
+            "url": "https://new.example/feed",
+            "homepage": "https://new.example",
+            "category": "ai",
+            "topics": ["ai"],
+            "tier": 2,
+        },
     ]
     added = reg.merge_into_registry(cfg, verified)
     assert added == 1
@@ -505,14 +548,18 @@ def test_merge_adds_new_and_returns_count(cfg, tmp_path, freeze_now_iso):
 @pytest.mark.integration
 def test_merge_dedup_by_canonical_url(cfg, tmp_path):
     _use_tmp_registry(cfg, tmp_path)
-    _write_registry(
-        cfg, [_source_dict(slug="exist", url="https://dup.example/feed")]
-    )
+    _write_registry(cfg, [_source_dict(slug="exist", url="https://dup.example/feed")])
     before = cfg.sources_json.read_text()
     verified = [
-        {"name": "Dup", "slug": "dup-new", "type": "rss",
-         # canonicalizes to the same key (www + trailing slash normalized away)
-         "url": "https://www.dup.example/feed/", "topics": ["ai"], "tier": 2},
+        {
+            "name": "Dup",
+            "slug": "dup-new",
+            "type": "rss",
+            # canonicalizes to the same key (www + trailing slash normalized away)
+            "url": "https://www.dup.example/feed/",
+            "topics": ["ai"],
+            "tier": 2,
+        },
     ]
     added = reg.merge_into_registry(cfg, verified)
     assert added == 0
@@ -525,8 +572,14 @@ def test_merge_slug_collision_suffixed(cfg, tmp_path):
     _use_tmp_registry(cfg, tmp_path)
     _write_registry(cfg, [_source_dict(slug="foo", url="https://old.example/feed")])
     verified = [
-        {"name": "Foo Two", "slug": "foo", "type": "rss",
-         "url": "https://new.example/feed", "topics": ["ai"], "tier": 3},
+        {
+            "name": "Foo Two",
+            "slug": "foo",
+            "type": "rss",
+            "url": "https://new.example/feed",
+            "topics": ["ai"],
+            "tier": 3,
+        },
     ]
     added = reg.merge_into_registry(cfg, verified)
     assert added == 1
@@ -539,8 +592,14 @@ def test_merge_drops_invalid_candidate(cfg, tmp_path):
     _use_tmp_registry(cfg, tmp_path)
     _write_registry(cfg, [])
     verified = [
-        {"name": "Bad Topic", "slug": "bad", "type": "rss",
-         "url": "https://bad.example/feed", "topics": ["not-a-channel"], "tier": 2},
+        {
+            "name": "Bad Topic",
+            "slug": "bad",
+            "type": "rss",
+            "url": "https://bad.example/feed",
+            "topics": ["not-a-channel"],
+            "tier": 2,
+        },
     ]
     added = reg.merge_into_registry(cfg, verified)
     assert added == 0
@@ -553,8 +612,9 @@ def test_merge_drops_invalid_candidate(cfg, tmp_path):
 def test_probe_url_direct_feed(fake_client, make_result, load_bytes):
     url = "https://feed.example/rss"
     client = fake_client(
-        responses={url: make_result(content=load_bytes("arxiv_cs_ai.rss"),
-                                    status=200, final_url=url)}
+        responses={
+            url: make_result(content=load_bytes("arxiv_cs_ai.rss"), status=200, final_url=url)
+        }
     )
     r = reg.probe_url(client, url, ["/feed/"])
     assert r.ok is True
@@ -570,8 +630,7 @@ def test_probe_url_homepage_rel_alternate(fake_client, make_result, load_bytes):
     client = fake_client(
         responses={
             home: make_result(content=HOMEPAGE_HTML, status=200, final_url=home),
-            feed: make_result(content=load_bytes("arxiv_cs_ai.rss"), status=200,
-                             final_url=feed),
+            feed: make_result(content=load_bytes("arxiv_cs_ai.rss"), status=200, final_url=feed),
         }
     )
     r = reg.probe_url(client, home, ["/rss/"])
@@ -586,8 +645,7 @@ def test_probe_url_common_path_probing(fake_client, make_result, load_bytes):
     client = fake_client(
         responses={
             home: make_result(content=HOMEPAGE_NO_FEED, status=200, final_url=home),
-            cand: make_result(content=load_bytes("reddit_top.rss"), status=200,
-                             final_url=cand),
+            cand: make_result(content=load_bytes("reddit_top.rss"), status=200, final_url=cand),
         }
     )
     r = reg.probe_url(client, home, ["/feed.xml"])
@@ -614,16 +672,21 @@ def test_probe_url_discovered_links_invalid_then_common_path(fake_client, make_r
             "https://disc.example/b.xml": make_result(content=b"not a feed", status=200),
             "https://disc.example/p1": make_result(content=b"still not", status=200),
             "https://disc.example/p2": make_result(
-                content=load_bytes("arxiv_cs_ai.rss"), status=200,
-                final_url="https://disc.example/p2"),
+                content=load_bytes("arxiv_cs_ai.rss"),
+                status=200,
+                final_url="https://disc.example/p2",
+            ),
         }
     )
     r = reg.probe_url(client, home, ["/p1", "/p2"])
     assert r.ok is True
     assert r.feed_url == "https://disc.example/p2"
     assert client.requested == [
-        home, "https://disc.example/a.xml", "https://disc.example/b.xml",
-        "https://disc.example/p1", "https://disc.example/p2",
+        home,
+        "https://disc.example/a.xml",
+        "https://disc.example/b.xml",
+        "https://disc.example/p1",
+        "https://disc.example/p2",
     ]
 
 
@@ -643,9 +706,7 @@ def test_probe_url_no_valid_feed(fake_client, make_result):
 
 def test_probe_url_status_zero_passes_error(fake_client, make_result):
     url = "https://down.example/feed"
-    client = fake_client(
-        responses={url: make_result(status=0, error="connection refused")}
-    )
+    client = fake_client(responses={url: make_result(status=0, error="connection refused")})
     r = reg.probe_url(client, url, ["/feed/"])
     assert r.ok is False
     assert r.error == "connection refused"
@@ -668,29 +729,55 @@ def test_probe_candidates_partitions_and_dedups(cfg, tmp_path, monkeypatch):
     # Pre-registered: feed url + homepage domain that later candidates collide with.
     _write_registry(
         cfg,
-        [_source_dict(slug="dupsrc", url="https://dup.example/feed",
-                      homepage="https://dup.example")],
+        [
+            _source_dict(
+                slug="dupsrc", url="https://dup.example/feed", homepage="https://dup.example"
+            )
+        ],
     )
 
     def fake_probe(client, url, probe_paths):
         table = {
             "https://good.example/feed": ProbeResult(
-                candidate_url=url, ok=True, feed_url="https://good.example/feed",
-                kind="rss", entries=5, title="Good"),
+                candidate_url=url,
+                ok=True,
+                feed_url="https://good.example/feed",
+                kind="rss",
+                entries=5,
+                title="Good",
+            ),
             "https://dup.example/feed": ProbeResult(
-                candidate_url=url, ok=True, feed_url="https://dup.example/feed",
-                kind="rss", entries=3),
+                candidate_url=url,
+                ok=True,
+                feed_url="https://dup.example/feed",
+                kind="rss",
+                entries=3,
+            ),
             "https://dead.example/feed": ProbeResult(
-                candidate_url=url, ok=True,
-                feed_url="https://openai.com/blog/rss.xml", kind="rss", entries=3),
+                candidate_url=url,
+                ok=True,
+                feed_url="https://openai.com/blog/rss.xml",
+                kind="rss",
+                entries=3,
+            ),
             "https://dup.example/section": ProbeResult(
-                candidate_url=url, ok=True,
-                feed_url="https://dup.example/newfeed.xml", kind="rss", entries=3),
+                candidate_url=url,
+                ok=True,
+                feed_url="https://dup.example/newfeed.xml",
+                kind="rss",
+                entries=3,
+            ),
             "https://fallback.example/badfeed": ProbeResult(
-                candidate_url=url, ok=False, error="404"),
+                candidate_url=url, ok=False, error="404"
+            ),
             "https://fallback.example": ProbeResult(
-                candidate_url=url, ok=True, feed_url="https://fallback.example/real",
-                kind="atom", entries=2, title="FB"),
+                candidate_url=url,
+                ok=True,
+                feed_url="https://fallback.example/real",
+                kind="atom",
+                entries=2,
+                title="FB",
+            ),
         }
         return table.get(url, ProbeResult(candidate_url=url, error="unknown"))
 
@@ -698,15 +785,23 @@ def test_probe_candidates_partitions_and_dedups(cfg, tmp_path, monkeypatch):
     monkeypatch.setattr(reg, "PoliteClient", _polite_factory())
 
     candidates = [
-        {"name": "Good", "homepage": "https://good.example",
-         "feed_url": "https://good.example/feed"},
-        {"name": "Dup", "homepage": "https://dup.example",
-         "feed_url": "https://dup.example/feed"},
-        {"name": "Dead", "homepage": "https://dead.example",
-         "feed_url": "https://dead.example/feed"},
+        {
+            "name": "Good",
+            "homepage": "https://good.example",
+            "feed_url": "https://good.example/feed",
+        },
+        {"name": "Dup", "homepage": "https://dup.example", "feed_url": "https://dup.example/feed"},
+        {
+            "name": "Dead",
+            "homepage": "https://dead.example",
+            "feed_url": "https://dead.example/feed",
+        },
         {"name": "DomDup", "homepage": "https://dup.example/section"},
-        {"name": "FB", "homepage": "https://fallback.example",
-         "feed_url": "https://fallback.example/badfeed"},
+        {
+            "name": "FB",
+            "homepage": "https://fallback.example",
+            "feed_url": "https://fallback.example/badfeed",
+        },
         {},  # no url
     ]
     verified, rejected = reg.probe_candidates(cfg, candidates, max_workers=2)
@@ -795,21 +890,28 @@ def test_seed_preserves_auto_disabled_but_reenables_flaky(cfg, tmp_path, freeze_
         conn.execute(
             "INSERT INTO sources(slug, name, category, type, url, tier, "
             "enabled, error_count) VALUES(?,?,?,?,?,?,?,?)",
-            ("broken", "Broken", "ai", "rss", "https://broken.example/feed",
-             2, 0, reg.PRESERVE_DISABLED_ERRORS),
+            (
+                "broken",
+                "Broken",
+                "ai",
+                "rss",
+                "https://broken.example/feed",
+                2,
+                0,
+                reg.PRESERVE_DISABLED_ERRORS,
+            ),
         )
         conn.execute(
             "INSERT INTO sources(slug, name, category, type, url, tier, "
             "enabled, error_count) VALUES(?,?,?,?,?,?,?,?)",
-            ("flaky", "Flaky", "ai", "rss", "https://flaky.example/feed",
-             2, 0, 1),
+            ("flaky", "Flaky", "ai", "rss", "https://flaky.example/feed", 2, 0, 1),
         )
     finally:
         conn.close()
 
     assert reg.seed(cfg) == 0
-    assert _db_row(cfg, "broken")["enabled"] == 0   # preserved auto-disable
-    assert _db_row(cfg, "flaky")["enabled"] == 1     # re-enabled
+    assert _db_row(cfg, "broken")["enabled"] == 0  # preserved auto-disable
+    assert _db_row(cfg, "flaky")["enabled"] == 1  # re-enabled
 
 
 # --------------------------------------------------------------------------- #
@@ -827,8 +929,9 @@ def test_stats_db_missing_falls_back_to_registry_file(cfg, tmp_path, capsys):
 
 @pytest.mark.integration
 def test_stats_reads_db(cfg, conn, seed, capsys):
-    seed.source(slug="a1", category="ai", tier=1, enabled=1,
-                verified_at="2026-07-01T00:00:00+00:00")
+    seed.source(
+        slug="a1", category="ai", tier=1, enabled=1, verified_at="2026-07-01T00:00:00+00:00"
+    )
     seed.source(slug="a2", category="ai", tier=2, enabled=1, verified_at=None)
     seed.source(slug="n1", category="news", tier=3, enabled=0, error_count=5)
     cfg.data["operation_1k"] = {"target_verified": 500}
@@ -868,7 +971,8 @@ def test_expand_adds_builtins_then_idempotent(cfg, tmp_path, capsys, freeze_now_
     freeze_now_iso(reg)
     _use_tmp_registry(cfg, tmp_path)
     monkeypatch.setattr(
-        reg, "PoliteClient",
+        reg,
+        "PoliteClient",
         _polite_factory(result=FetchResult(status=200, content=TECHMEME_OPML)),
     )
 
@@ -880,15 +984,19 @@ def test_expand_adds_builtins_then_idempotent(cfg, tmp_path, capsys, freeze_now_
 
     specs = {s.slug: s for s in reg.load_specs(cfg)}
     for slug in (
-        "arxiv-cs-ai", "reddit-programming", "gnews-technology",
-        "gnews-q-ai", "gdelt-tech", "mastodon-trends",
-        "tm-techcrunch", "tm-the-verge", "tm-techcrunch-2",
+        "arxiv-cs-ai",
+        "reddit-programming",
+        "gnews-technology",
+        "gnews-q-ai",
+        "gdelt-tech",
+        "mastodon-trends",
+        "tm-techcrunch",
+        "tm-the-verge",
+        "tm-techcrunch-2",
     ):
         assert slug in specs, slug
     # gdelt row carries the full artlist query URL
-    assert specs["gdelt-tech"].url == gdelt_mod.query_url(
-        "artificial intelligence sourcelang:eng"
-    )
+    assert specs["gdelt-tech"].url == gdelt_mod.query_url("artificial intelligence sourcelang:eng")
 
     # Second run: everything already present -> nothing added.
     assert reg.expand(cfg) == 0
@@ -896,13 +1004,16 @@ def test_expand_adds_builtins_then_idempotent(cfg, tmp_path, capsys, freeze_now_
 
 
 @pytest.mark.integration
-def test_expand_techmeme_fetch_failure_warns_but_adds_rest(cfg, tmp_path, capsys, freeze_now_iso, monkeypatch):
+def test_expand_techmeme_fetch_failure_warns_but_adds_rest(
+    cfg, tmp_path, capsys, freeze_now_iso, monkeypatch
+):
     freeze_now_iso(reg)
     _use_tmp_registry(cfg, tmp_path)
     # gnews_queries as a bare list (not a dict) exercises the list->dict branch.
     cfg.data["ingest"]["gnews_queries"] = ["neural nets"]
     monkeypatch.setattr(
-        reg, "PoliteClient",
+        reg,
+        "PoliteClient",
         _polite_factory(result=FetchResult(status=503, content=None, error="down")),
     )
     assert reg.expand(cfg) == 0
@@ -910,7 +1021,7 @@ def test_expand_techmeme_fetch_failure_warns_but_adds_rest(cfg, tmp_path, capsys
     assert "could not fetch Techmeme lb.opml (down)" in captured.err
     specs = {s.slug for s in reg.load_specs(cfg)}
     assert "arxiv-cs-ai" in specs
-    assert "gnews-q-neural-nets" in specs               # list->dict query branch
+    assert "gnews-q-neural-nets" in specs  # list->dict query branch
     assert not any(s.startswith("tm-") for s in specs)  # no techmeme rows
 
 
@@ -922,9 +1033,11 @@ def test_probe_cmd_url_ok(cfg, tmp_path, capsys, monkeypatch):
     _use_tmp_registry(cfg, tmp_path)
     monkeypatch.setattr(reg, "PoliteClient", _polite_factory())
     monkeypatch.setattr(
-        reg, "probe_url",
+        reg,
+        "probe_url",
         lambda client, url, paths: ProbeResult(
-            candidate_url=url, ok=True, feed_url=url, kind="rss", entries=3),
+            candidate_url=url, ok=True, feed_url=url, kind="rss", entries=3
+        ),
     )
     rc = reg.probe_cmd(cfg, candidates=None, url="https://x.example/feed", import_ok=False)
     assert rc == 0
@@ -942,9 +1055,9 @@ def test_probe_cmd_url_not_ok_returns_1(cfg, tmp_path, monkeypatch):
     _use_tmp_registry(cfg, tmp_path)
     monkeypatch.setattr(reg, "PoliteClient", _polite_factory())
     monkeypatch.setattr(
-        reg, "probe_url",
-        lambda client, url, paths: ProbeResult(
-            candidate_url=url, error="no valid feed found"),
+        reg,
+        "probe_url",
+        lambda client, url, paths: ProbeResult(candidate_url=url, error="no valid feed found"),
     )
     assert reg.probe_cmd(cfg, candidates=None, url="https://x.example", import_ok=False) == 1
 
@@ -962,8 +1075,16 @@ def test_probe_cmd_candidates_writes_verified_json(cfg, tmp_path, capsys, monkey
     cand_path = tmp_path / "cands.json"
     cand_path.write_text(json.dumps([{"name": "A"}, {"name": "B"}]))
 
-    verified = [{"name": "A", "slug": "a", "type": "rss",
-                 "url": "https://a.example/feed", "topics": ["ai"], "tier": 2}]
+    verified = [
+        {
+            "name": "A",
+            "slug": "a",
+            "type": "rss",
+            "url": "https://a.example/feed",
+            "topics": ["ai"],
+            "tier": 2,
+        }
+    ]
     rejected = [{"name": "B", "url": "https://b.example", "reason": "dead"}]
     monkeypatch.setattr(reg, "probe_candidates", lambda c, cands: (verified, rejected))
 
@@ -980,7 +1101,9 @@ def test_probe_cmd_candidates_writes_verified_json(cfg, tmp_path, capsys, monkey
 
 
 @pytest.mark.integration
-def test_probe_cmd_candidates_import_ok_merges_and_seeds(cfg, tmp_path, capsys, freeze_now_iso, monkeypatch):
+def test_probe_cmd_candidates_import_ok_merges_and_seeds(
+    cfg, tmp_path, capsys, freeze_now_iso, monkeypatch
+):
     freeze_now_iso(reg)
     _use_tmp_registry(cfg, tmp_path)
     _write_registry(cfg, [])
@@ -988,16 +1111,25 @@ def test_probe_cmd_candidates_import_ok_merges_and_seeds(cfg, tmp_path, capsys, 
     # dict form with a 'candidates' key exercises the unwrap branch
     cand_path.write_text(json.dumps({"candidates": [{"name": "A"}]}))
 
-    verified = [{"name": "New", "slug": "new", "type": "rss",
-                 "url": "https://new.example/feed", "homepage": "https://new.example",
-                 "category": "ai", "topics": ["ai"], "tier": 2}]
+    verified = [
+        {
+            "name": "New",
+            "slug": "new",
+            "type": "rss",
+            "url": "https://new.example/feed",
+            "homepage": "https://new.example",
+            "category": "ai",
+            "topics": ["ai"],
+            "tier": 2,
+        }
+    ]
     monkeypatch.setattr(reg, "probe_candidates", lambda c, cands: (verified, []))
 
     rc = reg.probe_cmd(cfg, candidates=cand_path, url=None, import_ok=True)
     assert rc == 0
     out = capsys.readouterr().out
     assert "imported 1 into" in out
-    assert "seeded: 1 new" in out              # seed(cfg) ran
+    assert "seeded: 1 new" in out  # seed(cfg) ran
     assert "new" in {s.slug for s in reg.load_specs(cfg)}
 
 
@@ -1010,10 +1142,22 @@ def test_import_cmd_adds_then_seeds(cfg, tmp_path, capsys, freeze_now_iso):
     _use_tmp_registry(cfg, tmp_path)
     _write_registry(cfg, [])
     path = tmp_path / "import.json"
-    path.write_text(json.dumps({"sources": [
-        {"name": "Imp", "slug": "imp", "type": "rss",
-         "url": "https://imp.example/feed", "topics": ["ai"], "tier": 2},
-    ]}))
+    path.write_text(
+        json.dumps(
+            {
+                "sources": [
+                    {
+                        "name": "Imp",
+                        "slug": "imp",
+                        "type": "rss",
+                        "url": "https://imp.example/feed",
+                        "topics": ["ai"],
+                        "tier": 2,
+                    },
+                ]
+            }
+        )
+    )
     rc = reg.import_cmd(cfg, path)
     assert rc == 0
     out = capsys.readouterr().out
@@ -1028,10 +1172,20 @@ def test_import_cmd_nothing_new_skips_seed(cfg, tmp_path, capsys):
     _write_registry(cfg, [_source_dict(slug="have", url="https://have.example/feed")])
     path = tmp_path / "import.json"
     # a bare list (non-dict) + a duplicate url -> 0 added
-    path.write_text(json.dumps([
-        {"name": "Dup", "slug": "dup", "type": "rss",
-         "url": "https://have.example/feed", "topics": ["ai"], "tier": 2},
-    ]))
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "name": "Dup",
+                    "slug": "dup",
+                    "type": "rss",
+                    "url": "https://have.example/feed",
+                    "topics": ["ai"],
+                    "tier": 2,
+                },
+            ]
+        )
+    )
     rc = reg.import_cmd(cfg, path)
     assert rc == 0
     out = capsys.readouterr().out
@@ -1046,8 +1200,8 @@ def test_import_cmd_nothing_new_skips_seed(cfg, tmp_path, capsys):
 def test_probe_url_live_lobsters():
     if not os.environ.get("SIGNAL_LIVE"):
         pytest.skip("live test; set SIGNAL_LIVE=1 to run")
-    from signalpipe.ingest.fetch_http import PoliteClient
     import signalpipe.config as config_mod
+    from signalpipe.ingest.fetch_http import PoliteClient
 
     cfg = config_mod.load()
     with PoliteClient(cfg) as client:

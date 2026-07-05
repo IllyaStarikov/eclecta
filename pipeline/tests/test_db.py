@@ -37,9 +37,7 @@ def _table_exists(conn: sqlite3.Connection, name: str) -> bool:
 
 
 def _schema_version(conn: sqlite3.Connection) -> str:
-    return conn.execute(
-        "SELECT value FROM meta WHERE key='schema_version'"
-    ).fetchone()[0]
+    return conn.execute("SELECT value FROM meta WHERE key='schema_version'").fetchone()[0]
 
 
 def _mem_v5() -> sqlite3.Connection:
@@ -129,9 +127,7 @@ def _make_db_file(path: pathlib.Path) -> None:
     """Create a real writer DB file (WAL, checkpointed, closed) with one source row."""
     w = db.connect_rw(path)
     try:
-        w.execute(
-            "INSERT INTO sources(slug, name, type, url) VALUES('s', 'S', 'rss', 'http://x')"
-        )
+        w.execute("INSERT INTO sources(slug, name, type, url) VALUES('s', 'S', 'rss', 'http://x')")
         db.checkpoint(w)
     finally:
         w.close()
@@ -238,8 +234,7 @@ class TestConnectRw:
         conn = db.connect_rw(tmp_path / "signal.db")
         try:
             conn.execute(
-                "INSERT INTO sources(slug, name, type, url) "
-                "VALUES('s', 'S', 'rss', 'http://x')"
+                "INSERT INTO sources(slug, name, type, url) VALUES('s', 'S', 'rss', 'http://x')"
             )
             row = conn.execute("SELECT slug, name FROM sources").fetchone()
             assert row["slug"] == "s"
@@ -270,8 +265,7 @@ class TestConnectRo:
             assert ro.execute("SELECT COUNT(*) FROM sources").fetchone()[0] == 1
             with pytest.raises(sqlite3.OperationalError):
                 ro.execute(
-                    "INSERT INTO sources(slug, name, type, url) "
-                    "VALUES('t', 'T', 'rss', 'http://y')"
+                    "INSERT INTO sources(slug, name, type, url) VALUES('t', 'T', 'rss', 'http://y')"
                 )
         finally:
             ro.close()
@@ -305,9 +299,7 @@ class TestInitSchemaFresh:
             # a fresh DB never takes the v1->v2 rebuild path
             assert not _table_exists(conn, "digests_v1")
             # exactly one schema_version row
-            n = conn.execute(
-                "SELECT COUNT(*) FROM meta WHERE key='schema_version'"
-            ).fetchone()[0]
+            n = conn.execute("SELECT COUNT(*) FROM meta WHERE key='schema_version'").fetchone()[0]
             assert n == 1
         finally:
             conn.close()
@@ -353,9 +345,7 @@ class TestMigrateDigestsV2:
             assert "iso_week" not in new_cols
             assert {"kind", "period_key", "window_start", "window_end"} <= new_cols
 
-            r24 = conn.execute(
-                "SELECT * FROM digests WHERE period_key='2026-W24'"
-            ).fetchone()
+            r24 = conn.execute("SELECT * FROM digests WHERE period_key='2026-W24'").fetchone()
             assert r24["kind"] == "weekly"
             assert r24["window_start"] == "2026-06-08T00:00:00+00:00"
             assert r24["window_end"] == "2026-06-15T00:00:00+00:00"
@@ -379,8 +369,7 @@ class TestMigrateDigestsV2:
         conn = self._old_digests_conn()
         try:
             conn.execute(
-                "INSERT INTO digests(iso_week, generated_at, title) "
-                "VALUES('not-a-week', 'g', 'T')"
+                "INSERT INTO digests(iso_week, generated_at, title) VALUES('not-a-week', 'g', 'T')"
             )
             with pytest.raises(ValueError):
                 db._migrate_digests_v2(conn)
@@ -414,14 +403,11 @@ class TestMigrateDigestsV2:
                 "INSERT INTO meta VALUES ('schema_version', '1');"
             )
             conn.execute(
-                "INSERT INTO digests(iso_week, generated_at, title) "
-                "VALUES('2026-W24', 'g', 'T')"
+                "INSERT INTO digests(iso_week, generated_at, title) VALUES('2026-W24', 'g', 'T')"
             )
             db.init_schema(conn)
             assert _schema_version(conn) == "5"
-            row = conn.execute(
-                "SELECT kind, period_key, blurb FROM digests"
-            ).fetchone()
+            row = conn.execute("SELECT kind, period_key, blurb FROM digests").fetchone()
             assert row["kind"] == "weekly"
             assert row["period_key"] == "2026-W24"
             assert "blurb" in _cols(conn, "digests")  # v3 added it
@@ -470,8 +456,7 @@ class TestMigrateSpendV4:
             assert "digest_usd" in _cols(conn, "spend")
             # existing row backfilled with the NOT NULL DEFAULT 0
             assert (
-                conn.execute("SELECT digest_usd FROM spend WHERE day='2026-07-04'")
-                .fetchone()[0]
+                conn.execute("SELECT digest_usd FROM spend WHERE day='2026-07-04'").fetchone()[0]
                 == 0
             )
             db._migrate_spend_v4(conn)  # idempotent
@@ -526,12 +511,8 @@ class TestMigrateTaxonomyV5:
             assert "story_id" in _cols(conn, "clusters")
             assert {"category", "subcategories"} <= _cols(conn, "curations")
 
-            got_url = conn.execute(
-                "SELECT story_id FROM clusters WHERE title='T'"
-            ).fetchone()[0]
-            got_null = conn.execute(
-                "SELECT story_id FROM clusters WHERE title='D'"
-            ).fetchone()[0]
+            got_url = conn.execute("SELECT story_id FROM clusters WHERE title='T'").fetchone()[0]
+            got_null = conn.execute("SELECT story_id FROM clusters WHERE title='D'").fetchone()[0]
             # delegates to dedup.story_id with (canonical_url, title_key)...
             assert got_url == dedup_story_id("https://x.com/a", "key words")
             assert got_null == dedup_story_id(None, "alpha beta")
@@ -647,8 +628,7 @@ class TestCheckpoint:
         conn = db.connect_rw(db_path)
         try:
             conn.execute(
-                "INSERT INTO sources(slug, name, type, url) "
-                "VALUES('s', 'S', 'rss', 'http://x')"
+                "INSERT INTO sources(slug, name, type, url) VALUES('s', 'S', 'rss', 'http://x')"
             )
             # The committed write lives in the -wal sidecar until checkpointed.
             wal = pathlib.Path(str(db_path) + "-wal")
@@ -763,12 +743,14 @@ class TestLogHealth:
         conn = _mem_v5()
         try:
             db.log_health(
-                conn, "ingest", "info", "hello",
-                stats='{"n": 1}', ts="2026-07-04T00:00:00+00:00",
+                conn,
+                "ingest",
+                "info",
+                "hello",
+                stats='{"n": 1}',
+                ts="2026-07-04T00:00:00+00:00",
             )
-            row = conn.execute(
-                "SELECT ts, job, level, message, stats FROM health"
-            ).fetchone()
+            row = conn.execute("SELECT ts, job, level, message, stats FROM health").fetchone()
             assert row["ts"] == "2026-07-04T00:00:00+00:00"
             assert row["job"] == "ingest"
             assert row["level"] == "info"
@@ -808,18 +790,18 @@ class TestRunAttribution:
         conn = _mem_v5()
         try:
             db.record_run(
-                conn, "ingest", "abc123", '{"kept": 5}',
-                tunables='{"knob": 1}', ts="2026-07-04T00:00:00+00:00",
+                conn,
+                "ingest",
+                "abc123",
+                '{"kept": 5}',
+                tunables='{"knob": 1}',
+                ts="2026-07-04T00:00:00+00:00",
             )
-            cv = conn.execute(
-                "SELECT hash, first_seen, tunables FROM config_versions"
-            ).fetchone()
+            cv = conn.execute("SELECT hash, first_seen, tunables FROM config_versions").fetchone()
             assert cv["hash"] == "abc123"
             assert cv["first_seen"] == "2026-07-04T00:00:00+00:00"
             assert cv["tunables"] == '{"knob": 1}'
-            run = conn.execute(
-                "SELECT job, config_hash, stats, ts FROM runs"
-            ).fetchone()
+            run = conn.execute("SELECT job, config_hash, stats, ts FROM runs").fetchone()
             assert run["job"] == "ingest"
             assert run["config_hash"] == "abc123"
             assert run["stats"] == '{"kept": 5}'
@@ -839,10 +821,12 @@ class TestRunAttribution:
     def test_record_run_tunables_insert_or_ignore_keeps_first(self):
         conn = _mem_v5()
         try:
-            db.record_run(conn, "ingest", "dup", "{}", tunables='{"v": 1}',
-                          ts="2026-01-01T00:00:00+00:00")
-            db.record_run(conn, "ingest", "dup", "{}", tunables='{"v": 2}',
-                          ts="2026-02-02T00:00:00+00:00")
+            db.record_run(
+                conn, "ingest", "dup", "{}", tunables='{"v": 1}', ts="2026-01-01T00:00:00+00:00"
+            )
+            db.record_run(
+                conn, "ingest", "dup", "{}", tunables='{"v": 2}', ts="2026-02-02T00:00:00+00:00"
+            )
             cv = conn.execute(
                 "SELECT COUNT(*) AS n, MIN(tunables) AS t FROM config_versions"
             ).fetchone()
@@ -906,7 +890,8 @@ class TestIsoWeekBounds:
 # of the suite still runs on a box without it (see WRITER_GUIDE marker rules).
 try:  # pragma: no cover - availability probe
     import hypothesis  # noqa: F401
-    from hypothesis import given, strategies as st
+    from hypothesis import given
+    from hypothesis import strategies as st
 
     _HAS_HYPOTHESIS = True
 except ImportError:  # pragma: no cover
@@ -915,8 +900,10 @@ except ImportError:  # pragma: no cover
 if _HAS_HYPOTHESIS:
 
     @pytest.mark.property
-    @given(year=st.integers(min_value=2000, max_value=2100),
-           week=st.integers(min_value=1, max_value=52))
+    @given(
+        year=st.integers(min_value=2000, max_value=2100),
+        week=st.integers(min_value=1, max_value=52),
+    )
     def test_iso_week_bounds_property(year, week):
         start_s, end_s = db._iso_week_bounds("%04d-W%02d" % (year, week))
         start = datetime.datetime.fromisoformat(start_s)

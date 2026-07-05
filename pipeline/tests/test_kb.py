@@ -66,8 +66,7 @@ def _make_fake_complete(result, calls):
     which case it is raised (to exercise the error branches).
     """
 
-    def _fake(tier, system, prompt, schema, *, cfg=None, conn=None,
-              cap_kind="daily", **_kw):
+    def _fake(tier, system, prompt, schema, *, cfg=None, conn=None, cap_kind="daily", **_kw):
         calls.append(
             {
                 "tier": tier,
@@ -85,9 +84,7 @@ def _make_fake_complete(result, calls):
 
 
 def _health_rows(conn):
-    return conn.execute(
-        "SELECT job, level, message FROM health ORDER BY id"
-    ).fetchall()
+    return conn.execute("SELECT job, level, message FROM health ORDER BY id").fetchall()
 
 
 # =========================================================================== #
@@ -213,8 +210,13 @@ def test_daily_ledger_populated(conn, cfg, seed):
 
     # Ingest health: one info line (rendered) + one error line (excluded) +
     # one non-ingest job (excluded).
-    kb_db_log(conn, "ingest", "info", "Fetched 12 new items from 5 sources",
-              ts="2026-07-04T09:30:00+00:00")
+    kb_db_log(
+        conn,
+        "ingest",
+        "info",
+        "Fetched 12 new items from 5 sources",
+        ts="2026-07-04T09:30:00+00:00",
+    )
     kb_db_log(conn, "ingest", "error", "boom", ts="2026-07-04T09:31:00+00:00")
     kb_db_log(conn, "score", "info", "scored 3", ts="2026-07-04T09:32:00+00:00")
 
@@ -223,10 +225,7 @@ def test_daily_ledger_populated(conn, cfg, seed):
     assert relpath == "kb/days/2026-07-04.md"
     assert content.startswith("# Signal ledger — 2026-07-04\n")
     assert "## Curated (1 done, 1 skipped)" in content
-    assert (
-        "### [Big AI model released](https://example.com/story1) — 9/10"
-        in content
-    )
+    assert "### [Big AI model released](https://example.com/story1) — 9/10" in content
     assert "This is why it matters." in content
     assert "Notes: first note · second note" in content
     assert (
@@ -235,10 +234,7 @@ def test_daily_ledger_populated(conn, cfg, seed):
         "[Hacker News (250)](https://news.ycombinator.com/item?id=1)"
     ) in content
     assert "## Top uncurated (1)" in content
-    assert (
-        "- [Uncurated gem](https://example.com/story3) — score 7.0, 2 surface(s)"
-        in content
-    )
+    assert "- [Uncurated gem](https://example.com/story3) — score 7.0, 2 surface(s)" in content
     assert "Skipped thing" not in content
     assert "## Ingest (1 run(s))" in content
     assert "- 09:30 — Fetched 12 new items from 5 sources" in content
@@ -289,7 +285,7 @@ def test_daily_ledger_archive_scrub(conn, cfg, seed):
     )
     seed.article(
         c,
-        source_url="https://archive.ph/AbC12",   # scrubbed -> None
+        source_url="https://archive.ph/AbC12",  # scrubbed -> None
         read_url="https://example.com/free",
     )
     seed.curation(
@@ -310,15 +306,12 @@ def test_daily_ledger_archive_scrub(conn, cfg, seed):
     assert "archive.today" not in content
     assert "[source]" not in content  # source_url was archive -> dropped
     # Title falls back to the free read url.
-    assert (
-        "### [Archive scrub story](https://example.com/free) — 5/10" in content
-    )
+    assert "### [Archive scrub story](https://example.com/free) — 5/10" in content
     # No notes / no why line (empty notes, why None).
     assert "Notes:" not in content
     # Real surface with NULL points renders name-only (no "(n)" suffix).
     assert (
-        "Links: [free read](https://example.com/free) · "
-        "[Lobsters](https://lobste.rs/s/abc)"
+        "Links: [free read](https://example.com/free) · [Lobsters](https://lobste.rs/s/abc)"
     ) in content
     assert "[Lobsters (" not in content
 
@@ -328,7 +321,10 @@ def test_daily_ledger_excludes_out_of_window_rows(conn, cfg, seed):
     """Rows on a neighbouring day must not bleed into this day's ledger."""
     c = seed.cluster(title="Yesterday news", canonical_url="https://example.com/y")
     seed.curation(
-        c, status="done", skip=0, relevance_score=6,
+        c,
+        status="done",
+        skip=0,
+        relevance_score=6,
         curated_at="2026-07-03T23:59:59+00:00",  # day before
     )
     _, content = kb.daily_ledger(conn, cfg, datetime.date(2026, 7, 4))
@@ -350,7 +346,10 @@ def test_backfill_range(conn, cfg, seed, monkeypatch):
         first_seen="2026-07-02T09:00:00+00:00",
     )
     seed.curation(
-        c, status="done", skip=0, relevance_score=7,
+        c,
+        status="done",
+        skip=0,
+        relevance_score=7,
         curated_at="2026-07-02T10:00:00+00:00",
     )
 
@@ -385,9 +384,7 @@ def test_backfill_single_day(conn, cfg, monkeypatch):
     writes = kb.backfill(conn, cfg, "2026-07-03")
     assert set(writes) == {"kb/days/2026-07-03.md"}
     # The single write must be that day's ledger, not an empty/garbage value.
-    assert writes["kb/days/2026-07-03.md"].startswith(
-        "# Signal ledger — 2026-07-03\n"
-    )
+    assert writes["kb/days/2026-07-03.md"].startswith("# Signal ledger — 2026-07-03\n")
 
 
 # =========================================================================== #
@@ -414,8 +411,7 @@ def test_trends_happy_path(conn, cfg, seed, tmp_path, monkeypatch):
     _set_repo(cfg, tmp_path, trends_text=existing)
 
     seed.digest()  # weekly, period_key 2026-W27, title "This week in tech"
-    c = seed.cluster(title="Fresh curation title",
-                     canonical_url="https://example.com/fresh")
+    c = seed.cluster(title="Fresh curation title", canonical_url="https://example.com/fresh")
     seed.curation(c, status="done", skip=0, relevance_score=8)
 
     calls = []
@@ -423,8 +419,7 @@ def test_trends_happy_path(conn, cfg, seed, tmp_path, monkeypatch):
         "trends_md": "## AI\n\nUpdated trend body with [x](https://example.com/x).",
         "changes": "Refreshed the AI section.",
     }
-    monkeypatch.setattr(adapter_mod, "complete",
-                        _make_fake_complete(result, calls))
+    monkeypatch.setattr(adapter_mod, "complete", _make_fake_complete(result, calls))
 
     out = kb.trends(conn, cfg)
     assert out is not None
@@ -432,9 +427,7 @@ def test_trends_happy_path(conn, cfg, seed, tmp_path, monkeypatch):
     assert relpath == "kb/trends.md"
 
     # New body first, then the marker + managed changelog.
-    assert content.startswith(
-        "## AI\n\nUpdated trend body with [x](https://example.com/x)."
-    )
+    assert content.startswith("## AI\n\nUpdated trend body with [x](https://example.com/x).")
     assert kb._CHANGELOG_MARKER in content
     assert "## Changelog" in content
     # Today's entry is prepended above the preserved old log.
@@ -470,8 +463,7 @@ def test_trends_first_run_empty_repo(conn, cfg, seed, tmp_path, monkeypatch):
 
     calls = []
     result = {"trends_md": "## New\n\nBody.", "changes": "Initial doc."}
-    monkeypatch.setattr(adapter_mod, "complete",
-                        _make_fake_complete(result, calls))
+    monkeypatch.setattr(adapter_mod, "complete", _make_fake_complete(result, calls))
 
     relpath, content = kb.trends(conn, cfg)
     assert relpath == "kb/trends.md"
@@ -482,8 +474,7 @@ def test_trends_first_run_empty_repo(conn, cfg, seed, tmp_path, monkeypatch):
 
 
 @pytest.mark.integration
-def test_trends_repo_read_oserror_falls_back(conn, cfg, seed, tmp_path,
-                                             monkeypatch):
+def test_trends_repo_read_oserror_falls_back(conn, cfg, seed, tmp_path, monkeypatch):
     """repo dir exists but kb/trends.md missing -> OSError -> current=''."""
     _freeze_kb_datetime(monkeypatch)
     _set_repo(cfg, tmp_path)  # no trends.md written
@@ -491,7 +482,8 @@ def test_trends_repo_read_oserror_falls_back(conn, cfg, seed, tmp_path,
     seed.digest()
     calls = []
     monkeypatch.setattr(
-        adapter_mod, "complete",
+        adapter_mod,
+        "complete",
         _make_fake_complete({"trends_md": "## X\n\ny", "changes": "c"}, calls),
     )
     out = kb.trends(conn, cfg)
@@ -515,7 +507,8 @@ def test_trends_picks_only_no_weekly(conn, cfg, seed, tmp_path, monkeypatch):
 
     calls = []
     monkeypatch.setattr(
-        adapter_mod, "complete",
+        adapter_mod,
+        "complete",
         _make_fake_complete({"trends_md": "## T\n\nbody", "changes": "c"}, calls),
     )
     out = kb.trends(conn, cfg)
@@ -532,8 +525,7 @@ def test_trends_picks_only_no_weekly(conn, cfg, seed, tmp_path, monkeypatch):
 
 
 @pytest.mark.integration
-def test_trends_guard_no_data_returns_none(conn, cfg, tmp_path, monkeypatch,
-                                           capsys):
+def test_trends_guard_no_data_returns_none(conn, cfg, tmp_path, monkeypatch, capsys):
     """No weekly digest and no recent picks -> None, adapter never called."""
     _freeze_kb_datetime(monkeypatch)
     _set_repo(cfg, tmp_path)
@@ -548,8 +540,7 @@ def test_trends_guard_no_data_returns_none(conn, cfg, tmp_path, monkeypatch,
 
 
 @pytest.mark.integration
-def test_trends_guard_archive_body_refused(conn, cfg, seed, tmp_path,
-                                           monkeypatch):
+def test_trends_guard_archive_body_refused(conn, cfg, seed, tmp_path, monkeypatch):
     """Model output citing archive.* is refused, logged, and returns None."""
     _freeze_kb_datetime(monkeypatch)
     _set_repo(cfg, tmp_path)
@@ -559,22 +550,18 @@ def test_trends_guard_archive_body_refused(conn, cfg, seed, tmp_path,
         "trends_md": "## AI\n\nSee https://archive.ph/xyz for details.",
         "changes": "bad",
     }
-    monkeypatch.setattr(adapter_mod, "complete",
-                        _make_fake_complete(result, []))
+    monkeypatch.setattr(adapter_mod, "complete", _make_fake_complete(result, []))
 
     assert kb.trends(conn, cfg) is None
     rows = _health_rows(conn)
     assert any(
-        r["job"] == "publish"
-        and r["level"] == "error"
-        and "archive link" in r["message"]
+        r["job"] == "publish" and r["level"] == "error" and "archive link" in r["message"]
         for r in rows
     )
 
 
 @pytest.mark.integration
-def test_trends_guard_llm_error_returns_none(conn, cfg, seed, tmp_path,
-                                             monkeypatch, capsys):
+def test_trends_guard_llm_error_returns_none(conn, cfg, seed, tmp_path, monkeypatch, capsys):
     """adapter raising LLMError is caught, logged to health, returns None."""
     from signalpipe.llm import LLMError
 
@@ -582,23 +569,19 @@ def test_trends_guard_llm_error_returns_none(conn, cfg, seed, tmp_path,
     _set_repo(cfg, tmp_path)
     seed.digest()
 
-    monkeypatch.setattr(adapter_mod, "complete",
-                        _make_fake_complete(LLMError("boom"), []))
+    monkeypatch.setattr(adapter_mod, "complete", _make_fake_complete(LLMError("boom"), []))
 
     assert kb.trends(conn, cfg) is None
     rows = _health_rows(conn)
     assert any(
-        r["job"] == "publish"
-        and r["level"] == "error"
-        and "kb trends LLM: boom" in r["message"]
+        r["job"] == "publish" and r["level"] == "error" and "kb trends LLM: boom" in r["message"]
         for r in rows
     )
     assert "kb trends failed: boom" in capsys.readouterr().out
 
 
 @pytest.mark.integration
-def test_trends_guard_spend_cap_returns_none(conn, cfg, seed, tmp_path,
-                                             monkeypatch):
+def test_trends_guard_spend_cap_returns_none(conn, cfg, seed, tmp_path, monkeypatch):
     """SpendCapExceeded (an LLMError subclass) is caught the same way."""
     from signalpipe.llm import SpendCapExceeded
 
@@ -606,15 +589,14 @@ def test_trends_guard_spend_cap_returns_none(conn, cfg, seed, tmp_path,
     _set_repo(cfg, tmp_path)
     seed.digest()
 
-    monkeypatch.setattr(adapter_mod, "complete",
-                        _make_fake_complete(SpendCapExceeded("cap hit"), []))
+    monkeypatch.setattr(
+        adapter_mod, "complete", _make_fake_complete(SpendCapExceeded("cap hit"), [])
+    )
 
     assert kb.trends(conn, cfg) is None
     rows = _health_rows(conn)
     assert any(
-        r["job"] == "publish"
-        and r["level"] == "error"
-        and "kb trends LLM: cap hit" in r["message"]
+        r["job"] == "publish" and r["level"] == "error" and "kb trends LLM: cap hit" in r["message"]
         for r in rows
     )
 

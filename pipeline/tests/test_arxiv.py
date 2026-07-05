@@ -82,21 +82,21 @@ def _install_rss(
 _MATCHES = [
     "Improved bounds. (arXiv:2507.01222v2 [cs.LG] UPDATED)",
     "Foo (arXiv:2501.12345v2 [cs.AI] UPDATED)",
-    "Foo (arXiv:2501.1v3 UPDATED)",                      # no category bracket
+    "Foo (arXiv:2501.1v3 UPDATED)",  # no category bracket
     "X (arXiv:2501.1v10 [math.CO] UPDATED)",
-    "Multi (arXiv:2501.1v2 [cs.AI cs.LG] UPDATED)",       # multi-token bracket
-    "Trailing space (arXiv:2501.1v3 UPDATED)   ",         # \s*$ absorbs trailing ws
-    "Two spaces (arXiv:2501.1v3  UPDATED)",               # \s+ matches >1 space
+    "Multi (arXiv:2501.1v2 [cs.AI cs.LG] UPDATED)",  # multi-token bracket
+    "Trailing space (arXiv:2501.1v3 UPDATED)   ",  # \s*$ absorbs trailing ws
+    "Two spaces (arXiv:2501.1v3  UPDATED)",  # \s+ matches >1 space
     "Older technique revisited. (arXiv:2506.09999v3 UPDATED)",
 ]
 
 _NON_MATCHES = [
-    "UPDATED benchmark for X",                            # bare word, no suffix
-    "Title (arXiv:2501.12345v1 [cs.AI])",                 # suffix but no UPDATED
-    "An UPDATED Benchmark. (arXiv:2501.1v1 [cs.AI])",     # UPDATED mid-title only
-    "Foo (arXiv:2501.1v3 UPDATED) trailing text",         # not anchored to end
-    "Foo (arXiv:2501.1v3 updated)",                       # lowercase, case-sensitive
-    "(arXiv: 2501.1v3 UPDATED)",                          # whitespace right after colon
+    "UPDATED benchmark for X",  # bare word, no suffix
+    "Title (arXiv:2501.12345v1 [cs.AI])",  # suffix but no UPDATED
+    "An UPDATED Benchmark. (arXiv:2501.1v1 [cs.AI])",  # UPDATED mid-title only
+    "Foo (arXiv:2501.1v3 UPDATED) trailing text",  # not anchored to end
+    "Foo (arXiv:2501.1v3 updated)",  # lowercase, case-sensitive
+    "(arXiv: 2501.1v3 UPDATED)",  # whitespace right after colon
     "Just a normal paper title",
     "",
 ]
@@ -149,9 +149,7 @@ def test_fetch_items_tags_every_surviving_item(monkeypatch):
 
 def test_fetch_items_overwrites_preexisting_surface(monkeypatch):
     # If rss somehow set a different surface, arxiv forces it to 'arxiv'.
-    _install_rss(
-        monkeypatch, [_item("Paper", extra={"bozo": False, "surface": "rss"})]
-    )
+    _install_rss(monkeypatch, [_item("Paper", extra={"bozo": False, "surface": "rss"})])
     (item,) = fetch_items(object(), {"url": ARXIV_URL})
     assert item["extra"]["surface"] == "arxiv"
     # The overwrite is a targeted single-key set, not a wholesale dict replacement:
@@ -168,8 +166,8 @@ def test_fetch_items_mutates_extra_dict_in_place(monkeypatch):
 
     (item,) = fetch_items(object(), {"url": ARXIV_URL})
 
-    assert item is canned                     # same object flows out
-    assert item["extra"] is extra             # same extra dict, mutated in place
+    assert item is canned  # same object flows out
+    assert item["extra"] is extra  # same extra dict, mutated in place
     assert extra["surface"] == "arxiv"
 
 
@@ -278,16 +276,12 @@ def test_fetch_items_end_to_end_with_fixture(fake_client, make_result, load_byte
 
 def test_fetch_items_end_to_end_unchanged_returns_empty(fake_client, make_result):
     # 304 / body-hash short-circuit → rss returns [] → arxiv returns [].
-    client = fake_client(
-        responses={ARXIV_URL: make_result(status=304, unchanged=True)}
-    )
+    client = fake_client(responses={ARXIV_URL: make_result(status=304, unchanged=True)})
     assert fetch_items(client, {"url": ARXIV_URL}) == []
 
 
 def test_fetch_items_end_to_end_http_error_raises(fake_client, make_result):
-    client = fake_client(
-        responses={ARXIV_URL: make_result(content=None, status=503, error=None)}
-    )
+    client = fake_client(responses={ARXIV_URL: make_result(content=None, status=503, error=None)})
     with pytest.raises(RuntimeError, match=r"^HTTP 503$"):
         fetch_items(client, {"url": ARXIV_URL})
 

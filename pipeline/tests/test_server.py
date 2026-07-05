@@ -99,8 +99,8 @@ def test_health_ctx_aggregation_against_seeded_db(conn, seed):
     c2 = seed.cluster(canonical_url="https://example.com/b", title="Story B")
     c3 = seed.cluster(canonical_url="https://example.com/c", title="Story C")
     seed.curation(c1, status="done", skip=0)
-    seed.curation(c2, status="done", skip=1)      # skipped -> excluded
-    seed.curation(c3, status="pending", skip=0)   # not done -> excluded
+    seed.curation(c2, status="done", skip=1)  # skipped -> excluded
+    seed.curation(c3, status="pending", skip=0)  # not done -> excluded
 
     # spend: today's row counts; a foreign day must not leak in
     seed.spend(day=day, cli_usd=1.5, api_usd=0.75)
@@ -111,23 +111,23 @@ def test_health_ctx_aggregation_against_seeded_db(conn, seed):
         ("ingest", "info", "i1"),
         ("curate", "info", "c1"),
         ("score", "info", "s1"),
-        ("ingest", "info", "i2"),   # latest ingest
-        ("curate", "warn", "c2"),   # latest curate
+        ("ingest", "info", "i2"),  # latest ingest
+        ("curate", "warn", "c2"),  # latest curate
         ("fetch", "info", "f1"),
         ("digest", "info", "d1"),
         ("server", "info", "sv1"),
         ("sources", "info", "so1"),
-        ("score", "error", "s2"),   # latest overall
+        ("score", "error", "s2"),  # latest overall
     ]
     for i, (job, level, msg) in enumerate(rows):
         _add_health(conn, job, level, msg, _ts(i))
 
     h = server_mod._health_ctx(conn)
 
-    assert h["sources_enabled"] == 6          # all but the disabled one
-    assert h["sources_verified"] == 2         # enabled AND verified_at set
+    assert h["sources_enabled"] == 6  # all but the disabled one
+    assert h["sources_verified"] == 2  # enabled AND verified_at set
     assert h["clusters"] == 3
-    assert h["curated"] == 1                   # done & skip=0 only
+    assert h["curated"] == 1  # done & skip=0 only
     assert h["spend_today"] == pytest.approx(2.25)
 
     # last_* = ts of the highest-id row per job
@@ -141,15 +141,9 @@ def test_health_ctx_aggregation_against_seeded_db(conn, seed):
 
     # recent = last 8 health rows, newest (highest id) first
     assert len(h["recent"]) == 8
-    assert h["recent"][0] == {
-        "ts": _ts(9), "job": "score", "level": "error", "message": "s2"
-    }
-    assert h["recent"][-1] == {
-        "ts": _ts(2), "job": "score", "level": "info", "message": "s1"
-    }
-    assert [r["message"] for r in h["recent"]] == [
-        "s2", "so1", "sv1", "d1", "f1", "c2", "i2", "s1"
-    ]
+    assert h["recent"][0] == {"ts": _ts(9), "job": "score", "level": "error", "message": "s2"}
+    assert h["recent"][-1] == {"ts": _ts(2), "job": "score", "level": "info", "message": "s1"}
+    assert [r["message"] for r in h["recent"]] == ["s2", "so1", "sv1", "d1", "f1", "c2", "i2", "s1"]
 
 
 @pytest.mark.integration
@@ -228,7 +222,8 @@ def test_run_honors_explicit_host_and_port(cfg, monkeypatch):
     uvicorn = pytest.importorskip("uvicorn")
     captured = {}
     monkeypatch.setattr(
-        uvicorn, "run",
+        uvicorn,
+        "run",
         lambda app, host, port, log_level: captured.update(host=host, port=port),
     )
     rc = server_mod.run(cfg, host="0.0.0.0", port=9999)
@@ -243,8 +238,7 @@ def test_run_honors_explicit_host_and_port(cfg, monkeypatch):
 @pytest.mark.integration
 def test_healthz_ok_truncates_and_carries_version(cfg, conn, seed):
     for i in range(6):
-        seed.source(slug="fail%d" % i, enabled=1, error_count=3 + i,
-                    last_error="e%d" % i)
+        seed.source(slug="fail%d" % i, enabled=1, error_count=3 + i, last_error="e%d" % i)
     for j in range(6):
         _add_health(conn, "ingest", "info", "m%d" % j, _ts(j))
 
@@ -260,17 +254,17 @@ def test_healthz_ok_truncates_and_carries_version(cfg, conn, seed):
     # WORST offenders (error_count DESC), dropping the lowest (fail0/ec=3).
     assert len(body["failing_sources"]) == 5
     assert [s["slug"] for s in body["failing_sources"]] == [
-        "fail5", "fail4", "fail3", "fail2", "fail1"
+        "fail5",
+        "fail4",
+        "fail3",
+        "fail2",
+        "fail1",
     ]
-    assert body["failing_sources"][0] == {
-        "slug": "fail5", "error_count": 8, "last_error": "e5"
-    }
+    assert body["failing_sources"][0] == {"slug": "fail5", "error_count": 8, "last_error": "e5"}
     assert all("fail0" != s["slug"] for s in body["failing_sources"])
     # recent truncated to five, newest (highest id) first
     assert len(body["recent"]) == 5
-    assert [r["message"] for r in body["recent"]] == [
-        "m5", "m4", "m3", "m2", "m1"
-    ]
+    assert [r["message"] for r in body["recent"]] == ["m5", "m4", "m3", "m2", "m1"]
 
 
 @pytest.mark.integration
@@ -329,9 +323,7 @@ def test_feed_channel_200_for_known(curated_cfg):
     assert "<rss" in body
     assert "<title>Example story about AI models</title>" in body
     # the single seeded cluster is id 1 -> its byte-stable, non-permalink guid
-    assert (
-        '<guid isPermaLink="false">tag:starikov.co,2026:signal/1</guid>' in body
-    )
+    assert '<guid isPermaLink="false">tag:starikov.co,2026:signal/1</guid>' in body
 
 
 @pytest.mark.integration
@@ -429,8 +421,7 @@ def test_dashboard_populated_with_items_and_digest(cfg, conn, seed):
     seed.source()
     cid = seed.cluster()
     seed.curation(cid)
-    seed.digest(period_key="2026-W27",
-                body_html="<h1>Weekly wrap</h1><p>Digest body.</p>")
+    seed.digest(period_key="2026-W27", body_html="<h1>Weekly wrap</h1><p>Digest body.</p>")
 
     resp = _client(cfg).get("/")
     assert resp.status_code == 200
@@ -444,13 +435,16 @@ def test_dashboard_populated_with_items_and_digest(cfg, conn, seed):
 
 
 @pytest.mark.integration
-@pytest.mark.parametrize("limit,expected", [
-    ("0", 422),
-    ("201", 422),
-    ("1", 200),
-    ("60", 200),
-    ("200", 200),
-])
+@pytest.mark.parametrize(
+    "limit,expected",
+    [
+        ("0", 422),
+        ("201", 422),
+        ("1", 200),
+        ("60", 200),
+        ("200", 200),
+    ],
+)
 def test_dashboard_limit_validation(cfg, conn, limit, expected):
     resp = _client(cfg).get("/", params={"limit": limit})
     assert resp.status_code == expected
