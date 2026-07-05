@@ -1,33 +1,82 @@
 ---
 import Base from '../layouts/Base.astro';
-import { site, href } from '../site';
+import { site, href, KIND_LABEL } from '../site';
+import { parseStats } from '../lib/schema';
+import rawStats from '../data/stats.json';
+
+const stats = parseStats(rawStats);
+const n = (x: number) => x.toLocaleString('en-US');
+
+/* Rounded for running prose (style rule 41); exact counts live on /stats/ and
+   /coverage/. Falls back to the exact figure below 100 so a thin ledger never
+   renders "about 0". */
+const approx = (x: number) => (x < 100 ? n(x) : n(Math.round(x / 100) * 100));
+
+/* One live ratio argues subtraction better than two lifetime totals. Floored at
+   2 so a fresh ledger never renders "one cluster in 0". */
+const oneIn = n(
+  Math.max(2, Math.round(stats.pipeline.clusters_total / Math.max(1, stats.pipeline.curations_done)))
+);
+
+/* The ledger's own freshness date, formatted for prose (style rule 44) and
+   pinned to UTC so the stamp reads the same wherever the site is built. */
+const asOf = new Date(stats.generated_at).toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+/** 'claude-haiku-4-5' -> 'Claude Haiku 4.5' (style rule 63), rendered from
+    pipeline config so the prose tracks the live stages. Drops a trailing
+    YYYYMMDD snapshot suffix if one is ever pinned. */
+const modelName = (id: string) => {
+  const parts = id.replace(/-\d{8}$/, '').split('-');
+  const words = parts
+    .filter((p) => !/^\d+$/.test(p))
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1));
+  const version = parts.filter((p) => /^\d+$/.test(p)).join('.');
+  return version ? `${words.join(' ')} ${version}` : words.join(' ');
+};
 ---
-<Base title={`About | ${site.name}`} description="How Eclecta works: read everything, keep almost nothing, explain what's left." compactHeader>
+<Base
+  title={`About | ${site.name}`}
+  description={`${site.name} reads the firehose of technology, AI, and science, then keeps the handful of stories that matter. How the pipeline works, what earns a slot, and what it costs the reader (nothing).`}
+  compactHeader
+>
   <article class="article measure measure--center">
     <header class="article__head">
-      <span class="label">Colophon</span>
+      <span class="label">About</span>
       <h1 class="article__title">Read everything. Keep almost nothing.</h1>
+      <p class="article__standfirst">What the machine reads, how it ranks and cuts, and how to check it against its own ledger.</p>
     </header>
     <div class="prose">
-      <p>There is too much to read, and most of it isn’t worth the time. {site.name} exists to fix the ratio. It watches the places technology, AI, and the sciences actually break first (over a thousand of them, from the labs and the front pages to the long tail of practitioner blogs) and surfaces the handful of things that matter, with a clear account of <em>why</em>.</p>
+      <p>There is too much to read, and most of it isn’t worth reading. {site.name} reads it anyway. It watches the places technology, AI, and the sciences break first (the labs, the front pages, the long tail of practitioner blogs) and files the few stories that matter, each with a plain account of why. About one cluster in {oneIn} survives to become a pick. The cuts are the product.</p>
 
       <h2>How it works</h2>
-      <p>Every cycle, {site.name} pulls from its full roll of <strong>verified sources</strong>: aggregators, research feeds, company and lab blogs, newsletters, and the deep bench of individual engineers who quietly write the best things on the internet. Items are clustered, so a story that surfaces across many independent sources rises; the rest settle. Everything that survives gets scored.</p>
-      <p>The finalists get read, actually read, by a language model briefed to be a ruthless editor: Sonnet scores relevance, pulls the load-bearing details, and writes the one line that tells you whether to care. Marketing dressed as news, thin rewrites, and benchmark theater get cut. Then Opus writes the editions, under a style guide it doesn’t get to argue with.</p>
-      <p>The editions run on a fixed clock. A <strong>daily brief</strong> lands weekday mornings. The <strong>weekly digest</strong>, the flagship, lands Friday. Behind those sit the monthly review, the quarterly report, and the year. Each is a longer lens on the same pipeline.</p>
+      <p>Everything starts wide. The pipeline pulls from about {approx(stats.sources.verified)} verified sources: RSS feeds plus Hacker News, Lobsters, Reddit, arXiv, Mastodon trends, Google News, Wikipedia current events, and GDELT. Items are canonicalized and clustered, so one story reported on a dozen surfaces counts once. A deterministic score then ranks each cluster on consensus, engagement, reputation, recency, and topic fit. No model has touched anything yet.</p>
+      <p>Then three do, in rising order of cost. {modelName(stats.models.triage)} triages the ranked clusters down to finalists. {modelName(stats.models.deep)} reads each finalist in full, pulls the load-bearing details, and writes the one line that says whether to care. {modelName(stats.models.digest)} writes the editions, under a style guide with no appeals process. Those names come from the pipeline’s own configuration; when a stage changes models, this paragraph changes with it.</p>
+      <p>The editions run on a fixed clock: the {KIND_LABEL.daily.toLowerCase()} on weekday mornings, the {KIND_LABEL.weekly.toLowerCase()} on Fridays, then the {KIND_LABEL.monthly.toLowerCase()}, the {KIND_LABEL.quarterly.toLowerCase()}, and {KIND_LABEL.yearly.toLowerCase()}. Each cadence answers its own question. The daily says what happened; the weekly names the through-lines; the retrospectives weigh what proved to matter.</p>
+      <p>The pipeline writes what it publishes into this site’s repository and pushes; GitHub Actions builds and deploys the result. The site is static. If the machine stops, the site stands; it stops getting newer.</p>
 
-      <h2>Principles</h2>
-      <ul>
-        <li><strong>Primary sources first.</strong> The paper, the repo, the filing. Not the press release about them. When the original is walled, the best free read is found and linked as backup.</li>
-        <li><strong>Why, not just what.</strong> Anyone can list links. Each pick says what it means and who should care.</li>
-        <li><strong>Unbiased by construction.</strong> Claims are attributed as claims. Disagreement is shown, not smoothed over.</li>
-        <li><strong>Your data stays yours.</strong> No account, no tracking, no inbox. Your <a href={href('/preferences/')}>reading preferences</a> (theme, type size, density, which sections you want, how much of the machinery to show) live in this browser and nowhere else.</li>
-        <li><strong>No inbox required.</strong> {site.name} lives in your feed reader. Subscribe to everything, only the digests, one cadence, or a single section.</li>
-      </ul>
+      <h2>What earns a slot</h2>
+      <p>Every edition is written for one reader: a senior engineer who wants primary sources, technical depth, and no theater. A story earns a slot on consequence (it changes what a practitioner builds, ships, secures, buys, or believes), on novelty, on evidence, or on durability, and it ranks by how many of those it clears and how hard. By policy, a day narrows to about 150 finalists; an edition keeps a handful.</p>
+      <p>The cuts are by standing rule: marketing dressed as news, point-release churn, engagement bait, vendor benchmarks without methodology, and thin rewrites of someone else’s reporting. When unsure, cut.</p>
+      <p>What survives is handled by rule. Claims stay attributed claims until independently checked; preprints are labeled; self-reported benchmarks are flagged every time. Where credible sources disagree, both run, with names attached. The primary source is linked first, always. When the original sits behind a paywall, a free read is linked beside it.</p>
+
+      <h2>Why trust it</h2>
+      <p>A publication written by machine earns trust the way an instrument does: by being checkable. Do not trust it. Check it. The <a href={href('/coverage/')}>coverage page</a> shows what gets read and which surfaces are loudest, the <a href={href('/sources/')}>sources page</a> names every feed on the roll, and the <a href={href('/stats/')}>stats page</a> publishes the pipeline’s numbers, down to which model runs each stage. The figures here (the source count, the survival ratio, the model behind each stage) are read from that same ledger, regenerated at each publish, most recently on {asOf}.</p>
+
+      <h2>What it costs</h2>
+      <p>Nothing, in money or in data. There is no account, no tracking, and no analytics: the site does not measure attention, so it has nothing to sell. <a href={href('/preferences/')}>Reading preferences</a> (theme, type size, density, muted sections, the signals panel) are stored in this browser’s localStorage and nowhere else; nothing about a visit leaves the device. Close the tab and the relationship ends.</p>
 
       <h2>Subscribe</h2>
-      <p>Point any RSS reader at <a href={href('/rss.xml')}>the full feed</a>, take <a href={href('/digests/rss.xml')}>the digests alone</a>, or pick a cadence or channel from <a href={href('/feeds/')}>the feed directory</a>. New picks arrive as they’re curated; the editions, on their clock.</p>
+      <p>{site.name} is built to live in a feed reader. Point one at <a href={href('/rss.xml')}>the full feed</a>, take <a href={href('/digests/rss.xml')}>the digests alone</a>, or pick a single cadence or section from <a href={href('/feeds/')}>the feed directory</a>. Picks arrive as they’re curated; editions arrive on their clock. Every edition published stays in <a href={href('/archive/')}>the archive</a>.</p>
+
+      <h2>Colophon</h2>
+      <p>Schibsted Grotesk sets the headlines, Source Serif 4 the body, IBM Plex Mono the furniture; all three are self-hosted. No images anywhere, only type, spacing, and hairline rules. Astro 5 builds the site; GitHub Pages serves it.</p>
+      <p>{site.name} is built and run by one person, <a href={site.authorUrl}>{site.author}</a>. Corrections, broken links, and bad calls go through the <a href={href('/contact/')}>contact page</a>. The words are machine-written; the responsibility is not.</p>
     </div>
-    <a class="arrow-link back" href={href('/')}>← Front page</a>
+    <a class="back" href={href('/')}>← Front page</a>
   </article>
 </Base>

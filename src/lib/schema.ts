@@ -147,7 +147,16 @@ export const statsSchema = z.object({
       clusters: z.number(),
     })
   ),
-  models: z.record(z.string(), z.string()),
+  // The pipeline's model stages. Pinned to the three the site renders by name
+  // (about page, /stats/) so a renamed or missing stage fails validation with a
+  // clear message instead of a build-time TypeError; extra stages still pass.
+  models: z
+    .object({
+      triage: z.string(),
+      deep: z.string(),
+      digest: z.string(),
+    })
+    .catchall(z.string()),
 });
 
 export type Stats = z.infer<typeof statsSchema>;

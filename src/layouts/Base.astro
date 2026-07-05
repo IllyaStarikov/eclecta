@@ -107,15 +107,32 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
         try {
           var g = function (k) { return localStorage.getItem(prefix + k); };
           var d = document.documentElement;
-          var t = g('theme');
-          if (t === 'light' || t === 'dark') d.dataset.theme = t;
-          var f = g('fontSize');
-          if (f && f !== 'm') d.dataset.fontsize = f;
-          if (g('density') === 'compact') d.dataset.density = 'compact';
-          if (g('showScores') === '1') d.dataset.showscores = '1';
-          if (g('showSignals') === '1') d.dataset.showsignals = '1';
+          var stamp = function (key, attr, ok) {
+            var v = g(key);
+            if (v && ok.indexOf(v) !== -1) d.setAttribute('data-' + attr, v);
+          };
+          stamp('theme', 'theme', ['light', 'dark']);
+          stamp('accent', 'accent', ['cobalt', 'moss', 'plum', 'ink']);
+          stamp('fontSize', 'fontsize', ['s', 'l', 'xl']);
+          stamp('bodyFont', 'bodyfont', ['sans']);
+          stamp('density', 'density', ['compact']);
+          stamp('leading', 'leading', ['tight', 'relaxed']);
+          stamp('measure', 'measure', ['narrow', 'wide']);
+          stamp('motion', 'motion', ['reduce']);
+          var flags = [
+            ['showScores', 'showscores'], ['showSignals', 'showsignals'],
+            ['justify', 'justify'], ['underlineLinks', 'underline'],
+            ['wideSpacing', 'widespacing'],
+          ];
+          for (var i = 0; i < flags.length; i++) {
+            if (g(flags[i][0]) === '1') d.setAttribute('data-' + flags[i][1], '1');
+          }
+          var c = g('contrast');
+          if (c === 'high' || (!c && matchMedia('(prefers-contrast: more)').matches)) {
+            d.setAttribute('data-contrast', 'high');
+          }
           var muted = g('mutedCategories');
-          if (muted) d.dataset.muted = muted.split(',').filter(Boolean).join(' ');
+          if (muted) d.setAttribute('data-muted', muted.split(',').filter(Boolean).join(' '));
         } catch (e) { /* first paint falls back to defaults */ }
       })();
     </script>

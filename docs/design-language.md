@@ -1,6 +1,6 @@
 # Eclecta — design language
 
-**Version 2.1.0** — see the [changelog](#changelog) at the bottom.
+**Version 2.2.0** — see the [changelog](#changelog) at the bottom.
 
 The one place the look is written down. If a change to `global.css`, a layout,
 or a page contradicts something here, either the change is wrong or this doc is
@@ -56,9 +56,22 @@ is no second dark block to keep in sync.
 | `--ink-faint` | `#63676e` | `#888d96` | tertiary: dates, counts, ordinals — darkened/lifted to clear AA (4.5:1+) at the small furniture sizes it carries |
 | `--hairline` | `#d5d7d2` | `#2a2d31` | row rules |
 | `--hairline-bold` | `#bfc2bc` | `#3a3e43` | section rules, chip borders |
-| `--accent` | `#e8451f` | `#ff6a3d` | the square, bar fills, hover, focus ring |
-| `--accent-ink` | `#c63a18` | `#ff8a63` | accent as *text* (contrast-safe) |
 | `--link-rule` | `rgba(22,24,29,0.30)` | `rgba(236,236,232,0.28)` | resting underline |
+
+**Accent inks** — the reader can re-ink the signal colour (Preferences,
+`html[data-accent]`). Each pair is a `light-dark()`; `--accent` and
+`--accent-ink` are derivations (`var(--acc-<choice>)` /
+`var(--acc-<choice>-ink)`), defaulting to signal:
+
+| pair | light | dark |
+|------|-------|------|
+| `--acc-signal` / `--acc-signal-ink` | `#e8451f` / `#c63a18` | `#ff6a3d` / `#ff8a63` |
+| `--acc-cobalt` / `--acc-cobalt-ink` | `#2251d6` / `#1a41ad` | `#7aa2ff` / `#9db9ff` |
+| `--acc-moss` / `--acc-moss-ink` | `#2e7d3f` / `#256633` | `#6fce85` / `#8edd9f` |
+| `--acc-plum` / `--acc-plum-ink` | `#9333b8` / `#7b2a9b` | `#cf8af0` / `#dea8f5` |
+
+`--accent` rules are unchanged: the square, bar fills, hover, focus ring;
+accent as *text* is always `--accent-ink`.
 
 **Orange is a spice, not a sauce** — the square motif, bar fills, link hover,
 focus ring, and the lead accents. Never large fills. Accent that carries text
@@ -80,7 +93,10 @@ survive.
 | reading body | **Source Serif 4** (variable `opsz`) | `--serif` | the only serif; 1.6 leading |
 | furniture | **IBM Plex Mono** | `--mono` | kickers, datelines, tags, counts, nav, CTAs |
 
-All three are `@fontsource*`, self-hosted woff2.
+All three are `@fontsource*`, self-hosted woff2. The reading face is
+indirected through `--body-font` (default `var(--serif)`; the reader can swap
+it via `html[data-bodyfont]`), and `--measure` derives from `--measure-prose`
+so the reader's measure preference retunes the column.
 
 **The scale** — six steps, all fluid `clamp()` with a `rem` term so browser
 zoom still scales. One usage rule per step; nothing between steps:
@@ -301,6 +317,7 @@ the title lexicon. The lexicon mirrors `signalpipe/topics.py`.
 
 | version | date | change |
 |---------|------|--------|
+| 2.2.0 | 2026-07-05 | Absorbed the reader personalization tokens into the single-source scheme: `--acc-*` accent pairs converted to `light-dark()` (one dark block stays dead), `--accent`/`--accent-ink` documented as derivations, `--body-font` + retunable measure documented. Preferences/about rewrites reconciled onto system classes. |
 | 2.1.0 | 2026-07-05 | Spotlight (`.spot`) + archive month folds (`.arch-month`) + editorial registers on picks (novelty kicker, developing tag, audience in signals) + digest colophon feeds/provenance; `--ink-faint` darkened to #63676e and accent-as-text moved to `--accent-ink` (nav current, pay tag) after the new axe gate flagged them; share cards generate at build (link-preview furniture, not site imagery); per-page feed autodiscovery. |
 | 2.0.0 | 2026-07-04 | Systematization: single-sourced dark (`light-dark()`), mono ladder made true, primitives consolidated (`.arrow-link`, `.chip`, `.label` ladder, `.briefing`), pages de-inlined, print contract fixed (erail), canonical breakpoints, page archetypes + "the dateline is a claim" masthead rule, component catalog, interaction-state spec, governance + lint/sync tests. |
 | 1.x | 2026-06 | Original wire-service language: principles, fonts, colors, page compositions. |

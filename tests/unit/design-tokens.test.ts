@@ -55,7 +55,9 @@ describe('design tokens ↔ design-language.md', () => {
   const colorTokens = new Set(colorRows.map((m) => m[1]));
 
   it('the color table matches the light-dark() pairs', () => {
-    expect(colorRows.length).toBeGreaterThanOrEqual(10);
+    // 8 base tokens; --accent/--accent-ink are documented derivations of the
+    // --acc-* pairs (their own table, different row shape).
+    expect(colorRows.length).toBeGreaterThanOrEqual(8);
     for (const [, token, light, dark] of colorRows) {
       const value = declared.get(token);
       expect(value, `${token} missing from :root`).toBeDefined();
