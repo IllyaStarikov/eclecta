@@ -57,6 +57,10 @@ const tierStrip = stripSegments(
     .sort((a, b) => a[0].localeCompare(b[0]))
     .map(([t, c]) => ({ label: `tier ${t} ${TIER_LABEL[t] ?? ''}`.trim(), value: c }))
 );
+const tierLeadIdx = tierStrip.reduce(
+  (best, s, i) => (s.value > tierStrip[best].value ? i : best),
+  0
+);
 const paywalledCount = (sourcesData as { paywalled: boolean }[]).filter((s) => s.paywalled).length;
 const paywalledPct = (paywalledCount / (sourcesData as unknown[]).length) * 100;
 const topSources = stats.top_sources_30d && stats.top_sources_30d.length > 0 ? stats.top_sources_30d : null;
@@ -171,7 +175,7 @@ const latest = stats.digests.latest ?? null;
             <rect x={c.x} y={c.y} width={c.w} height={c.h}><title>{c.title}</title></rect>
           ))}
         </svg>
-        <div class="wire-chart__strip" aria-label="Curated picks per day, own scale">
+        <div class="wire-chart__strip" role="img" aria-label="Curated picks per day, own scale">
           {strip.map((s) => (
             <span class={`wire-chart__cell wire-chart__cell--l${s.level}`} title={s.title}></span>
           ))}
@@ -234,7 +238,7 @@ const latest = stats.digests.latest ?? null;
       <div class="strip" role="img" aria-label="Sources by tier, proportional">
         {tierStrip.map((s, i) => (
           <span
-            class={i === 0 ? 'strip__seg strip__seg--lead' : 'strip__seg'}
+            class={i === tierLeadIdx ? 'strip__seg strip__seg--lead' : 'strip__seg'}
             style={`width:${s.pct}%`}
             title={`${s.label}: ${n(s.value)}`}
           ></span>
@@ -322,7 +326,7 @@ const latest = stats.digests.latest ?? null;
               <span
                 class={i === 0 ? 'strip__seg strip__seg--lead' : 'strip__seg'}
                 style={`width:${s.pct}%`}
-                title={`${s.label}: ${n(s.value)} curations`}
+                title={`${s.label}: ${n(s.value)} calls`}
               ></span>
             ))}
           </div>
