@@ -36,7 +36,9 @@ const barPct = (v: number, max: number) => Math.max(2, Math.round((v / max) * 10
 const series = stats.series_daily && stats.series_daily.length > 0 ? stats.series_daily : null;
 const chart = series ? columnChart(series, 900, 140) : null;
 const strip = series ? curatedStrip(series) : null;
-const cap = series ? seriesCaption(series) : null;
+const firstTracked = series ? series.findIndex((p) => p.items > 0) : -1;
+const capSeries = series && firstTracked > 0 ? series.slice(firstTracked) : series;
+const cap = capSeries && capSeries.length > 0 ? seriesCaption(capSeries) : null;
 const clusters7d = series ? series.slice(-7).reduce((a, p) => a + p.clusters, 0) : null;
 
 /* ── band 4: the funnel ── */
@@ -62,7 +64,7 @@ const tierLeadIdx = tierStrip.reduce(
   0
 );
 const paywalledCount = (sourcesData as { paywalled: boolean }[]).filter((s) => s.paywalled).length;
-const paywalledPct = (paywalledCount / (sourcesData as unknown[]).length) * 100;
+const paywalledPct = (paywalledCount / Math.max((sourcesData as unknown[]).length, 1)) * 100;
 const topSources = stats.top_sources_30d && stats.top_sources_30d.length > 0 ? stats.top_sources_30d : null;
 const maxTopSource = topSources ? Math.max(...topSources.map((s) => s.items), 1) : 1;
 const surfaces = stats.top_surfaces_7d.slice(0, 10);
@@ -184,6 +186,7 @@ const latest = stats.digests.latest ?? null;
           <span>busiest {fmtDay(cap.busiest.d)} {n(cap.busiest.items)}</span>
           <span>quietest {fmtDay(cap.quietest.d)} {n(cap.quietest.items)}</span>
           <span>mean {n(cap.mean)} per day</span>
+          {firstTracked > 0 && series && <span>item tracking since {fmtDay(series[firstTracked].d)}</span>}
           <span>orange strip: picks curated that day</span>
         </figcaption>
       </figure>
@@ -271,9 +274,9 @@ const latest = stats.digests.latest ?? null;
   )}
 
   <div class="rail">
-    <span class="rail__label">Where stories echo, 7 days</span>
+    <span class="rail__label">Where stories echo</span>
     <span class="rail__rule"></span>
-    <span class="rail__count">by clusters</span>
+    <span class="rail__count">by clusters, 7 days</span>
   </div>
   <ul class="bars">
     {surfaces.map((s, i) => (
@@ -302,7 +305,9 @@ const latest = stats.digests.latest ?? null;
         A surface is a place a story shows up: Hacker News, an arXiv section,
         a subreddit. Most stories surface once and stay there. The ones that
         echo across six or more surfaces are the news, and the pipeline
-        clusters every echo into one pick so nothing is counted twice.
+        clusters every echo into one pick so nothing is counted twice. The
+        echo distribution counts every story ever clustered; the bars above
+        cover the last seven days.
       </p>
     </>
   )}
@@ -356,8 +361,7 @@ const latest = stats.digests.latest ?? null;
       <p class="chart-note">
         The cards above are the configured routing; the strips are what
         actually ran in the last 30 days, straight from the curation log.
-        Triage runs on a local model on a MacBook; judgment is rented by the
-        token.
+        The pipeline runs on a MacBook; judgment is rented by the token.
       </p>
     </>
   )}
