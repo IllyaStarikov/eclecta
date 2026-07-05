@@ -51,9 +51,9 @@ renders a band only when its block is present. Existing fields are unchanged.
 | block | shape | source (DB) |
 |---|---|---|
 | `series_daily` | `[{d: "YYYY-MM-DD", items, clusters, curated}]`, last 90 days, contiguous (zero-fill missing days) | `items.ingested_at`, `clusters.first_seen`, `curations.curated_at` grouped by day |
-| `funnel` | `{all_time: {items, clusters, fetched, curated, published}, last_30d: {…}}`; `published` = distinct `cluster_id` in `published_ledger` (windowed on `first_at`) | counts over `items`, `clusters`, `articles(fetch_status='ok')`, `curations(status='done', skip=0)`, `published_ledger` |
+| `funnel` | `{all_time: {items, clusters, fetched, curated, published}, last_30d: {…}}`; `published` = distinct `story_id` in `published_ledger` (windowed on `first_at`; story_id is NOT NULL where cluster_id may not be) | counts over `items`, `clusters`, `articles(fetch_status='ok')`, `curations(status='done', skip=0)`, `published_ledger` |
 | `relevance_hist_30d` | `{kept: {"0"…"10": n}, skipped: {"0"…"10": n}}` | `curations.relevance_score` split on `skip` |
-| `models_used_30d` | `[{scope: "curation"\|"digest", model, backend, count, avg_relevance}]`; `avg_relevance` null for digest scope | curations: `model_used/backend_used`, avg `relevance_score`; digests: `model_used` (backend from config tier if not recorded) |
+| `models_used_30d` | `[{scope: "curation"\|"digest", model, backend, count, avg_relevance}]`; `avg_relevance` and `backend` null where the DB doesn't record them (digests carry no backend column) | curations: `model_used/backend_used`, avg `relevance_score`; digests: `model_used` |
 | `fetch_30d` | `{ok, paywalled, failed, skipped}`, windowed on `extracted_at` | `articles.fetch_status` |
 | `top_sources_30d` | `[{name, items}]`, top 15 | `items.source_id → sources.name` |
 | `echo_dist` | `{"1": n, "2": n, "3_5": n, "6_plus": n}` | `clusters.surface_count` |
