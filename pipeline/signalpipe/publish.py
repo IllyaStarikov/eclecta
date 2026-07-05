@@ -512,10 +512,18 @@ def _git(repo: pathlib.Path, *args: str) -> "subprocess.CompletedProcess":
         "GIT_COMMITTER_EMAIL": AUTHOR_EMAIL,
         "GIT_TERMINAL_PROMPT": "0",
     })
-    return subprocess.run(
-        ["git", "-C", str(repo)] + list(args),
-        capture_output=True, text=True, env=env,
-    )
+    try:
+        return subprocess.run(
+            ["git", "-C", str(repo)] + list(args),
+            capture_output=True, text=True, env=env, timeout=180,
+        )
+    except subprocess.TimeoutExpired:
+        # Synthetic failure: callers all branch on returncode. 180s covers a
+        # slow push of markdown; a hung fetch/push was the Jul 2-4 starvation.
+        return subprocess.CompletedProcess(
+            ["git"] + list(args), 124, stdout="",
+            stderr="git %s timed out after 180s" % (args[0] if args else "?"),
+        )
 
 
 def _dirty_paths(repo: pathlib.Path) -> List[Tuple[str, str]]:
@@ -836,6 +844,10 @@ def refresh(cfg) -> int:
             db_mod.log_health(conn, "publish", "error", str(e))
             print("publish refresh failed: %s" % e)
             return 1
+        if status in ("pushed", "noop"):
+            from . import monitoring
+
+            monitoring.ping("publish")
         if unpublished and status in ("pushed", "committed-local", "noop"):
             with db_mod.write_tx(conn):
                 conn.execute(

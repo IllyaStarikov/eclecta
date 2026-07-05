@@ -222,6 +222,14 @@ def cmd_sources(args: argparse.Namespace) -> int:
     return 2
 
 
+def cmd_retention(args: argparse.Namespace) -> int:
+    from . import retention
+
+    cfg = _load_cfg(args)
+    retention.run(cfg, dry_run=args.dry_run, vacuum=args.vacuum)
+    return 0
+
+
 def cmd_backup(args: argparse.Namespace) -> int:
     from . import db as db_mod
 
@@ -351,6 +359,11 @@ def main(argv=None) -> int:
     p.set_defaults(fn=cmd_backfill)
 
     p = sub.add_parser("publish", help="export picks/stats/kb/digests to the site repo")
+    r = sub.add_parser("retention", help="prune old uncurated data from the db")
+    r.add_argument("--dry-run", action="store_true")
+    r.add_argument("--vacuum", action="store_true")
+    r.set_defaults(fn=cmd_retention)
+
     p.add_argument("--what", choices=["picks", "stats", "spotlight", "kb", "digests", "all"],
                    default="all")
     p.add_argument("--no-push", dest="no_push", action="store_true",
