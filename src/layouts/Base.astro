@@ -1,5 +1,7 @@
 ---
 import '@fontsource-variable/schibsted-grotesk/wght.css';
+import schibstedWoff2 from '@fontsource-variable/schibsted-grotesk/files/schibsted-grotesk-latin-wght-normal.woff2?url';
+import serifWoff2 from '@fontsource-variable/source-serif-4/files/source-serif-4-latin-opsz-normal.woff2?url';
 import '@fontsource-variable/source-serif-4/opsz.css';
 import '@fontsource-variable/source-serif-4/opsz-italic.css';
 import '@fontsource/ibm-plex-mono/400.css';
@@ -18,6 +20,16 @@ interface Props {
   edition?: string;
   /** widen the shell to the broadsheet width (front + category pages) */
   wide?: boolean;
+  /** extra RSS autodiscovery links for this page's own feed(s) */
+  feedLinks?: { title: string; href: string }[];
+  /** open-graph object type: article for dated editions, website otherwise */
+  ogType?: 'website' | 'article';
+  /** ISO publish date, emitted as article:published_time when ogType=article */
+  publishedTime?: string;
+  /** absolute URL of the share card; defaults to the site-wide card */
+  ogImage?: string;
+  /** page-level JSON-LD object (Base adds WebSite on the front page) */
+  jsonLd?: Record<string, unknown>;
 }
 const {
   title = `${site.name} | the best of technology, AI & science`,
@@ -25,6 +37,11 @@ const {
   compactHeader = false,
   edition,
   wide = false,
+  feedLinks = [],
+  ogType = 'website',
+  publishedTime,
+  ogImage,
+  jsonLd,
 } = Astro.props;
 const year = new Date().getFullYear();
 
@@ -38,6 +55,12 @@ const asOfStamp = asOf.toISOString().slice(0, 16).replace('T', ' ');
 // Astro.url.pathname already includes the base path.
 const origin = Astro.site ? String(Astro.site).replace(/\/+$/, '') : '';
 const canonical = origin + Astro.url.pathname;
+const shareImage = ogImage ?? origin + href('/og/default.png');
+const isFront = Astro.url.pathname === href('/') || Astro.url.pathname === href('/') + '/';
+const websiteLd = isFront
+  ? { '@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: origin + href('/'), description: site.description }
+  : null;
+const ld = jsonLd ?? websiteLd;
 const currentPath = Astro.url.pathname;
 const isCurrent = (path: string) => (currentPath === href(path) || currentPath === href(path) + '/') ? 'page' : undefined;
 ---
@@ -51,17 +74,32 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
     <link rel="canonical" href={canonical} />
     <link rel="alternate" type="application/rss+xml" title={`${site.name} | everything`} href={href('/rss.xml')} />
     <link rel="alternate" type="application/rss+xml" title={`${site.name} | digests`} href={href('/digests/rss.xml')} />
+    {feedLinks.map((f) => (
+      <link rel="alternate" type="application/rss+xml" title={f.title} href={f.href} />
+    ))}
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={schibstedWoff2} />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={serifWoff2} />
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
     <meta name="color-scheme" content="light dark" />
     <meta name="author" content={site.author} />
     <meta property="og:site_name" content={site.name} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary" />
+    {ogType === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime} />
+    )}
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f2f0" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101214" />
+    {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
     <meta name="generator" content={Astro.generator} />
     <script is:inline define:vars={{ prefix: site.storagePrefix + ':' }}>
       // Pre-paint preference stamp — keep in sync with src/scripts/prefs.js.
@@ -134,7 +172,7 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
             <a href={href('/feeds/')} aria-current={isCurrent('/feeds/')}>Feeds</a>
             <a href={href('/about/')} aria-current={isCurrent('/about/')}>About</a>
             <a href={href('/preferences/')} aria-current={isCurrent('/preferences/')}>Prefs</a>
-            <button class="toggle" type="button" data-theme-toggle>auto</button>
+            <button class="toggle" type="button" data-theme-toggle aria-label="Theme: auto. Click to change">auto</button>
           </nav>
         </div>
       </header>
@@ -160,7 +198,7 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
         <a href={href('/sources/')}>Sources</a>
         <a href={href('/contact/')}>Contact</a>
         <a href={site.authorUrl}>starikov.co</a>
-        <span class="label" style="align-self:center;">© {year}</span>
+        <span class="label">© {year}</span>
       </div>
     </footer>
     <script>

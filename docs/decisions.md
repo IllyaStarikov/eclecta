@@ -2,6 +2,45 @@
 
 Short records of the choices behind the current shape of Eclecta, newest first.
 Each is "context → decision → why", so a future change knows what it's undoing.
+Visual-system decisions belong here too — `design-language.md` states the
+rules; this file records their rationale.
+
+## 2026-07-04 — "The dateline is a claim": masthead assignment by archetype
+
+**Context.** Header choice had drifted page-by-page: dated digests got the
+*compact* header while undated about/contact got the full masthead with the
+"as of today" dateline band — exactly backwards, and there was no written rule
+to appeal to.
+**Decision.** The dateline asserts "this page reflects the wire as of today."
+Pages that are views of the current wire (front, categories, subcategories,
+archive, feeds, sources, coverage, stats, preferences) carry the full masthead
+and dateline. Pages that carry their own date (digests — compact head +
+edition stamp) or no date (about, contact, 404) get the compact head. Every
+page belongs to exactly one archetype (design-language.md §5).
+**Why.** A dateline over a June 8 digest is a false statement. Making the
+dateline a *claim* gives a principled, testable axis instead of a per-page
+taste call, and it survives new pages: ask "does this page assert today's
+wire?" and the header follows.
+
+## 2026-07-04 — Design system v2: tokens made true, primitives consolidated
+
+**Context.** The written language claimed "three mono sizes, two trackings"
+while the CSS had five-plus of each; dark mode was hand-duplicated in two
+blocks with a "keep in sync" comment; five near-identical arrow-link classes,
+two chip classes, and eight eyebrow variants had accreted; six pages inlined
+the same `padding-top`; print hid a class that no longer existed, so the rail
+printed as a stray column.
+**Decision.** Single-source dark via `light-dark()`; collapse the near-
+duplicates into `.arrow-link`, `.chip`, and the `.label` ladder; make the mono
+ladder literally true; canonicalize breakpoints to {30, 40, 52, 60}rem; move
+every repeated inline pattern into the system; enforce all of it with
+`design-tokens.test.ts` (doc ↔ `:root` sync) and `design-lint.test.ts`
+(no off-system styling in pages), with the capture harness + `shotdiff` as the
+visual review loop.
+**Why.** A design language you can refine over time needs the doc, the CSS,
+and the pages to agree *by construction*, not by discipline. Consolidation is
+what makes future changes one-line: a hover tweak edits one primitive, not
+five forks of it. The tests turn drift from a slow leak into a failing build.
 
 ## 2026-06-13 — Front page is a composed "today's edition", not the daily prose
 

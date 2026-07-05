@@ -8,6 +8,9 @@
 import { CATEGORIES } from './taxonomy';
 import { site, KINDS, KIND_LABEL, type DigestKind } from '../site';
 
+/** Digest feeds serve the newest N editions; dailies accumulate forever. */
+export const FEED_DIGEST_CAP = 50;
+
 /** Minimal XML/HTML escaping for feed content. */
 export function esc(s: unknown): string {
   return String(s ?? '')
@@ -97,7 +100,9 @@ export function digestItemHtml(d: FeedDigest, url: string): string {
  * Passed as the `stylesheet` option to each rss.xml.js endpoint. Base-aware:
  * BASE_URL is '/' on eclecta.co, so this resolves to '/rss/styles.xsl'.
  */
-export const FEED_STYLESHEET = import.meta.env.BASE_URL + 'rss/styles.xsl';
+// Optional-chained so the module also loads in plain Node (Playwright specs
+// import the FEEDS registry); under Astro/Vite BASE_URL is always defined.
+export const FEED_STYLESHEET = (import.meta.env?.BASE_URL ?? '/') + 'rss/styles.xsl';
 
 /* ── the registry ──────────────────────────────────────────────────────── */
 

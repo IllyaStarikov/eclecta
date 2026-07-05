@@ -5,7 +5,7 @@ import Pick, { type PickData } from '../../../components/Pick.astro';
 import Rail from '../../../components/Rail.astro';
 import picksJson from '../../../data/picks.json';
 import { site, href } from '../../../site';
-import { CATEGORIES, deriveCategory } from '../../../lib/taxonomy';
+import { CATEGORIES, resolveCategory } from '../../../lib/taxonomy';
 
 export function getStaticPaths() {
   return CATEGORIES.flatMap((c) =>
@@ -18,7 +18,7 @@ export function getStaticPaths() {
 const { category, sub } = Astro.props;
 
 const picks = (picksJson as unknown as PickData[]).map((p) => {
-  const tax = deriveCategory(p.title, p.channels);
+  const tax = resolveCategory(p);
   return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
 });
 const catList = picks.filter((p) => p.category === category.slug);
@@ -43,43 +43,43 @@ const digests = (await getCollection('digests')).sort(
 );
 const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
 ---
-<Base wide={true} title={`${sub.name} | ${category.name} | ${site.name}`} description={sub.blurb}>
+<Base wide={true} feedLinks={[{ title: `${site.name} | ${category.name}`, href: href(`/${category.slug}/rss.xml`) }]} title={`${sub.name} | ${category.name} | ${site.name}`} description={sub.blurb}>
   <div class="broadsheet">
     <div class="broadsheet__main">
       <p class="crumb"><a href={href(`/${category.slug}/`)}>← {category.name}</a></p>
-      <div class="section-head" style="margin-top:0.4rem;">
+      <div class="section-head">
         <h1>{sub.name}</h1>
       </div>
-      <p class="cat-blurb">{sub.blurb}</p>
+      <p class="deck">{sub.blurb}</p>
 
       {list.length > 0 ? (
         <Fragment>
           {siblingSubs.length > 1 && (
             <nav class="subchips" aria-label={`${category.name} subsections`}>
               {siblingSubs.map((s) => (
-                <a class="subchip" href={s.href} aria-current={s.current ? 'page' : undefined}>{s.label}</a>
+                <a class="chip" href={s.href} aria-current={s.current ? 'page' : undefined}>{s.label}</a>
               ))}
             </nav>
           )}
-          <div class="briefing" style="margin-top:1.4rem; border-top:1px solid var(--hairline-bold);">
+          <div class="briefing briefing--ruled">
             {lead && <Pick pick={lead} index={0} variant="lead" />}
             {briefRows.map((p, i) => <Pick pick={p} index={i + 1} variant="brief" />)}
           </div>
           {alsoRows.length > 0 && (
-            <div class="also" style="margin-top:1.2rem;">
+            <div class="also also--gap">
               {alsoRows.map((p, i) => <Pick pick={p} index={i} variant="also" />)}
             </div>
           )}
         </Fragment>
       ) : (
         <div class="empty-state">
-          <p style="margin:0 0 0.8rem;">Nothing under {sub.name} in {category.name} right now.</p>
+          <p>Nothing under {sub.name} in {category.name} right now.</p>
           {siblingSubs.length > 0 && (
-            <p style="margin:0 0 0.8rem;">Meanwhile in {category.name}: {siblingSubs.map((s, i) => (
+            <p>Meanwhile in {category.name}: {siblingSubs.map((s, i) => (
               <Fragment>{i > 0 ? ', ' : ''}<a href={s.href}>{s.label}</a></Fragment>
             ))}.</p>
           )}
-          <p style="margin:0;"><a href={href(`/${category.slug}/`)}>Browse all of {category.name} →</a></p>
+          <p><a href={href(`/${category.slug}/`)}>Browse all of {category.name} →</a></p>
         </div>
       )}
     </div>
@@ -98,7 +98,6 @@ const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
         moreLabel: 'All feeds',
         moreHref: href('/feeds/'),
       }}
-      back={{ label: `All of ${category.name}`, href: href(`/${category.slug}/`) }}
     />
   </div>
 </Base>

@@ -15,6 +15,9 @@ const digests = defineCollection({
     date: z.coerce.date(),
     blurb: z.string(),
     items: z.number().optional(),
+    /* model provenance (optional until the pipeline emits it): which model
+       wrote this edition, e.g. "claude-opus-4-8" */
+    model: z.string().optional(),
   }),
 });
 

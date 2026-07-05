@@ -1,22 +1,25 @@
-name: Test & deploy
+name: Deploy
 
+# Push-to-main deploys (the pipeline's data commits every ~90min) plus a
+# manual lever for transient GitHub Pages failures. PRs run in pr.yml.
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  test:
+  build-test:
     runs-on: ubuntu-latest
+    # A newer data commit superseding an older one's build is correct: it
+    # deploys fresher data. The DEPLOY job below is never cancelled.
+    concurrency:
+      group: main-build
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
 
@@ -33,15 +36,12 @@ jobs:
         id: changes
         with:
           filters: |
-            data:
-              - 'src/data/**'
-              - 'src/content/**'
-              - 'kb/**'
             code:
               - '**'
               - '!src/data/**'
               - '!src/content/**'
               - '!kb/**'
+              - '!pipeline/kb/**'
 
       - name: Type check
         run: npm run check
@@ -64,34 +64,30 @@ jobs:
         if: steps.changes.outputs.code == 'true'
         run: npm run test:e2e
 
-  deploy:
-    needs: test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - name: Build
-        run: npm run build
-        env:
-          ECLECTA_SITE: https://eclecta.co
-          ECLECTA_BASE: /
-
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
+  deploy:
+    needs: build-test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    # Deploys queue and are never cancelled mid-flight; GitHub Pages
+    # "deployment failed, try again later" gets one in-run retry that reuses
+    # the SAME artifact (a workflow rerun would upload a duplicate).
+    concurrency:
+      group: pages-deploy
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment_retry.outputs.page_url }}
+    steps:
       - id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      - id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4

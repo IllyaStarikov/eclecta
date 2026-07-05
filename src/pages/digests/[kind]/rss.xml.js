@@ -1,7 +1,7 @@
 import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import { absUrl, KINDS, KIND_LABEL } from '../../../site';
-import { getFeed, digestItemHtml, FEED_STYLESHEET } from '../../../lib/feeds';
+import { getFeed, digestItemHtml, FEED_STYLESHEET, FEED_DIGEST_CAP } from '../../../lib/feeds';
 
 export function getStaticPaths() {
   return KINDS.map((kind) => ({ params: { kind } }));
@@ -18,7 +18,7 @@ export async function GET(context) {
     title: feed.title,
     description: feed.description,
     site: new URL(import.meta.env.BASE_URL, context.site).href,
-    items: digests.map((d) => {
+    items: digests.slice(0, FEED_DIGEST_CAP).map((d) => {
       const url = absUrl(`/digests/${d.id}/`, context.site);
       return {
         title: `${KIND_LABEL[d.data.kind]} · ${d.data.title}`,

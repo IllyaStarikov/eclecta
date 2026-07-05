@@ -11,48 +11,68 @@ const groups = KINDS.map((kind) => ({
   kind,
   entries: digests.filter((d) => d.data.kind === kind),
 })).filter((g) => g.entries.length > 0);
+
+const monthName = (ym: string) =>
+  new Date(ym + '-01T00:00:00Z').toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+/** Group entries by YYYY-MM of their period (newest month first). */
+function byMonth(entries: typeof digests) {
+  const m = new Map<string, typeof digests>();
+  for (const d of entries) {
+    const key = d.data.period.slice(0, 7);
+    if (!m.has(key)) m.set(key, []);
+    m.get(key)!.push(d);
+  }
+  return [...m.entries()];
+}
 ---
-<Base title={`Archive | ${site.name}`} description="Every edition Eclecta has published, daily brief to the year in review.">
-  <div class="section-head" style="padding-top:2.4rem;">
+<Base feedLinks={[{ title: `${site.name} | digests`, href: href('/digests/rss.xml') }]} title={`Archive | ${site.name}`} description="Every edition Eclecta has published, daily brief to the year in review.">
+  <div class="section-head section-head--page">
     <h1>The archive</h1>
   </div>
 
   {groups.map((g) => (
     <section>
-      <div class="section-head">
-        <h2 style="font-size:1.25rem;">{KIND_LABEL[g.kind]}</h2>
-      </div>
-      <div class="picks">
-        {g.entries.map((d, i) => (
-          <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
-            <div class="label arch__period">{d.data.period}</div>
-            <div>
-              <h3 class="pick__title" style="margin-bottom:0.4rem;">
-                <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
-              </h3>
-              <p class="pick__why" style="font-style:italic; color:var(--ink-soft); margin-bottom:0;">{d.data.blurb}</p>
-            </div>
-          </article>
-        ))}
-      </div>
-      <p style="margin:1rem 0 0;">
-        <a class="feed-chip" href={href(`/digests/${g.kind}/rss.xml`)}>
-          <span class="dot"></span>{KIND_LABEL[g.kind]} feed
+      <div class="rail">
+        <h2 class="rail__label">{KIND_LABEL[g.kind]}</h2>
+        <span class="rail__rule"></span>
+        <a class="chip" href={href(`/digests/${g.kind}/rss.xml`)}>
+          <span class="chip__dot"></span>{KIND_LABEL[g.kind]} feed
         </a>
-      </p>
+      </div>
+      {g.kind === 'daily' ? (
+        byMonth(g.entries).map(([ym, entries], mi) => (
+          <details class="arch-month" open={mi === 0}>
+            <summary>{monthName(ym)}<span class="arch-month__n">{entries.length} brief{entries.length === 1 ? '' : 's'}</span></summary>
+            <div class="briefing">
+              {entries.map((d, i) => (
+                <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
+                  <div class="label arch__period">{d.data.period}</div>
+                  <div>
+                    <h3 class="pick__title">
+                      <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
+                    </h3>
+                    <p class="pick__why">{d.data.blurb}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </details>
+        ))
+      ) : (
+        <div class="briefing">
+          {g.entries.map((d, i) => (
+            <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
+              <div class="label arch__period">{d.data.period}</div>
+              <div>
+                <h3 class="pick__title">
+                  <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
+                </h3>
+                <p class="pick__why">{d.data.blurb}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   ))}
-
-  <style>
-    .arch {
-      display: grid;
-      grid-template-columns: 7rem 1fr;
-      gap: 0 1rem;
-    }
-    .arch__period { padding-top: 0.5rem; }
-    @media (max-width: 38rem) {
-      .arch { grid-template-columns: 1fr; }
-      .arch__period { padding-top: 0; }
-    }
-  </style>
 </Base>
