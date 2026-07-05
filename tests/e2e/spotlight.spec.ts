@@ -4,13 +4,16 @@
  * The spec reads the data from disk so it passes in both states.
  */
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
 import { spotlightFileSchema } from '../../src/lib/schema';
 import { SPOTLIGHT_LIMIT } from '../../src/lib/spotlight';
 
+const here = dirname(fileURLToPath(import.meta.url));
+
 function expectedCount(): number {
-  const path = join(__dirname, '../../src/data/spotlight.json');
+  const path = join(here, '../../src/data/spotlight.json');
   if (!existsSync(path)) return 0;
   const parsed = spotlightFileSchema.safeParse(JSON.parse(readFileSync(path, 'utf8')));
   if (!parsed.success) return 0;
