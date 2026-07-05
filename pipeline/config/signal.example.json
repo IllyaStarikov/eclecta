@@ -1,0 +1,277 @@
+{
+  "db_path": "~/.local/state/signal/signal.db",
+  "blog_repo": "/path/to/starikov-dot-co",
+  "user_agent": "signal/0.1 (+https://starikov.co; personal feed curator)",
+  "server": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "auto_refresh_sec": 120,
+    "feed_default_limit": 50,
+    "feed_max_limit": 200,
+    "feed_title": "Signal \u2014 curated tech + AI",
+    "feed_link": "http://127.0.0.1:8765/",
+    "feed_description": "The best technology and AI articles across the internet right now, curated continuously."
+  },
+  "backend": {
+    "selector": "subscription",
+    "cli_bin": "~/.local/bin/claude",
+    "cli_timeout_sec": 900,
+    "cli_extra_args": [
+      "--strict-mcp-config",
+      "--setting-sources",
+      "project",
+      "--tools",
+      "",
+      "--disable-slash-commands"
+    ],
+    "cli_cwd": "~/.local/state/signal/cli-cwd",
+    "api_use_batches": true,
+    "api_use_prompt_cache": true,
+    "tier_overrides": {
+      "triage": "local",
+      "judge": "local"
+    },
+    "local": {
+      "base_url": "http://127.0.0.1:11434",
+      "models": [
+        "qwen2.5:14b"
+      ],
+      "timeout_sec": 600,
+      "num_ctx": 16384,
+      "keep_alive": "90s",
+      "fallback": "subscription",
+      "escalate_spread": 3
+    }
+  },
+  "tiers": {
+    "triage": {
+      "subscription": "claude-haiku-4-5",
+      "api": "claude-haiku-4-5",
+      "local": "qwen2.5:14b"
+    },
+    "deep": {
+      "subscription": "claude-sonnet-4-6",
+      "api": "claude-sonnet-4-6"
+    },
+    "judge": {
+      "subscription": "claude-haiku-4-5",
+      "api": "claude-haiku-4-5",
+      "local": "qwen2.5:14b"
+    },
+    "write": {
+      "subscription": "claude-sonnet-4-6",
+      "api": "claude-sonnet-4-6",
+      "local": "qwen2.5:14b"
+    },
+    "digest": {
+      "subscription": "claude-opus-4-8",
+      "api": "claude-opus-4-8",
+      "local": "qwen2.5:72b"
+    }
+  },
+  "cadences": {
+    "ingest_min": 45,
+    "score_min": 60,
+    "fetch_min": 90,
+    "curate_min": 15,
+    "publish_refresh_min": 90,
+    "kb_trends_cron": "45 7 * * fri",
+    "jitter_sec": 120,
+    "misfire_grace_sec": 3600
+  },
+  "digests": {
+    "daily": {
+      "cron": "0 7 * * mon-fri",
+      "min_relevance": 6,
+      "max_items": 25
+    },
+    "weekly": {
+      "cron": "30 7 * * fri",
+      "min_relevance": 7,
+      "max_items": 40
+    },
+    "monthly": {
+      "cron": "0 8 1-3 * *",
+      "min_relevance": 7,
+      "max_items": 30
+    },
+    "quarterly": {
+      "cron": "15 8 1-3 1,4,7,10 *",
+      "min_relevance": 7,
+      "max_items": 30
+    },
+    "yearly": {
+      "cron": "30 8 1-3 1 *",
+      "min_relevance": 7,
+      "max_items": 30
+    }
+  },
+  "site": {
+    "repo": "/path/to/eclecta",
+    "branch": "main",
+    "remote": "origin",
+    "name": "Eclecta",
+    "url": "https://eclecta.co",
+    "push": false,
+    "picks_window_days": 7,
+    "picks_limit": 60
+  },
+  "funnel": {
+    "score_window_hours": 72,
+    "daily_finalists": 80,
+    "triage_band": [
+      3.5,
+      6.0
+    ],
+    "min_score_to_curate": 3.5,
+    "min_relevance_for_feed": 6,
+    "curate_batch": 3
+  },
+  "spend": {
+    "daily_cap_usd": 10.0,
+    "digest_cap_usd": 3.0,
+    "stop_curate_on_cap": true
+  },
+  "downtime": {
+    "enabled": true,
+    "idle_min": 5,
+    "require_ac": true,
+    "thermal_guard": true,
+    "min_free_gb_curation": 14,
+    "min_free_gb_digest": 12,
+    "swap_thrash_guard": true,
+    "swap_used_max_gb": 6,
+    "ollama_preflight": false,
+    "editions_interval_min": 30
+  },
+  "channels": [
+    "ai",
+    "ml-research",
+    "devtools",
+    "security",
+    "hardware",
+    "startups",
+    "science",
+    "everything"
+  ],
+  "score_weights": {
+    "consensus": 0.3,
+    "engagement": 0.25,
+    "reputation": 0.15,
+    "recency": 0.15,
+    "topic_match": 0.15,
+    "recency_halflife_hours": 18
+  },
+  "paywall": {
+    "allow_archive_today": false,
+    "paywall_domains": [
+      "nytimes.com",
+      "wsj.com",
+      "ft.com",
+      "bloomberg.com",
+      "economist.com",
+      "theinformation.com",
+      "wired.com",
+      "theatlantic.com",
+      "technologyreview.com",
+      "washingtonpost.com",
+      "newyorker.com"
+    ],
+    "free_source_chain": [
+      "primary",
+      "publication-free",
+      "freedium",
+      "canonical-fallback"
+    ],
+    "min_words_not_paywalled": 150
+  },
+  "dedup": {
+    "title_jaccard_same_domain": 0.8,
+    "title_jaccard_cross_domain": 0.92,
+    "near_dup_window_hours": 48
+  },
+  "ingest": {
+    "reddit_mode": "rss",
+    "reddit_subs": [
+      "MachineLearning",
+      "LocalLLaMA",
+      "programming",
+      "artificial",
+      "compsci",
+      "netsec",
+      "hardware",
+      "startups",
+      "ExperiencedDevs",
+      "devops"
+    ],
+    "arxiv_categories": [
+      "cs.AI",
+      "cs.LG",
+      "cs.CL",
+      "cs.CV",
+      "cs.CR",
+      "cs.SE",
+      "stat.ML",
+      "quant-ph",
+      "astro-ph",
+      "cond-mat",
+      "gr-qc",
+      "hep-th",
+      "hep-ph",
+      "math-ph",
+      "cs.PL",
+      "cs.DC",
+      "cs.RO"
+    ],
+    "hn_pages": 2,
+    "lobsters_pages": 2,
+    "github_trending": true,
+    "hf_daily_papers": true,
+    "product_hunt_enabled": false,
+    "per_host_min_interval_sec": 2.0,
+    "http_timeout_sec": 20,
+    "max_redirects": 5,
+    "mastodon_instances": [
+      "mastodon.social"
+    ],
+    "gnews_topics": [
+      "TECHNOLOGY",
+      "SCIENCE",
+      "BUSINESS"
+    ],
+    "gnews_queries": {
+      "ai": "\"artificial intelligence\""
+    },
+    "gnews_resolve_top": 25,
+    "wiki_events_days": 2,
+    "gdelt_queries": [
+      "(artificial intelligence OR machine learning) sourcelang:eng",
+      "(quantum computing OR semiconductor) sourcelang:eng"
+    ],
+    "enable_devto": true,
+    "enable_stackexchange": true,
+    "host_min_interval": {
+      "api.gdeltproject.org": 6.0,
+      "news.google.com": 2.0
+    }
+  },
+  "operation_1k": {
+    "target_verified": 1000,
+    "probe_paths": [
+      "/feed/",
+      "/feed",
+      "/rss/",
+      "/rss",
+      "/atom.xml",
+      "/index.xml",
+      "/feed.xml",
+      "/rss.xml",
+      "/feeds/posts/default",
+      "/blog/feed/",
+      "/blog/rss/",
+      "/blog/index.xml",
+      "/blog/feed.xml",
+      "/blog/atom.xml"
+    ]
+  }
+}
