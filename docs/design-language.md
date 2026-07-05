@@ -92,7 +92,8 @@ is the recurring identity mark (it's also the wordmark period and the feed dot).
   7x24 ingest heatmap, and the editions calendar. Chart primitives live in
   global.css (`.wire-chart`, `.funnel`, `.strip`, `.hist`, `.heatmap`,
   `.editions`); geometry in `src/lib/coverage.ts`. One accent lead per
-  chart. `/stats/` redirects here. **Sources** (`/sources/`): the full
+  chart; proportional strips lead in ink so orange stays a spice.
+  `/stats/` redirects here. **Sources** (`/sources/`): the full
   feed roll, grouped.
 - **Footer**: bookends the masthead — wordmark, one-line colophon, link row.
 
