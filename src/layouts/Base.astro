@@ -20,6 +20,14 @@ interface Props {
   wide?: boolean;
   /** extra RSS autodiscovery links for this page's own feed(s) */
   feedLinks?: { title: string; href: string }[];
+  /** open-graph object type: article for dated editions, website otherwise */
+  ogType?: 'website' | 'article';
+  /** ISO publish date, emitted as article:published_time when ogType=article */
+  publishedTime?: string;
+  /** absolute URL of the share card; defaults to the site-wide card */
+  ogImage?: string;
+  /** page-level JSON-LD object (Base adds WebSite on the front page) */
+  jsonLd?: Record<string, unknown>;
 }
 const {
   title = `${site.name} | the best of technology, AI & science`,
@@ -28,6 +36,10 @@ const {
   edition,
   wide = false,
   feedLinks = [],
+  ogType = 'website',
+  publishedTime,
+  ogImage,
+  jsonLd,
 } = Astro.props;
 const year = new Date().getFullYear();
 
@@ -41,6 +53,12 @@ const asOfStamp = asOf.toISOString().slice(0, 16).replace('T', ' ');
 // Astro.url.pathname already includes the base path.
 const origin = Astro.site ? String(Astro.site).replace(/\/+$/, '') : '';
 const canonical = origin + Astro.url.pathname;
+const shareImage = ogImage ?? origin + href('/og/default.png');
+const isFront = Astro.url.pathname === href('/') || Astro.url.pathname === href('/') + '/';
+const websiteLd = isFront
+  ? { '@context': 'https://schema.org', '@type': 'WebSite', name: site.name, url: origin + href('/'), description: site.description }
+  : null;
+const ld = jsonLd ?? websiteLd;
 const currentPath = Astro.url.pathname;
 const isCurrent = (path: string) => (currentPath === href(path) || currentPath === href(path) + '/') ? 'page' : undefined;
 ---
@@ -63,11 +81,21 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
     <meta property="og:site_name" content={site.name} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:url" content={canonical} />
-    <meta name="twitter:card" content="summary" />
+    {ogType === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime} />
+    )}
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={shareImage} />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f1f2f0" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#101214" />
+    {ld && <script type="application/ld+json" set:html={JSON.stringify(ld)} />}
     <meta name="generator" content={Astro.generator} />
     <script is:inline define:vars={{ prefix: site.storagePrefix + ':' }}>
       // Pre-paint preference stamp — keep in sync with src/scripts/prefs.js.
