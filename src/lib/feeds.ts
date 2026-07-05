@@ -6,6 +6,7 @@
  * regardless of any on-site display preference.
  */
 import { CATEGORIES } from './taxonomy';
+import { safeUrl } from './url';
 import { site, KINDS, KIND_LABEL, type DigestKind } from '../site';
 
 /** Digest feeds serve the newest N editions; dailies accumulate forever. */
@@ -50,6 +51,13 @@ export function pickFreeLink(p: FeedPick): string | null {
 
 /** Full item body for a pick — everything the site knows, in the feed. */
 export function pickItemHtml(p: FeedPick): string {
+  // Neutralize hostile schemes from third-party feed data before they land in
+  // an href a browser-based reader would render (see lib/url). Unsafe URLs
+  // degrade to plain label text, never a clickable javascript:/data: link.
+  const link = (u: string | null | undefined, label: string): string => {
+    const safe = safeUrl(u);
+    return safe ? `<a href="${esc(safe)}">${label}</a>` : label;
+  };
   const primary = pickPrimaryLink(p);
   const free = pickFreeLink(p);
   const parts: string[] = [];
@@ -60,18 +68,18 @@ export function pickItemHtml(p: FeedPick): string {
     );
   }
   if (p.summary) parts.push(`<p>${esc(p.summary)}</p>`);
-  const links = [`<a href="${esc(primary)}">Primary source</a>`];
+  const links = [link(primary, 'Primary source')];
   if (p.paywalled) links.push('<em>paywalled</em>');
-  if (free) links.push(`<a href="${esc(free)}">Free read</a>`);
+  if (free) links.push(link(free, 'Free read'));
   parts.push(`<p><strong>Read</strong> · ${links.join(' · ')}</p>`);
   if (p.surfaces && p.surfaces.length) {
     parts.push(
       `<p><strong>Surfaced on</strong> ${p.surfaces
-        .map(
-          (s) =>
-            `<a href="${esc(s.url)}">${esc(s.name)}${s.points ? ` (${s.points})` : ''}${
-              s.comments ? ` · ${s.comments}c` : ''
-            }</a>`
+        .map((s) =>
+          link(
+            s.url,
+            `${esc(s.name)}${s.points ? ` (${s.points})` : ''}${s.comments ? ` · ${s.comments}c` : ''}`
+          )
         )
         .join(' · ')}</p>`
     );
@@ -102,7 +110,11 @@ export function digestItemHtml(d: FeedDigest, url: string): string {
  */
 // Optional-chained so the module also loads in plain Node (Playwright specs
 // import the FEEDS registry); under Astro/Vite BASE_URL is always defined.
-export const FEED_STYLESHEET = (import.meta.env?.BASE_URL ?? '/') + 'rss/styles.xsl';
+// Normalize the base like site.href(): trailingSlash 'ignore' leaves a
+// non-'/' base without a trailing slash (e.g. '/eclecta'), so naive
+// concatenation would yield '/eclectarss/styles.xsl' — a 404.
+const _base = (import.meta.env?.BASE_URL ?? '/').replace(/\/+$/, '');
+export const FEED_STYLESHEET = _base + '/rss/styles.xsl';
 
 /* ── the registry ──────────────────────────────────────────────────────── */
 

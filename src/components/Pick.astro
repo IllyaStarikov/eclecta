@@ -1,6 +1,7 @@
 ---
 import { href } from '../site';
 import { resolveCategory, categoryName } from '../lib/taxonomy';
+import { safeUrl } from '../lib/url';
 import type { Pick as PickData } from '../lib/schema';
 
 /** The canonical pick contract IS lib/schema.ts pickSchema — one source of
@@ -12,16 +13,17 @@ const delay = Math.min(index, 8) * 55;
 
 const tax = resolveCategory(pick);
 
-// primary source first, always; backup free link when one exists
-const primary = pick.source_url;
-const free = pick.free_link && pick.free_link !== primary ? pick.free_link : null;
+// primary source first, always; backup free link when one exists.
+// safeUrl neutralizes hostile schemes from third-party feed data (see lib/url).
+const primary = safeUrl(pick.source_url);
+const free = pick.free_link && pick.free_link !== pick.source_url ? safeUrl(pick.free_link) : null;
 const date = (pick.curated_at || '').slice(0, 10);
 const signalCount = pick.sources_count ?? pick.surfaces.length;
 
 function hostOf(u: string): string {
   try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; }
 }
-const host = hostOf(primary);
+const host = hostOf(primary ?? '');
 const Heading = variant === 'lead' ? 'h2' : 'h3';
 ---
 {variant === 'also' ? (
@@ -93,7 +95,7 @@ const Heading = variant === 'lead' ? 'h2' : 'h3';
       {pick.model && <span>curator: {pick.model}</span>}
       {date && <span>curated {date}</span>}
       {pick.surfaces.map((s) => (
-        <a href={s.url} target="_blank" rel="noopener">
+        <a href={safeUrl(s.url)} target="_blank" rel="noopener">
           {s.name}{s.points ? ` ${s.points} pts` : ''}{s.comments ? ` ${s.comments}c` : ''}
         </a>
       ))}
