@@ -1,6 +1,6 @@
 # Eclecta — design language
 
-**Version 2.0.0** — see the [changelog](#changelog) at the bottom.
+**Version 2.1.0** — see the [changelog](#changelog) at the bottom.
 
 The one place the look is written down. If a change to `global.css`, a layout,
 or a page contradicts something here, either the change is wrong or this doc is
@@ -97,7 +97,7 @@ zoom still scales. One usage rule per step; nothing between steps:
 **Documented display constants** — deliberate one-offs that are *not* scale
 members and may not spread: the masthead wordmark and standfirst clamps, the
 footer wordmark (1.7rem), stat values (2rem), the compact-head wordmark
-(1.5rem), the prose drop-cap, and the 404 numeral (the single sanctioned
+(1.5rem), spotlight titles (1.06rem), the prose drop-cap, and the 404 numeral (the single sanctioned
 display stunt, see §5D).
 
 ### 2.3 The mono ladder
@@ -188,9 +188,11 @@ catalog entry, a `decisions.md` rationale, and a minor version bump here.
 | `.standfirst` | the front page's editorial frame, accent-barred serif | — | front only |
 | `.deck` | one-line page intro under a page title (roman, `--ink-soft`) | — | every B-archetype page |
 | `.section-head` | page/section title row | `--page` (adds the page-head offset) | B pages, archive groups |
-| `.pick` | the briefing row | `--lead`, `--brief`; `.also__item` is the bare tail | A pages, preferences preview |
+| `.pick` | the briefing row: meta, novelty kicker (lead), developing tag (marked case), headline, why, details, signals | `--lead`, `--brief`; `.also__item` is the bare tail | A pages, preferences preview |
 | `.briefing` | a bordered stack of picks | — | A pages, archive |
 | `.also` | compact headline+source tail of a section | — | A pages |
+| `.spot` | the Spotlight traction wire: headline + spaced-mono traction line, curated entries add why + full-pick arrow-link | — | front page, when spotlight.json has items |
+| `.arch-month` | native details month fold for the daily archive: mono summary, +/- cue, current month open | — | archive |
 | `.subchips` | chip row of subcategories with counts | — | category pages |
 | `.crumb` | ← parent breadcrumb above a title | — | subcategory pages (their one back affordance) |
 | `.empty-state` | "nothing here right now" panel — always a `<div>` of `<p>`s | — | category/sub pages |
@@ -299,5 +301,6 @@ the title lexicon. The lexicon mirrors `signalpipe/topics.py`.
 
 | version | date | change |
 |---------|------|--------|
+| 2.1.0 | 2026-07-05 | Spotlight (`.spot`) + archive month folds (`.arch-month`) + editorial registers on picks (novelty kicker, developing tag, audience in signals) + digest colophon feeds/provenance; `--ink-faint` darkened to #63676e and accent-as-text moved to `--accent-ink` (nav current, pay tag) after the new axe gate flagged them; share cards generate at build (link-preview furniture, not site imagery); per-page feed autodiscovery. |
 | 2.0.0 | 2026-07-04 | Systematization: single-sourced dark (`light-dark()`), mono ladder made true, primitives consolidated (`.arrow-link`, `.chip`, `.label` ladder, `.briefing`), pages de-inlined, print contract fixed (erail), canonical breakpoints, page archetypes + "the dateline is a claim" masthead rule, component catalog, interaction-state spec, governance + lint/sync tests. |
 | 1.x | 2026-06 | Original wire-service language: principles, fonts, colors, page compositions. |
