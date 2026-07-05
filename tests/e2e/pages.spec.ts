@@ -26,7 +26,6 @@ const routes = [
   '/archive/',
   '/feeds/',
   '/preferences/',
-  '/stats/',
   '/contact/',
   '/about/',
 ];
@@ -72,3 +71,17 @@ for (const route of consoleRoutes) {
     expect(errors, `console errors on ${route}`).toEqual([]);
   });
 }
+
+test('/stats/ redirects to /coverage/', async ({ page }) => {
+  await page.goto(u('/stats/'));
+  await page.waitForURL('**/coverage/');
+  expect(page.url()).toContain('/coverage/');
+});
+
+test('/coverage/ renders the v2 bands', async ({ page }) => {
+  await page.goto(u('/coverage/'));
+  await expect(page.getByText('Ninety days on the wire')).toBeVisible();
+  await expect(page.getByText('The funnel')).toBeVisible();
+  await expect(page.getByText('The models')).toBeVisible();
+  await expect(page.getByText('Rhythm')).toBeVisible();
+});

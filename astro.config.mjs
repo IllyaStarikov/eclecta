@@ -13,4 +13,6 @@ export default defineConfig({
   base: BASE,
   integrations: [sitemap()],
   build: { format: 'directory' },
+  // /stats/ merged into /coverage/ (spec 2026-07-04); static meta-refresh.
+  redirects: { '/stats': '/coverage/' },
 });

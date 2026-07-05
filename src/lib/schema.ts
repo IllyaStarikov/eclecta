@@ -147,7 +147,7 @@ export const statsSchema = z.object({
     })
   ),
   // The pipeline's model stages. Pinned to the three the site renders by name
-  // (about page, /stats/) so a renamed or missing stage fails validation with a
+  // (about page, /coverage/) so a renamed or missing stage fails validation with a
   // clear message instead of a build-time TypeError; extra stages still pass.
   models: z
     .object({
