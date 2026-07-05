@@ -35,7 +35,7 @@ export const CATEGORIES: Category[] = [
   {
     slug: 'research',
     name: 'Research',
-    blurb: 'Papers and results that change practice — machine learning, systems, and the sciences.',
+    blurb: 'Papers and results that change practice, from machine learning to the lab bench.',
     match: ['paper', 'arxiv', 'study', 'researchers', 'preprint', 'journal', 'findings', 'experiment'],
     subcategories: [
       { slug: 'ml', name: 'ML & methods', blurb: 'Machine-learning methods and results.', match: ['transformer', 'diffusion', 'reinforcement learning', 'gradient', 'fine-tun', 'embedding', 'neural architecture', 'self-supervised', 'dataset'] },

@@ -117,7 +117,7 @@ export interface FeedDef {
 }
 
 const CADENCE_DESC: Record<DigestKind, string> = {
-  daily: 'The daily brief, weekday mornings. Just the editions — no individual picks.',
+  daily: 'The daily brief, weekday mornings. Just the editions, no individual picks.',
   weekly: 'The weekly digest, Fridays. The week, distilled to one read.',
   monthly: 'The monthly review. What actually moved.',
   quarterly: 'The quarterly report. The slower curves.',
@@ -127,14 +127,14 @@ const CADENCE_DESC: Record<DigestKind, string> = {
 export const FEEDS: FeedDef[] = [
   {
     slug: 'everything',
-    title: `${site.name} — everything`,
+    title: `${site.name} | everything`,
     path: '/rss.xml',
     description: 'Every curated pick and every digest edition, as they publish.',
     group: 'everything',
   },
   {
     slug: 'digests',
-    title: `${site.name} — digests`,
+    title: `${site.name} | digests`,
     path: '/digests/rss.xml',
     description: 'All editions, daily brief to the year in review. No individual picks.',
     group: 'digests',
@@ -142,7 +142,7 @@ export const FEEDS: FeedDef[] = [
   ...KINDS.map(
     (k): FeedDef => ({
       slug: `digests-${k}`,
-      title: `${site.name} — ${KIND_LABEL[k].toLowerCase()}`,
+      title: `${site.name} | ${KIND_LABEL[k].toLowerCase()}`,
       path: `/digests/${k}/rss.xml`,
       description: CADENCE_DESC[k],
       group: 'cadence',
@@ -151,7 +151,7 @@ export const FEEDS: FeedDef[] = [
   ...CATEGORIES.map(
     (c): FeedDef => ({
       slug: `cat-${c.slug}`,
-      title: `${site.name} — ${c.name.toLowerCase()}`,
+      title: `${site.name} | ${c.name.toLowerCase()}`,
       path: `/${c.slug}/rss.xml`,
       description: c.blurb,
       group: 'category',

@@ -1,6 +1,6 @@
 # Eclecta — design language
 
-**Version 2.2.0** — see the [changelog](#changelog) at the bottom.
+**Version 2.3.0** — see the [changelog](#changelog) at the bottom.
 
 The one place the look is written down. If a change to `global.css`, a layout,
 or a page contradicts something here, either the change is wrong or this doc is
@@ -111,7 +111,7 @@ zoom still scales. One usage rule per step; nothing between steps:
 | `--small` | `0.92rem` | notes, summaries, secondary prose |
 
 **Documented display constants** — deliberate one-offs that are *not* scale
-members and may not spread: the masthead wordmark and standfirst clamps, the
+members and may not spread: the masthead wordmark and lead-blurb clamps, the
 footer wordmark (1.7rem), stat values (2rem), the compact-head wordmark
 (1.5rem), spotlight titles (1.06rem), the prose drop-cap, and the 404 numeral (the single sanctioned
 display stunt, see §5D).
@@ -168,7 +168,9 @@ logotype. It appears where structure begins (rail labels, erail heads) and
 where a piece ends (the tombstone), and that restraint is the point: don't
 add instances. Its canonical expressions, in order of ceremony: the wordmark
 period `ECLECTA▪`, the favicon `E▪`, the **tombstone** closing every filed
-piece (the Economist-school QED square), and the small structural squares on
+piece (the Economist-school QED square), the **reading marker** (the one
+kinetic square: it glides down the front page's section index as the reader
+scrolls — the mark keeping their place), and the small structural squares on
 band labels.
 
 The complete glyph vocabulary. Anything not listed here is banned by
@@ -178,7 +180,7 @@ principle 3.
 |------|----------------|---------------------|
 | ▪ square | **CSS block element only** (an inline-block with `background: var(--accent)`, or a 2px accent left border for panels) — never the text glyph | wordmark period, favicon, rail labels, erail heads, chip dots, prose list markers, pick source prefix, bar leaders |
 | ▪ tombstone | `.prose > p:last-child::after` — fires only when a paragraph closes the piece | the end of every filed article (digests, about); exactly one per page |
-| — dash | text glyph, `--accent` | *annotation* lists only (pick notes — terse editorial asides) |
+| — dash | text glyph, `--accent` | *annotation* lists only (pick notes — terse editorial asides). **Never in chrome copy**: reader-facing strings pair with the `|` separator or recast with commas (lint-enforced); the em-dash register belongs to annotations alone |
 | ▪ block marker | CSS block | *content* lists (prose body lists). The dash and the block are two intentional list registers: annotation vs content |
 | → / ← | text glyph inside `.arrow-link` (aria-hidden span) | arrow-links only — never a bare arrow in running copy |
 | + / – | `::before` content on `details > summary` | collapsible details toggles |
@@ -192,34 +194,33 @@ catalog entry, a `decisions.md` rationale, and a minor version bump here.
 | component | purpose | variants | pages |
 |-----------|---------|----------|-------|
 | `.masthead` | nameplate band: wordmark, kicker, 3px rule | — | archetype A + B |
-| `.dateline` | the "as of" wire band under the nameplate | — | archetype A + B only — **the dateline is a claim** (§5) |
+| `.dateline` | the "as of" wire band: date left; right, the standing claim `No. <editions published> · Open source →` (a real, incrementing issue number and the repo link) | — | archetype A + B only — **the dateline is a claim** (§5) |
 | `.compact-head` | small nameplate for dated/undated articles | `+ edition stamp` | archetype C + D |
 | `.channels` | section nav, aria-current wayfinding | — | A + B |
 | `.toggle` | theme cycle button | — | all |
-| `.rail` | in-column band header: `▪ LABEL ──── count/more` | with `.rail__count`, with `.arrow-link` | everywhere a band starts |
+| `.rail` | in-column band header: `▪ LABEL ──── count/more` | with `.rail__count`, with `.arrow-link`; `--sub` (quiet, no ▪ — groupings inside a fold) | everywhere a band starts |
 | `.label` | uppercase mono eyebrow | `--accent`, `--faint` | article kickers, group heads, form legends |
 | `.count` | tabular count chip beside a head | — | section heads, prefs |
 | `.arrow-link` | THE navigational link: mono caps + →/← , gap grows on hover | `--faint` | rails, erail, article backs, digest nav |
 | `.chip` | bordered mono tag | `+ .chip__dot` (feed), `aria-current` | subcategory chips, feed chips |
-| `.standfirst` | the front page's editorial frame, accent-barred serif | — | front only |
 | `.deck` | one-line page intro under a page title (roman, `--ink-soft`) | — | every B-archetype page |
 | `.section-head` | page/section title row | `--page` (adds the page-head offset) | B pages, archive groups |
 | `.pick` | the briefing row: meta, novelty kicker (lead), developing tag (marked case), headline, why, details, signals | `--lead`, `--brief`; `.also__item` is the bare tail | A pages, preferences preview |
 | `.briefing` | a bordered stack of picks | — | A pages, archive |
 | `.also` | compact headline+source tail of a section | — | A pages |
 | `.spot` | the Spotlight traction wire: headline + spaced-mono traction line, curated entries add why + full-pick arrow-link | — | front page, when spotlight.json has items |
-| `.arch-month` | native details month fold for the daily archive: mono summary, +/- cue, current month open | — | archive |
+| `.arch-month` | native details fold for the archive's earlier editions: mono summary, +/- cue, count; each cadence shows a fixed recent window (7/4/3/4/5) in the open, the rest folds (dailies grouped by month inside) | — | archive |
 | `.subchips` | chip row of subcategories with counts | — | category pages |
 | `.crumb` | ← parent breadcrumb above a title | — | subcategory pages (their one back affordance) |
 | `.empty-state` | "nothing here right now" panel — always a `<div>` of `<p>`s | — | category/sub pages |
-| `.erail` | the broadsheet right rail: index, nav, brief, editions, subscribe, back | per-block | A pages |
+| `.erail` | the broadsheet right rail: index (with the JS-built `.erail__marker` reading square), nav, the editions ledger (latest of every cadence), subscribe, back | per-block | A pages |
 | `.bars` / `.bar` | CSS bar chart, one accent leader | `--lead` | coverage |
 | `.stat-grid` / `.stat` | headline stat cards | — | coverage, stats (card sets intentionally disjoint: transparency vs ops) |
 | `table.bare` | mono-headed data table | — | stats |
 | `.article` | long-form column: head, kind/serial, title, standfirst, prose | `.article__foot` colophon | digests, about, contact |
 | `.prose` | reading body: serif, drop-cap, block-marker lists | — | digests, about |
 | `.digest-nav` | prev/next sibling nav (arrow-links) | — | digests |
-| `.foot` | footer bookend: wordmark, colophon, links | — | all |
+| `.foot` | the colophon grid: identity column (wordmark, mission, stamp + issue no.) plus three single-axis link columns — Read / The wire / Made by (open source, model credit) | `.foot__id`, `.foot__col` | all |
 | `.prefs` controls | `.seg` radio rows, `.pref-toggle`, `.mute-grid` | — | preferences |
 | `.skip` / `.sr-only` | a11y: skip link, visually-hidden text | — | all |
 | `.nf` | the 404 stunt numeral + line + links | — | 404 only (sanctioned bespoke, `design-lint-allow`) |
@@ -227,7 +228,8 @@ catalog entry, a `decisions.md` rationale, and a minor version bump here.
 ## 5. Page archetypes
 
 Every page is exactly one of these. The axis for headers: **the dateline is a
-claim** — "this page reflects the wire as of today." Pages that are views of
+claim** — "this page reflects the wire as of today, the `No.` counts every
+edition ever published, and the source is open." Pages that are views of
 the current wire may make it; pages carrying their own date (a digest) or no
 date (colophon pages) may not.
 
@@ -263,6 +265,10 @@ Written down so they stop drifting. Timing budget: 0.15–0.25s, `ease`.
 - **Target**: `:target` picks get a 2px accent left rule (anchor arrivals).
 - **Reveal**: one staggered fade on load, 55ms steps, capped at 8 steps,
   killed under `prefers-reduced-motion: reduce`.
+- **Reading marker**: `transform` glide 0.22s `cubic-bezier(0.2,0.7,0.2,1)`
+  down the section index; `transition: none` under reduced motion (it jumps);
+  without JS it never renders. Active index entries carry
+  `aria-current="location"` + `--ink` at weight 600.
 
 ## 7. Contracts
 
@@ -293,7 +299,8 @@ Written down so they stop drifting. Timing budget: 0.15–0.25s, `ease`.
    golden.
 4. **The gates**: `design-tokens.test.ts` (doc ↔ `:root` sync) and
    `design-lint.test.ts` (no inline styles in pages, no off-token type/color
-   in page styles, canonical breakpoints only) run in CI with the unit suite.
+   in page styles, canonical breakpoints only, no em-dash in chrome copy)
+   run in CI with the unit suite.
 
 ## 9. Taxonomy
 
@@ -317,6 +324,7 @@ the title lexicon. The lexicon mirrors `signalpipe/topics.py`.
 
 | version | date | change |
 |---------|------|--------|
+| 2.3.0 | 2026-07-05 | The open-wire revision: the front page opens with the lead (standfirst retired — the identity lives in the chrome); the dateline claims a real issue number and links the source; the footer becomes the colophon grid (identity + Read / The wire / Made by); the rail merges the brief into one editions ledger (latest of every cadence) and its section index gains the reading marker (the kinetic ▪, scrollspy); the archive gives every cadence a fixed recent window with earlier editions folded; feed titles adopt the `|` separator and em-dashes are banned from chrome copy (lint-enforced). |
 | 2.2.0 | 2026-07-05 | Absorbed the reader personalization tokens into the single-source scheme: `--acc-*` accent pairs converted to `light-dark()` (one dark block stays dead), `--accent`/`--accent-ink` documented as derivations, `--body-font` + retunable measure documented. Preferences/about rewrites reconciled onto system classes. |
 | 2.1.0 | 2026-07-05 | Spotlight (`.spot`) + archive month folds (`.arch-month`) + editorial registers on picks (novelty kicker, developing tag, audience in signals) + digest colophon feeds/provenance; `--ink-faint` darkened to #63676e and accent-as-text moved to `--accent-ink` (nav current, pay tag) after the new axe gate flagged them; share cards generate at build (link-preview furniture, not site imagery); per-page feed autodiscovery. |
 | 2.0.0 | 2026-07-04 | Systematization: single-sourced dark (`light-dark()`), mono ladder made true, primitives consolidated (`.arrow-link`, `.chip`, `.label` ladder, `.briefing`), pages de-inlined, print contract fixed (erail), canonical breakpoints, page archetypes + "the dateline is a claim" masthead rule, component catalog, interaction-state spec, governance + lint/sync tests. |

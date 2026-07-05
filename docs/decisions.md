@@ -93,6 +93,53 @@ them.
 **Why.** The preview makes each setting's effect legible without leaving the
 page, which was the core complaint.
 
+## 2026-07-05 — The identity moves into the chrome; the front page opens with news
+
+**Context.** The front page led with a four-line standfirst explaining what
+Eclecta is, above the lead story. The owner: "i hate this always being on the
+homepage." Meanwhile the dateline said "Automated edition" on every page — a
+label that informs no one, since every edition is automated.
+**Decision.** Retire the standfirst; the identity now lives in the site
+furniture. The dateline carries the real claim: `No. <n> · Open source`, where
+n counts every edition ever published (a true, incrementing issue number) and
+the link goes to the repository. The footer becomes a colophon grid — identity
+column plus Read / The wire / Made by — and "Made by" names the terms: open
+source under MIT, written by Claude models, run by one person.
+**Why.** A newspaper doesn't print its mission statement above the lead; its
+identity is in the nameplate, the dateline, the colophon. "Automated edition"
+was an apology. "No. 42 · Open source" is a boast, and both halves are
+verifiable — the number increments with the archive and the link shows the code.
+
+## 2026-07-05 — The mark becomes the reading marker (scrollspy)
+
+**Context.** The rail's "In this edition" index was static; the owner wanted
+the dot to "shoot down" the index as the reader scrolls. Separately, the rail
+carried a "Latest brief" block *and* an "Editions" block — two blocks doing one
+job — and the index's scaling was an open question.
+**Decision.** One kinetic ▪: a JS-built `.erail__marker` glides down the index,
+tracking the topmost section past the reading band (top 40% of the viewport),
+with `aria-current="location"` on the active entry. The brief merges into a
+single editions ledger — the latest of every cadence, daily first. Scaling is
+bounded by design (the index can never exceed the six fixed categories +
+Spotlight) and belt-and-braces by an overflow guard on the sticky rail.
+**Why.** The square is Eclecta's whole logo system, and this is its one
+allowed motion: it keeps the reader's place, which is furniture, not
+decoration. Without JS the index is a plain anchor list — the enhancement
+degrades to exactly the old behavior.
+
+## 2026-07-05 — Archive: equal standing per cadence
+
+**Context.** 31 dailies vs 8 weeklies vs 2 monthlies: the archive read as a
+wall of daily briefs with the long views buried at the bottom.
+**Decision.** Every cadence shows a fixed recent window in the open — 7
+dailies, 4 weeklies, 3 monthlies, 4 quarterlies, 5 yearlies (each roughly the
+cadence's natural span: a week of days, a month of weeks, a quarter of months,
+a year of quarters) — and the remainder folds into one closed "Earlier" details
+per kind, dailies grouped by month inside.
+**Why.** The archive's job is "find the edition I remember," and recency
+dominates that search. Fixed windows keep the five cadences visually equal
+forever, however lopsided their counts grow.
+
 ## Planned — pipeline v2: native taxonomy, cross-edition dedup, RSS-on-confident
 
 **Context.** Cross-edition de-duplication, retro-tagging old picks, a 2×/day

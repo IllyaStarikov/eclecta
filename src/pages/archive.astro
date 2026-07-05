@@ -1,16 +1,33 @@
 ---
 import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import { site, href, KINDS, KIND_LABEL } from '../site';
+import { site, href, KINDS, KIND_LABEL, type DigestKind } from '../site';
 
 const digests = (await getCollection('digests')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
+
+/* Every cadence gets equal standing: a fixed recent window in the open, the
+   rest folded. Windows follow each cadence's natural span — a week of dailies,
+   a month of weeklies, a quarter of monthlies, a year of quarterlies, five
+   years of yearlies — so no kind drowns another. */
+const RECENT: Record<DigestKind, number> = {
+  daily: 7,
+  weekly: 4,
+  monthly: 3,
+  quarterly: 4,
+  yearly: 5,
+};
+
 // Group by kind in KINDS order; skip kinds with nothing published yet.
-const groups = KINDS.map((kind) => ({
-  kind,
-  entries: digests.filter((d) => d.data.kind === kind),
-})).filter((g) => g.entries.length > 0);
+const groups = KINDS.map((kind) => {
+  const entries = digests.filter((d) => d.data.kind === kind);
+  return {
+    kind,
+    recent: entries.slice(0, RECENT[kind]),
+    older: entries.slice(RECENT[kind]),
+  };
+}).filter((g) => g.recent.length > 0);
 
 const monthName = (ym: string) =>
   new Date(ym + '-01T00:00:00Z').toLocaleDateString('en-US', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -24,6 +41,14 @@ function byMonth(entries: typeof digests) {
   }
   return [...m.entries()];
 }
+/** Plural noun for the fold summary: 7 briefs, 4 digests, 3 reviews… */
+const NOUN: Record<DigestKind, string> = {
+  daily: 'brief',
+  weekly: 'digest',
+  monthly: 'review',
+  quarterly: 'report',
+  yearly: 'edition',
+};
 ---
 <Base feedLinks={[{ title: `${site.name} | digests`, href: href('/digests/rss.xml') }]} title={`Archive | ${site.name}`} description="Every edition Eclecta has published, daily brief to the year in review.">
   <div class="section-head section-head--page">
@@ -31,7 +56,7 @@ function byMonth(entries: typeof digests) {
   </div>
 
   {groups.map((g) => (
-    <section>
+    <section aria-label={KIND_LABEL[g.kind]}>
       <div class="rail">
         <h2 class="rail__label">{KIND_LABEL[g.kind]}</h2>
         <span class="rail__rule"></span>
@@ -39,39 +64,60 @@ function byMonth(entries: typeof digests) {
           <span class="chip__dot"></span>{KIND_LABEL[g.kind]} feed
         </a>
       </div>
-      {g.kind === 'daily' ? (
-        byMonth(g.entries).map(([ym, entries], mi) => (
-          <details class="arch-month" open={mi === 0}>
-            <summary>{monthName(ym)}<span class="arch-month__n">{entries.length} brief{entries.length === 1 ? '' : 's'}</span></summary>
+      <div class="briefing">
+        {g.recent.map((d, i) => (
+          <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
+            <div class="label arch__period">{d.data.period}</div>
+            <div>
+              <h3 class="pick__title">
+                <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
+              </h3>
+              <p class="pick__why">{d.data.blurb}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      {g.older.length > 0 && (
+        <details class="arch-month">
+          <summary>Earlier {NOUN[g.kind]}s<span class="arch-month__n">{g.older.length} more</span></summary>
+          {g.kind === 'daily' ? (
+            byMonth(g.older).map(([ym, entries]) => (
+              <Fragment>
+                <div class="rail rail--sub">
+                  <h3 class="rail__label">{monthName(ym)}</h3>
+                  <span class="rail__rule"></span>
+                </div>
+                <div class="briefing">
+                  {entries.map((d) => (
+                    <article class="pick arch">
+                      <div class="label arch__period">{d.data.period}</div>
+                      <div>
+                        <h4 class="pick__title">
+                          <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
+                        </h4>
+                        <p class="pick__why">{d.data.blurb}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </Fragment>
+            ))
+          ) : (
             <div class="briefing">
-              {entries.map((d, i) => (
-                <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
+              {g.older.map((d) => (
+                <article class="pick arch">
                   <div class="label arch__period">{d.data.period}</div>
                   <div>
-                    <h3 class="pick__title">
+                    <h4 class="pick__title">
                       <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
-                    </h3>
+                    </h4>
                     <p class="pick__why">{d.data.blurb}</p>
                   </div>
                 </article>
               ))}
             </div>
-          </details>
-        ))
-      ) : (
-        <div class="briefing">
-          {g.entries.map((d, i) => (
-            <article class="pick reveal arch" style={`animation-delay:${Math.min(i, 8) * 50}ms`}>
-              <div class="label arch__period">{d.data.period}</div>
-              <div>
-                <h3 class="pick__title">
-                  <a href={href(`/digests/${d.id}/`)}>{d.data.title}</a>
-                </h3>
-                <p class="pick__why">{d.data.blurb}</p>
-              </div>
-            </article>
-          ))}
-        </div>
+          )}
+        </details>
       )}
     </section>
   ))}
