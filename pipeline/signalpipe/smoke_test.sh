@@ -107,7 +107,7 @@ fi
 
 # ---------------------------------------------------------------------------
 sec "E · Ghost separation (digest must not leak into the blog)"
-slug=$(q "SELECT staged_path FROM digests ORDER BY iso_week DESC LIMIT 1" | xargs -I{} basename {} .md | sed 's/_/-/g')
+slug=$(q "SELECT staged_path FROM digests ORDER BY period_key DESC LIMIT 1" | xargs -I{} basename {} .md | sed 's/_/-/g')
 if [ -n "$slug" ] && [ "$(code "$GHOST/")" = "200" ]; then
   [ "$(curl -s "$GHOST/blog/rss/" | grep -c "$slug")" = 0 ] && ok "digest ABSENT from /blog/rss" || bad "digest LEAKED into /blog/rss"
   [ "$(curl -s "$GHOST/signal/rss/" | grep -c "$slug")" -ge 1 ] && ok "digest present in /signal/rss" || bad "digest missing from /signal/rss"

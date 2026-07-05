@@ -459,7 +459,13 @@ def digest_title(kind: str, period_key: str) -> str:
 
 
 def _fm_quote(s: str) -> str:
-    return '"%s"' % (s or "").replace("\\", "\\\\").replace('"', '\\"')
+    return '"%s"' % (
+        (s or "")
+        .replace("\\", "\\\\")
+        .replace('"', '\\"')
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+    )
 
 
 def write_digest_md(cfg, row, blurb: Optional[str] = None) -> Tuple[str, str]:

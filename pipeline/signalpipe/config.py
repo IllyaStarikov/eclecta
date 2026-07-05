@@ -267,7 +267,12 @@ class Config:
         self.save()
 
     def save(self) -> None:
-        self.path.write_text(json.dumps(self.data, indent=2) + "\n")
+        # Atomic: write a sibling temp then rename, so a concurrent load()
+        # never reads a truncated file (rename is atomic on the same fs).
+        text = json.dumps(self.data, indent=2) + "\n"
+        tmp = self.path.with_name(self.path.name + ".tmp")
+        tmp.write_text(text)
+        os.replace(str(tmp), str(self.path))
 
 
 def load(path: Optional[pathlib.Path] = None) -> Config:
