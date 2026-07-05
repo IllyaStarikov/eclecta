@@ -24,7 +24,10 @@ import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const BASE_URL = 'http://localhost:4321';
+// Dedicated port: NEVER reuse :4321 — a dev server from another checkout on
+// the default port once fed a whole capture run the wrong site.
+const PORT = 4331;
+const BASE_URL = `http://localhost:${PORT}`;
 
 const VIEWPORTS = [
   { width: 390, height: 844 },
@@ -72,17 +75,18 @@ async function isUp() {
   }
 }
 
-let server = null;
-if (await isUp()) {
-  console.log('Reusing astro preview already running on :4321');
-} else {
-  console.log('Starting astro preview…');
-  server = spawn('npx', ['astro', 'preview'], { cwd: ROOT, stdio: 'ignore', detached: false });
+console.log(`Starting astro preview on :${PORT}…`);
+const server = spawn('npx', ['astro', 'preview', '--port', String(PORT)], {
+  cwd: ROOT,
+  stdio: 'ignore',
+  detached: true, // own process group, so cleanup kills astro, not just npx
+});
+{
   const deadline = Date.now() + 30_000;
   while (!(await isUp())) {
     if (Date.now() > deadline) {
       server.kill();
-      throw new Error('astro preview did not come up on :4321 in 30s — did you run `npm run build`?');
+      throw new Error(`astro preview did not come up on :${PORT} in 30s — did you run \`npm run build\`?`);
     }
     await new Promise((r) => setTimeout(r, 400));
   }
@@ -195,7 +199,11 @@ try {
   }
 } finally {
   await browser.close();
-  if (server) server.kill();
+  try {
+    process.kill(-server.pid);
+  } catch {
+    server.kill();
+  }
 }
 
 console.log(`\n${shots} screenshots → ${outDir}`);
