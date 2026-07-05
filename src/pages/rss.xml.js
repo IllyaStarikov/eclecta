@@ -2,6 +2,7 @@ import rss from '@astrojs/rss';
 import { getCollection } from 'astro:content';
 import picks from '../data/picks.json';
 import { absUrl, KIND_LABEL } from '../site';
+import { safeUrl } from '../lib/url';
 import { getFeed, pickItemHtml, pickPrimaryLink, digestItemHtml, FEED_STYLESHEET, FEED_DIGEST_CAP } from '../lib/feeds';
 
 export async function GET(context) {
@@ -22,7 +23,7 @@ export async function GET(context) {
     }),
     ...picks.map((p) => ({
       title: p.title,
-      link: pickPrimaryLink(p),
+      link: safeUrl(pickPrimaryLink(p)) ?? absUrl('/', context.site),
       pubDate: p.curated_at ? new Date(p.curated_at) : undefined,
       description: p.why || '',
       content: pickItemHtml(p),

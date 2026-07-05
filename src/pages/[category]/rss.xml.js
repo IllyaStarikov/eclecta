@@ -1,6 +1,7 @@
 import rss from '@astrojs/rss';
 import picks from '../../data/picks.json';
 import { absUrl } from '../../site';
+import { safeUrl } from '../../lib/url';
 import { CATEGORIES, resolveCategory } from '../../lib/taxonomy';
 import { getFeed, pickItemHtml, pickPrimaryLink, FEED_STYLESHEET } from '../../lib/feeds';
 
@@ -21,7 +22,7 @@ export function GET(context) {
     site: new URL(import.meta.env.BASE_URL, context.site).href,
     items: list.map((p) => ({
       title: p.title,
-      link: pickPrimaryLink(p),
+      link: safeUrl(pickPrimaryLink(p)) ?? absUrl('/', context.site),
       pubDate: p.curated_at ? new Date(p.curated_at) : undefined,
       description: p.why || '',
       content: pickItemHtml(p),
