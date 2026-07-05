@@ -351,7 +351,7 @@ def main(argv=None) -> int:
     p.set_defaults(fn=cmd_backfill)
 
     p = sub.add_parser("publish", help="export picks/stats/kb/digests to the site repo")
-    p.add_argument("--what", choices=["picks", "stats", "kb", "digests", "all"],
+    p.add_argument("--what", choices=["picks", "stats", "spotlight", "kb", "digests", "all"],
                    default="all")
     p.add_argument("--no-push", dest="no_push", action="store_true",
                    help="commit locally without pushing")
