@@ -181,6 +181,43 @@ class Config:
             "user_agent", "signalpipe/0.1 (+https://eclecta.co; feed curator)"
         )
 
+    def config_fingerprint(self) -> Dict[str, Any]:
+        """A stable fingerprint of the knobs that shape pipeline behavior, used to
+        attribute each run's outcomes to the config that produced them. Returns
+        {'hash': <12-char sha256>, 'tunables': {...}}: the hash changes iff a
+        tunable changes, so runs group into comparable config versions.
+
+        Deliberately excludes non-behavioral keys (paths, server bind, feed
+        strings, tracking hashes) so cosmetic edits don't fork the version."""
+        tunables = {
+            "funnel": self.data.get("funnel", {}),
+            "score_weights": self.data.get("score_weights", {}),
+            "cadences": self.data.get("cadences", {}),
+            "spend": self.data.get("spend", {}),
+            "dedup": self.data.get("dedup", {}),
+            "digests": self.digests,
+            "backend": {
+                "selector": self.data.get("backend", {}).get("selector"),
+                "tier_overrides": self.data.get("backend", {}).get(
+                    "tier_overrides", {}
+                ),
+            },
+            "tiers": self.data.get("tiers", {}),
+            "downtime": {
+                k: self.data.get("downtime", {}).get(k)
+                for k in (
+                    "idle_min",
+                    "require_ac",
+                    "min_free_gb_curation",
+                    "min_free_gb_digest",
+                    "swap_used_max_gb",
+                )
+            },
+        }
+        blob = json.dumps(tunables, sort_keys=True, separators=(",", ":"))
+        fp = hashlib.sha256(blob.encode("utf-8")).hexdigest()[:12]
+        return {"hash": fp, "tunables": tunables}
+
     def model_for(self, tier: str, backend: Optional[str] = None) -> str:
         """Resolve tier -> cloud model id for a backend (default: the active
         selector). 'local' tiers carry no per-tier cloud id, so they resolve to

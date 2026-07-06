@@ -103,6 +103,46 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_runs(args: argparse.Namespace) -> int:
+    """Recent job runs, each tagged with the config that produced it — so you can
+    see whether a knob change actually moved the outcomes (attribution)."""
+    import json
+
+    from . import db as db_mod
+
+    cfg = _load_cfg(args)
+    if not cfg.db_path.exists():
+        print("db not created yet — run `python3 -m signalpipe ingest` first")
+        return 0
+    conn = db_mod.connect_ro(cfg.db_path)
+    try:
+        runs = db_mod.recent_runs(conn, job=args.job, limit=args.limit)
+        if not runs:
+            print("no runs recorded yet — records begin on the first job cycle "
+                  "after the worker picks up this build.")
+            return 0
+        print("current config: %s" % cfg.config_fingerprint()["hash"])
+        print("%-19s  %-7s  %-12s  %s" % ("when (UTC)", "job", "config", "outcome"))
+        prev = None
+        for r in reversed(runs):  # oldest-first: a config change reads top-down
+            h = r["config_hash"]
+            mark = "   <- config changed" if prev and h != prev else ""
+            prev = h
+            try:
+                st = json.loads(r["stats"])
+            except (ValueError, TypeError):
+                st = {}
+            summary = ", ".join(
+                "%s=%s" % (k, st[k]) for k in list(st)[:5]
+                if not isinstance(st[k], (dict, list))
+            )
+            print("%-19s  %-7s  %-12s  %s%s" % (
+                r["ts"][:19], r["job"], h, summary, mark))
+    finally:
+        conn.close()
+    return 0
+
+
 # --------------------------------------------------------------------------
 # stage commands (lazy imports keep startup light and optional deps optional)
 # --------------------------------------------------------------------------
@@ -305,6 +345,13 @@ def main(argv=None) -> int:
     sub.add_parser("status", help="config, db, spend, health summary").set_defaults(
         fn=cmd_status
     )
+
+    p = sub.add_parser("runs", help="recent job runs tagged with the config that "
+                                    "produced them (tuning attribution)")
+    p.add_argument("--job", default=None,
+                   help="filter to one job: ingest|score|fetch|curate|digest")
+    p.add_argument("--limit", type=int, default=40, help="max runs to show")
+    p.set_defaults(fn=cmd_runs)
 
     p = sub.add_parser("ingest", help="poll sources, dedup, store")
     p.add_argument("--source", help="single source slug")
