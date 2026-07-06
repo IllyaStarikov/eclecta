@@ -16,9 +16,13 @@ python3 -m pytest -m live         # LIVE: hits real services (HN/Reddit/arXiv/..
 The pytest config lives in `pipeline/pyproject.toml` (`pythonpath=["."]` makes
 `import signalpipe.*` resolve without an install step).
 
-### Dev dependencies
+### Python + dev dependencies
+
+The suite targets **Python 3.13**. A dedicated pyenv virtualenv keeps its deps isolated:
 
 ```bash
+pyenv virtualenv 3.13.6 eclecta      # once
+pyenv local eclecta                  # pins this repo to it (writes .python-version)
 pip install -r pipeline/requirements-dev.txt
 ```
 

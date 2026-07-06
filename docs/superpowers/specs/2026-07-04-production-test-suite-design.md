@@ -43,7 +43,9 @@ lives under `~/Library/Mobile Documents/…`, so:
 
 ## Environment constraints
 
-- **Python 3.9.22** (pyenv) — all tests must be 3.9-compatible.
+- **Python 3.9.22** (pyenv) — tests written 3.9-compatible. **Cut over to Python 3.13.6 on
+  2026-07-05** (verified: 2648 passed, 99% cov on 3.13); the suite runs on both. CI + ruff now
+  target 3.13; local dev uses a dedicated `eclecta` pyenv virtualenv.
 - Installed: `pytest`, `pytest-cov`, `coverage`, `httpx`, `feedparser`, `trafilatura`, `anthropic`, `ruff`.
 - **Missing**: `respx`, `freezegun`, `hypothesis` → the suite is **dependency-light**:
   - HTTP faking via **`httpx.MockTransport`** (for `PoliteClient` internals) and **injected fake clients**
@@ -133,7 +135,7 @@ show_missing = true
 ## CI + hooks
 
 - **`.github/workflows/deploy.yml`** — add a **`pytest` job** parallel to the JS job:
-  setup-python 3.9 → `pip install -r pipeline/requirements-dev.txt` → `pytest` (with coverage) →
+  setup-python 3.13 → `pip install -r pipeline/requirements-dev.txt` → `pytest` (with coverage) →
   upload `coverage.xml` + htmlcov artifact. `deploy` gates on **both** test jobs.
 - **`.pre-commit-config.yaml`** — `ruff check` + `ruff format` on commit (Python only);
   **pre-push** stage runs `pytest -m "not live and not integration"` + `npm run test:unit`.
