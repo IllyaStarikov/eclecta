@@ -638,7 +638,9 @@ def test_run_weekly_happy_path(cfg, conn, seed, monkeypatch):
     call = fake.calls[0]
     assert call.tier == "digest"
     assert call.cap_kind == "digest"
-    assert call.effort == "max"
+    # daily/weekly run 'high' (the recommended prose ceiling); only the
+    # cross-period retrospectives (monthly+) earn 'max'.
+    assert call.effort == "high"
     assert call.prompt.startswith("PERIOD: weekly 2026-W27")
     assert "You are writing a 'Signal' digest" in call.system
 

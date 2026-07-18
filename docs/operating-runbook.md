@@ -36,11 +36,15 @@ Job bodies live in `pipeline/ops/`.
 
 ## Cadence
 
-Worker intervals and edition crons live in `signal.json`
-(`cadences`, `digests.*.cron`). Editions run daily on weekday mornings, weekly
-on Fridays, monthly on the first weekday, quarterly on the first weekday of
-Jan/Apr/Jul/Oct, and yearly on the first weekday of January. `period.py` is the
-single authority for windows and due-dates.
+Worker intervals live in `signal.json` (`cadences`). Editions do NOT run on a
+cron: the worker fires a single editions dispatcher every
+`downtime.editions_interval_min` (default 30 min) and `period.py` decides which
+kinds are due. Editions run daily on weekday mornings, weekly on Fridays, monthly
+on the first weekday, quarterly on the first weekday of Jan/Apr/Jul/Oct, and
+yearly on the first weekday of January. The `digests.*.cron` keys are
+documentation of the intended times only — the scheduler never reads them, so
+editing one changes nothing. `period.py` is the single authority for windows and
+due-dates.
 
 ## Downtime gating (why editions sometimes don't run)
 

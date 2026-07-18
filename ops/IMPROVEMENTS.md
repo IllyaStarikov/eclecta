@@ -47,9 +47,21 @@ Landed on `main` after the owner returned with fresh usage. Site: 246 unit +
 - **Review #3 (partial)** — `effort="low"` on triage + judge; the write call left
   at default (Opus prose — quality tradeoff, see `[?]`). ✓
 
-Still open below: the `[?]` decisions (brand kept as-is, model routing, caps,
-write/digest effort) and the low/nit config cleanups (dead knobs, sitemap/OG
-tests). These are the nightly pass's queue.
+Second batch (owner directive + remaining review findings):
+- **Model routing** — per Illya: **Sonnet triage, Sonnet curation (judge), Opus
+  writing**. Example config: `tier_overrides={}` (all on subscription),
+  triage/judge/deep → `claude-sonnet-5`, write/digest → `claude-opus-4-8`;
+  `claude-sonnet-5` + `claude-fable-5` added to `backend_api.PRICING`. ⚠️ This is
+  the REPO/example only — his LIVE config still routes triage/judge to local
+  qwen; moving them to subscription Sonnet raises Max-quota burn a lot (see note). 
+- **Digest effort** — `high` for daily/weekly, `max` only for monthly+. ✓
+- **Dead knobs** — removed `api_use_batches`, `escalate_spread`,
+  `stop_curate_on_cap` from the example; `tiers.digest.local` 72b→14b (OOM trap);
+  daily cap 10→5; runbook fixed to say `digests.*.cron` is documentation-only. ✓
+- **Coverage** — new sitemap-output + default-OG-card e2e tests. ✓
+
+Still open (owner decisions in §C): whether to apply the Sonnet/Opus routing to
+the LIVE pipeline config (quota tradeoff), and cadence interval tuning.
 
 ---
 

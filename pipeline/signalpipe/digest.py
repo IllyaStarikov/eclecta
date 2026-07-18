@@ -219,9 +219,14 @@ def run(cfg, kind: str = "weekly", period: Optional[str] = None,
         system = system_digest(kind, _load_style(cfg), _load_editorial(cfg))
 
         try:
+            # The retrospectives (monthly+) synthesize across sub-digests and
+            # earn 'max'; the bounded daily/weekly editions get 'high', the
+            # recommended ceiling for prose — no overthinking, less quota burn.
             out, cost = adapter.complete_with_cost(
                 "digest", system, prompt, DIGEST_SCHEMA,
-                cfg=cfg, conn=conn, effort="max", cap_kind="digest",
+                cfg=cfg, conn=conn,
+                effort=("max" if kind in ("monthly", "quarterly", "yearly") else "high"),
+                cap_kind="digest",
             )
         except UsageLimitExhausted as e:
             # Not a failure — the editions dispatcher re-fires on its interval

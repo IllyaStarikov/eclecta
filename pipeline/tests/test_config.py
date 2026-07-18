@@ -134,8 +134,12 @@ def test_example_config_roundtrips(tmp_path):
     dst.write_text(example.read_text())
     cfg = config_mod.load(dst)
     assert cfg.model_for("digest", "api") == "claude-opus-4-8"
-    # example ships tier_overrides {triage: local, judge: local}
-    assert cfg.backend_for("triage") == "local"
+    # example ships all tiers on the subscription (empty tier_overrides):
+    # triage + judge on Sonnet, write + digest on Opus.
+    assert cfg.backend_for("triage") == "subscription"
+    assert cfg.model_for("triage") == "claude-sonnet-5"
+    assert cfg.model_for("judge") == "claude-sonnet-5"
+    assert cfg.model_for("write") == "claude-opus-4-8"
     assert cfg.backend_for("write") == "subscription"
     assert set(cfg.digests) == {"daily", "weekly", "monthly", "quarterly", "yearly"}
     assert "Mobile Documents" not in str(cfg.db_path)

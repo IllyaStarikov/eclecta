@@ -35,6 +35,30 @@ test('digest: article og + published_time + Article JSON-LD + kind feed + live c
   expect(card.headers()['content-type']).toContain('image/png');
 });
 
+test('the default OG card actually renders (every non-digest page references it)', async ({ request }) => {
+  const card = await request.get('/og/default.png');
+  expect(card.status()).toBe(200);
+  expect(card.headers()['content-type']).toContain('image/png');
+});
+
+test('sitemap: index + url set exist, list routes, and digests carry lastmod', async ({ request }) => {
+  // robots.txt advertises https://eclecta.co/sitemap-index.xml — it must be real.
+  const index = await request.get('/sitemap-index.xml');
+  expect(index.status()).toBe(200);
+  expect(index.headers()['content-type']).toContain('xml');
+  const sub = (await index.text()).match(/<loc>([^<]*sitemap-\d+\.xml)<\/loc>/)?.[1];
+  expect(sub, 'index references a url sitemap').toBeTruthy();
+
+  const urls = await request.get(sub!.replace(/^https?:\/\/[^/]+/, ''));
+  expect(urls.status()).toBe(200);
+  const xml = await urls.text();
+  expect(xml).toContain('https://eclecta.co/');
+  expect(xml).toContain('https://eclecta.co/ai/');
+  expect(xml).toContain(`https://eclecta.co/digests/daily/${latestDaily}/`);
+  // the serialize() hook stamps digest URLs with a computed <lastmod>
+  expect(xml).toContain('<lastmod>');
+});
+
 test('category page advertises its own feed', async ({ page }) => {
   await page.goto('/ai/');
   await expect(
