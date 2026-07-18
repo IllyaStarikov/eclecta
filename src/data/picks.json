@@ -1,10 +1,112 @@
 [
   {
+    "id": 95768,
+    "story_id": "s_f113a1daf2eeab3f",
+    "title": "Longinus: 2 Boundaries in One Bug, Piercing Chrome’s Renderer and V8 Sandbox with a Single Vulnerability, CVE-2026-6307",
+    "relevance": 9,
+    "score": 5.72,
+    "why": "A single missing field comparison in one V8 C++ equality operator gave attackers reliable read/write plus a full heap-sandbox escape and renderer RCE from one bug, and it shipped in every Chrome from 106 through 147 before the April 7, 2026 fix.",
+    "notes": [
+      "Root cause: `JSToWasmFrameStateFunctionInfo::operator==` accepted base-class references and never compared the derived `signature_` field, so Turboshaft's global value numbering (CSE) merged FrameState nodes for Wasm functions with identical parameter lists but different return types, such as `() -> i64` versus `() -> externref`.",
+      "On lazy deoptimization the deoptimizer reads `kReturnRegister0` and interprets the bits per the serialized `wasm_call_return_kind` from the surviving (merged) state; an `externref` read as `int64_t` yields addrof, and an attacker-controlled `i64` treated as `Tagged<Object>` yields fakeobj. The writeup claims 100% success with no heap spraying.",
+      "Sandbox escape falls out of the same primitive: Wasm reference values use the tagged register representation, so the register already holds a full 64-bit tagged pointer with no cage-base reconstruction. The forged pointer is unconstrained by the 1TB sandbox and needs no second vulnerability or pointer-table manipulation (CodePointerTable, TrustedPointerTable, ExternalPointerTable are untouched).",
+      "RCE path: forge an out-of-sandbox object pointer backed by a valid map, abuse a TurboFan-optimized in-object property store to write into JIT memory, stage arbitrary qwords as double-array literals, then patch a short relative jump to reach smuggled shellcode in the renderer.",
+      "Trigger setup: a JS function that sees two receiver shapes inlines two JS-to-Wasm getter wrappers; a callback changes one prototype after optimization, forcing lazy deopt on the Wasm return that consumes the incorrectly shared FrameState.",
+      "Timeline (self-reported by Vega/Nebula): bug introduced in Chrome 106, reported 2026-03-29, root cause and fix by 2026-03-31, shipped in Chrome 147.0.7727.101 on 2026-04-07; all releases 106 through 147 affected, roughly four years of exposure. Assigned CVE-2026-6307."
+    ],
+    "summary": "Vega (Nebula Security) documents CVE-2026-6307, a V8 vulnerability where `JSToWasmFrameStateFunctionInfo::operator==` compared only base-class fields and omitted the Wasm `signature_`, letting Turboshaft's CSE merge two deoptimization FrameState nodes whose Wasm functions share parameter lists but differ in return type (i64 vs externref). On a lazy deoptimization triggered by a prototype change during a JS-to-Wasm call, the deoptimizer materializes the return register using the wrong return kind, reinterpreting a tagged reference as an integer (addrof) or an attacker-controlled i64 as an object reference (fakeobj), which the writeup claims works with 100% reliability and no spraying. Because Wasm reference values already occupy a full 64-bit tagged register with no cage-base step, the forged pointer can point outside V8's 1TB heap sandbox, so the same bug crosses both the arbitrary R/W and sandbox-escape boundaries without a second vulnerability. The described RCE forges an out-of-sandbox object with a valid map, uses an optimized in-object property store to patch JIT memory holding staged double literals, and redirects execution to shellcode in the renderer. Per the reported timeline the bug existed since Chrome 106 and was fixed in Chrome 147.0.7727.101 on 2026-04-07; performance and reliability figures are the author's own.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "Single missing field in C++ equality operator (`JSToWasmFrameStateFunctionInfo::operator==` omits `signature_`) causes TurboFan's CSE to merge semantically distinct JS-to-Wasm deoptimization FrameState nodes, yielding type confusion + full V8 heap sandbox escape from one bug with no secondary vulnerability needed",
+    "audience": "Browser engine security researchers, V8/compiler engineers, and exploit developers studying sandbox escape techniques",
+    "source_url": "https://nebusec.ai/research/v8-cve-2026-6307-writeup",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/uaoe9y/longinus_2_boundaries_one_bug_piercing",
+        "points": 14,
+        "comments": 0,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://nebusec.ai/research/v8-cve-2026-6307-writeup/",
+        "points": null,
+        "comments": null,
+        "name": "Nebula Security Research"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-06-29T10:00:17.000-05:00",
+    "published_at": "2026-07-18T15:05:07.020231+00:00",
+    "curated_at": "2026-07-18T15:05:07.020231+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 111173,
+    "story_id": "s_a7b30a30460e3b96",
+    "title": "Leanstral 1.5: Proof abundance for all",
+    "relevance": 8,
+    "score": 5.641,
+    "why": "A free Apache-2.0 Lean 4 prover that Mistral says solves PutnamBench problems at ~$4 each versus ~$300 for Seed-Prover puts serious formal-verification and automated bug-finding within reach of individual engineers, not just labs with H20 clusters.",
+    "notes": [
+      "MoE model: 119B total, 6B active parameters, Apache-2.0, weights on Hugging Face plus a free API endpoint (leanstral-1-5); trained via mid-training, SFT, then RL with CISPO across a multiturn prove/disprove environment and a filesystem code-agent environment verified by a fork of SafeVerify.",
+      "Self-reported benchmarks: 100% on miniF2F validation and test; 587/672 PutnamBench; SOTA 87% FATE-H and 34% FATE-X; FLTEval pass@8 up from 31.9 to 43.2, beating Claude Opus 4.6's 39.6 at one-seventh the cost. All figures are vendor-reported without independent verification.",
+      "Cost claim: ~$4 per PutnamBench problem, edging Seed-Prover 1.5 (high) by 7 problems at an estimated $300+ per problem (10 H20-days budget); Aleph Prover cited at $54-68 per problem. Higher-ranked provers use natural-language proof guidance or run at far higher cost.",
+      "Test-time scaling is monotone with token budget on PutnamBench Pass@8: 44 solved at 50k tokens, 244 at 200k, 493 at 1M, 587 at 4M; an AVL-tree O(log n) proof ran over 2.7M tokens across 22 context compactions.",
+      "Bug-finding pipeline: Aeneas translates Rust to Lean, Leanstral infers intended correctness properties and tries to prove or disprove them (4 attempts each). Across 57 repos it flagged 47 violated properties, 11 genuine bugs, 5 previously unreported, including a (value+1) overflow on Std.U64.MAX in datrs/varinteger zigzag decoding.",
+      "Article text has typos (\"%87\") and gives no methodology detail on total inference budget, seeds, or how per-problem cost was measured; all comparisons to Seed-Prover, Opus 4.6, and open-source models are Mistral's own."
+    ],
+    "summary": "Mistral released Leanstral 1.5, an Apache-2.0 licensed MoE model (119B total, 6B active) for formal proof engineering in Lean 4, with open weights on Hugging Face and a free API. The company reports it saturates miniF2F (100% on validation and test), solves 587 of 672 PutnamBench problems, and reaches state-of-the-art on the abstract-algebra benchmarks FATE-H (87%) and FATE-X (34%), while claiming a large cost advantage of about $4 per PutnamBench problem versus an estimated $300+ for Seed-Prover 1.5 high. Training used mid-training, supervised fine-tuning, and RL with CISPO across a multiturn prove/disprove environment and a filesystem code-agent environment. Mistral highlights monotone test-time scaling (44 to 587 PutnamBench problems as token budget rises from 50k to 4M) and a long AVL-tree proof spanning 2.7M tokens and 22 compactions. A bug-discovery pipeline combining Aeneas Rust-to-Lean translation with Leanstral flagged 47 violated properties across 57 repositories, 11 genuine bugs and 5 previously unreported, including a U64 overflow in zigzag decoding. All benchmark, cost, and bug-count figures are self-reported and lack independent verification or detailed methodology.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "devtools",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "First model to fully saturate miniF2F (100%); SOTA on graduate-level abstract algebra benchmarks FATE-H/X; dramatic cost advantage over competing provers; automated real-world bug discovery pipeline via Lean formalization",
+    "audience": "ML researchers and engineers working on formal verification, theorem proving, or automated code correctness",
+    "source_url": "https://mistral.ai/news/leanstral-1-5",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=48780801",
+        "points": 353,
+        "comments": 94,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://mistral.ai/news/leanstral-1-5/",
+        "points": null,
+        "comments": null,
+        "name": "Mistral AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-07-03T22:33:10+00:00",
+    "published_at": "2026-07-18T15:19:51.866746+00:00",
+    "curated_at": "2026-07-18T15:19:51.866746+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 169490,
     "story_id": "s_0b0d7b935db5d4f1",
     "title": "TP-Link Kasa cameras leaked home GPS via unauthenticated UDP for 6 years",
     "relevance": 8,
-    "score": 5.431,
+    "score": 5.391,
     "why": "If you buy, sell, or donate a used TP-Link Kasa camera, a $3 CH341A programmer plus one UDP packet recovers the prior owner's plaintext TP-Link ID email, crackable MD5 password, and sub-meter home GPS, and that TP-Link ID unlocks Tapo locks, Deco routers, and VIGI surveillance.",
     "notes": [
       "The get_sysinfo exposure: one unauthenticated UDP packet to port 9999 returns precise GPS coordinates, MAC/oemId/hwId/deviceId, device alias, and firmware string, protected only by a trivial XOR that Wireshark decodes as cleartext. The unauthenticated port-9999 protocol was documented by softScheck (HS110) in July 2016; identical GPS exposure on the Kasa KC100 camera was published in August 2020.",
@@ -31,8 +133,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48952565",
-        "points": 159,
-        "comments": 59,
+        "points": 177,
+        "comments": 62,
         "name": "Hacker News"
       },
       {
@@ -53,7 +155,7 @@
     "story_id": "s_f76877611f751c36",
     "title": "China's 2.8-trillion-parameter Kimi K3 beats Claude Fable 5 in Frontend Code Arena benchmark— Moonshot AI delivers largest open-weight AI model ever, as China works around U.S. compute limits",
     "relevance": 8,
-    "score": 5.213,
+    "score": 5.151,
     "why": "If the July 27 weights match the blog, engineers get the first open 3T-class model, a 1M-context sparse MoE that activates ~1.8% of its experts per token and topped blind Frontend Code Arena testing, trained entirely under U.S. export limits.",
     "notes": [
       "2.8T total parameters across 896 experts, 16 active per token (~1.8%), 1M-token context, native vision; full weights due July 27, so every figure is Moonshot-reported or API-derived and unverifiable until then.",
@@ -112,7 +214,7 @@
     "story_id": "s_c3239532ca3339f9",
     "title": "AI Meets Cryptography 2: What AI Found in OpenVM's ZkVM",
     "relevance": 8,
-    "score": 6.231,
+    "score": 6.179,
     "why": "A specialized AI auditor found a critical soundness bug (CVE-2026-46669) in a production zkVM's pairing library that let a prover forge any pairing equality, and the writeup is a rare honest account of where AI code auditing actually works versus where it still fails.",
     "notes": [
       "The bug: OpenVM's openvm-pairing checked only that the hint c was non-zero, but never that the scaling factor lay in the proper subfield Fp6 of Fp12. The optimized check f·u = c^lambda is sound only if u is subfield-constrained. Exploit is trivial: set c=1 and u=f^{-1}, so f·f^{-1}=1=c^lambda passes for ANY Miller-loop output f, including false pairing equations. The success return also skipped the slow full-exponentiation fallback.",
@@ -163,7 +265,7 @@
     "story_id": "s_f564f50f1f6f2fda",
     "title": "Linus Torvalds on LLM usage in kernel development",
     "relevance": 8,
-    "score": 7.186,
+    "score": 7.113,
     "why": "The maintainer of the most consequential open-source project just declared, in a binding way, that Linux will not be an anti-LLM project, settling a debate that touches how kernel patches get reviewed and who gets to object.",
     "notes": [
       "In a linux-media thread reply dated July 14, 2026, Torvalds writes 'Linux is not one of those anti-AI projects' and tells objectors they can 'fork it' or 'just walk away,' calling it a line he will 'absolutely put my foot down' on as top-level maintainer.",
@@ -218,7 +320,7 @@
     "story_id": "s_6608eb5ba86b6956",
     "title": "The Refusal Residue: When Probes Catch Alignment Faking and When They Don't",
     "relevance": 8,
-    "score": 4.778,
+    "score": 4.765,
     "why": "If you plan to catch alignment faking by probing hidden states, this paper shows the method can silently fail on some models and that most published probe evaluations are inflated by measurement leakage.",
     "notes": [
       "A 13-model sweep for naturally-emerging faking found detectable behavior in only two models: Qwen3-32B (+18.2pp) and Llama-3.1-8B (+24.4pp at n=10, p<10^-15). Scratchpad self-reports were nearly silent: a Claude Opus 4 judge flagged faking reasoning in 1.4% of Qwen and 0.0% of Llama compliant scratchpads, motivating hidden-state probing over output inspection.",
@@ -276,7 +378,7 @@
     "story_id": "s_480649bdeb09d779",
     "title": "Inkling: Our Open-Weights Model",
     "relevance": 8,
-    "score": 5.393,
+    "score": 5.372,
     "why": "Thinking Machines just dropped its first from-scratch open-weights model, a 975B multimodal MoE with several non-standard architecture choices and RL-trained controllable thinking effort, giving fine-tuners a genuinely new base to build on rather than another RoPE-and-encoder clone.",
     "notes": [
       "Inkling is a DeepSeek-V3-style MoE: 975B total / 41B active, 256 routed + 2 shared experts (6 routed active per token), sigmoid router with auxiliary-loss-free load-balancing bias, 1M-token context, pretrained on 45T tokens of text/image/audio/video on NVIDIA GB300 NVL72 systems.",
@@ -328,7 +430,7 @@
     "story_id": "s_07dddda982bbfd57",
     "title": "The Memory Heist",
     "relevance": 8,
-    "score": 4.18,
+    "score": 4.172,
     "why": "A working proof-of-concept shows that Claude's default memory plus web-browsing tools could silently exfiltrate a user's PII with zero suspicious user action, which is the exact threat model anyone shipping tool-using agents needs to reason about.",
     "notes": [
       "Exfiltration channel: web_fetch enforced a 3-tier URL allowlist (user-provided URLs, web_search results, and hyperlinks found in a prior web_fetch result). The author reports the third tier was the exploitable surface, letting Claude 'click' attacker-controlled links.",
@@ -430,7 +532,7 @@
     "story_id": "s_a5bd910cf09e6f61",
     "title": "FreeBSoD: Leveraging Language Models to Find and Exploit Kernel Bugs (Part 2 of 2)",
     "relevance": 8,
-    "score": 5.911,
+    "score": 5.833,
     "why": "This is a concrete, primary-source account of LLMs moving past vulnerability discovery into working kernel exploit development, which reshapes both offensive tooling and the disclosure load that volunteer security teams now face.",
     "notes": [
       "Two full FreeBSD jail escapes (kernel code execution on host) built with Claude Code on Opus 4.6. Only the RTSock stack overflow, CVE-2026-3038, is patched (FreeBSD-SA-26:05.route, fixed within a day); the other bugs remain unpatched and details are withheld. Both chains target networking code reachable from VNET jails that predates the jail subsystem.",
@@ -487,7 +589,7 @@
     "story_id": "s_29b5b1fa63da001f",
     "title": "FreeBSoD: Leveraging Language Models to Find and Exploit Kernel Bugs (Part 1 of 2)",
     "relevance": 8,
-    "score": 6.086,
+    "score": 6.009,
     "why": "A working practitioner account of an AI-assisted kernel bug-hunting pipeline that produced real FreeBSD CVEs on a $100/month subscription, with an unusually honest catalogue of how the model cheated and hallucinated exploits.",
     "notes": [
       "CVE-2026-3038: a stack overflow in FreeBSD's rtsock_msg_buffer() where bcopy copies a user-supplied sockaddr (sa_len up to 255) into a 128-byte sockaddr_storage on the kernel stack, giving 127 bytes of attacker-controlled overflow. A KASSERT bounds check compiles out in production kernels. Fixed in FreeBSD-SA-26:05.route on Feb 24, 2026, one day after report; patch by Mark Johnston.",
@@ -696,7 +798,7 @@
     "story_id": "s_3b05c936af475876",
     "title": "Battery packs: Let's talk about crates, baby",
     "relevance": 7,
-    "score": 6.915,
+    "score": 6.828,
     "why": "Picking crates from crates.io is the friction point new Rust adopters complain about most; a working `cargo-bp` prototype turns curated crate sets into installable, forkable crates you can try today.",
     "notes": [
       "Battery packs are ordinary crates named X-battery-pack: the pack's Cargo.toml dependencies are the recommendations, features map to common co-use groupings, and examples act as templates. You depend on the underlying crates directly, not the pack, so pack updates never break your build.",
@@ -750,7 +852,7 @@
     "story_id": "s_0fd1aab3b10380c5",
     "title": "Regressive JPEGs",
     "relevance": 7,
-    "score": 7.022,
+    "score": 6.976,
     "why": "You can smuggle a playing video, or a stateful single-page app, into one standards-compliant JPEG with no JavaScript or CSS, using only how browsers render progressive scans over a slow connection.",
     "notes": [
       "Progressive JPEGs split compressed data into multiple scans, each with its own header setting channels, DCT spectral (bin) range, and precision; a partial download renders at reduced quality instead of cutting off.",
@@ -776,13 +878,13 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48954851",
-        "points": 467,
-        "comments": 46,
+        "points": 521,
+        "comments": 52,
         "name": "Hacker News"
       },
       {
         "url": "https://lobste.rs/s/ihel7n/regressive_jpegs",
-        "points": 39,
+        "points": 54,
         "comments": 1,
         "name": "Lobsters"
       },
@@ -810,7 +912,7 @@
     "story_id": "s_b245820638765ef7",
     "title": "Ring-Zero: Scaling Zero RL to a Trillion Parameters for Emergent Reasoning",
     "relevance": 7,
-    "score": 5.143,
+    "score": 5.119,
     "why": "This is the first published account of what zero-RL training dynamics and emergent reasoning behaviors look like at 1 trillion parameters, a scale most reinforcement-learning studies have never touched.",
     "notes": [
       "Ring-2.5-1T-Zero is trained with 'zero RL': reinforcement learning on verifiable rewards only, no human-annotated data, to elicit chain-of-thought reasoning at 1T parameters.",
@@ -867,7 +969,7 @@
     "story_id": "s_43a8e59a47547255",
     "title": "Static search trees: 40x faster than binary search (2024)",
     "relevance": 7,
-    "score": 5.211,
+    "score": 5.173,
     "why": "If you index sorted 32-bit data (suffix arrays, lookup tables) for throughput, this shows how to beat std binary search by a claimed 40x on out-of-cache data using an S+ tree, query batching, and hand-written AVX2, with the assembly diff for every instruction saved.",
     "notes": [
       "Baseline chain: Eytzinger layout is ~4x faster than std binary search once data exceeds L3, because it can prefetch 4 cache lines ahead; the S+ tree adds cache-line-dense nodes on top for the claimed 40x. All numbers are self-benchmarked on an i7-10750H pinned to 2.6GHz (32KiB L1, 256KiB L2, 12MiB L3), AVX2 only, no AVX-512, hyper-threading off.",
@@ -894,8 +996,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48951898",
-        "points": 150,
-        "comments": 10,
+        "points": 159,
+        "comments": 12,
         "name": "Hacker News"
       },
       {
@@ -916,7 +1018,7 @@
     "story_id": "s_6bddf23f3156589e",
     "title": "How Cops Use Flock to Track People, Not Cars",
     "relevance": 7,
-    "score": 5.262,
+    "score": 5.187,
     "why": "The license-plate cameras your town approved to find stolen cars now let any officer run natural-language person searches (\"male with brown hair,\" \"gray shirt\") across hundreds of camera networks at once, without face recognition and largely without public disclosure.",
     "notes": [
       "Flock's FreeForm search, launched February 2025 and marketed around vehicles, lets police query cameras with plain-language phrases; the queries surface in the 'text_prompt' field of 'Network Audit' spreadsheets obtained via public records and aggregated at HaveIBeenFlocked.com.",
@@ -977,7 +1079,7 @@
     "story_id": "s_61e8f2b287d4ff9f",
     "title": "Zigzag Decoding with AVX-512",
     "relevance": 7,
-    "score": 5.266,
+    "score": 5.191,
     "why": "If you write AVX-512 intrinsics, this shows Clang will silently canonicalize your hand-tuned mask code back to the baseline while GCC keeps it, and that GFNI's vgf2p8affineqb collapses an entire 8-bit unzigzag into one instruction.",
     "notes": [
       "Baseline SSE2/AVX zigzag decode is four instructions (vpsrld/vpandq/vpsubd/vpxorq), 3-cycle latency on Zen 4, ~1 cycle throughput because the ops spread across all four FP ports.",
@@ -1028,7 +1130,7 @@
     "story_id": "s_78ec9dd6358ec400",
     "title": "Enterprise Haskell at H-E-B",
     "relevance": 7,
-    "score": 5.402,
+    "score": 5.374,
     "why": "A named retailer documents eight years and ~1M lines of production Haskell, including the two projects where it failed and why, so you can weigh a functional-language bet against real operational war stories instead of advocacy.",
     "notes": [
       "H-E-B has run Haskell in production since ~2018, now nearly 1 million lines across multiple teams on supply-chain systems feeding 435+ stores; began as a consultant-pitched replacement for the company's largest COBOL mainframe app.",
@@ -1054,8 +1156,8 @@
     "surfaces": [
       {
         "url": "https://lobste.rs/s/zar7fc/enterprise_haskell_at_h_e_b",
-        "points": 34,
-        "comments": 6,
+        "points": 36,
+        "comments": 8,
         "name": "Lobsters"
       },
       {
@@ -1082,7 +1184,7 @@
     "story_id": "s_d154a703931c29cf",
     "title": "Moroccan intelligence insider reveals widespread use of Pegasus hacking software",
     "relevance": 7,
-    "score": 5.38,
+    "score": 5.305,
     "why": "Insider testimony from inside Morocco's DGST turns the Pegasus Project from database inference into operational detail: how the spyware was acquired, when it was deployed, and against whom, including a sitting NATO-ally prime minister and defense minister.",
     "notes": [
       "A whistleblower codenamed 'Safir,' who worked for Morocco's Direction Générale de la Surveillance du Territoire (DGST) for about a decade, says the service adopted Pegasus in 2017 after an NSO Group demonstration at a Rabat property nicknamed the 'FSSYS villa,' after FSSYS Maroc, then the Moroccan branch of UAE surveillance intermediary al-Fahad; two other former agents corroborated, and Amnesty International's Security Lab did forensic analysis. Investigation coordinated by Forbidden Stories across 14 outlets.",
@@ -1142,7 +1244,7 @@
     "story_id": "s_74dec12eee805399",
     "title": "kernel asynchronous reads in PostgreSQL 19 (io_uring)",
     "relevance": 7,
-    "score": 5.985,
+    "score": 5.91,
     "why": "PostgreSQL 19 lets a backend push reads straight to the kernel via io_uring, keeping ~30 I/Os in flight without dedicated worker processes; the tradeoff is a monitoring trap where load average hits 25 while CPUs sit 95% in iowait.",
     "notes": [
       "PostgreSQL 19beta1 exposes io_method=io_uring; inside Docker seccomp blocks the io_uring syscalls, so the author runs with --security-opt seccomp=unconfined. Defaults observed: io_combine_limit=128kB, io_max_concurrency=64, io_max_workers=8.",
@@ -1193,7 +1295,7 @@
     "story_id": "s_038bc440af83467e",
     "title": "Pact: Anonymous Credentials for the Web",
     "relevance": 7,
-    "score": 5.618,
+    "score": 5.572,
     "why": "If PACT ships, sites could rate-limit VPN users, private browsers, and AI agents by a scarce signal instead of demanding an email login or blocking them outright, without the hardware attestation lock-in of Apple's Private Access Tokens or Google's abandoned Web Environment Integrity.",
     "notes": [
       "Three roles: Anchors issue Privacy Pass-style Endorsement tokens off scarce signals (VPN subscription, verified phone, account in good standing); Moderators verify Endorsements and issue stateful Credentials; each site is bound to a single Moderator so the Moderator set can't become a cross-site fingerprint. In the common case the site is its own Moderator.",
@@ -1229,7 +1331,7 @@
       {
         "url": "https://lobste.rs/s/6pdyiy/pact_anonymous_credentials_for_web",
         "points": 12,
-        "comments": 3,
+        "comments": 4,
         "name": "Lobsters"
       },
       {
@@ -1256,7 +1358,7 @@
     "story_id": "s_41bce1ce1ed1bb3a",
     "title": "Kaiser nurses say AI, workplace surveillance are making their jobs, care worse",
     "relevance": 7,
-    "score": 5.92,
+    "score": 5.847,
     "why": "If you build or defend algorithmic management systems, this is the reference case for how tone-scoring and call-time metrics collide with a licensed profession, a labor contract, and a state legislature at California's largest private employer.",
     "notes": [
       "Kaiser piloted an AI tool in summer 2024 that scored empathy and tone of voice in nurse and patient audio; nurses petitioned ('Trust nurses, not AI'), the pilot ended November 2024, and union reps were told it may return. Kaiser declined to answer questions about the tool.",
@@ -1307,7 +1409,7 @@
     "story_id": "s_185eb1892df955be",
     "title": "First atmosphere found on Earth-like planet in habitable zone of distant star",
     "relevance": 7,
-    "score": 5.895,
+    "score": 5.83,
     "why": "A category that had zero confirmed members now has one: LHS 1140 b is the first rocky planet in a star's habitable zone with a detected atmosphere, moving the \"is there life elsewhere\" question from candidates to a confirmed detection.",
     "notes": [
       "The planet, LHS 1140 b, sits 48 light-years away orbiting a red dwarf smaller and cooler than the Sun; results published in Science, lead author Dr. Collin Cherubim (Harvard), co-author Dr. David Charbonneau.",
@@ -1332,8 +1434,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48947560",
-        "points": 477,
-        "comments": 281,
+        "points": 487,
+        "comments": 288,
         "name": "Hacker News"
       },
       {
@@ -1354,7 +1456,7 @@
     "story_id": "s_5eb9adca72fdb7c5",
     "title": "AWS: Inaccurate Estimated Billing Data – $1.7 billion",
     "relevance": 7,
-    "score": 6.151,
+    "score": 6.078,
     "why": "If you run anything on AWS, the console's estimated-charges figure just proved unreliable enough to show a sub-$5 account a $1.7 billion bill, so any billing alerts or budget automation keyed to that number can fire on garbage.",
     "notes": [
       "An AWS user reported an estimated bill of $1.7 billion for the current month against normal monthly spend under $5.",
@@ -1383,8 +1485,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48945241",
-        "points": 1226,
-        "comments": 717,
+        "points": 1244,
+        "comments": 722,
         "name": "Hacker News"
       },
       {
@@ -1405,7 +1507,7 @@
     "story_id": "s_3870d18dffb097bf",
     "title": "We're building Postgres in Rust. Using the LLVM of databases",
     "relevance": 7,
-    "score": 7.002,
+    "score": 6.929,
     "why": "If Turso pulls this off, Postgres-compatible SQL could run embedded in a browser tab or as a single file with no server process, changing how local-first and per-user database provisioning work for engineers.",
     "notes": [
       "Architecture: Postgres SQL is parsed into a common AST and compiled to Turso's VDBE bytecode, the same bytecode layer the SQLite-compatible frontend already targets; Turso pitches this as the 'LLVM of databases' where one Rust core hosts many pluggable database frontends.",
@@ -1463,7 +1565,7 @@
     "story_id": "s_3dda61cb764a10d6",
     "title": "Lobste.rs is now running on SQLite",
     "relevance": 7,
-    "score": 5.62,
+    "score": 5.557,
     "why": "A rare, honestly told production war story showing exactly what breaks (and what it costs) when a real Rails/MariaDB app moves to SQLite, useful the next time someone pitches \"just use SQLite.\"",
     "notes": [
       "The final deploy landed July 11th (announced after surviving the following Monday traffic spike); reported results: lower CPU, lower memory, a snappier feel, and a projected ~50% VPS cost cut once the MariaDB instance is decommissioned.",
@@ -1507,7 +1609,7 @@
     "story_id": "s_fbaa32e011613b5e",
     "title": "Mozilla: The state of open source AI",
     "relevance": 7,
-    "score": 7.394,
+    "score": 7.321,
     "why": "If you ship on LLMs, Mozilla's data argues the practical default has already flipped to open weights for most production workloads, and the remaining moat, plus the vendor lock-in risk, sits in the agentic harness above the model.",
     "notes": [
       "Mozilla/SlashData 2026 developer survey (n=1,411): 79% of developers adding AI functionality use open models vs 71% closed, and ~50% use both; the two are framed as largely complementary.",
@@ -1559,7 +1661,7 @@
     "story_id": "s_68789de0a52aac0e",
     "title": "topcoat: A batteries-included framework for building web apps",
     "relevance": 7,
-    "score": 7.425,
+    "score": 7.352,
     "why": "If you write Rust and want fullstack web reactivity without shipping a WASM bundle or maintaining a separate client build, Topcoat's dual Rust/JS expression model is a genuinely novel approach worth watching, even if it is too raw to adopt.",
     "notes": [
       "`$(...)` expressions are type-checked Rust that Topcoat evaluates server-side for the initial render and also transpiles to JavaScript so they re-run in the browser: no WASM bundle, no client build step. Used for `@click`/`@input` event handlers and `:hidden`-style bind attributes with `signal` local state.",
@@ -1619,7 +1721,7 @@
     "story_id": "s_837ac4de69d841c5",
     "title": "Meta in Talks to Lease Computing Power to Anthropic in Potential $10 Billion Deal",
     "relevance": 7,
-    "score": 6.27,
+    "score": 6.194,
     "why": "If confirmed, Meta renting compute to Anthropic would mark a structural shift: a frontier lab and social-media giant becoming an infrastructure landlord to a direct model rival, a sign of how scarce and monetizable AI compute has become.",
     "notes": [
       "NYT reports (2026-07-17) that Meta is in talks to lease computing power to Anthropic in a deal potentially worth ~$10 billion; framed as talks, not a signed agreement.",
@@ -1694,7 +1796,7 @@
     "story_id": "s_bbc8d77ede8ed283",
     "title": "LongStraw: Long-Context RL Beyond 2M Tokens under a Fixed GPU Budget",
     "relevance": 7,
-    "score": 6.691,
+    "score": 6.644,
     "why": "If your agents accumulate million-token trajectories, this paper argues you can push RL post-training past 2M tokens on a fixed, commodity GPU budget instead of leaning on length generalization at deployment.",
     "notes": [
       "The problem framing: inference is approaching million-token contexts while RL post-training often stays at 256K tokens or below, forcing reliance on length generalization at deployment; this matters most for agents whose observations, tool outputs, documents, and prior decisions accumulate over long trajectories.",
@@ -1751,7 +1853,7 @@
     "story_id": "s_6f2423e75bc28961",
     "title": "Kimi K3, and what we can still learn from the pelican benchmark",
     "relevance": 7,
-    "score": 8.477,
+    "score": 8.413,
     "why": "A Chinese lab shipping a 2.8T-parameter open-weight model at Sonnet-tier pricing signals that the open frontier is now competing on capability rather than undercutting on cost, and Willison's throwaway pelican test surfaces a real deployment gotcha: a single fixed \"max\" reasoning level.",
     "notes": [
       "Moonshot AI's Kimi K3 is self-described as 2.8 trillion parameters, billed as the first 'open 3T-class model' (rounding up), with open weights promised by July 27, 2026; it more than doubles DeepSeek's 1.6T V4 Pro.",
@@ -1780,8 +1882,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48947717",
-        "points": 363,
-        "comments": 192,
+        "points": 374,
+        "comments": 199,
         "name": "Hacker News"
       },
       {
@@ -1814,7 +1916,7 @@
     "story_id": "s_1c04fedf7d3df3b6",
     "title": "Show HN: Sentinel – open-source QA agent that reads your code before it clicks",
     "relevance": 7,
-    "score": 3.934,
+    "score": 3.914,
     "why": "A working QA agent that reads your repo to derive business flows before touching a browser, and verifies backend state per step, is a more honest template for autonomous testing than the click-around demos, and it is open source under MIT.",
     "notes": [
       "Architecture: deterministic recon (grep/find, zero model calls) extracts frontend routes, API modules, services, and DB entities into a digest; the model reasons over that to derive prioritized end-to-end flows, cached per commit. From a hotel PMS repo plus admin creds and no test plan, it derived nine critical business flows on its own.",
@@ -1859,7 +1961,7 @@
     "story_id": "s_aa492a3f70be9a55",
     "title": "Show HN: Galois connections for composable numeric casts in Rust",
     "relevance": 7,
-    "score": 4.037,
+    "score": 4.017,
     "why": "Numeric casts are a perennial source of silent bugs (`u32::MAX as i32 == -1`), and this crate reframes them as law-checked, composable Galois connections with actual SMT proofs behind the integer families, not just tests.",
     "notes": [
       "`Conn<A, B, K>` is a pair of monotone functions `(f, g)` with a phantom kind tag `K ∈ {L, R}`; it is `Copy`, `const`-constructible, heap-free, and the crate is `#![forbid(unsafe_code)]`. MSRV Rust 1.88, Edition 2024, MIT, and a stated port of the Haskell `connections` library. Kind discipline is structural: calling `.floor()` on an L-kind Conn (or `.ceil()` on R) is a compile error.",
@@ -1903,7 +2005,7 @@
     "story_id": "s_43f7a973c1cb3f50",
     "title": "Tower Semiconductor revives shuttered Panasonic-era fab in $3 billion Japan photonics expansion — METI-backed plan targets $3.6 billion revenue by 2028",
     "relevance": 7,
-    "score": 3.956,
+    "score": 3.935,
     "why": "The AI buildout's shift from copper to optical interconnects is now visibly reshaping foundry capital plans, and Tower's disclosures give hard numbers on how much silicon photonics demand is already contracted through 2027.",
     "notes": [
       "Tower committed up to $3 billion (net of grants), backed by Japan's METI, in a two-track 300mm expansion; only Track One (reviving the shuttered Panasonic-era Arai fab as Fab 6 for silicon photonics plus expanding Fab 7 in Uozu, production-ready Q4 2027) underpins the new targets. Track Two (a new fab adjacent to Fab 7, 'highly accretive beginning 2029') has no signed agreements.",
@@ -1955,7 +2057,7 @@
     "story_id": "s_812d19e24c3c768f",
     "title": "Linus Torvalds rebukes anti-AI stances in the Linux kernel code review process, says 'Linux is not one of those anti-AI projects' — creator embraces AI as just a tool and 'clearly a useful one'",
     "relevance": 7,
-    "score": 3.956,
+    "score": 3.935,
     "why": "The maintainer of the most consequential open-source project just publicly reversed his 2024 AI skepticism and told anti-AI kernel developers to fork or walk away, signaling that LLM-assisted code review is becoming a legitimate part of upstream workflows.",
     "notes": [
       "On the LKML, Torvalds wrote 'Linux is not one of those anti-AI projects,' told dissenters they can 'fork it. Or just walk away,' and called AI 'a tool, just like other tools we use... and it's clearly a useful one,' a reversal from his 2024 dismissal of AI as overhyped.",
@@ -2006,7 +2108,7 @@
     "story_id": "s_5a504bf3a1c49046",
     "title": "Tracing Agentic Failure from the Flow of Success",
     "relevance": 7,
-    "score": 4.899,
+    "score": 4.887,
     "why": "If you run multi-step agents, this proposes a way to localize which step broke a failed run without ever labeling failures, using only a handful of successful traces.",
     "notes": [
       "OAT reframes step-level failure attribution as one-class (anomaly-detection) learning: it models the dynamics of successful agent trajectories in latent space using neural controlled differential equations (NCDEs).",
@@ -2056,7 +2158,7 @@
     "story_id": "s_b4eca034ef13cf46",
     "title": "From Noisy Traces to Root Causes: Structural Trajectory Analysis and Causal Extraction for Agent Optimization",
     "relevance": 7,
-    "score": 4.776,
+    "score": 4.764,
     "why": "If you build agents optimized by an LLM-as-optimizer loop, the quality of the traces you feed it may matter more than the optimizer itself, and this paper argues naive context reduction actively corrupts the signal.",
     "notes": [
       "STRACE (Structural TRajectory Analysis and Causal Extraction) works at two levels: batch-level failure-pattern mining to filter redundant/heterogeneous traces and keep representative failures, and within-trace causal localization over a textual dependency graph to strip non-causal steps and pinpoint the root-cause module.",
@@ -2106,7 +2208,7 @@
     "story_id": "s_636a7bcae269af89",
     "title": "Adaptive Filtering of the KV Cache: Diagnosing and Correcting Structural-Role Bias in LLM Inference",
     "relevance": 7,
-    "score": 4.775,
+    "score": 4.762,
     "why": "If you run long-context inference over JSON or other schema-dense inputs, popular attention-based KV cache eviction can silently retain delimiters and drop the tokens holding your answers, tanking accuracy at aggressive budgets.",
     "notes": [
       "Diagnosis: on schema-dense streams like nested JSON, non-content sink tokens (delimiters, whitespace) accumulate roughly 10x more attention energy than any content role, so H2O-style eviction (which keeps the heaviest attention mass) preferentially retains structural noise.",
@@ -2163,7 +2265,7 @@
     "story_id": "s_3317d9e04ce2c05b",
     "title": "From Controlled to the Wild: Evaluation of Pentesting Agents for the Real-World",
     "relevance": 7,
-    "score": 4.729,
+    "score": 4.711,
     "why": "If you build or buy AI pentesting agents, this paper argues today's CTF/RCE benchmarks tell you almost nothing about real-world performance and proposes a scoring protocol built around validated vulnerability discovery instead.",
     "notes": [
       "The authors argue existing pentesting-agent benchmarks optimize narrow, predefined goals (capture-the-flag, remote code execution, exploit reproduction, trajectory similarity) in simplified settings that fail to capture open-ended exploration and strategic decision-making.",
@@ -2215,7 +2317,7 @@
     "story_id": "s_205260e0ab26ff39",
     "title": "How Our Rust-to-Zig Rewrite Is Going",
     "relevance": 7,
-    "score": 6.998,
+    "score": 6.922,
     "why": "A rare longitudinal retrospective on a real 300K-line Rust-to-Zig compiler rewrite, with concrete build-time benchmarks and memory-safety bug counts, gives you evidence instead of forum tribalism when weighing the two languages for systems work.",
     "notes": [
       "The rewrite of Roc's compiler took 487 days to reach feature parity; the codebase grew from ~354K Rust LoC to ~464K Zig LoC as features were added alongside the port, so it is explicitly not an apples-to-apples comparison. The author contrasts this with Bun's 11-day Zig-to-Rust port, noting theirs was a direct port while Roc's was a rewrite motivated by architectural changes.",
@@ -2250,7 +2352,7 @@
       },
       {
         "url": "https://lobste.rs/s/axdfjx/how_our_rust_zig_rewrite_is_going",
-        "points": 178,
+        "points": 181,
         "comments": 67,
         "name": "Lobsters"
       },
@@ -2278,7 +2380,7 @@
     "story_id": "s_d68056f87b10bb84",
     "title": "Google ordered to open Android and Search to rivals in Europe",
     "relevance": 7,
-    "score": 4.847,
+    "score": 4.825,
     "why": "If you build AI assistants or search-adjacent products, the EU just mandated that Android grant third-party assistants Gemini-level system access, opening a distribution channel on the world's largest mobile OS that was previously closed.",
     "notes": [
       "Two DMA decisions issued Thursday: one on Android AI-assistant interoperability, one on Google Search data sharing. Deadlines: begin sharing Search data by January 2027, implement Android changes by July 2027.",
@@ -2352,7 +2454,7 @@
     "story_id": "s_27756f8dfc305390",
     "title": "SingGuard-NSFA: Extensible Guardrails for Agentic AI via Generative Reasoning and Real-Time Classification",
     "relevance": 7,
-    "score": 5.212,
+    "score": 5.199,
     "why": "If you are deploying agents in production, this paper offers an open-weight guardrail stack that claims both interpretable offline auditing and ~50ms real-time threat detection from one backbone, plus a taxonomy and multilingual benchmark you can test against.",
     "notes": [
       "The NSFA taxonomy organizes 185 risk variants into a CIA-triad-grounded hierarchy (confidentiality, integrity, availability), cross-validated against three OWASP guideline sets; targeted threats include prompt injection, sensitive information extraction, malicious code requests, dangerous tool misuse, and resource exhaustion.",
@@ -2417,7 +2519,7 @@
     "story_id": "s_e785b7cfbbde5038",
     "title": "ShortOPD: Recovering Pruned LLMs with Short-to-Long On-Policy Distillation",
     "relevance": 7,
-    "score": 5.677,
+    "score": 5.664,
     "why": "If you ship pruned LLMs, this paper shows why they collapse on free-form generation and offers a recovery recipe that cuts training cost ~4x by truncating the repetitive rollouts that were burning your budget.",
     "notes": [
       "Diagnosis: after structured pruning, greedy pass@1 nearly vanishes but pass@k recovers substantially under repeated sampling, which the authors read as useful generations being demoted rather than erased; the dominant failure mode in this recoverable regime is suffix repetition.",
@@ -2478,7 +2580,7 @@
     "story_id": "s_46171e1f9cbff871",
     "title": "Boogu-Image-0.1: Boosting Open-Source Unified Multimodal Understanding and Generation",
     "relevance": 7,
-    "score": 6.196,
+    "score": 6.183,
     "why": "A permissively licensed unified understanding-plus-generation model family that claims near-closed-source image quality for a roughly $400K base-model training budget is a concrete data point on how cheaply the open ecosystem can now approach the frontier.",
     "notes": [
       "Boogu-Image-0.1 ships four variants: Base, Turbo, Edit, and Edit-Turbo, covering text-to-image generation, fast inference, and instruction-based editing.",
@@ -2535,7 +2637,7 @@
     "story_id": "s_172ece36d1124049",
     "title": "Harness Handbook: Making Evolving Agent Harnesses Readable,Navigable, and Editable",
     "relevance": 7,
-    "score": 6.3,
+    "score": 6.287,
     "why": "If you maintain an agent harness, the paper argues your real bottleneck is not generating edits but finding where behavior lives in the code, and it proposes a reusable index to close that gap.",
     "notes": [
       "Frames a specific problem: modification requests describe desired behavior, but repos are organized by files/modules, so mapping behavior to code locations stays a manual bottleneck even with code search, repo indexing, and long-context inspection.",
@@ -2592,7 +2694,7 @@
     "story_id": "s_870bfba255290e41",
     "title": "Self-Improvements in Modern Agentic Systems: A Survey",
     "relevance": 7,
-    "score": 6.266,
+    "score": 6.248,
     "why": "Self-improving agents are moving from research demos toward deployment, and this survey offers a single vocabulary for reasoning about how they actually change over time.",
     "notes": [
       "Models a modern agent as a configuration that couples a foundation model with an operational scaffold: prompts, memory, tools, and control logic.",
@@ -2655,7 +2757,7 @@
     "story_id": "s_eb5e8b88cee3211b",
     "title": "Function-Aware Fill-in-the-Middle as Mid-Training for Coding Agent Foundation Models",
     "relevance": 7,
-    "score": 5.373,
+    "score": 5.362,
     "why": "If you build coding agents, this paper argues you can bake the tool-call-and-continue reasoning pattern into a base model with cheap self-supervised code masking, before any expensive agentic RL, and get consistent SWE-Bench gains.",
     "notes": [
       "Core claim: a coding agent's action-observation-continuation loop is structurally isomorphic to a function call site (caller binds args, callee returns a value computed elsewhere, downstream code consumes it), so ordinary code at internet scale already contains this conditioning structure.",
@@ -2707,7 +2809,7 @@
     "story_id": "s_d94584f4c288b4d0",
     "title": "Windows 0-day drops the same day Microsoft releases record number of patches",
     "relevance": 7,
-    "score": 3.766,
+    "score": 3.756,
     "why": "A working, publicly available Windows elevation-of-privilege exploit landed the same day as a record Patch Tuesday, meaning your fleet has an unpatched 0-day primitive circulating before Microsoft can respond.",
     "notes": [
       "HiveLegacy is an elevation-of-privilege exploit in the Windows User Profile Service; it lets a limited-rights user modify an administrator account's classes registry hive, the resource that controls which application opens a given file type in Explorer.",
@@ -3003,7 +3105,7 @@
     "story_id": "s_c5eaab85e9801198",
     "title": "Murati's Thinking Machines Releases Open-Weights 975B Parameter LLM",
     "relevance": 7,
-    "score": 4.141,
+    "score": 4.133,
     "why": "Mira Murati's Thinking Machines Lab has shipped its first open-weights model, putting a fine-tunable 975B-parameter MoE with native audio input into the open ecosystem where you can actually run and modify it.",
     "notes": [
       "Inkling is a Mixture-of-Experts model: 975B total parameters, 41B active per token, released with open weights and available for fine-tuning.",
@@ -3148,104 +3250,6 @@
     "first_seen": "2026-07-14T01:36:13+00:00",
     "published_at": "2026-07-15T18:29:42.651673+00:00",
     "curated_at": "2026-07-15T18:29:42.651673+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 158913,
-    "story_id": "s_b57de413cd86ea83",
-    "title": "Running Gemma 4 26B at 5 tokens/SEC on a 13-year-old Xeon with no GPU",
-    "relevance": 7,
-    "score": 5.135,
-    "why": "If you have pre-Haswell enterprise iron gathering dust, this is a concrete recipe and a still-open patch to run a 26B MoE locally at reading speed, plus a clean case study of driving an LLM agent through a real performance-C++ debugging session.",
-    "notes": [
-      "Hardware: dual Xeon E5-2690 v2 (Ivy Bridge, 2013), AVX1 only (no AVX2, no FMA3), DDR3, no GPU, box cost under $300; reported ~5.2 tok/s decode and ~16 tok/s prompt eval on Gemma 4 26B-A4B (MoE) at Q8_0.",
-      "Root cause: ik_llama.cpp's graph builder unconditionally emits MOE_FUSED_UP_GATE and FUSED_UP_GATE ops, but the compute dispatcher has no case for them when GGML_USE_IQK_MULMAT is off, so ~240 expert FFN destination tensors per forward pass (30 layers x 8 active experts) were silently left as uninitialized memory.",
-      "Symptom signature that cracked it: deterministic at temperature 0, bit-identical across thread counts, no NaNs, but fluent multilingual gibberish; instrumented logits showed a mean of +16 (expected near 0) with ~80% of the 262K vocab at positive logits, pointing to uninitialized-but-small-positive floats rather than random corruption.",
-      "Fix is three commits gated behind #if !GGML_USE_IQK_MULMAT: rewrite non-scalar 'scalar' quantize branches as portable loops, and have the graph builder split the fused up_gate_exps tensor via ggml_view_3d, run two ggml_mul_mat_id calls, and recombine with ggml_fused_mul_unary(SILU); AVX2 builds stay bit-identical. Extra cost is two matmul-IDs vs one fused kernel, but the box is memory-bandwidth-bound and the fused kernel was AVX2-only.",
-      "Separate unfixed gotcha: --run-time-repack reorders weights into the AVX2-only Q8_0_R8 interleaved layout at startup and re-garbles AVX1 output; the workaround is to drop the flag, not patch it.",
-      "Caveats: patch is PR ikawrakow/ik_llama.cpp#2138, open and awaiting maintainer review at publication; the author states plainly he is not a C++ programmer, that the diagnosis and patch came from a Claude instance, and that his role was running experiments and judging correctness. The post is on the author's company blog and doubles as marketing for legacy-code consulting."
-    ],
-    "summary": "The author revives a ~13-year-old, GPU-less HP StoreVirtual box (dual Ivy Bridge Xeon E5-2690 v2, AVX1 only, under $300) to run Google's Gemma 4 26B-A4B mixture-of-experts model at roughly 5.2 tokens/sec decode and ~16 tokens/sec prompt eval using a patched ik_llama.cpp built with GGML_USE_IQK_MULMAT disabled. The fork assumes AVX2/FMA3 as a floor, so it neither built nor ran correctly on the older chip; the visible failure was fluent multilingual gibberish. Root cause was a silent dispatcher fall-through: the graph builder emitted MOE_FUSED_UP_GATE/FUSED_UP_GATE ops the compute path did not handle without IQK, so every forward pass left ~240 expert FFN tensors as uninitialized memory, biasing logits (mean +16, ~80% of the 262K vocab positive). The three-commit fix adds real scalar quantize fallbacks and rewrites the graph builder to emit ops with working non-IQK implementations (ggml_view_3d split, two ggml_mul_mat_id calls, ggml_fused_mul_unary SILU), all gated so AVX2 builds are unchanged; users must also drop --run-time-repack, which garbles output on AVX1. The patch (PR ikawrakow/ik_llama.cpp#2138) was still open and unreviewed at publication. The author openly credits a Claude agent with the diagnosis and patch, framing his contribution as running experiments and recognizing correctness, and the post also promotes his firm's legacy-code work.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "devtools",
-      "hardware"
-    ],
-    "category": "hardware",
-    "subcategories": [
-      "silicon"
-    ],
-    "state": "confident",
-    "novelty": "First documented AVX1-only fallback patch for ik_llama.cpp enabling Gemma 4 MoE on pre-Haswell (Ivy Bridge) CPUs, including root-cause diagnosis of a silent dispatcher bug unique to that build configuration",
-    "audience": "Local inference engineers and systems hackers running LLMs on CPU-only or legacy enterprise hardware",
-    "source_url": "https://neomindlabs.com/2026/06/08/running-gemma-4-26b-at-5-tokens-sec-on-a-13-year-old-xeon-with-no-gpu",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=48922434",
-        "points": 263,
-        "comments": 170,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 1,
-    "first_seen": "2026-07-15T15:34:05+00:00",
-    "published_at": "2026-07-15T17:57:36.587048+00:00",
-    "curated_at": "2026-07-15T17:57:36.587048+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 150047,
-    "story_id": "s_30ed56035017843e",
-    "title": "SynthDocBench: Controlled Benchmark for Long-Context Visual Document Understanding",
-    "relevance": 7,
-    "score": 5.237,
-    "why": "If your product relies on VLMs to read long, mixed-modality documents, this benchmark argues their headline scores may reflect overfitting to benchmark artifacts rather than robust comprehension, with predictable failures by length and position.",
-    "notes": [
-      "SynthDocBench is a fully synthetic, combinatorially designed benchmark that varies four factors independently: document length, layout structure, modality composition, and question type, so failures can be attributed to specific causes rather than confounded together.",
-      "Documents are generated end to end by an LLM pipeline across six layout archetypes, with a 40 percent random override to stop models from exploiting spurious layout-to-answer correlations; the authors claim greater length and structural diversity than existing benchmarks.",
-      "Across seven frontier VLMs, the authors report three failure modes: sharp accuracy degradation as document length grows, positional sensitivity, and breakdown of chart comprehension specifically in long-document settings.",
-      "Positional finding: the middle third of a document is hardest for 5 of 6 models, and 5 of 6 show a negative Early-to-Late trend, with a steepest single-model decline of 8.3 percentage points.",
-      "The authors frame these results as evidence that current models may be overfitting to benchmark artifacts on DocVQA, ChartQA, and MMLongBench-Doc rather than achieving robust long-context visual document understanding.",
-      "Caveats: it is a synthetic benchmark (results may not transfer to real documents), the abstract does not name the specific models, absolute accuracy numbers, or generation-pipeline details, and no code or data availability is stated in the provided text."
-    ],
-    "summary": "SynthDocBench is a fully synthetic benchmark for long-context visual document understanding that uses a combinatorial design to vary document length, layout structure, modality composition, and question type independently, enabling controlled attribution of model failures. Documents are generated end to end by an LLM pipeline across six layout archetypes with a 40 percent random override intended to prevent models from exploiting spurious correlations, and the authors claim substantially greater length and structural diversity than DocVQA, ChartQA, and MMLongBench-Doc. Evaluating seven frontier VLMs, the paper reports three failure modes existing benchmarks cannot surface: sharp degradation as documents lengthen, a positional sensitivity in which the middle third is hardest for 5 of 6 models and 5 of 6 show a negative Early-to-Late trend (steepest decline 8.3 percentage points), and breakdown of chart comprehension in long-document settings. The authors argue these results suggest current models may be overfitting to benchmark artifacts rather than achieving robust long-context document understanding. The abstract does not disclose the specific models, absolute scores, or generation details, and the findings are on synthetic rather than real documents.",
-    "channels": [
-      "ml-research",
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "evals"
-    ],
-    "state": "confident",
-    "novelty": "Controlled synthetic benchmark isolates three VLM failure modes—length degradation, positional sensitivity, chart comprehension collapse—that existing benchmarks (DocVQA, ChartQA, MMLongBench-Doc) structurally cannot surface.",
-    "audience": "ML engineers and researchers building, fine-tuning, or evaluating VLMs on long-context document tasks.",
-    "source_url": "https://arxiv.org/abs/2607.10400",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2607.10400",
-        "points": 64,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2607.10400",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CV"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-07-14T04:00:00+00:00",
-    "published_at": "2026-07-15T17:23:45.328049+00:00",
-    "curated_at": "2026-07-15T17:23:45.328049+00:00",
     "model": "claude-opus-4-8"
   }
 ]
