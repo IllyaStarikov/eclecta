@@ -172,7 +172,12 @@ def finalists(conn, cfg, limit=None):
     any LLM spend. The retry bound is a Python ISO timestamp — stored
     curated_at values use the 'T' separator, which compares wrong against
     SQLite's space-separated datetime('now')."""
-    min_score = float(cfg.funnel.get("min_score_to_curate", 3.5))
+    from . import adaptive
+
+    min_score = adaptive.effective_min_score(
+        conn, cfg.funnel.get("adaptive", {}),
+        datetime.datetime.now(datetime.timezone.utc),
+        base=float(cfg.funnel.get("min_score_to_curate", 3.5)))
     n = int(limit or cfg.funnel.get("daily_finalists", 40))
     retry_before = (
         datetime.datetime.now(datetime.timezone.utc)

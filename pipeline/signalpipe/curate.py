@@ -330,6 +330,18 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
             msg += " [stopped: subscription usage limit — will retry]"
         print("%s (%.1fs)" % (msg, time.time() - started))
         db_mod.log_health(conn, "curate", "info", msg, json.dumps(stats))
+        _acfg = cfg.funnel.get("adaptive", {})
+        if _acfg.get("enabled"):
+            import datetime as _dt
+
+            from . import adaptive
+            _now = _dt.datetime.now(_dt.timezone.utc)
+            stats["eff_min_score"] = adaptive.effective_min_score(
+                conn, _acfg, _now,
+                base=float(cfg.funnel.get("min_score_to_curate", 3.5)))
+            stats["eff_min_relevance"] = adaptive.effective_min_relevance(
+                conn, _acfg, _now,
+                base=int(cfg.funnel.get("min_relevance_for_feed", 6)))
         _fp = cfg.config_fingerprint()
         db_mod.record_run(conn, "curate", _fp["hash"], json.dumps(stats),
                           json.dumps(_fp["tunables"]))

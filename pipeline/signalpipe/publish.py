@@ -103,8 +103,14 @@ def export_picks(conn: sqlite3.Connection, cfg) -> List[Dict[str, Any]]:
     site = cfg.site
     since = _iso_days_ago(int(site.get("picks_window_days", 7)))
     limit = int(site.get("picks_limit", 60))
-    min_rel = int(site.get("picks_min_relevance",
-                           cfg.funnel.get("min_relevance_for_feed", 6)))
+    import datetime as _dt
+
+    from . import adaptive
+    min_rel = adaptive.effective_min_relevance(
+        conn, cfg.funnel.get("adaptive", {}),
+        _dt.datetime.now(_dt.timezone.utc),
+        base=int(site.get("picks_min_relevance",
+                          cfg.funnel.get("min_relevance_for_feed", 6))))
     from . import topics
     rows = conn.execute(
         "SELECT c.id, c.title, c.first_seen, c.surface_count, c.score, "
@@ -449,8 +455,14 @@ def export_stats(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
     window_since = _iso_days_ago(int(site.get("picks_window_days", 7)))
     week_since = _iso_days_ago(7)
     month_since = _iso_days_ago(30)
-    min_rel = int(site.get("picks_min_relevance",
-                           cfg.funnel.get("min_relevance_for_feed", 6)))
+    import datetime as _dt
+
+    from . import adaptive
+    min_rel = adaptive.effective_min_relevance(
+        conn, cfg.funnel.get("adaptive", {}),
+        _dt.datetime.now(_dt.timezone.utc),
+        base=int(site.get("picks_min_relevance",
+                          cfg.funnel.get("min_relevance_for_feed", 6))))
 
     by_category = {
         r["category"]: r["n"]
