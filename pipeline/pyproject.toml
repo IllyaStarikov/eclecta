@@ -1,0 +1,49 @@
+# Test + coverage configuration for the signalpipe pipeline.
+# rootdir is this directory; `pythonpath = ["."]` makes `import signalpipe.*`
+# resolve without an install step. See docs/superpowers/specs/2026-07-04-*.
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config -m 'not live'"
+xfail_strict = true
+filterwarnings = [
+  "ignore::DeprecationWarning:feedparser.*",
+]
+markers = [
+  "integration: touches sqlite / filesystem / subprocess but performs NO network I/O",
+  "live: hits real external services or spends money; deselected by default, opt-in via `-m live`",
+  "property: randomized / property-based (uses hypothesis; skipped if hypothesis is absent)",
+]
+
+[tool.coverage.run]
+source = ["signalpipe"]
+branch = true
+omit = [
+  "signalpipe/__main__.py",   # thin CLI dispatch; covered by targeted tests, not line-chased
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+exclude_also = [
+  "def __repr__",
+  "raise NotImplementedError",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+  "@(abc\\.)?abstractmethod",
+]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+# Keep the pipeline's existing style; tests get a light, non-fussy ruleset.
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]  # long lines exist in the codebase; don't churn them
+
+[tool.ruff.lint.per-file-ignores]
+# Tests get a lenient ruleset: late imports (E402), fixture redefinition (F811),
+# unused locals (F841 — the `x = pytest.importorskip(...)` idiom + seed() side-effect
+# calls), and single-char loop names (E741) are all fine and common in tests.
+"tests/**" = ["E402", "F811", "F841", "E741"]

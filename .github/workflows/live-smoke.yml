@@ -1,0 +1,57 @@
+name: Nightly live smoke
+
+# Exercises the `-m live` tests against REAL external services (HN, Reddit, arXiv,
+# GDELT, Google News, Wikipedia, dev.to, Stack Exchange, ...). Advisory only:
+# third-party endpoints are flaky/rate-limited, so this never gates a deploy — it
+# is a daily signal that the live integrations still work. Money-spending LLM tests
+# stay skipped: no provider credentials are set here.
+
+on:
+  schedule:
+    - cron: '17 8 * * *' # 08:17 UTC daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-smoke
+  cancel-in-progress: true
+
+jobs:
+  live-smoke:
+    name: Live smoke (real external services)
+    runs-on: ubuntu-latest
+    # Non-blocking on purpose: a red run is a heads-up, not a broken build.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: pipeline/requirements-dev.txt
+
+      - name: Install test deps
+        run: pip install -r pipeline/requirements-dev.txt
+
+      - name: Run live smoke (network only; LLM-spend tests remain skipped)
+        id: live
+        working-directory: pipeline
+        env:
+          SIGNAL_LIVE: '1'
+          # SIGNAL_LIVE_LLM deliberately UNSET → paid LLM live tests self-skip.
+        run: |
+          python -m pytest -m live -ra --no-header \
+            && echo "result=pass" >> "$GITHUB_OUTPUT" \
+            || echo "result=fail" >> "$GITHUB_OUTPUT"
+
+      - name: Summary
+        if: always()
+        env:
+          RESULT: ${{ steps.live.outputs.result }}
+        run: |
+          echo "### Nightly live smoke: ${RESULT:-unknown}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Live tests hit real external services and are advisory only (non-blocking)." >> "$GITHUB_STEP_SUMMARY"

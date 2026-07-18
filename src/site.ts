@@ -13,8 +13,8 @@ export const site = {
     'a clear account of why. A daily brief, a weekly digest, and the long view.',
   author: 'Illya Starikov',
   authorUrl: 'https://starikov.co',
-  repoUrl: 'https://github.com/IllyaStarikov/eclecta',
   contactUrl: 'https://starikov.co/contact/',
+  repoUrl: 'https://github.com/IllyaStarikov/eclecta',
   storagePrefix: 'eclecta',
 } as const;
 

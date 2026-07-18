@@ -164,6 +164,8 @@
             <a><xsl:attribute name="href"><xsl:value-of select="/rss/channel/link"/></xsl:attribute>eclecta.co</a>
             &#160;·&#160;
             <a><xsl:attribute name="href"><xsl:value-of select="concat(/rss/channel/link,'feeds/')"/></xsl:attribute>All feeds</a>
+            &#160;·&#160;
+            <a href="https://github.com/IllyaStarikov/eclecta">Source</a>
           </footer>
         </div>
 

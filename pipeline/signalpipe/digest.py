@@ -26,7 +26,7 @@ from typing import Any, Dict, List, Optional
 
 from . import db as db_mod
 from . import period as period_mod
-from .llm import LLMError, SpendCapExceeded, adapter
+from .llm import LLMError, SpendCapExceeded, UsageLimitExhausted, adapter
 from .llm.schemas import DIGEST_SCHEMA, STYLE_FALLBACK, system_digest
 from .publish import _ARCHIVE_RE, no_archive
 
@@ -223,6 +223,12 @@ def run(cfg, kind: str = "weekly", period: Optional[str] = None,
                 "digest", system, prompt, DIGEST_SCHEMA,
                 cfg=cfg, conn=conn, effort="max", cap_kind="digest",
             )
+        except UsageLimitExhausted as e:
+            # Not a failure — the editions dispatcher re-fires on its interval
+            # and digest.run is idempotent, so this retries until quota is back.
+            db_mod.log_health(conn, "digest", "warn", str(e))
+            print("digest deferred: %s" % e)
+            return 1
         except (LLMError, SpendCapExceeded) as e:
             db_mod.log_health(conn, "digest", "error", str(e))
             print("digest failed: %s" % e)

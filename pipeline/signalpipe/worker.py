@@ -88,6 +88,16 @@ def _job(name):
                     print("[worker] %s deferred (downtime: %s)" % (name, why),
                           flush=True)
                     return
+                # Subscription usage-limit hold: same defer shape as downtime.
+                # The quota_probe job clears the hold and pulls these jobs
+                # forward the moment usage is back.
+                from .llm import quota
+
+                held, hold_why = quota.status()
+                if held:
+                    print("[worker] %s deferred (%s)" % (name, hold_why),
+                          flush=True)
+                    return
             if name == "ingest":
                 from .ingest import pipeline
 
@@ -385,6 +395,43 @@ def run(cfg) -> int:
         next_run_time=soon(3),
         coalesce=True,
     )
+
+    # Usage-limit recovery probe. Free no-op while no hold exists or while the
+    # hold window is still running. Once retry_at passes, one tiny probe call
+    # per interval answers "is usage back?": success clears the hold (in
+    # backend_cli) and pulls curate/editions forward immediately; another
+    # limit hit re-arms the hold with a fresh window. This is what makes the
+    # pipeline resilient to running out of Max-plan quota mid-day.
+    def _quota_probe():
+        try:
+            from .llm import adapter, quota
+
+            if not quota.exists():
+                return
+            held, why = quota.status()
+            if held:
+                print("[worker] usage hold active (%s)" % why, flush=True)
+                return
+            cfg2 = config_mod.load()
+            ok, msg = adapter.probe_auth(cfg2)
+            if not ok:
+                print("[worker] usage still limited or probe failed — will "
+                      "re-check: %s" % str(msg)[:200], flush=True)
+                return
+            quota.clear()
+            print("[worker] subscription usage restored — pulling "
+                  "curate/editions forward", flush=True)
+            for job_id in ("curate", "digest_editions"):
+                job = sched.get_job(job_id)
+                if job:
+                    job.modify(next_run_time=datetime.datetime.now())
+        except Exception:  # noqa: BLE001 — the probe must never kill the loop
+            print("[worker] quota_probe failed:\n%s" % traceback.format_exc(),
+                  file=sys.stderr, flush=True)
+
+    quota_probe_min = int(cad.get("quota_probe_min", 15))
+    sched.add_job(_quota_probe, IntervalTrigger(minutes=quota_probe_min),
+                  id="quota_probe", next_run_time=soon(2))
 
     sched.add_job(_job("publish_refresh"), IntervalTrigger(
         minutes=int(cad.get("publish_refresh_min", 240)), jitter=jitter),

@@ -70,8 +70,59 @@ jobs:
         with:
           path: dist
 
+  pytest:
+    name: Pipeline tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Data-only publishes can't break the pipeline suite — skip it there,
+      # same treatment the e2e suite gets in build-test above.
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            pipeline:
+              - 'pipeline/**'
+              - '!pipeline/kb/**'
+
+      - uses: actions/setup-python@v5
+        if: steps.changes.outputs.pipeline == 'true'
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: pipeline/requirements-dev.txt
+
+      - name: Install test deps
+        if: steps.changes.outputs.pipeline == 'true'
+        run: pip install -r pipeline/requirements-dev.txt
+
+      # Hermetic suite only (live tests are deselected by the pyproject addopts and
+      # run in the nightly live-smoke workflow instead).
+      - name: Run pytest with coverage
+        if: steps.changes.outputs.pipeline == 'true'
+        working-directory: pipeline
+        run: |
+          python -m pytest \
+            --cov=signalpipe \
+            --cov-report=term-missing:skip-covered \
+            --cov-report=xml \
+            --cov-report=html \
+            --junitxml=pytest-report.xml
+
+      - name: Upload coverage + report
+        if: always() && steps.changes.outputs.pipeline == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-coverage
+          path: |
+            pipeline/coverage.xml
+            pipeline/htmlcov
+            pipeline/pytest-report.xml
+          if-no-files-found: warn
+
   deploy:
-    needs: build-test
+    needs: [build-test, pytest]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Deploys queue and are never cancelled mid-flight; GitHub Pages

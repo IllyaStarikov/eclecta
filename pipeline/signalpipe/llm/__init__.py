@@ -33,3 +33,17 @@ class SpendCapExceeded(LLMError):
 
     def __init__(self, message):
         super().__init__(message, cost_usd=0.0)
+
+
+class UsageLimitExhausted(LLMError):
+    """Subscription usage limit hit (Max plan 5-hour/weekly quota).
+
+    Not a permanent failure: quota.py arms a hold and the worker re-checks on
+    an interval, so stages defer instead of marking items failed. retry_at is
+    the epoch when the hold expires — the CLI's reset hint when it gave one,
+    else now + backend.quota_recheck_min.
+    """
+
+    def __init__(self, message, retry_at=None, cost_usd=0.0):
+        super().__init__(message, cost_usd=cost_usd)
+        self.retry_at = retry_at
