@@ -8,13 +8,17 @@ const digests = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/digests' }),
   schema: z.object({
     title: z.string(),
-    kind: z
-      .enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly'])
-      .default('weekly'),
+    // Required, no default: the pipeline always writes kind, and a missing one
+    // must fail the build loudly rather than silently masquerade as 'weekly'
+    // (wrong archive group, wrong feed, wrong label).
+    kind: z.enum(['daily', 'weekly', 'monthly', 'quarterly', 'yearly']),
     period: z.string(),
     date: z.coerce.date(),
     blurb: z.string(),
     items: z.number().optional(),
+    /* model provenance (optional until the pipeline emits it): which model
+       wrote this edition, e.g. "claude-opus-4-8" */
+    model: z.string().optional(),
   }),
 });
 

@@ -1,6 +1,7 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
+import { lastmodForUrl } from './src/lib/sitemap.mjs';
 
 // Deploy target is env-driven. The live site is the custom apex domain
 // eclecta.co (base /); override with ECLECTA_SITE / ECLECTA_BASE for a
@@ -11,6 +12,13 @@ const BASE = process.env.ECLECTA_BASE || '/';
 export default defineConfig({
   site: SITE,
   base: BASE,
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      serialize(item) {
+        const lastmod = lastmodForUrl(item.url);
+        return lastmod ? { ...item, lastmod } : item;
+      },
+    }),
+  ],
   build: { format: 'directory' },
 });

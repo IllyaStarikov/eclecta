@@ -5,6 +5,7 @@ import {
   categoryBySlug,
   categoryName,
   deriveCategory,
+  resolveCategory,
 } from '../../src/lib/taxonomy';
 
 // Handy sets/maps derived from the source of truth.
@@ -298,5 +299,47 @@ describe('taxonomy structural invariants', () => {
         expect(validSubs.has(s)).toBe(true);
       }
     }
+  });
+});
+
+describe('resolveCategory() — trust the pipeline, derive as fallback', () => {
+  it('trusts a valid pipeline-emitted category + subs', () => {
+    const r = resolveCategory({
+      title: 'Completely unrelated title',
+      category: 'hardware',
+      subcategories: ['silicon'],
+    });
+    expect(r).toEqual({ category: 'hardware', subcategories: ['silicon'] });
+  });
+
+  it('filters subcategory slugs that do not belong to the category', () => {
+    const r = resolveCategory({
+      title: 'x',
+      category: 'hardware',
+      subcategories: ['silicon', 'agents', 'nope'],
+    });
+    expect(r.subcategories).toEqual(['silicon']);
+  });
+
+  it('caps trusted subcategories at 3', () => {
+    const ai = CATEGORIES.find((c) => c.slug === 'ai')!;
+    const all = ai.subcategories.map((s) => s.slug);
+    const r = resolveCategory({ title: 'x', category: 'ai', subcategories: all });
+    expect(r.subcategories.length).toBe(3);
+  });
+
+  it('falls back to derive on an unknown category slug', () => {
+    const r = resolveCategory({
+      title: 'New LLM benchmark',
+      channels: ['ai'],
+      category: 'not-a-category',
+      subcategories: ['models'],
+    });
+    expect(r.category).toBe('ai');
+  });
+
+  it('derives when the pipeline emitted nothing', () => {
+    const r = resolveCategory({ title: 'Ransomware gang exploits a zero-day', channels: [] });
+    expect(r.category).toBe('security');
   });
 });

@@ -9,8 +9,11 @@ untouched by anything that happens here.
 
 from __future__ import annotations
 
+import os
 import signal as stdlib_signal  # package is `signalpipe`, so this is stdlib
+import socket
 import sys
+import time
 import traceback
 
 from . import config as config_mod
@@ -24,11 +27,53 @@ CATCH_UP_DAYS = 7
 BACKUP_CRON = "0 9 * * sun"
 
 
+# Live job-start times, read by the stuck_check job. GIL-atomic dict ops.
+RUNNING: dict = {}
+
+# A job past its limit is logged; past 2x, the worker exits non-zero and
+# launchd (KeepAlive SuccessfulExit=false) restarts it inside 30s. WAL +
+# publish's crash-dirt cleanup make the hard exit safe. This converts
+# "silent multi-day starvation" (Jul 2-4) into one logged restart.
+STUCK_LIMITS_SEC = {
+    "ingest": 40 * 60, "score": 30 * 60, "fetch": 80 * 60,
+    "curate": 3 * 3600, "editions": 3 * 3600, "publish_refresh": 20 * 60,
+}
+
+
+def _stuck_check() -> None:
+    now = time.time()
+    for name, started in list(RUNNING.items()):
+        limit = STUCK_LIMITS_SEC.get(name)
+        if not limit:
+            continue
+        elapsed = now - started
+        if elapsed > 2 * limit:
+            print("[worker] %s stuck %ds (2x limit) — exiting for restart"
+                  % (name, elapsed), file=sys.stderr, flush=True)
+            os._exit(70)
+        if elapsed > limit:
+            try:
+                cfg = config_mod.load()
+                conn = db_mod_top.connect_rw(cfg.db_path)
+                try:
+                    db_mod_top.log_health(
+                        conn, name, "error",
+                        "stuck: running %ds (limit %ds)" % (elapsed, limit))
+                finally:
+                    conn.close()
+            except Exception:  # noqa: BLE001 — never let telemetry kill us
+                pass
+
+
+from . import db as db_mod_top  # noqa: E402 — after the constants above
+
+
 def _job(name):
     """Wrap a stage so one failing run never kills the scheduler, and each
     run reloads config (picks up edits without a restart)."""
 
     def runner():
+        RUNNING[name] = time.time()
         try:
             cfg = config_mod.load()
             # Local heavy stages run ONLY during machine downtime (AC + user-idle
@@ -90,9 +135,28 @@ def _job(name):
 
                 dest = db_mod.backup(cfg.db_path)
                 print("[worker] db backup -> %s" % dest, flush=True)
+            elif name == "retention":
+                from . import retention
+                import datetime as _dt
+
+                # monthly VACUUM on the first Sunday, right after the backup
+                retention.run(cfg, vacuum=_dt.date.today().day <= 7)
         except Exception:  # noqa: BLE001 — isolation per job run
             print("[worker] %s failed:\n%s" % (name, traceback.format_exc()),
                   file=sys.stderr, flush=True)
+            # Failures must reach the dashboard, not just stderr (the Jul 2-4
+            # outage was invisible because only the log knew).
+            try:
+                conn = db_mod_top.connect_rw(config_mod.load().db_path)
+                try:
+                    db_mod_top.log_health(conn, name, "error",
+                                          traceback.format_exc()[-2000:])
+                finally:
+                    conn.close()
+            except Exception:  # noqa: BLE001 — logging never masks the error
+                pass
+        finally:
+            RUNNING.pop(name, None)
 
     runner.__name__ = "job_%s" % name
     return runner
@@ -243,12 +307,19 @@ def _heartbeat() -> None:
     except OSError as e:  # a heartbeat hiccup must never kill the scheduler
         print("[worker] heartbeat write failed: %s" % e,
               file=sys.stderr, flush=True)
+    from . import monitoring
+
+    monitoring.ping("worker")
 
 
 def run(cfg) -> int:
     from apscheduler.schedulers.blocking import BlockingScheduler
     from apscheduler.triggers.cron import CronTrigger
     from apscheduler.triggers.interval import IntervalTrigger
+
+    # Belt-and-braces for any library that bypasses httpx timeouts
+    # (feedparser URL mode et al) — a hung socket must never hold a job slot.
+    socket.setdefaulttimeout(30)
 
     from . import db as db_mod
 
@@ -286,6 +357,11 @@ def run(cfg) -> int:
         return now + datetime.timedelta(minutes=minutes)
 
     # Heartbeat first: proves the scheduler loop is alive for the watchdog.
+    sched.add_job(_stuck_check, IntervalTrigger(minutes=10),
+                  id="stuck_check", name="stuck_check")
+    sched.add_job(_job("retention"),
+                  CronTrigger.from_crontab("0 10 * * sun", timezone=DIGEST_TZ),
+                  id="retention", name="retention")
     sched.add_job(_heartbeat, IntervalTrigger(minutes=5),
                   id="heartbeat", next_run_time=soon(0.1))
     sched.add_job(_job("ingest"), IntervalTrigger(

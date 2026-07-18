@@ -56,6 +56,41 @@ export const pickSchema = z.object({
 export const picksSchema = z.array(pickSchema);
 export type Pick = z.infer<typeof pickSchema>;
 
+/* ── spotlight.json ────────────────────────────────────────────────────── */
+/* Stories gaining traction across the internet right now: pipeline-selected
+   clusters with unusual cross-surface breadth + velocity, curated or not.
+   The file may not exist yet; the section hides when it is absent. */
+
+export const spotlightItemSchema = z
+  .object({
+    story_id: z.string(),
+    title: z.string().min(1),
+    url: z.string().min(1).optional(),
+    canonical_url: z.string().min(1).optional(),
+    first_seen: z.string(),
+    surface_count: z.number(),
+    surfaces: z.array(surfaceSchema).default([]),
+    velocity_hours: z.number().nullable().optional(),
+    points: z.number().nullable().optional(),
+    comments: z.number().nullable().optional(),
+    score: z.number(),
+    curated: z.boolean(),
+    pick_id: z.number().nullable().optional(),
+  })
+  .refine((i) => i.url || i.canonical_url, { message: 'url or canonical_url required' });
+
+/* Accept both a bare array and { generated_at, items } while the pipeline
+   contract settles. */
+export const spotlightFileSchema = z.union([
+  z.array(spotlightItemSchema),
+  z.object({
+    generated_at: z.string().optional(),
+    window_hours: z.number().optional(),
+    items: z.array(spotlightItemSchema),
+  }),
+]);
+export type SpotlightItem = z.infer<typeof spotlightItemSchema>;
+
 /* ── channels.json ─────────────────────────────────────────────────────── */
 
 export const channelSchema = z.object({

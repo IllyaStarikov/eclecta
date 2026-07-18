@@ -1,48 +1,38 @@
 ---
 import { href } from '../site';
-import { deriveCategory, categoryName } from '../lib/taxonomy';
+import { resolveCategory, categoryName } from '../lib/taxonomy';
+import { safeUrl } from '../lib/url';
+import type { Pick as PickData } from '../lib/schema';
 
-interface Surface { url: string; points: number | null; comments: number | null; name: string; }
-/** The canonical pick contract — mirrors lib/schema.ts pickSchema.
- *  category/subcategories are optional: emitted by the pipeline when present,
- *  otherwise derived from the title + channels on the front end. */
-export interface PickData {
-  id: number; title: string; relevance: number; score: number;
-  why: string; notes: string[]; summary: string; channels: string[];
-  novelty: string | null; audience: string | null;
-  source_url: string; read_kind: string | null; free_link: string | null;
-  paywalled: boolean; surfaces: Surface[];
-  sources_count: number; first_seen: string | null; curated_at: string;
-  model: string | null;
-  category?: string; subcategories?: string[];
-}
+/** The canonical pick contract IS lib/schema.ts pickSchema — one source of
+ *  truth, inferred from zod, re-exported for the pages that render picks. */
+export type { PickData };
 interface Props { pick: PickData; index?: number; variant?: 'lead' | 'brief' | 'also'; }
 const { pick, index = 0, variant = 'brief' } = Astro.props;
 const delay = Math.min(index, 8) * 55;
 
-const tax = pick.category
-  ? { category: pick.category, subcategories: pick.subcategories ?? [] }
-  : deriveCategory(pick.title, pick.channels);
+const tax = resolveCategory(pick);
 
-// primary source first, always; backup free link when one exists
-const primary = pick.source_url;
-const free = pick.free_link && pick.free_link !== primary ? pick.free_link : null;
+// primary source first, always; backup free link when one exists.
+// safeUrl neutralizes hostile schemes from third-party feed data (see lib/url).
+const primary = safeUrl(pick.source_url);
+const free = pick.free_link && pick.free_link !== pick.source_url ? safeUrl(pick.free_link) : null;
 const date = (pick.curated_at || '').slice(0, 10);
 const signalCount = pick.sources_count ?? pick.surfaces.length;
 
 function hostOf(u: string): string {
   try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; }
 }
-const host = hostOf(primary);
+const host = hostOf(primary ?? '');
 const Heading = variant === 'lead' ? 'h2' : 'h3';
 ---
 {variant === 'also' ? (
-  <article class="also__item reveal" style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
-    <span class="also__title"><a href={primary} target="_blank" rel="noopener">{pick.title}</a></span>
+  <article class="also__item reveal" id={`p-${pick.id}`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+    <span class="also__title"><a href={primary} target="_blank" rel="noopener">{pick.title}<span class="sr-only"> (external)</span></a></span>
     {host && <span class="also__src">{host}</span>}
   </article>
 ) : (
-  <article class={`pick pick--${variant} reveal`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
+  <article class={`pick pick--${variant} reveal`} id={`p-${pick.id}`} style={`animation-delay:${delay}ms`} data-pick-id={pick.id}>
     <div class="pick__meta">
       <span class="pick__no" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
       {host && <span class="pick__src">{host}</span>}
@@ -51,15 +41,17 @@ const Heading = variant === 'lead' ? 'h2' : 'h3';
       {tax.subcategories.slice(0, 2).map((s) => (
         <a class="pick__tag pick__tag--sub" href={href(`/${tax.category}/${s}/`)}>{s}</a>
       ))}
+      {pick.state === 'developing' && <span class="pick__tag pick__tag--state">developing</span>}
       <span class="pick__score">rel {pick.relevance}/10 score {Number(pick.score ?? 0).toFixed(1)}</span>
     </div>
+    {variant === 'lead' && pick.novelty && <p class="pick__novelty">{pick.novelty}</p>}
     <Heading class="pick__title">
-      <a href={primary} target="_blank" rel="noopener">{pick.title}</a>
+      <a href={primary} target="_blank" rel="noopener">{pick.title}<span class="sr-only"> (external)</span></a>
     </Heading>
     {(pick.paywalled || free) && (
       <div class="pick__alt">
         {pick.paywalled && <span class="pick__tag pick__tag--pay">paywalled</span>}
-        {free && <a class="pick__free" href={free} target="_blank" rel="noopener">free read →</a>}
+        {free && <a class="pick__free" href={free} target="_blank" rel="noopener">free read →<span class="sr-only"> (external)</span></a>}
       </div>
     )}
     {pick.why && <p class="pick__why">{pick.why}</p>}
@@ -98,10 +90,12 @@ const Heading = variant === 'lead' ? 'h2' : 'h3';
       <span>relevance {pick.relevance}/10</span>
       <span>score {Number(pick.score ?? 0).toFixed(2)}</span>
       {pick.read_kind && pick.read_kind !== 'primary' && <span>read: {pick.read_kind}</span>}
+      {variant !== 'lead' && pick.novelty && <span>new: {pick.novelty}</span>}
+      {pick.audience && <span>for: {pick.audience}</span>}
       {pick.model && <span>curator: {pick.model}</span>}
       {date && <span>curated {date}</span>}
       {pick.surfaces.map((s) => (
-        <a href={s.url} target="_blank" rel="noopener">
+        <a href={safeUrl(s.url)} target="_blank" rel="noopener">
           {s.name}{s.points ? ` ${s.points} pts` : ''}{s.comments ? ` ${s.comments}c` : ''}
         </a>
       ))}

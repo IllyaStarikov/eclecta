@@ -6,7 +6,11 @@
  * regardless of any on-site display preference.
  */
 import { CATEGORIES } from './taxonomy';
+import { safeUrl } from './url';
 import { site, KINDS, KIND_LABEL, type DigestKind } from '../site';
+
+/** Digest feeds serve the newest N editions; dailies accumulate forever. */
+export const FEED_DIGEST_CAP = 50;
 
 /** Minimal XML/HTML escaping for feed content. */
 export function esc(s: unknown): string {
@@ -47,6 +51,13 @@ export function pickFreeLink(p: FeedPick): string | null {
 
 /** Full item body for a pick — everything the site knows, in the feed. */
 export function pickItemHtml(p: FeedPick): string {
+  // Neutralize hostile schemes from third-party feed data before they land in
+  // an href a browser-based reader would render (see lib/url). Unsafe URLs
+  // degrade to plain label text, never a clickable javascript:/data: link.
+  const link = (u: string | null | undefined, label: string): string => {
+    const safe = safeUrl(u);
+    return safe ? `<a href="${esc(safe)}">${label}</a>` : label;
+  };
   const primary = pickPrimaryLink(p);
   const free = pickFreeLink(p);
   const parts: string[] = [];
@@ -57,18 +68,18 @@ export function pickItemHtml(p: FeedPick): string {
     );
   }
   if (p.summary) parts.push(`<p>${esc(p.summary)}</p>`);
-  const links = [`<a href="${esc(primary)}">Primary source</a>`];
+  const links = [link(primary, 'Primary source')];
   if (p.paywalled) links.push('<em>paywalled</em>');
-  if (free) links.push(`<a href="${esc(free)}">Free read</a>`);
+  if (free) links.push(link(free, 'Free read'));
   parts.push(`<p><strong>Read</strong> · ${links.join(' · ')}</p>`);
   if (p.surfaces && p.surfaces.length) {
     parts.push(
       `<p><strong>Surfaced on</strong> ${p.surfaces
-        .map(
-          (s) =>
-            `<a href="${esc(s.url)}">${esc(s.name)}${s.points ? ` (${s.points})` : ''}${
-              s.comments ? ` · ${s.comments}c` : ''
-            }</a>`
+        .map((s) =>
+          link(
+            s.url,
+            `${esc(s.name)}${s.points ? ` (${s.points})` : ''}${s.comments ? ` · ${s.comments}c` : ''}`
+          )
         )
         .join(' · ')}</p>`
     );
@@ -97,7 +108,13 @@ export function digestItemHtml(d: FeedDigest, url: string): string {
  * Passed as the `stylesheet` option to each rss.xml.js endpoint. Base-aware:
  * BASE_URL is '/' on eclecta.co, so this resolves to '/rss/styles.xsl'.
  */
-export const FEED_STYLESHEET = import.meta.env.BASE_URL + 'rss/styles.xsl';
+// Optional-chained so the module also loads in plain Node (Playwright specs
+// import the FEEDS registry); under Astro/Vite BASE_URL is always defined.
+// Normalize the base like site.href(): trailingSlash 'ignore' leaves a
+// non-'/' base without a trailing slash (e.g. '/eclecta'), so naive
+// concatenation would yield '/eclectarss/styles.xsl' — a 404.
+const _base = (import.meta.env?.BASE_URL ?? '/').replace(/\/+$/, '');
+export const FEED_STYLESHEET = _base + '/rss/styles.xsl';
 
 /* ── the registry ──────────────────────────────────────────────────────── */
 
@@ -112,7 +129,7 @@ export interface FeedDef {
 }
 
 const CADENCE_DESC: Record<DigestKind, string> = {
-  daily: 'The daily brief, weekday mornings. Just the editions — no individual picks.',
+  daily: 'The daily brief, weekday mornings. Just the editions, no individual picks.',
   weekly: 'The weekly digest, Fridays. The week, distilled to one read.',
   monthly: 'The monthly review. What actually moved.',
   quarterly: 'The quarterly report. The slower curves.',
@@ -122,14 +139,14 @@ const CADENCE_DESC: Record<DigestKind, string> = {
 export const FEEDS: FeedDef[] = [
   {
     slug: 'everything',
-    title: `${site.name} — everything`,
+    title: `${site.name} | everything`,
     path: '/rss.xml',
     description: 'Every curated pick and every digest edition, as they publish.',
     group: 'everything',
   },
   {
     slug: 'digests',
-    title: `${site.name} — digests`,
+    title: `${site.name} | digests`,
     path: '/digests/rss.xml',
     description: 'All editions, daily brief to the year in review. No individual picks.',
     group: 'digests',
@@ -137,7 +154,7 @@ export const FEEDS: FeedDef[] = [
   ...KINDS.map(
     (k): FeedDef => ({
       slug: `digests-${k}`,
-      title: `${site.name} — ${KIND_LABEL[k].toLowerCase()}`,
+      title: `${site.name} | ${KIND_LABEL[k].toLowerCase()}`,
       path: `/digests/${k}/rss.xml`,
       description: CADENCE_DESC[k],
       group: 'cadence',
@@ -146,7 +163,7 @@ export const FEEDS: FeedDef[] = [
   ...CATEGORIES.map(
     (c): FeedDef => ({
       slug: `cat-${c.slug}`,
-      title: `${site.name} — ${c.name.toLowerCase()}`,
+      title: `${site.name} | ${c.name.toLowerCase()}`,
       path: `/${c.slug}/rss.xml`,
       description: c.blurb,
       group: 'category',

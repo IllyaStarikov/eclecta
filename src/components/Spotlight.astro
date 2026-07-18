@@ -1,0 +1,40 @@
+---
+/**
+ * Spotlight: stories gaining traction across the internet right now.
+ * Pre-editorial by design: the pipeline selects clusters with unusual
+ * cross-surface breadth and velocity; curated entries link their full pick,
+ * the rest run headline + traction only. Deliberately NOT category-scoped
+ * (no data-category), so muting a section never hides the spotlight.
+ */
+import { href } from '../site';
+import { resolveCategory } from '../lib/taxonomy';
+import { safeUrl } from '../lib/url';
+import { tractionParts, type SpotlightEntry } from '../lib/spotlight';
+
+interface Props { items: SpotlightEntry[]; }
+const { items } = Astro.props;
+const now = new Date();
+---
+<section class="reveal" id="s-spotlight" aria-label="Spotlight">
+  <div class="rail">
+    <h2 class="rail__label">Spotlight</h2>
+    <span class="rail__rule"></span>
+    <span class="rail__count">gaining traction now</span>
+  </div>
+  <ol class="spot">
+    {items.map((it) => (
+      <li class="spot__item">
+        <a class="spot__title" href={safeUrl(it.link)} target="_blank" rel="noopener">{it.title}<span class="sr-only"> (external)</span></a>
+        <span class="spot__traction">
+          {tractionParts(it, now).map((p) => <span>{p}</span>)}
+        </span>
+        {it.pick?.why && <p class="spot__why">{it.pick.why}</p>}
+        {it.pick && (
+          <a class="arrow-link arrow-link--faint spot__more" href={href(`/${resolveCategory(it.pick).category}/#p-${it.pick.id}`)}>
+            full pick <span aria-hidden="true">→</span>
+          </a>
+        )}
+      </li>
+    ))}
+  </ol>
+</section>

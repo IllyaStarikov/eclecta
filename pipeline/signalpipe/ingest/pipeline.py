@@ -228,6 +228,9 @@ def run(cfg, only: Optional[str] = None, limit: Optional[int] = None) -> int:
         )
         print("%s (%.1fs)" % (msg, dur))
         db_mod.log_health(conn, "ingest", "info", msg, json.dumps(totals))
+        _fp = cfg.config_fingerprint()
+        db_mod.record_run(conn, "ingest", _fp["hash"], json.dumps(totals),
+                          json.dumps(_fp["tunables"]))
         cfg.write_last_run("ingest", totals)
         return 0
     finally:

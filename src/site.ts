@@ -8,11 +8,12 @@ export const site = {
   kicker: 'The frontier, distilled',
   tagline: 'We read the firehose, so you read what matters.',
   description:
-    'Eclecta watches the places technology, AI, and the sciences break first — ' +
-    'thousands of sources — and distills what actually matters, with a clear ' +
-    'account of why. A daily brief, a weekly digest, and the long view.',
+    'Eclecta watches the places technology, AI, and the sciences break first, ' +
+    'thousands of sources at a time, and distills what actually matters, with ' +
+    'a clear account of why. A daily brief, a weekly digest, and the long view.',
   author: 'Illya Starikov',
   authorUrl: 'https://starikov.co',
+  repoUrl: 'https://github.com/IllyaStarikov/eclecta',
   contactUrl: 'https://starikov.co/contact/',
   storagePrefix: 'eclecta',
 } as const;

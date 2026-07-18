@@ -142,6 +142,9 @@ def run(cfg, show: int = 20) -> int:
         msg = "score: %d clusters scored (window %dh)" % (n, window_h)
         print("%s (%.1fs)" % (msg, time.time() - started))
         db_mod.log_health(conn, "score", "info", msg, json.dumps(stats))
+        _fp = cfg.config_fingerprint()
+        db_mod.record_run(conn, "score", _fp["hash"], json.dumps(stats),
+                          json.dumps(_fp["tunables"]))
         cfg.write_last_run("score", stats)
 
         if show:

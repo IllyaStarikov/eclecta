@@ -1,10 +1,15 @@
 ---
 /**
  * The edition rail — the right-hand column of the broadsheet layout.
- * Carries the edition furniture (section index, the brief, editions, subscribe)
- * so the main column stays a clean reading sequence. Every block is optional;
- * pass only what a page needs. Index/nav items take a `category` so muted
+ * Carries the edition furniture (section index, editions, subscribe) so the
+ * main column stays a clean reading sequence. Every block is optional; pass
+ * only what a page needs. Index/nav items take a `category` so muted
  * categories hide from the rail exactly as they do from the sections.
+ *
+ * The section index is live: a ▪ marker tracks the section under the reader's
+ * eye and glides down the list as they scroll (the mark as reading indicator —
+ * see design-language.md §The mark). Progressive enhancement: without JS the
+ * index is a plain anchor list and no marker renders.
  */
 export interface RailLink {
   label: string;
@@ -22,7 +27,6 @@ export interface RailBlock {
 interface Props {
   index?: RailBlock | null;
   nav?: RailBlock | null;
-  brief?: { title: string; href: string } | null;
   editions?: RailBlock | null;
   feeds?: RailBlock | null;
   back?: RailLink | null;
@@ -30,7 +34,6 @@ interface Props {
 const {
   index = null,
   nav = null,
-  brief = null,
   editions = null,
   feeds = null,
   back = null,
@@ -39,7 +42,7 @@ const hasMeta = (m: RailLink['meta']) => m != null && m !== '';
 ---
 <aside class="erail" aria-label="Edition guide">
   {index && index.items.length > 0 && (
-    <nav class="erail__block erail__index" aria-label={index.title}>
+    <nav class="erail__block erail__index" data-scrollspy aria-label={index.title}>
       <span class="erail__head">{index.title}</span>
       <ul class="erail__list">
         {index.items.map((it) => (
@@ -70,13 +73,6 @@ const hasMeta = (m: RailLink['meta']) => m != null && m !== '';
     </nav>
   )}
 
-  {brief && (
-    <div class="erail__block erail__brief">
-      <span class="erail__head">Latest brief</span>
-      <a class="erail__brieflink" href={brief.href}>{brief.title}</a>
-    </div>
-  )}
-
   {editions && editions.items.length > 0 && (
     <div class="erail__block erail__editions">
       <span class="erail__head">{editions.title}</span>
@@ -91,7 +87,7 @@ const hasMeta = (m: RailLink['meta']) => m != null && m !== '';
         ))}
       </ul>
       {editions.moreHref && (
-        <a class="erail__more" href={editions.moreHref}>{editions.moreLabel ?? 'More'} <span aria-hidden="true">→</span></a>
+        <a class="arrow-link arrow-link--faint erail__more" href={editions.moreHref}>{editions.moreLabel ?? 'More'} <span aria-hidden="true">→</span></a>
       )}
     </div>
   )}
@@ -107,12 +103,85 @@ const hasMeta = (m: RailLink['meta']) => m != null && m !== '';
         ))}
       </ul>
       {feeds.moreHref && (
-        <a class="erail__more" href={feeds.moreHref}>{feeds.moreLabel ?? 'All feeds'} <span aria-hidden="true">→</span></a>
+        <a class="arrow-link arrow-link--faint erail__more" href={feeds.moreHref}>{feeds.moreLabel ?? 'All feeds'} <span aria-hidden="true">→</span></a>
       )}
     </div>
   )}
 
   {back && (
-    <a class="erail__back" href={back.href}><span aria-hidden="true">←</span> {back.label}</a>
+    <a class="arrow-link" href={back.href}><span aria-hidden="true">←</span> {back.label}</a>
   )}
 </aside>
+
+<script>
+  // The reading marker: a ▪ that tracks the visible section in the index.
+  // One IntersectionObserver per page; "active" = the last section whose top
+  // has passed the reading band (upper 40% of the viewport), so the marker
+  // steps down exactly when the reader's section changes.
+  const spy = document.querySelector('[data-scrollspy]');
+  const list = spy?.querySelector('.erail__list');
+  if (spy instanceof HTMLElement && list instanceof HTMLElement) {
+    const links = [...spy.querySelectorAll<HTMLAnchorElement>('a[href^="#"]')];
+    const targets = links
+      .map((a) => {
+        const el = document.getElementById(decodeURIComponent(a.hash.slice(1)));
+        return el ? { a, el } : null;
+      })
+      .filter((t): t is { a: HTMLAnchorElement; el: HTMLElement } => t !== null);
+
+    if (targets.length > 0) {
+      const marker = document.createElement('span');
+      marker.className = 'erail__marker';
+      marker.setAttribute('aria-hidden', 'true');
+      list.append(marker);
+
+      let current: HTMLAnchorElement | null = null;
+      const place = () => {
+        // Muted categories collapse their <li>; skip hidden entries.
+        if (current && current.offsetParent === null) current = null;
+        if (!current) {
+          const first = targets.find((t) => t.a.offsetParent !== null);
+          current = first ? first.a : null;
+        }
+        if (!current) {
+          marker.style.opacity = '0';
+          return;
+        }
+        const li = current.closest('li');
+        if (!(li instanceof HTMLElement)) return;
+        marker.style.opacity = '1';
+        marker.style.transform = `translateY(${li.offsetTop + li.offsetHeight / 2}px)`;
+        for (const t of targets) {
+          if (t.a === current) t.a.setAttribute('aria-current', 'location');
+          else t.a.removeAttribute('aria-current');
+        }
+      };
+
+      const setCurrent = () => {
+        // Last section whose top sits above the reading band = the one in view.
+        const band = window.innerHeight * 0.4;
+        let active: HTMLAnchorElement | null = null;
+        for (const t of targets) {
+          if (t.a.offsetParent === null) continue;
+          if (t.el.getBoundingClientRect().top <= band) active = t.a;
+        }
+        current = active ?? null;
+        place();
+      };
+
+      // Observe section edges to wake up only when the answer can change;
+      // recompute the winner from geometry (order-safe and mute-safe).
+      const io = new IntersectionObserver(setCurrent, {
+        rootMargin: '-40% 0px -59% 0px',
+      });
+      for (const t of targets) io.observe(t.el);
+      window.addEventListener('resize', setCurrent, { passive: true });
+      // Preference changes (muting a section) re-layout the rail.
+      new MutationObserver(setCurrent).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-muted'],
+      });
+      setCurrent();
+    }
+  }
+</script>

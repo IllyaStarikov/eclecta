@@ -35,7 +35,7 @@ export const CATEGORIES: Category[] = [
   {
     slug: 'research',
     name: 'Research',
-    blurb: 'Papers and results that change practice — machine learning, systems, and the sciences.',
+    blurb: 'Papers and results that change practice, from machine learning to the lab bench.',
     match: ['paper', 'arxiv', 'study', 'researchers', 'preprint', 'journal', 'findings', 'experiment'],
     subcategories: [
       { slug: 'ml', name: 'ML & methods', blurb: 'Machine-learning methods and results.', match: ['transformer', 'diffusion', 'reinforcement learning', 'gradient', 'fine-tun', 'embedding', 'neural architecture', 'self-supervised', 'dataset'] },
@@ -157,4 +157,27 @@ export function deriveCategory(
   }
   const subcategories = (subHits[primary] || []).slice(0, 3);
   return { category: primary, subcategories };
+}
+
+/**
+ * Resolve a pick's category: trust the pipeline-emitted slug when it names a
+ * real category (filtering its subcategories against that category's actual
+ * sub-slugs, since an unknown sub would 404 as a link), otherwise fall back
+ * to deriveCategory. All pick consumers go through this one helper.
+ */
+export function resolveCategory(p: {
+  title: string;
+  channels?: string[];
+  category?: string;
+  subcategories?: string[];
+}): { category: string; subcategories: string[] } {
+  const cat = p.category ? categoryBySlug(p.category) : undefined;
+  if (cat) {
+    const valid = new Set(cat.subcategories.map((s) => s.slug));
+    return {
+      category: cat.slug,
+      subcategories: (p.subcategories ?? []).filter((s) => valid.has(s)).slice(0, 3),
+    };
+  }
+  return deriveCategory(p.title, p.channels ?? []);
 }

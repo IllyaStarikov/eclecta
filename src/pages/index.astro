@@ -1,30 +1,26 @@
 ---
-import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
 import Pick, { type PickData } from '../components/Pick.astro';
 import Rail from '../components/Rail.astro';
+import Spotlight from '../components/Spotlight.astro';
+import { latestEditions } from '../lib/editions';
+import { joinCurated, loadSpotlightRaw, normalizeSpotlight } from '../lib/spotlight';
 import picksJson from '../data/picks.json';
-import { site, href, KIND_LABEL, KINDS } from '../site';
-import { CATEGORIES, deriveCategory } from '../lib/taxonomy';
+import { site, href } from '../site';
+import { CATEGORIES, resolveCategory } from '../lib/taxonomy';
 
-const digests = (await getCollection('digests')).sort(
-  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
-);
-const latestDaily = digests.find((d) => d.data.kind === 'daily') ?? null;
-// latest edition of each kind, for the rail's "Editions" index
-const editions = KINDS.map((k) => digests.find((d) => d.data.kind === k)).filter(
-  (d): d is (typeof digests)[number] => Boolean(d)
-);
-// the daily is surfaced as "the brief"; the rail's editions list is the longer view
-const olderEditions = editions.filter((d) => d.id !== latestDaily?.id);
+const editions = await latestEditions();
 
 // The pipeline emits the v1 contract (channels[]); derive the public taxonomy
 // here so the front page reads as a sectioned edition. When the pipeline emits
 // category/subcategories natively, this passthrough simply uses them.
 const picks = (picksJson as unknown as PickData[]).map((p) => {
-  const tax = deriveCategory(p.title, p.channels);
+  const tax = resolveCategory(p);
   return { ...p, category: tax.category, subcategories: tax.subcategories } as PickData;
 });
+
+// the traction wire: hidden until the pipeline starts writing spotlight.json
+const spotItems = joinCurated(normalizeSpotlight(loadSpotlightRaw()).items, picks);
 
 const lead = picks[0] ?? null;
 const rest = lead ? picks.slice(1) : picks;
@@ -39,22 +35,11 @@ const sections = CATEGORIES.map((cat) => ({
 }))
   .filter((s) => s.items.length > 0)
   .sort((a, b) => b.items.length - a.items.length);
-
-const fmt = (d: Date) =>
-  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 ---
 <Base wide={true}>
   <h1 class="sr-only">{site.name} | today's edition</h1>
   <div class="broadsheet">
     <div class="broadsheet__main">
-      <p class="standfirst reveal">
-        {site.name} watches where technology, AI, and the sciences break first,
-        and keeps almost none of it. Stories that surface across many independent
-        sources are read closely, scored, and explained. Each pick links the
-        primary source, with a free read when the original is walled.
-        <a href={href('/about/')}>How it works →</a>
-      </p>
-
       {lead && (
         <section class="reveal" aria-label="Lead story" data-category={lead.category}>
           <div class="rail">
@@ -67,12 +52,14 @@ const fmt = (d: Date) =>
         </section>
       )}
 
+      {spotItems.length > 0 && <Spotlight items={spotItems} />}
+
       {sections.map((s) => (
         <section class="reveal" id={`s-${s.cat.slug}`} data-category={s.cat.slug} aria-label={s.cat.name}>
           <div class="rail">
             <span class="rail__label">{s.cat.name}</span>
             <span class="rail__rule"></span>
-            <a class="rail__more" href={href(`/${s.cat.slug}/`)}>More <span aria-hidden="true">→</span></a>
+            <a class="arrow-link arrow-link--faint" href={href(`/${s.cat.slug}/`)}>More <span aria-hidden="true">→</span></a>
           </div>
           <div class="briefing">
             {s.items.slice(0, FEATURED).map((p, i) => <Pick pick={p} index={i} variant="brief" />)}
@@ -89,26 +76,16 @@ const fmt = (d: Date) =>
     <Rail
       index={{
         title: 'In this edition',
-        items: sections.map((s) => ({
-          label: s.cat.name,
-          href: `#s-${s.cat.slug}`,
-          category: s.cat.slug,
-        })),
+        items: [
+          ...(spotItems.length > 0 ? [{ label: 'Spotlight', href: '#s-spotlight' }] : []),
+          ...sections.map((s) => ({
+            label: s.cat.name,
+            href: `#s-${s.cat.slug}`,
+            category: s.cat.slug,
+          })),
+        ],
       }}
-      brief={latestDaily ? {
-        title: latestDaily.data.title,
-        href: href(`/digests/${latestDaily.id}/`),
-      } : null}
-      editions={olderEditions.length ? {
-        title: 'Editions',
-        items: olderEditions.map((d) => ({
-          label: KIND_LABEL[d.data.kind],
-          href: href(`/digests/${d.id}/`),
-          meta: fmt(d.data.date),
-        })),
-        moreLabel: 'All editions',
-        moreHref: href('/archive/'),
-      } : null}
+      editions={editions}
       feeds={{
         title: 'Subscribe',
         items: [
