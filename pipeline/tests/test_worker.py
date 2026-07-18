@@ -738,6 +738,8 @@ def test_run_wires_all_jobs_with_configured_cadences(cfg, monkeypatch):
         "publish_refresh",
         "kb_trends",
         "backup",
+        "retention",
+        "stuck_check",
     }
     assert set(result.jobs_by_id) == expected_ids
 

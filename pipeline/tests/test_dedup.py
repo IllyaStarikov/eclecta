@@ -125,13 +125,18 @@ def test_story_id_ignores_title_key_when_url_present():
     assert a == b == "s_6b09ccb24d2975a6"
 
 
-def test_story_id_www_and_query_and_trailing_slash_collapse():
-    # registered_domain strips www; only the path (rstrip '/') feeds the id, so
-    # www, a trailing slash, and tracker query params all produce the SAME id.
+def test_story_id_www_and_trailing_slash_collapse_but_query_distinguishes():
+    # registered_domain strips www and the path rstrips '/', so www and a
+    # trailing slash collapse — but a surviving query string is PART of the id
+    # (else every youtube.com/watch?v=... collides). Tracking params never get
+    # here: canonicalize() strips them before story_id sees the URL.
     base = dedup.story_id("https://example.com/story", "k")
     assert dedup.story_id("https://www.example.com/story", "k") == base
     assert dedup.story_id("https://example.com/story/", "k") == base
-    assert dedup.story_id("https://example.com/story?utm_source=nl", "k") == base
+    assert dedup.story_id("https://example.com/story?v=abc", "k") != base
+    assert dedup.story_id("https://example.com/story?v=abc", "k") == dedup.story_id(
+        "https://www.example.com/story?v=abc", "k"
+    )
 
 
 def test_story_id_different_paths_differ():

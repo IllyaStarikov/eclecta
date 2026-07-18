@@ -1354,7 +1354,11 @@ def test_refresh_no_unpublished_skips_digest_writes(conn, seed, cfg, monkeypatch
     )
     rc = publish.refresh(cfg)
     assert rc == 0
-    assert set(rec.calls[0]["writes"]) == {"src/data/picks.json", "src/data/stats.json"}
+    assert set(rec.calls[0]["writes"]) == {
+        "src/data/picks.json",
+        "src/data/spotlight.json",
+        "src/data/stats.json",
+    }
 
 
 @pytest.mark.integration
