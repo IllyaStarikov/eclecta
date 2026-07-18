@@ -37,7 +37,7 @@ _ARCHIVE_RE = re.compile(r"(^|[./])archive\.(ph|today|is|org)(/|$)", re.I)
 # Paths in the site repo the pipeline regenerates on every publish. Leftover
 # dirt under these (a crash between write and commit) is safe to discard;
 # dirt anywhere else means a human is mid-edit and we refuse to touch it.
-PIPELINE_OWNED = ("src/data/", "src/content/digests/", "kb/")
+PIPELINE_OWNED = ("src/data/", "src/content/digests/", "src/content/library/", "kb/")
 
 
 class PublishError(Exception):
@@ -1095,6 +1095,69 @@ def publish_kb_daily(cfg, dates=None) -> int:
             print("kb publish failed: %s" % e)
             return 1
         print("[publish] kb %s: %s" % (label, status))
+        return 0 if status in ("pushed", "committed-local", "noop") else 1
+    finally:
+        conn.close()
+
+
+def _library_frontmatter(meta: Dict[str, Any]) -> str:
+    import json as _json
+
+    return (
+        "---\n"
+        "name: %s\n" % _json.dumps(meta["name"])
+        + "slug: %s\n" % _json.dumps(meta["slug"])
+        + "type: %s\n" % _json.dumps(meta["type"])
+        + "summary: %s\n" % _json.dumps(meta["summary"])
+        + "updated: %s\n" % meta["updated"]
+        + "coverage: %d\n" % meta["coverage"]
+        + "---\n\n"
+    )
+
+
+def publish_library(cfg) -> int:
+    """Worker job: refresh a few Library entity pages (deterministic, $0).
+
+    Writes canonical notes to kb/library/ and reader-safe copies (with
+    frontmatter) to src/content/library/ so the site renders /library/."""
+    import datetime
+    import os
+
+    from . import library as library_mod
+
+    repo_raw = cfg.site.get("repo")
+    if not repo_raw:
+        print("library: no site repo configured — skipping")
+        return 0
+    repo_root = os.path.expanduser(repo_raw)
+    conn = db_mod.connect_rw(cfg.db_path)
+    try:
+        k = int(cfg.data.get("library", {}).get("entities_per_run", 3))
+        now = datetime.datetime.now(datetime.timezone.utc)
+        out = library_mod.refresh(conn, repo_root, k, now)
+        writes = dict(out["kb_writes"])
+        for meta in out["entities"]:
+            writes["src/content/library/%s.md" % meta["slug"]] = (
+                _library_frontmatter(meta) + meta["body_md"])
+        if not writes:
+            print("library: no covered entities yet — nothing to publish")
+            return 0
+        # refresh() persisted the grown registry; include it in the commit.
+        reg_rel = library_mod.REGISTRY_REL
+        try:
+            writes[reg_rel] = (pathlib.Path(repo_root) / reg_rel).read_text()
+        except OSError:
+            pass
+        try:
+            status = git_publish(
+                cfg, "signal: library refresh", writes,
+                push=bool(cfg.site.get("push", True)), conn=conn)
+        except PublishError as e:
+            db_mod.log_health(conn, "publish", "error", str(e))
+            print("library publish failed: %s" % e)
+            return 1
+        print("[publish] library: %s (%d page(s))"
+              % (status, len(out["entities"])))
         return 0 if status in ("pushed", "committed-local", "noop") else 1
     finally:
         conn.close()

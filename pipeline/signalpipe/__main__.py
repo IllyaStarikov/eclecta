@@ -229,6 +229,47 @@ def cmd_eval(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_library(args: argparse.Namespace) -> int:
+    """Refresh the reader-facing Library (entity wiki). Writes working-tree
+    files repo-side; the caller commits. The worker's own job commits+pushes."""
+    import datetime
+
+    from . import db as db_mod
+    from . import library as library_mod
+    from . import publish as publish_mod
+
+    cfg = _load_cfg(args)
+    repo_root = _repo_root(cfg)
+    if not cfg.db_path.exists():
+        print("db not created yet — run `python3 -m signalpipe ingest` first")
+        return 0
+    conn = db_mod.connect_ro(cfg.db_path)
+    try:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if args.library_cmd == "propose":
+            reg = library_mod.load_registry(repo_root)
+            new = library_mod.propose_entities(conn, reg, args.k, now)
+            for e in new:
+                print("%-22s %-10s" % (e["slug"], e["type"]))
+            print("%d proposable entit%s"
+                  % (len(new), "y" if len(new) == 1 else "ies"))
+            return 0
+        out = library_mod.refresh(conn, repo_root, args.k, now)
+        writes = dict(out["kb_writes"])
+        for m in out["entities"]:
+            writes["src/content/library/%s.md" % m["slug"]] = (
+                publish_mod._library_frontmatter(m) + m["body_md"])
+        for rel, content in writes.items():
+            p = pathlib.Path(repo_root) / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content)
+        print("library: wrote %d file(s), %d page(s), %d in index"
+              % (len(writes), len(out["entities"]), len(out["index"])))
+        return 0
+    finally:
+        conn.close()
+
+
 # --------------------------------------------------------------------------
 # stage commands (lazy imports keep startup light and optional deps optional)
 # --------------------------------------------------------------------------
@@ -458,6 +499,15 @@ def main(argv=None) -> int:
     pel.add_argument("--category", default=None)
     pes.add_parser("report", help="print the latest eval metrics")
     pe.set_defaults(fn=cmd_eval)
+
+    pl = sub.add_parser("library", help="refresh the reader-facing Library "
+                        "(entity wiki built from coverage)")
+    pls = pl.add_subparsers(dest="library_cmd", required=True)
+    plr = pls.add_parser("refresh", help="grow the registry + rebuild a few pages")
+    plr.add_argument("-k", type=int, default=3)
+    plp = pls.add_parser("propose", help="show proposable entities with coverage")
+    plp.add_argument("-k", type=int, default=5)
+    pl.set_defaults(fn=cmd_library)
 
     p = sub.add_parser("ingest", help="poll sources, dedup, store")
     p.add_argument("--source", help="single source slug")
