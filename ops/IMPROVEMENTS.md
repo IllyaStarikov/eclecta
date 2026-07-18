@@ -19,6 +19,39 @@ Ground rules (see `ops/self-improve.md`):
 
 ---
 
+## SHIPPED 2026-07-18 — self-learning layer (branch `feat/self-learning-layer`)
+
+Spec `docs/superpowers/specs/2026-07-18-self-learning-system-design.md`, plan
+`docs/superpowers/plans/2026-07-18-self-learning-layer.md`. All repo-side,
+opt-in defaults, green (pipeline 2694 pytest; site 246 unit + 116 e2e).
+
+- **Footer** — "Written by Claude models" → "Colophon" (Art. 50 machine
+  declaration kept). ✓
+- **Eval sets** — `eval/` gold corpus + `signal eval run|grow|label|report`;
+  judge replay on the free local backend ($0); `eval.py` + tests. ✓
+- **Adaptive bar** — `adaptive.py` bounded ratcheting percentile wired at every
+  funnel gate, **default OFF**, floor-guarded, logged to `runs.stats`. ✓
+- **Momentum** — `momentum.py` + daily job → `kb/momentum.json`; opt-in
+  `topic_match` multiplier (default off). ✓
+- **Library** — `library.py` entity wiki + daily job; public `/library/` index +
+  entity pages in nav/footer; 8 seed entities from live coverage. ✓
+- **Loop** — `ops/self-improve.md` step 4 now runs eval/momentum/library. ✓
+
+### Follow-ups (open)
+- [?] **Enable the adaptive bar live** once watched for a few cycles: set
+  `funnel.adaptive.enabled=true` (staged config; conservative percentile 50→60,
+  floor 3.5). Needs Illya's go.
+- [?] **Enable the momentum multiplier** (`momentum.enabled=true`) after a week of
+  `kb/momentum.json` looking sane.
+- [ ] **Seed the eval gold set** — first nightly runs `signal eval grow` a few
+  times against the live DB, then `eval run` to establish a baseline.
+- [ ] **Library: person entities** — deferred (biography-accuracy risk); revisit
+  behind stronger sourcing guards.
+- [ ] **Library → novelty grounding** — let the judge consult an entity page to
+  assess whether a story is genuinely new (closes the loop into selection).
+- [ ] **Library entity body via deep tier** — v1 pages are deterministic; a
+  Sonnet rewrite (spend-capped, like `trends.md`) would read better.
+
 ## SHIPPED 2026-07-18 (this session, all suites green)
 
 Landed on `main` after the owner returned with fresh usage. Site: 246 unit +

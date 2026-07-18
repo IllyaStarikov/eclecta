@@ -38,25 +38,44 @@ safe improvements — leaving anything bigger or riskier for a human to approve.
    `docs/digest-style.md`. Note concrete issues (banned words that slipped
    through, a lead that shouldn't lead, an unattributed claim, a missing free
    link, an over-long `novelty`).
-4. **Pull work.** Open `ops/IMPROVEMENTS.md`. Pick the highest-value
+4. **Measure + learn (the self-learning instruments).** All repo-side, all
+   green-or-revert, all cheap:
+   - **Eval.** `python3 -m signalpipe eval run` (local backend, $0) → writes
+     `eval/results/<date>.json`. Compare `agreement_featured` / `featured_precision`
+     / `relevance_mae` to the previous result. A drop with the gold set unchanged
+     is a **judge regression** — flag it in the journal and, if you can see the
+     cause (a prompt edit, a model swap), propose a fix `[?]`. Then
+     `python3 -m signalpipe eval grow -k 5` to add a few fresh provisional
+     candidates. Correct any obviously-mislabeled gold with `eval label`.
+   - **Momentum.** Read `kb/momentum.json`. Note the `rising` and `emerging`
+     categories in the journal — that is "what matters now / next." A category
+     surging for several passes may justify enabling the momentum multiplier or a
+     topic nudge (`[?]`, propose — don't flip it yourself).
+   - **Library.** `python3 -m signalpipe library refresh -k 3` to grow the
+     registry + rebuild a few entity pages from fresh coverage. Skim one page for
+     accuracy before committing; entities are non-person by policy.
+   - **Adaptive bar (only if enabled).** Check the effective bar in the latest
+     `runs.stats` (or `signal runs`). If it's pinned at the floor every pass, the
+     bar is too high for current supply — flag it `[?]`.
+5. **Pull work.** Open `ops/IMPROVEMENTS.md`. Pick the highest-value
    non-`[?]` item(s) you can finish and verify this pass. Prefer §A
    (owner-requested) first, then High, then Medium.
-5. **Do it, test-first where it's behavior.** Add/adjust tests, make the change,
+6. **Do it, test-first where it's behavior.** Add/adjust tests, make the change,
    run the relevant suite(s), confirm green. Re-capture pages if it's visual
    (`node scripts/capture.mjs`, or the focused helper).
-6. **Record.**
+7. **Record.**
    - Append a dated entry to `ops/journal/YYYY-MM-DD.md` (what you checked, what
      you changed, what you learned, what's still open).
    - Move finished items to `[x]` in `IMPROVEMENTS.md`; add any NEW ideas you
      found (this file grows over time — that's the point).
    - Add durable, reusable insights to `ops/LEARNINGS.md` (not one-off task
      notes — things a future pass should know).
-7. **Commit.** One focused commit per landed item (or one per pass for small
+8. **Commit.** One focused commit per landed item (or one per pass for small
    polish). Clear message. Data-only or ops-only commits are fine and skip the
    pytest deploy gate. Do NOT push if unsure; committing to local `main` is
    enough for a human to review. (Illya has authorized direct-to-main for this
    repo previously; still, keep commits reviewable.)
-8. **Re-arm.** The `runat` tick handles re-scheduling tomorrow's 4am pass; if the
+9. **Re-arm.** The `runat` tick handles re-scheduling tomorrow's 4am pass; if the
    task instruction includes the re-enqueue step, make sure it ran.
 
 ## What "great" looks like
