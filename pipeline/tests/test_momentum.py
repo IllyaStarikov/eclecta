@@ -92,3 +92,12 @@ def test_artifact_and_load_multipliers(conn, seed, tmp_path):
 
 def test_load_multipliers_missing_is_empty(tmp_path):
     assert mom.load_multipliers(tmp_path) == {}
+
+
+def test_apply_multiplier():
+    # no map -> no-op (identical scoring when disabled/absent)
+    assert mom.apply_multiplier(1.0, "ai", {}) == 1.0
+    # matching category scales
+    assert mom.apply_multiplier(1.0, "ai", {"ai": 1.25}) == 1.25
+    # non-matching category untouched
+    assert mom.apply_multiplier(0.7, "hardware", {"ai": 1.25}) == 0.7

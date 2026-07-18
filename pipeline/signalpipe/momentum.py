@@ -159,6 +159,12 @@ def momentum_artifact(conn, mcfg: Dict[str, Any], now: datetime.datetime):
     return ARTIFACT_REL, json.dumps(payload, indent=2, sort_keys=True) + "\n"
 
 
+def apply_multiplier(topic: float, category: str, mult: Dict[str, float]) -> float:
+    """Scale a topic-fit contribution by a category's momentum multiplier
+    (1.0 when the category is absent). The opt-in nudge score.py applies."""
+    return topic * mult.get(category, 1.0)
+
+
 def load_multipliers(repo_root) -> Dict[str, float]:
     """Read kb/momentum.json multipliers; {} if absent/unreadable (no-op)."""
     p = pathlib.Path(repo_root) / ARTIFACT_REL
