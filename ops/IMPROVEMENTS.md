@@ -60,8 +60,18 @@ Second batch (owner directive + remaining review findings):
   daily cap 10→5; runbook fixed to say `digests.*.cron` is documentation-only. ✓
 - **Coverage** — new sitemap-output + default-OG-card e2e tests. ✓
 
-Still open (owner decisions in §C): whether to apply the Sonnet/Opus routing to
-the LIVE pipeline config (quota tradeoff), and cadence interval tuning.
+Live config routing APPLIED (his go): triage/judge/deep → `claude-sonnet-5`,
+write/digest → `claude-opus-4-8`, `digest.local` → `qwen2.5:14b` (backup
+`signal.json.bak-2026-07-18-sonnet5`).
+
+**Only open item — pipeline CODE deploy (needs Illya's go, restarts the worker):**
+the repo's novelty clamp + short-excerpt (`MAX_JUDGE_CHARS`) + `effort` + per-kind
+digest effort are in `pipeline/`, but the LIVE worker runs the deployed copy at
+`~/.local/state/signal/app/signalpipe` and won't have them until synced. Config
+reloads per job; CODE needs a worker kickstart. To apply:
+`rsync` the pipeline source to the deployed copy, back it up, then
+`launchctl kickstart -k gui/$UID/io.starikov.signal.worker`. Until then the site
+CSS clamp keeps the lead standfirst bounded, but `picks.json` novelties stay long.
 
 ---
 
