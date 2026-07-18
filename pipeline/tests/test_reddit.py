@@ -94,11 +94,12 @@ def test_row_mode_overrides_arg(monkeypatch):
     # row mode 'RSS' beats arg 'oauth': resolves to rss, NOT the oauth RuntimeError.
     from signalpipe.ingest import rss as rss_mod
 
-    monkeypatch.setattr(rss_mod, "fetch_feed_items", lambda client, row: ["ok"])
+    monkeypatch.setattr(rss_mod, "fetch_feed_items", lambda client, row: [{"guid": "ok"}])
     out = reddit.fetch_items(
         object(), {"mode": "RSS", "slug": "reddit-py", "url": "u"}, mode="oauth"
     )
-    assert out == ["ok"]
+    # rss-mode items pass through with the "/u/<user>" byline stripped (PII).
+    assert out == [{"guid": "ok", "author": None}]
 
 
 def test_both_none_defaults_to_public_json(make_result):
@@ -129,7 +130,9 @@ def test_rss_mode_rewrites_url_and_delegates(monkeypatch):
     source_row = {"mode": "rss", "slug": "reddit-python", "url": "https://original/feed"}
     result = reddit.fetch_items(client, source_row)
 
-    assert result is sentinel  # passthrough of delegate return
+    # Delegate output flows through with the "/u/<user>" byline stripped (PII);
+    # a new list, so identity differs but content matches minus the author.
+    assert result == [{"guid": "sentinel", "author": None}]
     assert captured["client"] is client  # same client handed to the feed path
     assert captured["row"]["url"] == "https://www.reddit.com/r/python/top/.rss?t=day"
     assert captured["row"]["url"].endswith("/r/python/top/.rss?t=day")
@@ -167,7 +170,7 @@ def test_public_json_happy_path(make_result, load_json):
         "guid": "t3_self1",
         "raw_url": "https://www.reddit.com/r/python/comments/self1/a_self_post/",
         "title": "A self post that needs stripping",  # stripped
-        "author": "alice",
+        "author": None,  # PII minimization: Reddit username dropped at ingest
         "published_at": "2023-11-14T22:13:20+00:00",  # created_utc -> ISO UTC
         "points": 321,  # <- score
         "comments": 45,  # <- num_comments
@@ -180,13 +183,13 @@ def test_public_json_happy_path(make_result, load_json):
     }
 
     # link post: raw_url is the external url; discussion_url is still the permalink.
-    # Full-dict pin so the link branch's author/title/upvote_ratio mapping is also
-    # covered (not just the self-post path above).
+    # Full-dict pin so the link branch's title/upvote_ratio mapping is also covered
+    # (not just the self-post path above); author is PII-minimized to None.
     assert link_post == {
         "guid": "t3_link1",
         "raw_url": "https://example.com/article",  # <- external url, not permalink
         "title": "External link post",
-        "author": "bob",
+        "author": None,  # PII minimization: Reddit username dropped at ingest
         "published_at": "2023-11-14T08:20:00+00:00",  # 1699950000 -> ISO UTC
         "points": 210,
         "comments": 12,
@@ -385,7 +388,7 @@ def test_rss_mode_end_to_end_real_feedparser(polite_client_factory, load_bytes):
     first = items[0]
     assert first["raw_url"] == "https://www.reddit.com/r/python/comments/self1/a_self_post/"
     assert first["title"] == "A self post via the Atom feed"
-    assert first["author"] == "/u/alice"
+    assert first["author"] is None  # PII minimization: "/u/<user>" byline dropped
     assert first["published_at"] == "2023-11-14T22:13:20+00:00"
     assert first["points"] is None
     assert first["comments"] is None

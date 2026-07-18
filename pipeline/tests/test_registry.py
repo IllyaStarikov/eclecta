@@ -950,6 +950,45 @@ def test_stats_reads_db(cfg, conn, seed, capsys):
 
 
 # --------------------------------------------------------------------------- #
+# attribution
+# --------------------------------------------------------------------------- #
+def test_attribution_db_missing(cfg, tmp_path, capsys):
+    cfg.data["db_path"] = str(tmp_path / "nope.db")
+    assert not cfg.db_path.exists()
+    assert reg.attribution(cfg) == 0
+    assert "no db yet" in capsys.readouterr().out
+
+
+def test_attribution_counts_picks_and_flags_dead_weight(cfg, conn, seed, capsys):
+    # A: two items, both in clusters that became picks (done, skip=0) -> 2 picks.
+    a = seed.source(slug="a", category="ai", tier=1, enabled=1)
+    # B: one item, but its cluster was skipped -> 0 picks, still enabled.
+    b = seed.source(slug="b", category="news", tier=2, enabled=1)
+    # C: no items at all -> 0 picks, still enabled (prune candidate).
+    seed.source(slug="c", category="devtools", tier=3, enabled=1)
+
+    c1 = seed.cluster(canonical_url="https://ex.com/1", title="One")
+    seed.item(c1, a, _n=1)
+    seed.curation(c1)  # defaults: status='done', skip=0 -> a pick
+    c2 = seed.cluster(canonical_url="https://ex.com/2", title="Two")
+    seed.item(c2, a, _n=2)
+    seed.curation(c2)  # a pick
+    c3 = seed.cluster(canonical_url="https://ex.com/3", title="Three")
+    seed.item(c3, b, _n=3)
+    seed.curation(c3, skip=1)  # skipped -> NOT a pick
+
+    assert reg.attribution(cfg) == 0
+    out = capsys.readouterr().out
+    # 3 sources, only A earns picks; B and C earn none and are both still enabled.
+    assert "source pick-attribution: 3 sources, 1 earned >=1 pick, 2 earned none (2 still enabled = prune candidates)" in out
+    a_line = next(ln for ln in out.splitlines() if ln.startswith("a "))
+    assert a_line.split()[:2] == ["a", "2"]  # slug, pick count
+    # B and C earned no picks -> they are not listed among the with-picks rows.
+    assert not any(ln.startswith("b ") for ln in out.splitlines())
+    assert not any(ln.startswith("c ") for ln in out.splitlines())
+
+
+# --------------------------------------------------------------------------- #
 # expand
 # --------------------------------------------------------------------------- #
 TECHMEME_OPML = (

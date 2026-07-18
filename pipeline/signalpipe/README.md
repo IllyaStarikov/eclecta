@@ -1,6 +1,6 @@
 # Signal — local tech+AI feed-curation pipeline
 
-A continuously-running local pipeline that ingests 1,000+ sources, dedups
+A continuously-running local pipeline that ingests 3,400+ sources, dedups
 stories into clusters, scores them deterministically (free), has Claude read
 and curate the ~40 daily finalists, serves a **parameterized RSS feed** + a
 review dashboard on `127.0.0.1:8765`, and writes a weekly Opus digest that can

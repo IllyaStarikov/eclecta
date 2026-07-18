@@ -693,3 +693,134 @@ def test_live_fetch_example_com(cfg):
         assert res.content
     finally:
         pc.close()
+
+
+# --------------------------------------------------------------------------- #
+# robots.txt compliance (RFC 9309)
+# --------------------------------------------------------------------------- #
+def _robots_handler(robots_body: str, robots_status: int = 200):
+    """A MockTransport handler that serves a canned robots.txt for /robots.txt
+    and a plain 200 "article body" for every other path. Returns (handler, seen)
+    where ``seen`` records every requested path."""
+    seen: List[str] = []
+
+    def handler(request):
+        seen.append(request.url.path)
+        if request.url.path == "/robots.txt":
+            if robots_status >= 400:
+                return httpx.Response(robots_status)
+            return httpx.Response(200, content=robots_body.encode("utf-8"))
+        return httpx.Response(200, content=b"article body")
+
+    return handler, seen
+
+
+def test_fetchresult_blocked_by_robots_default():
+    assert FetchResult(status=200).blocked_by_robots is False
+
+
+def test_init_robots_knobs_off_by_default():
+    pc = PoliteClient(_FakeCfg({}))
+    try:
+        # Off in code so the suite is undisturbed; TTL defaults to 24h.
+        assert pc.respect_robots is False
+        assert pc.robots_ttl == 86400.0
+        assert pc._robots == {}
+    finally:
+        pc.close()
+
+
+def test_init_robots_knobs_from_cfg():
+    pc = PoliteClient(_FakeCfg({"respect_robots": True, "robots_cache_ttl_sec": 10}))
+    try:
+        assert pc.respect_robots is True
+        assert pc.robots_ttl == 10.0
+        assert pc.user_agent == "signalpipe-test/ua"
+    finally:
+        pc.close()
+
+
+def test_robots_disallow_blocks_matching_path(polite_client_factory):
+    handler, seen = _robots_handler("User-agent: *\nDisallow: /private/\n")
+    pc = polite_client_factory(handler)
+    pc.respect_robots = True
+
+    blocked = pc.fetch("https://ex.com/private/secret")
+    assert blocked.status == 0
+    assert blocked.blocked_by_robots is True
+    assert blocked.error == "blocked by robots.txt"
+    assert blocked.content is None
+    assert blocked.final_url == "https://ex.com/private/secret"
+    # Blocked BEFORE the article GET: only robots.txt was hit for this path.
+    assert seen == ["/robots.txt"]
+
+    # A path the same policy allows proceeds (robots now cached, not refetched).
+    allowed = pc.fetch("https://ex.com/public/post")
+    assert allowed.status == 200
+    assert allowed.content == b"article body"
+    assert allowed.blocked_by_robots is False
+    assert seen == ["/robots.txt", "/public/post"]
+
+
+def test_robots_allows_when_robots_missing(polite_client_factory):
+    # 404 robots.txt => no applicable policy => fail-open allow.
+    handler, _seen = _robots_handler("", robots_status=404)
+    pc = polite_client_factory(handler)
+    pc.respect_robots = True
+
+    res = pc.fetch("https://ex.com/anything")
+    assert res.status == 200
+    assert res.content == b"article body"
+    assert res.blocked_by_robots is False
+
+
+def test_robots_ignored_when_disabled(polite_client_factory):
+    # A blanket Disallow that WOULD block, but respect_robots is off by default.
+    handler, seen = _robots_handler("User-agent: *\nDisallow: /\n")
+    pc = polite_client_factory(handler)
+
+    res = pc.fetch("https://ex.com/blocked-if-checked")
+    assert res.status == 200
+    assert res.content == b"article body"
+    # robots.txt is never even fetched when the feature is disabled.
+    assert "/robots.txt" not in seen
+
+
+def test_robots_fetched_once_per_netloc(polite_client_factory):
+    handler, seen = _robots_handler("User-agent: *\nDisallow: /x/\n")
+    pc = polite_client_factory(handler)
+    pc.respect_robots = True
+
+    pc.fetch("https://ex.com/a")
+    pc.fetch("https://ex.com/b")
+    # Cached per netloc for robots_ttl: only one robots.txt fetch for two GETs.
+    assert seen.count("/robots.txt") == 1
+
+
+def test_robots_fail_open_on_transport_error(polite_client_factory):
+    def handler(request):
+        if request.url.path == "/robots.txt":
+            raise httpx.ConnectError("boom")
+        return httpx.Response(200, content=b"article body")
+
+    pc = polite_client_factory(handler)
+    pc.respect_robots = True
+
+    # A broken robots.txt must not halt ingestion.
+    res = pc.fetch("https://ex.com/x")
+    assert res.status == 200
+    assert res.content == b"article body"
+
+
+def test_robots_ua_specific_disallow(polite_client_factory):
+    # RobotFileParser matches the token before the first "/" of our UA
+    # ("signalpipe-test/ua" -> "signalpipe-test").
+    robots = "User-agent: signalpipe-test\nDisallow: /nope/\n\nUser-agent: *\nDisallow:\n"
+    handler, _seen = _robots_handler(robots)
+    pc = polite_client_factory(handler)
+    pc.respect_robots = True
+
+    blocked = pc.fetch("https://ex.com/nope/here")
+    assert blocked.blocked_by_robots is True
+    allowed = pc.fetch("https://ex.com/ok/here")
+    assert allowed.status == 200

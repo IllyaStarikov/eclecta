@@ -5,7 +5,7 @@ source of truth** for the pipeline; it is *not* built or run from here. The
 launchd worker runs a TCC-safe copy under `~/.local/state/signal/app/`, kept in
 sync with this tree (see [`../docs/operating-runbook.md`](../docs/operating-runbook.md)).
 
-It reads ~1,500 sources, clusters stories, scores them deterministically, has
+It reads ~3,400 sources, clusters stories, scores them deterministically, has
 Claude read the day's finalists and write the editions on five cadences (daily,
 weekly, monthly, quarterly, yearly), and pushes the output into this repo's
 `src/content/digests/` and `src/data/`. The site never depends on the pipeline

@@ -16,8 +16,9 @@ import sqlite3
 import threading
 import time
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 from urllib.parse import urlsplit
+from urllib.robotparser import RobotFileParser
 
 import httpx
 
@@ -49,6 +50,7 @@ class FetchResult:
     unchanged: bool = False          # 304 or identical body hash
     error: Optional[str] = None
     final_url: Optional[str] = None
+    blocked_by_robots: bool = False  # skipped: a robots.txt rule disallowed it
 
 
 def _now_iso() -> str:
@@ -68,6 +70,14 @@ class PoliteClient:
         self.fetch_deadline = float(
             ing.get("fetch_deadline_sec", FETCH_DEADLINE_SEC))
         self.conn = conn
+        # robots.txt compliance (RFC 9309). Off by default in code so the test
+        # suite is undisturbed; the shipped config turns it on. Parsers are
+        # cached per netloc with a TTL (RFC 9309 suggests a 24h caching bound).
+        self.user_agent = cfg.user_agent
+        self.respect_robots = bool(ing.get("respect_robots", False))
+        self.robots_ttl = float(ing.get("robots_cache_ttl_sec", 86400.0))
+        self._robots: Dict[str, Tuple[Optional[RobotFileParser], float]] = {}
+        self._robots_lock = threading.Lock()
         self._last_hit: Dict[str, float] = {}
         self._lock = threading.Lock()
         self.client = httpx.Client(
@@ -98,6 +108,59 @@ class PoliteClient:
             if wait > 0:
                 time.sleep(wait)
             self._last_hit[host] = time.monotonic()
+
+    # ------------------------------------------------------------------
+
+    def _load_robots(self, scheme: str, netloc: str) -> Optional[RobotFileParser]:
+        """Fetch + parse a host's robots.txt through the shared (UA-bearing,
+        rate-limited) client. Returns a parser, or None meaning "no applicable
+        policy — allow all". Fail-open on 4xx/5xx/transport error: a missing or
+        broken robots.txt must not silently halt ingestion (RFC 9309 leaves 5xx
+        handling to the crawler; a feed reader errs toward continuing)."""
+        robots_url = "%s://%s/robots.txt" % (scheme, netloc)
+        try:
+            self._respect_rate_limit(robots_url)
+            resp = self.client.get(robots_url)
+        except httpx.HTTPError:
+            return None
+        if resp.status_code >= 400:
+            return None
+        rp = RobotFileParser()
+        try:
+            text = resp.text
+        except Exception:  # pragma: no cover - defensive decode guard
+            return None
+        rp.parse(text[: self.max_body_bytes].splitlines())
+        return rp
+
+    def _robots_allowed(self, url: str) -> bool:
+        """True if robots.txt permits fetching ``url`` for our User-Agent.
+        No-op (always True) unless ``respect_robots`` is enabled. Parsers are
+        cached per netloc for ``robots_ttl`` seconds."""
+        if not self.respect_robots:
+            return True
+        parts = urlsplit(url)
+        netloc = (parts.netloc or "").lower()
+        if not netloc:
+            return True
+        scheme = parts.scheme or "https"
+        now = time.monotonic()
+        with self._robots_lock:
+            entry = self._robots.get(netloc)
+            fresh = entry is not None and (now - entry[1]) < self.robots_ttl
+            rp = entry[0] if entry else None
+        if not fresh:
+            rp = self._load_robots(scheme, netloc)
+            with self._robots_lock:
+                self._robots[netloc] = (rp, time.monotonic())
+        if rp is None:
+            return True
+        try:
+            return rp.can_fetch(self.user_agent, url)
+        except Exception:  # pragma: no cover - robotparser edge cases
+            return True
+
+    # ------------------------------------------------------------------
 
     def _cache_row(self, url: str):
         if self.conn is None:
@@ -137,6 +200,13 @@ class PoliteClient:
         oversized Content-Length is rejected before any body read; a body
         that grows past the cap or drips past the deadline is aborted with
         an error result instead of buffering unbounded data in the worker."""
+        if not self._robots_allowed(url):
+            return FetchResult(
+                status=0,
+                error="blocked by robots.txt",
+                final_url=url,
+                blocked_by_robots=True,
+            )
         self._respect_rate_limit(url)
         headers = {}
         cached = self._cache_row(url) if conditional else None

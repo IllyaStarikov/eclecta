@@ -6,6 +6,28 @@ commit writes it), so edits here are safe and durable. It is *not* the live inge
 (that lives in the separate `signalpipe` repo); adding the `feed` field makes this file an
 OPML-exportable manifest `signalpipe` can import later.
 
+## Relationship to the live ingestion registry (reconciliation)
+
+This roll and the pipeline's `signalpipe/sources.json` are **intentionally divergent**, not
+mirror copies — do not assume one is a strict subset of the other:
+
+- **Different purpose.** This file is a hand-curated, feed-expressible *showcase* of subscribable
+  sources. The pipeline registry (~3,400 entries) is the actual *fetch list*, and it includes
+  API/scrape surfaces that have no simple RSS URL — arXiv, Reddit JSON, HN Algolia, GDELT,
+  Mastodon/Bluesky, GitHub Trending — plus primary-feed additions (e.g. the FTC regulator feeds)
+  that may not be mirrored onto this roll.
+- **Neither contains the other.** Counts differ (this roll ~3,649 vs registry ~3,400) and each
+  holds entries the other lacks.
+- **Deliberate roll-only exceptions.** Some sources appear here for completeness but are *not*
+  ingested — e.g. **EurekAlert!** (a press-release wire that collides with the "no marketing
+  dressed as news" bar) and **Reuters** (paywalled / ToS-restrictive). That is by design.
+
+**Reconciliation rule:** the `/sources` page must never imply the pipeline ingests a source it
+does not. When curating, treat this roll as a superset-showcase, and periodically eyeball the
+delta against `signalpipe/sources.json` (by `homepage`/`feed`) so roll-only exceptions stay
+intentional rather than accidental drift. A strict equality test is deliberately *not* enforced —
+it would encode a false invariant.
+
 ## Schema (6 fields)
 
 Each entry, validated by `src/lib/sources.ts` (zod) and `tests/unit/sources.test.ts`:

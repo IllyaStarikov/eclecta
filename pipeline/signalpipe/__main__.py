@@ -246,6 +246,8 @@ def cmd_sources(args: argparse.Namespace) -> int:
     cfg = _load_cfg(args)
     if args.sources_cmd == "stats":
         return registry.stats(cfg)
+    if args.sources_cmd == "attribution":
+        return registry.attribution(cfg)
     if args.sources_cmd == "seed":
         return registry.seed(cfg)
     if args.sources_cmd == "probe":
@@ -458,6 +460,7 @@ def main(argv=None) -> int:
     p = sub.add_parser("sources", help="registry management")
     ps = p.add_subparsers(dest="sources_cmd", required=True)
     ps.add_parser("stats", help="counts by category/tier/verified")
+    ps.add_parser("attribution", help="per-source pick counts; flags zero-pick dead weight")
     ps.add_parser("seed", help="import sources.json + sources.opml into the DB")
     pp = ps.add_parser("probe", help="probe candidate homepages/feeds for valid feeds")
     pp.add_argument("--candidates", type=pathlib.Path,

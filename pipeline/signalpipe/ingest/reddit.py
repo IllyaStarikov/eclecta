@@ -38,7 +38,8 @@ def fetch_items(client: PoliteClient, source_row, mode: str = "public_json") -> 
         sub = _sub_from_source(source_row)
         row = dict(source_row)
         row["url"] = "https://www.reddit.com/r/%s/top/.rss?t=day" % sub
-        return rss_mod.fetch_feed_items(client, row)
+        # Drop the "/u/<user>" byline the .rss feed carries (see public_json).
+        return [{**it, "author": None} for it in rss_mod.fetch_feed_items(client, row)]
 
     # public_json
     res = client.fetch(source_row["url"], conditional=False)
@@ -67,7 +68,9 @@ def fetch_items(client: PoliteClient, source_row, mode: str = "public_json") -> 
                 "guid": name,
                 "raw_url": url,
                 "title": title,
-                "author": d.get("author"),
+                # PII minimization (GDPR): the Reddit poster's username is social
+                # UGC that is never displayed or used for signal — drop it.
+                "author": None,
                 "published_at": published,
                 "points": d.get("score"),
                 "comments": d.get("num_comments"),

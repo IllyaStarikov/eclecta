@@ -585,6 +585,48 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
 
 
 @pytest.mark.integration
+def test_export_picks_never_leaks_fulltext_or_archive(conn, seed, cfg, monkeypatch):
+    """Fair-use / privacy guardrail: a published pick carries summaries + links
+    only — never the stored full article text, the INTERNAL paywall-bypass
+    archive_url, or a poster byline. Pins the exact key set so a future field
+    addition can't silently republish protected content or PII."""
+    _install_frozen_clock(monkeypatch)
+    hn = seed.source(slug="hn", name="Hacker News")
+    other = seed.source(slug="rd", name="Reddit")
+    c = seed.cluster(canonical_url="https://example.com/story", title="A real story")
+    seed.curation(c, category="ai", relevance_score=9, curated_at=_iso(-1))
+    seed.article(
+        c,
+        source_url="https://example.com/story",
+        read_url="https://example.com/read",
+        text="FULL COPYRIGHTED ARTICLE BODY that must never be republished.",
+    )
+    seed.surface(c, hn, url="https://news.ycombinator.com/item?id=9", points=50)
+    seed.surface(c, other, url="https://archive.ph/scrubbed", points=99)
+
+    picks = publish.export_picks(conn, cfg)
+    assert len(picks) == 1
+    pick = picks[0]
+
+    # The published contract is a fixed allowlist of safe fields.
+    ALLOWED = {
+        "id", "story_id", "title", "relevance", "score", "why", "notes",
+        "summary", "channels", "category", "subcategories", "state", "novelty",
+        "audience", "source_url", "read_kind", "free_link", "paywalled",
+        "surfaces", "sources_count", "first_seen", "published_at", "curated_at",
+        "model",
+    }
+    assert set(pick.keys()) == ALLOWED
+    # Fields that would create copyright / PII exposure must never be present.
+    for forbidden in ("archive_url", "text", "articleBody", "author", "excerpt", "read_url"):
+        assert forbidden not in pick
+    # And no emitted value may leak the stored full text or an archive host.
+    blob = json.dumps(pick)
+    assert "FULL COPYRIGHTED ARTICLE BODY" not in blob
+    assert "archive.ph" not in blob and "archive.today" not in blob
+
+
+@pytest.mark.integration
 def test_export_picks_limit_and_order(conn, seed, cfg, monkeypatch):
     _install_frozen_clock(monkeypatch)
     cfg.data["site"]["picks_limit"] = 1

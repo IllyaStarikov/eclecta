@@ -362,6 +362,51 @@ def stats(cfg) -> int:
     return 0
 
 
+def attribution(cfg, limit: int = 30) -> int:
+    """Per-source pick attribution: how many distinct picks (curations with
+    status 'done' and skip=0) each source contributed an *item* to.
+
+    Answers "which sources actually earn picks" and, via the zero-pick tally,
+    "which enabled sources are dead weight" — the evidence needed to prune the
+    long tail. Attributes on items.source_id (the source that produced the
+    article), not surfaces (cross-source discussion links). Read-only."""
+    if not cfg.db_path.exists():
+        print("no db yet: attribution needs an ingested + curated database")
+        return 0
+    conn = db_mod.connect_ro(cfg.db_path)
+    try:
+        rows = conn.execute(
+            "SELECT s.slug, s.category, s.tier, s.enabled, "
+            "COUNT(DISTINCT CASE WHEN cu.status='done' AND cu.skip=0 "
+            "THEN c.id END) AS picks "
+            "FROM sources s "
+            "LEFT JOIN items i ON i.source_id = s.id "
+            "LEFT JOIN clusters c ON c.id = i.cluster_id "
+            "LEFT JOIN curations cu ON cu.cluster_id = c.id "
+            "GROUP BY s.id ORDER BY picks DESC, s.slug"
+        ).fetchall()
+        with_picks = [r for r in rows if r["picks"] > 0]
+        zero = [r for r in rows if r["picks"] == 0]
+        zero_enabled = [r for r in zero if r["enabled"]]
+        print(
+            "source pick-attribution: %d sources, %d earned >=1 pick, "
+            "%d earned none (%d still enabled = prune candidates)"
+            % (len(rows), len(with_picks), len(zero), len(zero_enabled))
+        )
+        print("%-40s %6s %-14s %4s %3s" % ("source", "picks", "category", "tier", "on"))
+        for r in with_picks[:limit]:
+            print(
+                "%-40s %6d %-14s %4d %3s"
+                % (r["slug"][:40], r["picks"], (r["category"] or "")[:14], r["tier"],
+                   "y" if r["enabled"] else "n")
+            )
+        if len(with_picks) > limit:
+            print("... and %d more sources with >=1 pick" % (len(with_picks) - limit))
+    finally:
+        conn.close()
+    return 0
+
+
 # ---------------------------------------------------------------------------
 # probe / verify
 # ---------------------------------------------------------------------------
