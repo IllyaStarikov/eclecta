@@ -7,10 +7,13 @@ yearly reviews. Static site (Astro 5), deployed to GitHub Pages.
 
 **We read the firehose, so you read what matters.**
 
+Open source (MIT): the site and the `signalpipe` pipeline that fills it both
+live in this repo. Read it, run it, fork it.
+
 ## How it works
 
-The public face of a local curation pipeline (`signalpipe`, in a separate
-repo) that:
+The public face of a local curation pipeline (`signalpipe`, whose code lives in
+`pipeline/`) that:
 
 1. ingests thousands of verified sources (RSS + HN/Lobsters/Reddit/arXiv/
    Mastodon trends/Google News/Wikipedia current events/GDELT and more),
@@ -105,3 +108,9 @@ Serif 4** (reading), **IBM Plex Mono** (datelines, source tags, furniture).
 Cool oat-grey ground, one signal-orange accent, hairline rules, sharp corners,
 light + dark + print. Type and rules do all the work — no images. The full
 system is written down in [`docs/design-language.md`](docs/design-language.md).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE). Both the site and the `signalpipe` pipeline in
+`pipeline/` are covered. Use it, modify it, or run your own; attribution is the
+only ask.

@@ -15,6 +15,7 @@ export const site = {
   authorUrl: 'https://starikov.co',
   repoUrl: 'https://github.com/IllyaStarikov/eclecta',
   contactUrl: 'https://starikov.co/contact/',
+  repoUrl: 'https://github.com/IllyaStarikov/eclecta',
   storagePrefix: 'eclecta',
 } as const;
 
