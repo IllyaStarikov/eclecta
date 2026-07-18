@@ -3,7 +3,8 @@
  * See docs/design-language.md §8 Governance.
  *
  *  1. No static style="..." attributes in templates; dynamic style={...} is
- *     allowed only for data-driven values (reveal stagger, bar widths).
+ *     allowed only for data-driven values (reveal stagger, bar widths,
+ *     histogram column heights).
  *  2. Page/component <style> blocks: no hex colors, no literal rem/em
  *     font-size or letter-spacing — token vars only. One sanctioned escape
  *     (`design-lint-allow: display-xl`, the 404 numeral) must exist exactly
@@ -37,7 +38,7 @@ describe('design lint', () => {
       const text = readFileSync(file, 'utf8');
       if (/style="/.test(text)) offenders.push(`${file}: static style=""`);
       for (const m of text.matchAll(/style=\{([^}]*)\}/g)) {
-        if (!/animation-delay|width/.test(m[1])) {
+        if (!/animation-delay|width|height/.test(m[1])) {
           offenders.push(`${file}: dynamic style not on the allowlist (${m[1].slice(0, 40)})`);
         }
       }
