@@ -149,6 +149,86 @@ def cmd_runs(args: argparse.Namespace) -> int:
     return 0
 
 
+def _repo_root(cfg) -> pathlib.Path:
+    """The site repo root (where eval/ and kb/ live). Prefer the configured
+    site repo; fall back to this checkout's root for in-repo dev runs."""
+    import os
+
+    repo_raw = cfg.site.get("repo") if getattr(cfg, "site", None) else None
+    if repo_raw:
+        return pathlib.Path(os.path.expanduser(repo_raw))
+    return config_mod.REPO_ROOT.parent
+
+
+def cmd_eval(args: argparse.Namespace) -> int:
+    """Curation eval sets: score the current judge against a versioned gold
+    corpus. Repo-side only; `run` defaults to the free local backend ($0)."""
+    import datetime
+    import json
+
+    from . import db as db_mod
+    from . import eval as eval_mod
+
+    cfg = _load_cfg(args)
+    repo_root = _repo_root(cfg)
+
+    if args.eval_cmd == "grow":
+        if not cfg.db_path.exists():
+            print("db not created yet — run `python3 -m signalpipe ingest` first")
+            return 0
+        conn = db_mod.connect_ro(cfg.db_path)
+        try:
+            cands = eval_mod.build_candidates(conn, limit=args.limit)
+        finally:
+            conn.close()
+        gold = eval_mod.load_gold(repo_root)
+        before = len(gold)
+        gold = eval_mod.grow(gold, cands, args.k)
+        eval_mod.save_gold(repo_root, gold)
+        print("gold: %d -> %d (+%d)" % (before, len(gold), len(gold) - before))
+        return 0
+
+    if args.eval_cmd == "label":
+        gold = eval_mod.load_gold(repo_root)
+        human = {"featured": bool(args.featured), "relevance": int(args.relevance)}
+        if args.category:
+            human["category"] = args.category
+        gold = eval_mod.label(gold, args.id, human)
+        eval_mod.save_gold(repo_root, gold)
+        print("labeled %s (featured=%s, relevance=%d)"
+              % (args.id, human["featured"], human["relevance"]))
+        return 0
+
+    if args.eval_cmd == "report":
+        r = eval_mod.latest_result(repo_root)
+        if not r:
+            print("no eval results yet — run `python3 -m signalpipe eval run`")
+            return 0
+        print(json.dumps(r["metrics"], indent=2, sort_keys=True))
+        return 0
+
+    # run
+    gold = eval_mod.load_gold(repo_root)
+    if not gold:
+        print("gold set empty — run `python3 -m signalpipe eval grow` first")
+        return 0
+    conn = db_mod.connect_ro(cfg.db_path) if cfg.db_path.exists() else None
+    try:
+        date = args.date or datetime.date.today().isoformat()
+        res = eval_mod.run(gold, cfg=cfg, backend=args.backend, date=date, conn=conn)
+    finally:
+        if conn is not None:
+            conn.close()
+    eval_mod.write_result(repo_root, date, res)
+    m = res["metrics"]
+    print("eval %s (%s, n=%d): agreement=%.2f precision=%.2f recall=%.2f "
+          "mae=%.2f cat=%.2f" % (
+              date, m["backend"], m["n"], m["agreement_featured"],
+              m["featured_precision"], m["featured_recall"],
+              m["relevance_mae"], m["category_accuracy"]))
+    return 0
+
+
 # --------------------------------------------------------------------------
 # stage commands (lazy imports keep startup light and optional deps optional)
 # --------------------------------------------------------------------------
@@ -360,6 +440,24 @@ def main(argv=None) -> int:
                    help="filter to one job: ingest|score|fetch|curate|digest")
     p.add_argument("--limit", type=int, default=40, help="max runs to show")
     p.set_defaults(fn=cmd_runs)
+
+    pe = sub.add_parser("eval", help="curation eval sets: score the judge vs. a "
+                        "versioned gold corpus (repo-side; local backend = $0)")
+    pes = pe.add_subparsers(dest="eval_cmd", required=True)
+    per = pes.add_parser("run", help="replay the judge over the gold set + record")
+    per.add_argument("--backend", default="local",
+                     choices=["local", "api", "subscription"])
+    per.add_argument("--date", default=None)
+    peg = pes.add_parser("grow", help="add provisional gold candidates from the DB")
+    peg.add_argument("-k", type=int, default=5)
+    peg.add_argument("--limit", type=int, default=50)
+    pel = pes.add_parser("label", help="confirm/correct a gold label by id")
+    pel.add_argument("--id", required=True)
+    pel.add_argument("--featured", action="store_true")
+    pel.add_argument("--relevance", type=int, required=True)
+    pel.add_argument("--category", default=None)
+    pes.add_parser("report", help="print the latest eval metrics")
+    pe.set_defaults(fn=cmd_eval)
 
     p = sub.add_parser("ingest", help="poll sources, dedup, store")
     p.add_argument("--source", help="single source slug")
