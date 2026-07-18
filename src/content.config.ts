@@ -22,4 +22,20 @@ const digests = defineCollection({
   }),
 });
 
-export const collections = { digests };
+// Library — the entity wiki, written by the Signal pipeline into
+// src/content/library/<slug>.md (companies, models, technologies, standards,
+// events, projects; never people in v1). Each page is a dated timeline built
+// deterministically from coverage.
+const library = defineCollection({
+  loader: glob({ pattern: '*.md', base: './src/content/library' }),
+  schema: z.object({
+    name: z.string(),
+    slug: z.string(),
+    type: z.enum(['company', 'model', 'technology', 'standard', 'event', 'project']),
+    summary: z.string(),
+    updated: z.coerce.date(),
+    coverage: z.number().optional(),
+  }),
+});
+
+export const collections = { digests, library };
