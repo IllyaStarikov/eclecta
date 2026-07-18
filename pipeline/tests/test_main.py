@@ -673,6 +673,22 @@ def test_cmd_runs_db_not_created(cfg, monkeypatch, capsys, tmp_path):
     assert "db not created yet" in out
 
 
+def test_cmd_runs_pre_attribution_db(cfg, monkeypatch, capsys, tmp_path):
+    # A DB from before the runs/config_versions tables existed (they self-create
+    # on the worker's first rw connect, not on this read-only path): the CLI must
+    # answer with the friendly empty-state, not an OperationalError traceback.
+    import sqlite3 as _sq
+
+    old = tmp_path / "old.db"
+    _sq.connect(old).close()  # a real file, none of our schema
+    cfg.data["db_path"] = str(old)
+    monkeypatch.setattr(config_mod, "load", lambda p=None: cfg)
+    rc = cli.main(["runs"])
+    out = capsys.readouterr().out
+    assert rc == 0
+    assert "no runs recorded yet" in out
+
+
 # --------------------------------------------------------------------------- #
 # Live smoke — real module against real config+DB. Non-hermetic (macOS probes,
 # real sqlite); deselected by default (addopts -m 'not live') AND env-gated.

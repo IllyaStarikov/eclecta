@@ -107,6 +107,7 @@ def cmd_runs(args: argparse.Namespace) -> int:
     """Recent job runs, each tagged with the config that produced it — so you can
     see whether a knob change actually moved the outcomes (attribution)."""
     import json
+    import sqlite3
 
     from . import db as db_mod
 
@@ -116,7 +117,12 @@ def cmd_runs(args: argparse.Namespace) -> int:
         return 0
     conn = db_mod.connect_ro(cfg.db_path)
     try:
-        runs = db_mod.recent_runs(conn, job=args.job, limit=args.limit)
+        try:
+            runs = db_mod.recent_runs(conn, job=args.job, limit=args.limit)
+        except sqlite3.OperationalError:
+            # A pre-attribution DB has no runs table yet; the worker's first
+            # job after picking up this build creates it (read-only here).
+            runs = []
         if not runs:
             print("no runs recorded yet — records begin on the first job cycle "
                   "after the worker picks up this build.")
