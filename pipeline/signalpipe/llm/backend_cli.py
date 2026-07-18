@@ -18,9 +18,48 @@ import re
 import subprocess
 from typing import Any, Dict, Optional, Tuple
 
-from . import LLMError
+from . import LLMError, UsageLimitExhausted, quota
 
 _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.S)
+
+# Max-plan quota exhaustion, in its several CLI spellings ("Claude AI usage
+# limit reached|<epoch>", "5-hour limit reached ∙ resets 3am", API-shaped
+# rate_limit_error). Deliberately NOT matched: "maximum number of turns",
+# "credit balance" — those are real failures, not a waiting game.
+_LIMIT_RE = re.compile(
+    r"usage limit|limit reached|rate.?limit|out of (?:extra )?usage|"
+    r"quota exceeded", re.I)
+# Reset hints: "...|1751652000" epoch tail, or an ISO timestamp after "resets".
+_RESET_EPOCH_RE = re.compile(r"\|\s*(\d{10,13})\b")
+_RESET_ISO_RE = re.compile(
+    r"resets?(?: at)?[:\s]+(\d{4}-\d{2}-\d{2}[T ][0-9:.+]+Z?)", re.I)
+
+
+def _parse_reset_epoch(text: str) -> Optional[float]:
+    m = _RESET_EPOCH_RE.search(text)
+    if m:
+        val = float(m.group(1))
+        return val / 1000.0 if val > 1e12 else val
+    m = _RESET_ISO_RE.search(text)
+    if m:
+        import datetime
+        try:
+            raw = m.group(1).replace(" ", "T").replace("Z", "+00:00")
+            return datetime.datetime.fromisoformat(raw).timestamp()
+        except ValueError:
+            return None
+    return None
+
+
+def _raise_if_usage_limited(detail: str, cfg, cost: float) -> None:
+    """When the error is quota exhaustion: arm the hold and raise the
+    dedicated exception so stages defer instead of marking items failed."""
+    if not _LIMIT_RE.search(detail):
+        return
+    retry_at = quota.set_hold(cfg, detail, _parse_reset_epoch(detail))
+    raise UsageLimitExhausted(
+        "subscription usage limit: %s" % detail[:300],
+        retry_at=retry_at, cost_usd=cost or 0.0)
 
 
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
@@ -137,6 +176,7 @@ def run(
 
         if proc.returncode != 0 and not proc.stdout.strip():
             last_err = (proc.stderr or "exit %d" % proc.returncode)[:300]
+            _raise_if_usage_limited(last_err, cfg, total_cost)
             raise LLMError("claude -p failed: %s" % last_err,
                            cost_usd=total_cost or None)
 
@@ -155,6 +195,7 @@ def run(
         # turn-limit failures — pass it along so the ledger sees it.
         if envelope.get("is_error"):
             detail = envelope.get("errors") or envelope.get("result")
+            _raise_if_usage_limited(str(detail), cfg, total_cost)
             raise LLMError("claude -p api error (%s): %s" % (
                 envelope.get("api_error_status"), str(detail)[:300]),
                 cost_usd=total_cost or None)
@@ -165,6 +206,7 @@ def run(
         if isinstance(obj, dict):
             err = _validate(obj, schema)
             if err is None:
+                quota.clear()  # a success proves usage is back
                 return obj, total_cost
             last_err = "schema validation: %s" % err
         else:

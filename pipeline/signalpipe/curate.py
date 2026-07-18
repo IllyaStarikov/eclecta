@@ -27,7 +27,7 @@ from typing import List, Optional, Tuple
 from . import db as db_mod
 from . import downtime
 from . import score as score_mod
-from .llm import LLMError, SpendCapExceeded, adapter
+from .llm import LLMError, SpendCapExceeded, UsageLimitExhausted, adapter, quota
 from .llm.schemas import (
     JUDGE_SCHEMA,
     SYSTEM_JUDGE,
@@ -195,6 +195,15 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
             db_mod.log_health(conn, "curate", "warn", msg)
             return 0
 
+        # Same shape for a subscription usage-limit hold: defer the WHOLE run,
+        # touch nothing. The worker's probe job resumes us when usage is back.
+        held, held_why = quota.status()
+        if not dry_run and held:
+            msg = "deferring curate (%s)" % held_why
+            print("curate: %s" % msg)
+            db_mod.log_health(conn, "curate", "warn", msg)
+            return 0
+
         # Sweep orphaned 'pending' claims from a crashed run (sole writer).
         if not dry_run:
             with db_mod.write_tx(conn):
@@ -210,7 +219,9 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
         # worker runs curate often (cadences.curate_min). The deterministic
         # score orders finalists, so the best items are judged first.
         if limit is None:
-            limit = cfg.funnel.get("curate_batch")
+            # Default 3, NOT None: a missing key must not fall through to
+            # finalists()' daily_finalists cap (80) — an 80-item paid batch.
+            limit = cfg.funnel.get("curate_batch", 3)
         finalists = score_mod.finalists(conn, cfg, limit)
         if not finalists:
             print("no uncurated finalists")
@@ -223,7 +234,7 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
 
         band = cfg.funnel.get("triage_band", [3.5, 6.0])
         stats = {"done": 0, "skipped": 0, "triaged_out": 0, "failed": 0,
-                 "cap_stopped": 0}
+                 "cap_stopped": 0, "quota_stopped": 0}
 
         # Claim every finalist up front (idempotent).
         for c in finalists:
@@ -247,6 +258,15 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
                         stats["triaged_out"] += 1
                         continue
                 survivors.append((c, prompt, in_band))
+            except UsageLimitExhausted as e:
+                # Quota is a waiting game, not a failure: stop the run without
+                # marking anything failed. Leftover 'pending' claims are swept
+                # by the next run; the probe job pulls curate forward when
+                # usage is back.
+                db_mod.log_health(conn, "curate", "warn", str(e))
+                stats["quota_stopped"] = 1
+                print("STOP: %s" % e)
+                break
             except LLMError as e:
                 _mark_failed(conn, c, e)
                 stats["failed"] += 1
@@ -272,6 +292,15 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
                     WRITE_SCHEMA, cfg=cfg, conn=conn)
                 _persist_done(conn, c, judged, written, cfg, triaged)
                 stats["done"] += 1
+            except UsageLimitExhausted as e:
+                db_mod.log_health(conn, "curate", "warn", str(e))
+                with db_mod.write_tx(conn):
+                    conn.execute(
+                        "DELETE FROM curations WHERE cluster_id=? "
+                        "AND status='pending'", (c["id"],))
+                stats["quota_stopped"] = 1
+                print("STOP: %s" % e)
+                break
             except SpendCapExceeded as e:
                 db_mod.log_health(conn, "curate", "warn", str(e))
                 with db_mod.write_tx(conn):
@@ -291,8 +320,13 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
         )
         if stats["cap_stopped"]:
             msg += " [stopped at spend cap]"
+        if stats["quota_stopped"]:
+            msg += " [stopped: subscription usage limit — will retry]"
         print("%s (%.1fs)" % (msg, time.time() - started))
         db_mod.log_health(conn, "curate", "info", msg, json.dumps(stats))
+        _fp = cfg.config_fingerprint()
+        db_mod.record_run(conn, "curate", _fp["hash"], json.dumps(stats),
+                          json.dumps(_fp["tunables"]))
         cfg.write_last_run("curate", stats)
         return 0
     finally:

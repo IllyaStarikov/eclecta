@@ -7,7 +7,8 @@ from __future__ import annotations
 import sqlite3
 from typing import Any, Dict, Optional, Tuple
 
-from . import LLMError, backend_api, backend_cli, backend_local, spend
+from . import (LLMError, UsageLimitExhausted, backend_api, backend_cli,
+               backend_local, quota, spend)
 
 
 def complete_with_cost(
@@ -46,6 +47,15 @@ def complete_with_cost(
             if not fb or fb == "local":
                 raise
             backend = fb  # degrade to a cloud backend below
+
+    # Usage-limit hold: while armed, fail fast without spawning the CLI so a
+    # curate/digest run stops on its first call instead of burning a spawn per
+    # item. backend_cli arms the hold on a limit hit and clears it on success;
+    # the worker's probe job re-checks once retry_at passes.
+    if backend == "subscription":
+        held, why = quota.status()
+        if held:
+            raise UsageLimitExhausted(why, cost_usd=0.0)
 
     spend.assert_under_cap(conn, cfg, kind=cap_kind)
     if model_override is not None:
