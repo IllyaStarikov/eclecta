@@ -1088,6 +1088,35 @@ def publish_kb_daily(cfg, dates=None) -> int:
         conn.close()
 
 
+def publish_momentum(cfg) -> int:
+    """Worker job: deterministic kb/momentum.json (per-category momentum).
+
+    Zero LLM, zero spend. Aggregates curated items by taxonomy category over
+    trailing windows so the Library + the nightly pass can see what's rising."""
+    import datetime
+
+    from . import momentum as momentum_mod
+
+    conn = db_mod.connect_rw(cfg.db_path)
+    try:
+        mcfg = momentum_mod.config(cfg)
+        now = datetime.datetime.now(datetime.timezone.utc)
+        rel, content = momentum_mod.momentum_artifact(conn, mcfg, now)
+        try:
+            status = git_publish(
+                cfg, "signal: momentum refresh", {rel: content},
+                push=bool(cfg.site.get("push", True)), conn=conn,
+            )
+        except PublishError as e:
+            db_mod.log_health(conn, "publish", "error", str(e))
+            print("momentum publish failed: %s" % e)
+            return 1
+        print("[publish] momentum: %s" % status)
+        return 0 if status in ("pushed", "committed-local", "noop") else 1
+    finally:
+        conn.close()
+
+
 def publish_trends(cfg) -> int:
     """Worker job: Sonnet rolling update of kb/trends.md (spends)."""
     from . import kb

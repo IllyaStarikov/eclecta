@@ -130,6 +130,11 @@ def _job(name):
 
                 if cfg.site.get("push"):
                     publish.publish_trends(cfg)
+            elif name == "momentum":
+                from . import publish
+
+                if cfg.site.get("push"):
+                    publish.publish_momentum(cfg)
             elif name == "backup":
                 from . import db as db_mod
 
@@ -441,6 +446,14 @@ def run(cfg) -> int:
         CronTrigger.from_crontab(
             cad.get("kb_trends_cron", "45 7 * * fri"), timezone=DIGEST_TZ),
         id="kb_trends",
+        misfire_grace_time=DIGEST_GRACE_SEC,
+        coalesce=True,
+    )
+    sched.add_job(
+        _job("momentum"),
+        CronTrigger.from_crontab(
+            cad.get("momentum_cron", "40 7 * * *"), timezone=DIGEST_TZ),
+        id="momentum",
         misfire_grace_time=DIGEST_GRACE_SEC,
         coalesce=True,
     )

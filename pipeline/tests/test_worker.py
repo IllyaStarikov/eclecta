@@ -737,6 +737,7 @@ def test_run_wires_all_jobs_with_configured_cadences(cfg, monkeypatch):
         "quota_probe",
         "publish_refresh",
         "kb_trends",
+        "momentum",
         "backup",
         "retention",
         "stuck_check",
@@ -760,6 +761,9 @@ def test_run_wires_all_jobs_with_configured_cadences(cfg, monkeypatch):
     kb = result.jobs_by_id["kb_trends"]["trigger"]
     assert kb.crontab == "45 7 * * fri"
     assert kb.timezone == worker.DIGEST_TZ
+    momentum = result.jobs_by_id["momentum"]["trigger"]
+    assert momentum.crontab == "40 7 * * *"
+    assert momentum.timezone == worker.DIGEST_TZ
     backup = result.jobs_by_id["backup"]["trigger"]
     assert backup.crontab == worker.BACKUP_CRON
     assert backup.timezone == worker.DIGEST_TZ
