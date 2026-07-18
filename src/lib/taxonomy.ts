@@ -40,7 +40,7 @@ export const CATEGORIES: Category[] = [
     subcategories: [
       { slug: 'ml', name: 'ML & methods', blurb: 'Machine-learning methods and results.', match: ['transformer', 'diffusion', 'reinforcement learning', 'gradient', 'fine-tun', 'embedding', 'neural architecture', 'self-supervised', 'dataset'] },
       { slug: 'systems', name: 'Systems & theory', blurb: 'Systems, algorithms, and theory.', match: ['algorithm', 'complexity', 'distributed system', 'consensus', 'theory', 'random graph', 'data structure', 'formal verification'] },
-      { slug: 'science', name: 'Sciences', blurb: 'Physics, biology, chemistry, and the rest.', match: ['physics', 'quantum', 'biology', 'genom', 'chemistry', 'astronom', 'climate', 'neuroscience', 'materials science', 'particle', 'protein', 'fusion'] },
+      { slug: 'science', name: 'Sciences', blurb: 'Physics, biology, chemistry, and the rest.', match: ['physics', 'quantum', 'biolog', 'genom', 'chemistr', 'astronom', 'astrophys', 'cosmolog', 'climate', 'neuroscience', 'materials science', 'particle', 'protein', 'fusion', 'synthetic biology', 'exoplanet', 'black hole', 'dark matter', 'gravitational', 'gamma-ray', 'superconduct', 'spectroscop', 'relativity'] },
       { slug: 'math', name: 'Mathematics', blurb: 'Mathematics and its frontiers.', match: ['mathematic', 'theorem', 'conjecture', 'number theory', 'topology', 'combinatoric', 'prime'] },
     ],
   },
