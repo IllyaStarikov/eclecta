@@ -24,14 +24,29 @@ const TOTAL = Object.values(KIND_COUNTS).reduce((a, b) => a + b, 0);
 // The archive's open window per cadence — keep in sync with archive.astro.
 const RECENT: Record<string, number> = { daily: 7, weekly: 4, monthly: 3, quarterly: 4, yearly: 5 };
 
-test('dateline claims a real issue number and links the source', async ({ page }) => {
+test('dateline claims a real issue number and links the current edition', async ({ page }) => {
   await page.goto(u('/'));
   const edition = page.locator('.dateline__edition');
   await expect(edition).toContainText(`No. ${TOTAL}`);
-  const repo = edition.locator('a');
-  await expect(repo).toHaveText('Open source');
-  expect(await repo.getAttribute('href')).toMatch(/^https:\/\/github\.com\//);
+  // the edition slot now links the CURRENT edition (useful), not the static repo
+  const link = edition.locator('a');
+  await expect(link).toHaveText(/^(Daily Brief|Weekly Digest|Monthly Review|Quarterly Report|The Year)$/);
+  expect(await link.getAttribute('href')).toMatch(/\/digests\/.+\/$/);
   await expect(page.getByText('Automated edition')).toHaveCount(0);
+});
+
+test('every page carries the same masthead: a digest shows the wordmark home link + channels nav', async ({ page }) => {
+  const dailies = readdirSync(join(digestsDir, 'daily')).filter((f) => f.endsWith('.md')).sort();
+  test.skip(dailies.length === 0, 'no daily digests to check');
+  const slug = dailies[dailies.length - 1].replace(/\.md$/, '');
+  await page.goto(u(`/digests/daily/${slug}/`));
+  const wordmark = page.locator('.masthead__wordmark a');
+  await expect(wordmark).toBeVisible();
+  const href = await wordmark.getAttribute('href');
+  expect(href === '/' || href?.endsWith('/')).toBeTruthy();
+  // the full chrome (channels nav + dateline) is present, identical to the front
+  await expect(page.locator('nav.channels')).toBeVisible();
+  await expect(page.locator('.dateline__edition')).toContainText('No. ');
 });
 
 test('the footer is a colophon grid: identity plus three link columns', async ({ page }) => {

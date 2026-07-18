@@ -216,6 +216,9 @@ body {
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  /* a long unbreakable token (a hyphenated model name, a URL) must never force
+     the page to scroll sideways on a phone; inherited, so all text is covered */
+  overflow-wrap: break-word;
 }
 
 ::selection { background: var(--accent); color: var(--ground); }
@@ -372,7 +375,7 @@ code { font-family: var(--mono); font-size: 0.9em; letter-spacing: 0; }
 
 /* ── masthead band ─────────────────────────────────────────────────────── */
 .masthead {
-  display: flex; align-items: baseline; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 0.4rem 1.5rem;
   padding: clamp(1.4rem, 4vw, 2.4rem) 0 clamp(0.7rem, 1.6vw, 1rem);
   border-bottom: 3px solid var(--ink);   /* the nameplate rule */
@@ -410,19 +413,6 @@ code { font-family: var(--mono); font-size: 0.9em; letter-spacing: 0; }
 /* no glyph separator: a gap + a register shift carries the divide */
 .dateline__edition { display: inline-flex; flex-wrap: wrap; gap: 0 0.9rem; color: var(--ink-faint); }
 .dateline__count { color: var(--ink-soft); }
-
-/* compact header (article pages) */
-.compact-head {
-  display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.4rem 1rem;
-  padding: 1.3rem 0 1rem; border-bottom: 2px solid var(--ink);
-}
-.compact-head .masthead__wordmark { font-size: 1.5rem; letter-spacing: -0.02em; }
-.compact-head__tag { font-family: var(--mono); font-size: var(--mono-xs); letter-spacing: var(--track-meta); text-transform: uppercase; color: var(--ink-faint); }
-.compact-head__edition {
-  margin-left: auto; font-family: var(--mono); font-size: var(--mono-xs);
-  letter-spacing: var(--track-cap); text-transform: uppercase;
-  color: var(--accent-ink); font-variant-numeric: tabular-nums; white-space: nowrap;
-}
 
 /* ── nav ───────────────────────────────────────────────────────────────── */
 .channels {
@@ -631,6 +621,10 @@ html:not([data-showscores="1"]) .pick__score { display: none; }
   margin: 0 0 0.35rem; font-family: var(--mono); font-size: var(--mono-sm);
   letter-spacing: var(--track-meta); color: var(--ink-soft);
   max-width: var(--measure-lead); text-wrap: pretty;
+  /* the kicker is one short phrase; clamp defensively so a stray long value
+     from the pipeline can never grow into a paragraph above the headline */
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  line-clamp: 2; overflow: hidden;
 }
 .pick__tag--state { color: var(--accent-ink); }
 /* anchor arrivals (spotlight "full pick" links) get a quiet accent cue */
@@ -1158,7 +1152,9 @@ a.editions__day--filled:hover { background: var(--accent); border-color: var(--a
 /* ── footer — the colophon grid: every column reads top-down ──────────── */
 .foot {
   border-top: 2px solid var(--ink); margin-top: var(--space-8);
-  padding: var(--space-6) 0 var(--space-8);
+  /* padding-block only: leave the horizontal gutter to .wrap, or the shorthand's
+     0 would clobber it and clip the footer flush-left on mobile */
+  padding-top: var(--space-6); padding-bottom: var(--space-8);
   display: grid; gap: var(--space-6) 2.5rem;
   grid-template-columns: minmax(16rem, 2fr) repeat(3, minmax(8rem, 1fr));
 }
@@ -1237,10 +1233,11 @@ a.editions__day--filled:hover { background: var(--accent); border-color: var(--a
   .toggle { padding-top: 0.45rem; padding-bottom: 0.45rem; }
   .masthead { padding-top: 1.7rem; }        /* a little more air up top */
   .masthead__kicker { text-align: left; }
-  .compact-head__tag { display: none; }
-  .foot { flex-direction: column; }
+  /* let long mono counts wrap instead of forcing horizontal scroll (coverage) */
+  .section-head, .rail { flex-wrap: wrap; }
+  .count, .section-head .count, .rail__count { white-space: normal; }
   /* 44px touch targets for the foot + rail link lists */
-  .foot__links a { padding: 0.4rem 0; }
+  .foot__col a { padding: 0.4rem 0; }
   .erail__feeds a { padding: 0.5rem 0; }
   .erail .arrow-link { padding: 0.45rem 0; }
   /* roomier controls on the touch-first preferences page */

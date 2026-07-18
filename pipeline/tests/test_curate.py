@@ -421,6 +421,44 @@ def test_persist_done_sets_full_row(cfg, conn, seed, patched):
 
 
 @pytest.mark.integration
+def test_persist_clamps_runaway_novelty(cfg, conn, seed, patched):
+    # A verbose LLM novelty must never reach the lead standfirst as a paragraph;
+    # persistence clamps it to 160 chars (mirrors skip_reason's [:300]).
+    long_novelty = "x" * 400
+    written = {"why_it_matters": "w", "notes": ["a", "b"], "summary": "s"}
+
+    cid = _finalist(seed, 5.0, canonical_url="https://ex.com/nv-done")
+    seed.curation(cid, status="pending")
+    curate._persist_done(
+        conn, {"id": cid},
+        {"relevance_score": 8, "channels": ["ai"], "novelty": long_novelty, "audience": "au"},
+        written, cfg, triaged=True,
+    )
+    assert _curation(conn, cid)["novelty"] == "x" * 160
+
+    # the judge-skip path clamps identically
+    cid2 = _finalist(seed, 5.0, canonical_url="https://ex.com/nv-skip")
+    seed.curation(cid2, status="pending")
+    curate._mark_judge_skip(
+        conn, {"id": cid2},
+        {"relevance_score": 3, "channels": ["ai"], "novelty": long_novelty,
+         "audience": "au", "skip_reason": "dup"},
+        cfg, triaged=False,
+    )
+    assert _curation(conn, cid2)["novelty"] == "x" * 160
+
+    # an empty novelty still stores NULL, not ""
+    cid3 = _finalist(seed, 5.0, canonical_url="https://ex.com/nv-none")
+    seed.curation(cid3, status="pending")
+    curate._persist_done(
+        conn, {"id": cid3},
+        {"relevance_score": 8, "channels": ["ai"], "novelty": None, "audience": "au"},
+        written, cfg, triaged=True,
+    )
+    assert _curation(conn, cid3)["novelty"] is None
+
+
+@pytest.mark.integration
 def test_persist_done_notes_none_becomes_empty_json_array(cfg, conn, seed, patched):
     cid = _finalist(seed, 5.0, canonical_url="https://ex.com/pd3")
     seed.curation(cid, status="pending")

@@ -144,7 +144,7 @@ def _mark_judge_skip(conn, c, judged, cfg, triaged: bool) -> None:
              backend, _model_label(cfg, "judge", backend),
              int(judged.get("relevance_score") or 0),
              json.dumps(judged.get("channels") or []),
-             judged.get("novelty"), judged.get("audience"),
+             (judged.get("novelty") or "")[:160] or None, judged.get("audience"),
              str(judged.get("skip_reason") or "")[:300],
              _now_iso(), c["id"]),
         )
@@ -166,7 +166,7 @@ def _persist_done(conn, c, judged, written, cfg, triaged: bool) -> None:
              json.dumps(written.get("notes") or []),
              written.get("summary"),
              json.dumps(judged.get("channels") or []),
-             judged.get("novelty"), judged.get("audience"),
+             (judged.get("novelty") or "")[:160] or None, judged.get("audience"),
              _now_iso(), c["id"]),
         )
 
@@ -244,15 +244,18 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
                     "VALUES(?, 'pending')", (c["id"],))
 
         # PHASE 1 — triage (cheap keep/skip gate). survivors carry a triaged flag.
+        # Triage and judge only need the lede + key facts, so they run on a short
+        # excerpt (MAX_JUDGE_CHARS) at 'low' effort — classification/extraction,
+        # not writing. Only the writer (below) reads the full article.
         survivors: List[Tuple[dict, str, bool]] = []
         for c in finalists:
-            prompt = _build_prompt(conn, c)
+            prompt = _build_prompt(conn, c, MAX_JUDGE_CHARS)
             try:
                 in_band = bool(band) and band[0] <= (c["score"] or 0) <= band[1]
                 if in_band:
                     gate = adapter.complete(
                         "triage", SYSTEM_TRIAGE, prompt, TRIAGE_SCHEMA,
-                        cfg=cfg, conn=conn)
+                        cfg=cfg, conn=conn, effort="low")
                     if not gate.get("keep"):
                         _mark_triaged_out(conn, c, gate, cfg)
                         stats["triaged_out"] += 1
@@ -280,15 +283,18 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
             try:
                 judged = adapter.complete(
                     "judge", SYSTEM_JUDGE, prompt, JUDGE_SCHEMA,
-                    cfg=cfg, conn=conn)
+                    cfg=cfg, conn=conn, effort="low")
 
                 if judged.get("skip"):
                     _mark_judge_skip(conn, c, judged, cfg, triaged)
                     stats["skipped"] += 1
                     continue
 
+                # the writer polishes from the FULL article (the triage/judge
+                # prompt above is only the short excerpt), plus the judge's facts.
+                full_prompt = _build_prompt(conn, c, MAX_ARTICLE_CHARS)
                 written = adapter.complete(
-                    "write", SYSTEM_WRITE, _write_prompt(prompt, judged),
+                    "write", SYSTEM_WRITE, _write_prompt(full_prompt, judged),
                     WRITE_SCHEMA, cfg=cfg, conn=conn)
                 _persist_done(conn, c, judged, written, cfg, triaged)
                 stats["done"] += 1

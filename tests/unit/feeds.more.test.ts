@@ -153,14 +153,14 @@ describe('digestItemHtml()', () => {
   it('shows the KIND_LABEL for the digest kind, right after the blurb', () => {
     // Pin position: the metadata paragraph opens with the label immediately
     // after the emphasized blurb — not merely "Daily brief" somewhere.
-    expect(html).toContain('</em></p><p>Daily brief · ');
+    expect(html).toContain('</em></p><p>Daily Brief · ');
   });
 
   it('shows the period in the metadata slot, not just via the URL', () => {
     // The URL also contains "2026-07-04" (…/daily/2026-07-04/…), so a bare
     // toContain('2026-07-04') would pass even if the period were dropped.
     // Pin the label · period · link ordering instead.
-    expect(html).toContain('Daily brief · 2026-07-04 · <a href="https://eclecta.co/');
+    expect(html).toContain('Daily Brief · 2026-07-04 · <a href="https://eclecta.co/');
   });
 
   it('links to the on-site edition, labelled with the site name', () => {
@@ -170,11 +170,11 @@ describe('digestItemHtml()', () => {
 
   it('uses the right KIND_LABEL for other kinds', () => {
     expect(digestItemHtml({ kind: 'yearly', period: '2026', blurb: 'x' }, '/y/')).toContain(
-      'The year'
+      'The Year'
     );
     expect(
       digestItemHtml({ kind: 'quarterly', period: '2026-Q2', blurb: 'x' }, '/q/')
-    ).toContain('Quarterly report');
+    ).toContain('Quarterly Report');
   });
 });
 

@@ -1,6 +1,8 @@
 name: PR checks
 
-# PRs are code by definition: the full suite always runs, no paths-filter.
+# PRs are code by definition. The site suite always runs; the pipeline pytest
+# suite runs when pipeline/** changes (paths-filtered so data/site-only PRs stay
+# fast, matching deploy.yml's gate).
 on:
   pull_request:
 
@@ -41,3 +43,36 @@ jobs:
 
       - name: E2E tests
         run: npm run test:e2e
+
+  pytest:
+    name: Pipeline tests (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pipeline suite runs when pipeline code changes; data/site-only PRs skip
+      # it (mirrors deploy.yml so a PR is gated exactly as its eventual push).
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            pipeline:
+              - 'pipeline/**'
+              - '!pipeline/kb/**'
+
+      - uses: actions/setup-python@v5
+        if: steps.changes.outputs.pipeline == 'true'
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: pipeline/requirements-dev.txt
+
+      - name: Install test deps
+        if: steps.changes.outputs.pipeline == 'true'
+        run: pip install -r pipeline/requirements-dev.txt
+
+      # Hermetic suite only (live tests are deselected by the pyproject addopts).
+      - name: Run pytest
+        if: steps.changes.outputs.pipeline == 'true'
+        working-directory: pipeline
+        run: python -m pytest -q

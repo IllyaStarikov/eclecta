@@ -22,11 +22,11 @@ export const KINDS = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'] as co
 export type DigestKind = (typeof KINDS)[number];
 
 export const KIND_LABEL: Record<DigestKind, string> = {
-  daily: 'Daily brief',
-  weekly: 'Weekly digest',
-  monthly: 'Monthly review',
-  quarterly: 'Quarterly report',
-  yearly: 'The year',
+  daily: 'Daily Brief',
+  weekly: 'Weekly Digest',
+  monthly: 'Monthly Review',
+  quarterly: 'Quarterly Report',
+  yearly: 'The Year',
 };
 
 /** Base-aware internal href ('/about/' -> '<base>/about/'; base is '/' on eclecta.co). */

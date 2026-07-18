@@ -12,8 +12,8 @@ finalists; an edition keeps a handful. The discipline is what we leave out.
 
 ## 1. The reader
 
-One reader, precisely drawn. A senior software engineer (Google; before that
-Garmin) who writes a technical blog. AI-first: frontier and open-weight models,
+One reader, precisely drawn. A technically deep, working senior software engineer
+who writes a technical blog. AI-first: frontier and open-weight models,
 agents and tooling, ML research that changes practice, AI policy with real
 consequence. Tech-broad beyond that: systems and devtools depth, security
 research, semiconductors and datacenter hardware, the startup and industry moves
@@ -58,7 +58,12 @@ cut.
   harness, baseline, or independent check is a claim, not a result. It can be
   *reported as a claim* if the story is the claim; it cannot lead on its own.
 - **Thin rewrites and duplicate coverage.** One story, one slot, the best,
-  most-primary surface. Never the aggregator's rewrite when the source is free.
+  most-primary surface. Find and credit whoever broke the story (the primary
+  document, or the outlet that first reported it, "first reported by X"); the
+  credit and the link go to the source that broke it, never the aggregator that
+  rewrote it. And always leave a free door: when the primary source is paywalled,
+  link a free read beside it, so every item gives the reader at least one link
+  they can open without paying.
 - **Unfalsifiable and unsourced.** "Experts say," "could revolutionize," no named
   source, no document. If it cannot be attributed, write around it or drop it.
 

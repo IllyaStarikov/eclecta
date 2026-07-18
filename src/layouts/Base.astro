@@ -9,16 +9,12 @@ import '@fontsource/ibm-plex-mono/500.css';
 import '../styles/global.css';
 import { getCollection } from 'astro:content';
 import rawStats from '../data/stats.json';
-import { site, href } from '../site';
+import { site, href, KIND_LABEL } from '../site';
 import { CATEGORIES } from '../lib/taxonomy';
 
 interface Props {
   title?: string;
   description?: string;
-  /** hide the big masthead (e.g. on article pages, use a compact one) */
-  compactHeader?: boolean;
-  /** wire edition stamp shown in the compact header (e.g. "Weekly · 2026-W24") */
-  edition?: string;
   /** widen the shell to the broadsheet width (front + category pages) */
   wide?: boolean;
   /** extra RSS autodiscovery links for this page's own feed(s) */
@@ -35,8 +31,6 @@ interface Props {
 const {
   title = `${site.name} | the best of technology, AI & science`,
   description = site.description,
-  compactHeader = false,
-  edition,
   wide = false,
   feedLinks = [],
   ogType = 'website',
@@ -47,8 +41,13 @@ const {
 const year = new Date().getFullYear();
 
 // The issue number is real: every published edition counts, so the dateline's
-// "No." increments exactly when the archive grows.
-const editionNo = (await getCollection('digests')).length;
+// "No." increments exactly when the archive grows. Newest first, so the dateline
+// can link its issue number straight to the current edition.
+const digests = (await getCollection('digests')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+const editionNo = digests.length;
+const latestEdition = digests[0] ?? null;
 
 // Dateline / colophon — the wire's "as of". Prefer the pipeline's last run.
 const generatedAt = (rawStats as { generated_at?: string }).generated_at;
@@ -144,45 +143,37 @@ const isCurrent = (path: string) => (currentPath === href(path) || currentPath =
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
-    {compactHeader ? (
-      <header class="wrap compact-head">
-        <a href={href('/')} class="masthead__wordmark">{site.name}<span class="period" aria-hidden="true"></span></a>
-        <span class="compact-head__tag">{site.kicker}</span>
-        {edition && <span class="compact-head__edition">{edition}</span>}
-      </header>
-    ) : (
-      <header>
-        <div class="wrap">
-          <div class="masthead">
-            <p class="masthead__wordmark"><a href={href('/')} aria-label={`${site.name} | front page`}>{site.name}<span class="period" aria-hidden="true"></span></a></p>
-            <div class="masthead__kicker">
-              <span class="label">{site.kicker}</span>
-              <span class="masthead__tag">{site.tagline}</span>
-            </div>
+    <header>
+      <div class="wrap">
+        <div class="masthead">
+          <p class="masthead__wordmark"><a href={href('/')} aria-label={`${site.name} | front page`}>{site.name}<span class="period" aria-hidden="true"></span></a></p>
+          <div class="masthead__kicker">
+            <span class="label">{site.kicker}</span>
+            <span class="masthead__tag">{site.tagline}</span>
           </div>
         </div>
-        <div class="wrap">
-          <div class="dateline">
-            <span class="dateline__date">{wireDate}</span>
-            <span class="dateline__edition">No. {editionNo} · <a href={site.repoUrl}>Open source</a></span>
-          </div>
+      </div>
+      <div class="wrap">
+        <div class="dateline">
+          <span class="dateline__date">{wireDate}</span>
+          <span class="dateline__edition">No. {editionNo}{latestEdition && (<> · <a href={href(`/digests/${latestEdition.id}/`)}>{KIND_LABEL[latestEdition.data.kind]}</a></>)}</span>
         </div>
-        <div class="wrap">
-          <nav class="channels" aria-label="Sections">
-            <a href={href('/')} aria-current={isCurrent('/')}>Front</a>
-            {CATEGORIES.map((c) => (
-              <a href={href(`/${c.slug}/`)} data-category={c.slug} aria-current={isCurrent(`/${c.slug}/`)}>{c.name}</a>
-            ))}
-            <a href={href('/archive/')} aria-current={isCurrent('/archive/')}>Archive</a>
-            <a href={href('/feeds/')} aria-current={isCurrent('/feeds/')}>Feeds</a>
-            <a href={href('/about/')} aria-current={isCurrent('/about/')}>About</a>
-            <a href={href('/preferences/')} aria-current={isCurrent('/preferences/')}>Prefs</a>
-            <a href={site.repoUrl}>Source</a>
-            <button class="toggle" type="button" data-theme-toggle aria-label="Theme: auto. Click to change">auto</button>
-          </nav>
-        </div>
-      </header>
-    )}
+      </div>
+      <div class="wrap">
+        <nav class="channels" aria-label="Sections">
+          <a href={href('/')} aria-current={isCurrent('/')}>Front</a>
+          {CATEGORIES.map((c) => (
+            <a href={href(`/${c.slug}/`)} data-category={c.slug} aria-current={isCurrent(`/${c.slug}/`)}>{c.name}</a>
+          ))}
+          <a href={href('/archive/')} aria-current={isCurrent('/archive/')}>Archive</a>
+          <a href={href('/feeds/')} aria-current={isCurrent('/feeds/')}>Feeds</a>
+          <a href={href('/about/')} aria-current={isCurrent('/about/')}>About</a>
+          <a href={href('/preferences/')} aria-current={isCurrent('/preferences/')}>Prefs</a>
+          <a href={site.repoUrl}>Source</a>
+          <button class="toggle" type="button" data-theme-toggle aria-label="Theme: auto. Click to change">auto</button>
+        </nav>
+      </div>
+    </header>
 
     <main class="wrap" id="main">
       {wide ? <slot /> : <div class="column"><slot /></div>}

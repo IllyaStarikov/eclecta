@@ -55,7 +55,7 @@ test('the rail carries one editions ledger, every cadence, no separate brief', a
   await expect(editions).toBeVisible();
   await expect(editions.locator('.erail__head')).toHaveText('Editions');
   // the daily leads the ledger; the old standalone brief block is gone
-  await expect(editions.locator('li').first()).toContainText('Daily brief');
+  await expect(editions.locator('li').first()).toContainText('Daily Brief');
   expect(await editions.locator('li').count()).toBeGreaterThanOrEqual(3);
   await expect(page.locator('.erail__brief')).toHaveCount(0);
   await expect(page.getByText('Latest brief')).toHaveCount(0);

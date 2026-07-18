@@ -19,6 +19,40 @@ Ground rules (see `ops/self-improve.md`):
 
 ---
 
+## SHIPPED 2026-07-18 (this session, all suites green)
+
+Landed on `main` after the owner returned with fresh usage. Site: 246 unit +
+110 e2e green. Pipeline: 2650 pytest green. Verified visually at desktop + mobile.
+
+- **A1 masthead** — `align-items: center`; kicker + tagline now balanced against
+  the wordmark (was floating low). ✓
+- **A2 edition labels** — Title Case (Daily Brief … The Year); tests updated. ✓
+- **A3 dateline** — the edition slot now links the CURRENT edition
+  (`No. N · Daily Brief`) instead of the static repo. ✓
+- **A4 mobile footer** — `.foot` padding-block only, `.wrap` gutter restored; no
+  more flush-left clip. Also fixed ALL horizontal overflow at 360–390px
+  (`/feeds/` grid `min()`, coverage count wrap, global `overflow-wrap`); new
+  `tests/e2e/layout.spec.ts` pins it. ✓
+- **A5 header unified** — about/contact/404/digest now use the full masthead;
+  compact-header code + CSS removed; digest-header e2e assertion added. ✓
+- **A6 novelty** — CSS 2-line clamp + pipeline persistence clamp `[:160]` +
+  tightened judge/curate prompts; `test_persist_clamps_runaway_novelty` pins it. ✓
+- **A8 provenance** — editorial-policy §3 + the digest writer prompt now demand
+  crediting whoever broke the story and always leaving a free read. ✓
+- **A9 de-personalization** — editorial-policy §1 anonymized (Google/Garmin
+  removed from the public repo). ✓
+- **Review High #1** — `MAX_JUDGE_CHARS` wired: triage/judge run the 6K excerpt,
+  only the writer sees the full article (~75% off the two hottest LLM calls). ✓
+- **Review High #2** — `pr.yml` now runs the pipeline pytest suite (paths-filtered). ✓
+- **Review #3 (partial)** — `effort="low"` on triage + judge; the write call left
+  at default (Opus prose — quality tradeoff, see `[?]`). ✓
+
+Still open below: the `[?]` decisions (brand kept as-is, model routing, caps,
+write/digest effort) and the low/nit config cleanups (dead knobs, sitemap/OG
+tests). These are the nightly pass's queue.
+
+---
+
 ## A. Owner-requested (2026-07-18 screenshot + message) — SHIP THESE FIRST
 
 ### A1. Masthead vertical alignment / centering  [ ]  (site)

@@ -70,19 +70,19 @@ describe('KINDS + KIND_LABEL', () => {
   it('maps each KIND to its exact display label', () => {
     // Pins the concrete cadence copy: this is what renders in the UI.
     expect(KIND_LABEL).toEqual({
-      daily: 'Daily brief',
-      weekly: 'Weekly digest',
-      monthly: 'Monthly review',
-      quarterly: 'Quarterly report',
-      yearly: 'The year',
+      daily: 'Daily Brief',
+      weekly: 'Weekly Digest',
+      monthly: 'Monthly Review',
+      quarterly: 'Quarterly Report',
+      yearly: 'The Year',
     });
     // Every KIND resolves to that exact label (no undefined gaps).
     expect(KINDS.map((k) => KIND_LABEL[k as DigestKind])).toEqual([
-      'Daily brief',
-      'Weekly digest',
-      'Monthly review',
-      'Quarterly report',
-      'The year',
+      'Daily Brief',
+      'Weekly Digest',
+      'Monthly Review',
+      'Quarterly Report',
+      'The Year',
     ]);
   });
 
