@@ -191,6 +191,26 @@ CREATE TABLE IF NOT EXISTS health (
   stats         TEXT                           -- JSON
 );
 CREATE INDEX IF NOT EXISTS idx_health_ts ON health(ts DESC);
+
+-- Run attribution. Every completed job records its outcome stats tagged with a
+-- fingerprint of the tunable config that produced them, so a knob change has a
+-- real before/after instead of a guess. config_versions dedups the
+-- fingerprint -> tunables snapshot; runs is the append-only outcome series.
+CREATE TABLE IF NOT EXISTS config_versions (
+  hash          TEXT PRIMARY KEY,             -- 12-char sha256 of the tunable knobs
+  first_seen    TEXT NOT NULL,
+  tunables      TEXT NOT NULL                 -- JSON snapshot of the knobs
+);
+
+CREATE TABLE IF NOT EXISTS runs (
+  id            INTEGER PRIMARY KEY,
+  ts            TEXT NOT NULL,
+  job           TEXT NOT NULL,                -- ingest|score|fetch|curate|digest
+  config_hash   TEXT NOT NULL,                -- -> config_versions.hash
+  stats         TEXT NOT NULL                 -- JSON outcome counts for this run
+);
+CREATE INDEX IF NOT EXISTS idx_runs_ts ON runs(ts DESC);
+CREATE INDEX IF NOT EXISTS idx_runs_job ON runs(job, ts DESC);
 """
 
 
@@ -489,3 +509,53 @@ def log_health(
             stats,
         ),
     )
+
+
+def record_run(
+    conn: sqlite3.Connection,
+    job: str,
+    config_hash: str,
+    stats: str,
+    tunables: Optional[str] = None,
+    ts: Optional[str] = None,
+) -> None:
+    """Append an attributable run record: this run's outcome `stats` (JSON) tagged
+    with the `config_hash` that produced them. When `tunables` (JSON) is given,
+    upsert the config_versions row so the hash always resolves to its knobs.
+
+    Autocommit connection (isolation_level=None): no commit() here — it would
+    prematurely end a caller's open write_tx (mirrors log_health)."""
+    import datetime
+
+    now = ts or datetime.datetime.now(datetime.timezone.utc).isoformat()
+    if tunables is not None:
+        conn.execute(
+            "INSERT OR IGNORE INTO config_versions(hash, first_seen, tunables) "
+            "VALUES(?,?,?)",
+            (config_hash, now, tunables),
+        )
+    conn.execute(
+        "INSERT INTO runs(ts, job, config_hash, stats) VALUES(?,?,?,?)",
+        (now, job, config_hash, stats),
+    )
+
+
+def recent_runs(
+    conn: sqlite3.Connection,
+    job: Optional[str] = None,
+    limit: int = 40,
+) -> list:
+    """Most-recent run records (newest first): ts, job, config_hash, stats JSON."""
+    if job:
+        cur = conn.execute(
+            "SELECT ts, job, config_hash, stats FROM runs WHERE job=? "
+            "ORDER BY id DESC LIMIT ?",
+            (job, int(limit)),
+        )
+    else:
+        cur = conn.execute(
+            "SELECT ts, job, config_hash, stats FROM runs "
+            "ORDER BY id DESC LIMIT ?",
+            (int(limit),),
+        )
+    return [dict(r) for r in cur.fetchall()]

@@ -210,7 +210,9 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
         # worker runs curate often (cadences.curate_min). The deterministic
         # score orders finalists, so the best items are judged first.
         if limit is None:
-            limit = cfg.funnel.get("curate_batch")
+            # Default 3, NOT None: a missing key must not fall through to
+            # finalists()' daily_finalists cap (80) — an 80-item paid batch.
+            limit = cfg.funnel.get("curate_batch", 3)
         finalists = score_mod.finalists(conn, cfg, limit)
         if not finalists:
             print("no uncurated finalists")
@@ -293,6 +295,9 @@ def run(cfg, limit: Optional[int] = None, dry_run: bool = False) -> int:
             msg += " [stopped at spend cap]"
         print("%s (%.1fs)" % (msg, time.time() - started))
         db_mod.log_health(conn, "curate", "info", msg, json.dumps(stats))
+        _fp = cfg.config_fingerprint()
+        db_mod.record_run(conn, "curate", _fp["hash"], json.dumps(stats),
+                          json.dumps(_fp["tunables"]))
         cfg.write_last_run("curate", stats)
         return 0
     finally:

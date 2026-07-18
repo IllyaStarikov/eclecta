@@ -220,6 +220,9 @@ def run(cfg, limit: Optional[int] = None,
         )
         print("%s (%.1fs)" % (msg, time.time() - started))
         db_mod.log_health(conn, "fetch", "info", msg, json.dumps(stats))
+        _fp = cfg.config_fingerprint()
+        db_mod.record_run(conn, "fetch", _fp["hash"], json.dumps(stats),
+                          json.dumps(_fp["tunables"]))
         cfg.write_last_run("fetch", stats)
         return 0
     finally:

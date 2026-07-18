@@ -303,8 +303,12 @@ def run(cfg, kind: str = "weekly", period: Optional[str] = None,
             print("review on the dashboard, then: "
                   "python3 -m signalpipe promote --target local --apply")
         db_mod.log_health(conn, "digest", "info", msg)
-        cfg.write_last_run("digest", {"kind": kind, "period": key,
-                                      "items": len(items), "cost_usd": cost})
+        _dstats = {"kind": kind, "period": key,
+                   "items": len(items), "cost_usd": cost}
+        _fp = cfg.config_fingerprint()
+        db_mod.record_run(conn, "digest", _fp["hash"], json.dumps(_dstats),
+                          json.dumps(_fp["tunables"]))
+        cfg.write_last_run("digest", _dstats)
 
         if cfg.site.get("push"):
             from . import publish
