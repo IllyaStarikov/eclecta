@@ -300,6 +300,143 @@ def export_spotlight(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
         "window_hours": int(sp["window_hours"]),
         "items": items[: int(sp["limit"])],
     }
+def _daily_series(conn: sqlite3.Connection, days: int = 90) -> List[Dict[str, Any]]:
+    """Contiguous per-day counts (zero-filled) for the wire chart."""
+    since = _iso_days_ago(days)
+
+    def per_day(sql: str) -> Dict[str, int]:
+        return {r["d"]: r["n"] for r in conn.execute(sql, (since,)).fetchall()}
+
+    items = per_day(
+        "SELECT substr(ingested_at,1,10) AS d, COUNT(*) AS n FROM items "
+        "WHERE ingested_at >= ? GROUP BY d"
+    )
+    clusters = per_day(
+        "SELECT substr(first_seen,1,10) AS d, COUNT(*) AS n FROM clusters "
+        "WHERE first_seen >= ? GROUP BY d"
+    )
+    curated = per_day(
+        "SELECT substr(curated_at,1,10) AS d, COUNT(*) AS n FROM curations "
+        "WHERE status='done' AND skip=0 AND curated_at >= ? GROUP BY d"
+    )
+    today = datetime.datetime.now(datetime.timezone.utc).date()
+    out = []
+    for i in range(days - 1, -1, -1):
+        d = (today - datetime.timedelta(days=i)).isoformat()
+        out.append({
+            "d": d,
+            "items": items.get(d, 0),
+            "clusters": clusters.get(d, 0),
+            "curated": curated.get(d, 0),
+        })
+    return out
+
+
+def _funnel_counts(conn: sqlite3.Connection,
+                   since: Optional[str] = None) -> Dict[str, int]:
+    """items -> clusters -> fetched -> curated -> published. published =
+    distinct story_id in the ledger (a story published to several editions
+    counts once)."""
+    def one(sql, args=()):
+        return conn.execute(sql, args).fetchone()[0]
+
+    if since is None:
+        return {
+            "items": one("SELECT COUNT(*) FROM items"),
+            "clusters": one("SELECT COUNT(*) FROM clusters"),
+            "fetched": one(
+                "SELECT COUNT(*) FROM articles WHERE fetch_status='ok'"),
+            "curated": one(
+                "SELECT COUNT(*) FROM curations WHERE status='done' AND skip=0"),
+            "published": one(
+                "SELECT COUNT(DISTINCT story_id) FROM published_ledger"),
+        }
+    return {
+        "items": one(
+            "SELECT COUNT(*) FROM items WHERE ingested_at >= ?", (since,)),
+        "clusters": one(
+            "SELECT COUNT(*) FROM clusters WHERE first_seen >= ?", (since,)),
+        "fetched": one(
+            "SELECT COUNT(*) FROM articles "
+            "WHERE fetch_status='ok' AND extracted_at >= ?", (since,)),
+        "curated": one(
+            "SELECT COUNT(*) FROM curations "
+            "WHERE status='done' AND skip=0 AND curated_at >= ?", (since,)),
+        "published": one(
+            "SELECT COUNT(DISTINCT story_id) FROM published_ledger "
+            "WHERE first_at >= ?", (since,)),
+    }
+
+
+def _relevance_hist(conn: sqlite3.Connection, since: str) -> Dict[str, Dict[str, int]]:
+    """Score histogram 0..10, kept (done, not skipped) vs skipped (everything
+    else that got a score). Scores clamp into 0..10 defensively."""
+    hist = {"kept": {}, "skipped": {}}
+    for r in conn.execute(
+        "SELECT (status='done' AND skip=0) AS kept, relevance_score AS s, "
+        "COUNT(*) AS n FROM curations "
+        "WHERE relevance_score IS NOT NULL AND curated_at >= ? "
+        "GROUP BY kept, s",
+        (since,),
+    ).fetchall():
+        bucket = "kept" if r["kept"] else "skipped"
+        s = str(max(0, min(10, int(r["s"]))))
+        hist[bucket][s] = hist[bucket].get(s, 0) + r["n"]
+    return hist
+
+
+def _models_used(conn: sqlite3.Connection, since: str) -> List[Dict[str, Any]]:
+    """Observed provenance: which model actually ran, per scope. The DB holds
+    one model_used per curation and per digest; sub-stage splits don't exist,
+    so neither does a fake breakdown."""
+    rows: List[Dict[str, Any]] = []
+    for r in conn.execute(
+        "SELECT model_used AS model, backend_used AS backend, COUNT(*) AS n, "
+        "AVG(relevance_score) AS avg_rel FROM curations "
+        "WHERE model_used IS NOT NULL AND curated_at >= ? "
+        "GROUP BY model_used, backend_used ORDER BY n DESC",
+        (since,),
+    ).fetchall():
+        rows.append({
+            "scope": "curation",
+            "model": r["model"],
+            "backend": r["backend"],
+            "count": r["n"],
+            "avg_relevance":
+                round(r["avg_rel"], 2) if r["avg_rel"] is not None else None,
+        })
+    for r in conn.execute(
+        "SELECT model_used AS model, COUNT(*) AS n FROM digests "
+        "WHERE model_used IS NOT NULL AND generated_at >= ? "
+        "GROUP BY model_used ORDER BY n DESC",
+        (since,),
+    ).fetchall():
+        rows.append({
+            "scope": "digest",
+            "model": r["model"],
+            "backend": None,
+            "count": r["n"],
+            "avg_relevance": None,
+        })
+    return rows
+
+
+def _rhythm_7x24(conn: sqlite3.Connection, since: str) -> List[List[int]]:
+    """Items ingested by UTC weekday (Mon-first) x hour."""
+    grid = [[0] * 24 for _ in range(7)]
+    for r in conn.execute(
+        "SELECT substr(ingested_at,1,13) AS dh, COUNT(*) AS n FROM items "
+        "WHERE ingested_at >= ? GROUP BY dh",
+        (since,),
+    ).fetchall():
+        try:
+            wd = datetime.date.fromisoformat(r["dh"][:10]).weekday()
+            hh = int(r["dh"][11:13])
+        except (ValueError, IndexError):
+            continue
+        if 0 <= hh <= 23:
+            grid[wd][hh] += r["n"]
+    return grid
 
 
 def export_stats(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
@@ -311,6 +448,7 @@ def export_stats(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
     site = cfg.site
     window_since = _iso_days_ago(int(site.get("picks_window_days", 7)))
     week_since = _iso_days_ago(7)
+    month_since = _iso_days_ago(30)
     min_rel = int(site.get("picks_min_relevance",
                            cfg.funnel.get("min_relevance_for_feed", 6)))
 
@@ -390,6 +528,40 @@ def export_stats(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
     if avg_rel is not None:
         pipeline["avg_relevance_7d"] = round(avg_rel, 2)
 
+    fetch_30d = {"ok": 0, "paywalled": 0, "failed": 0, "skipped": 0}
+    for r in conn.execute(
+        "SELECT fetch_status AS s, COUNT(*) AS n FROM articles "
+        "WHERE extracted_at >= ? GROUP BY s",
+        (month_since,),
+    ).fetchall():
+        if r["s"] in fetch_30d:
+            fetch_30d[r["s"]] = r["n"]
+
+    top_sources = [
+        {"name": r["name"], "items": r["n"]}
+        for r in conn.execute(
+            "SELECT src.name AS name, COUNT(*) AS n FROM items i "
+            "JOIN sources src ON src.id=i.source_id "
+            "WHERE i.ingested_at >= ? "
+            "GROUP BY src.name ORDER BY n DESC LIMIT 15",
+            (month_since,),
+        ).fetchall()
+    ]
+
+    echo = {"1": 0, "2": 0, "3_5": 0, "6_plus": 0}
+    for r in conn.execute(
+        "SELECT surface_count AS c, COUNT(*) AS n FROM clusters GROUP BY c"
+    ).fetchall():
+        c = r["c"] or 0
+        if c <= 1:
+            echo["1"] += r["n"]
+        elif c == 2:
+            echo["2"] += r["n"]
+        elif c <= 5:
+            echo["3_5"] += r["n"]
+        else:
+            echo["6_plus"] += r["n"]
+
     return {
         "generated_at": _now_iso(),
         "site_name": site.get("name", "Signal"),
@@ -417,6 +589,19 @@ def export_stats(conn: sqlite3.Connection, cfg) -> Dict[str, Any]:
         "channels": channels,
         "top_surfaces_7d": top_surfaces,
         "models": {t: cfg.model_for(t) for t in ("triage", "deep", "digest")},
+        # v2 coverage blocks (optional in the site schema; same privacy
+        # rules: counts and model names only, no dollars, no error text).
+        "series_daily": _daily_series(conn),
+        "funnel": {
+            "all_time": _funnel_counts(conn),
+            "last_30d": _funnel_counts(conn, month_since),
+        },
+        "relevance_hist_30d": _relevance_hist(conn, month_since),
+        "models_used_30d": _models_used(conn, month_since),
+        "fetch_30d": fetch_30d,
+        "top_sources_30d": top_sources,
+        "echo_dist": echo,
+        "rhythm_7x24": _rhythm_7x24(conn, month_since),
     }
 
 

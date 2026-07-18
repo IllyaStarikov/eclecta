@@ -104,6 +104,40 @@ export type Channel = z.infer<typeof channelSchema>;
 
 /* ── stats.json ────────────────────────────────────────────────────────── */
 
+/* ── stats.json v2 coverage blocks ─────────────────────────────────────────
+ * Emitted by pipeline publish.py::export_stats v2. ALL optional: the site
+ * must build against either export generation (the deployed pipeline lags
+ * the repo until Illya syncs it). coverage.astro renders a band only when
+ * its block is present. */
+
+export const dayPointSchema = z.object({
+  d: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  items: z.number(),
+  clusters: z.number(),
+  curated: z.number(),
+});
+export type DayPoint = z.infer<typeof dayPointSchema>;
+
+const funnelCountsSchema = z.object({
+  items: z.number(),
+  clusters: z.number(),
+  fetched: z.number(),
+  curated: z.number(),
+  published: z.number(),
+});
+export type FunnelCounts = z.infer<typeof funnelCountsSchema>;
+
+const scoreBucketsSchema = z.record(z.string(), z.number());
+
+export const modelUsageSchema = z.object({
+  scope: z.enum(['curation', 'digest']),
+  model: z.string().min(1),
+  backend: z.string().nullable(),
+  count: z.number(),
+  avg_relevance: z.number().nullable(),
+});
+export type ModelUsage = z.infer<typeof modelUsageSchema>;
+
 export const statsSchema = z.object({
   generated_at: z.string(),
   site_name: z.string().optional(),
@@ -148,7 +182,7 @@ export const statsSchema = z.object({
     })
   ),
   // The pipeline's model stages. Pinned to the three the site renders by name
-  // (about page, /stats/) so a renamed or missing stage fails validation with a
+  // (about page, /coverage/) so a renamed or missing stage fails validation with a
   // clear message instead of a build-time TypeError; extra stages still pass.
   models: z
     .object({
@@ -157,6 +191,35 @@ export const statsSchema = z.object({
       digest: z.string(),
     })
     .catchall(z.string()),
+  // v2 coverage blocks — optional during the export transition.
+  series_daily: z.array(dayPointSchema).optional(),
+  funnel: z
+    .object({ all_time: funnelCountsSchema, last_30d: funnelCountsSchema })
+    .optional(),
+  relevance_hist_30d: z
+    .object({ kept: scoreBucketsSchema, skipped: scoreBucketsSchema })
+    .optional(),
+  models_used_30d: z.array(modelUsageSchema).optional(),
+  fetch_30d: z
+    .object({
+      ok: z.number(),
+      paywalled: z.number(),
+      failed: z.number(),
+      skipped: z.number(),
+    })
+    .optional(),
+  top_sources_30d: z
+    .array(z.object({ name: z.string(), items: z.number() }))
+    .optional(),
+  echo_dist: z
+    .object({
+      '1': z.number(),
+      '2': z.number(),
+      '3_5': z.number(),
+      '6_plus': z.number(),
+    })
+    .optional(),
+  rhythm_7x24: z.array(z.array(z.number()).length(24)).length(7).optional(),
 });
 
 export type Stats = z.infer<typeof statsSchema>;

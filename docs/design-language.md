@@ -215,8 +215,9 @@ catalog entry, a `decisions.md` rationale, and a minor version bump here.
 | `.empty-state` | "nothing here right now" panel — always a `<div>` of `<p>`s | — | category/sub pages |
 | `.erail` | the broadsheet right rail: index (with the JS-built `.erail__marker` reading square), nav, the editions ledger (latest of every cadence), subscribe, back | per-block | A pages |
 | `.bars` / `.bar` | CSS bar chart, one accent leader | `--lead` | coverage |
-| `.stat-grid` / `.stat` | headline stat cards | — | coverage, stats (card sets intentionally disjoint: transparency vs ops) |
-| `table.bare` | mono-headed data table | — | stats |
+| `.wire-chart` / `.funnel` / `.strip` / `.hist` / `.heatmap` / `.editions` | build-time SVG/CSS chart primitives, never a chart library; geometry in `src/lib/coverage.ts`; one accent lead per chart | `--lead` | coverage |
+| `.stat-grid` / `.stat` | headline stat cards, 7-day deltas | — | coverage (`/stats/` redirects here) |
+| `table.bare` | mono-headed data table | — | coverage |
 | `.article` | long-form column: head, kind/serial, title, standfirst, prose | `.article__foot` colophon | digests, about, contact |
 | `.prose` | reading body: serif, drop-cap, block-marker lists | — | digests, about |
 | `.digest-nav` | prev/next sibling nav (arrow-links) | — | digests |
@@ -236,7 +237,8 @@ date (colophon pages) may not.
 - **A. Broadsheet edition** — front, category, subcategory. Full masthead +
   dateline + nav; `wide`; main column + `.erail`. Back affordance: the erail
   (front has none; category → front; sub → its `.crumb`).
-- **B. Wire index** — archive, feeds, sources, coverage, stats, preferences.
+- **B. Wire index** — archive, feeds, sources, coverage (absorbing `/stats/`,
+  which redirects here), preferences.
   Full masthead + dateline + nav; single `.column`; `.section-head--page` +
   `.deck`. No back link — these are top-level, the masthead nav is the way
   back.

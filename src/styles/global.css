@@ -1038,6 +1038,121 @@ table.bare td { padding: 0.45rem 0.8rem 0.45rem 0; border-bottom: 1px solid var(
   .bar__val { grid-area: val; }
 }
 
+/* ── coverage charts — build-time SVG/CSS, no libraries ─────────────────── */
+/* The wire chart: SVG columns (ink-faint), curated strip below on its own
+   scale. Orange marks exactly one lead per band: the curated strip, the
+   funnel's final stage, the histogram's modal kept bucket. */
+.wire-chart { margin: var(--space-4) 0 0; }
+.wire-chart svg { display: block; width: 100%; height: 9rem; }
+.wire-chart svg rect { fill: var(--ink-faint); }
+.wire-chart__strip {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  gap: 1px; margin-top: 2px;
+}
+.wire-chart__cell { height: 0.55rem; background: var(--ground-2); }
+.wire-chart__cell--l1 { background: color-mix(in srgb, var(--accent) 30%, var(--ground-2)); }
+.wire-chart__cell--l2 { background: color-mix(in srgb, var(--accent) 55%, var(--ground-2)); }
+.wire-chart__cell--l3 { background: color-mix(in srgb, var(--accent) 80%, var(--ground-2)); }
+.wire-chart__cell--l4 { background: var(--accent); }
+.wire-chart__caption {
+  display: flex; flex-wrap: wrap; gap: 0.4rem 1.6rem; margin-top: 0.6rem;
+  font-family: var(--mono); font-size: var(--mono-xs);
+  letter-spacing: var(--track-meta); color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+/* funnel — log-scaled tracks; caption states the scale */
+.funnel { list-style: none; margin: var(--space-4) 0 0; padding: 0; display: grid; gap: 0.5rem; }
+.funnel__row {
+  display: grid; grid-template-columns: minmax(9rem, max-content) 1fr 8rem;
+  gap: 0 0.9rem; align-items: center;
+}
+.funnel__label {
+  font-family: var(--mono); font-size: var(--mono-xs); letter-spacing: var(--track-meta);
+  text-transform: uppercase; color: var(--ink-soft); white-space: nowrap;
+}
+.funnel__track { height: 0.7rem; background: var(--ground-2); border: 1px solid var(--hairline); position: relative; }
+.funnel__fill { position: absolute; inset: 0 auto 0 0; min-width: 2px; background: var(--ink-faint); }
+.funnel__row--lead .funnel__fill { background: var(--accent); }
+.funnel__val {
+  font-family: var(--mono); font-size: var(--mono-xs); color: var(--ink-faint);
+  text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+
+/* proportional strips (tier split, fetch outcomes, model mix) */
+.strip { display: flex; height: 0.9rem; border: 1px solid var(--hairline); background: var(--ground-2); margin-top: var(--space-3); }
+.strip__seg { background: var(--ink-faint); }
+.strip__seg + .strip__seg { border-left: 1px solid var(--ground); }
+/* strips lead in ink, not accent: a dominant lead segment would flood the
+   page orange (design rule: orange is a spice, never a large fill) */
+.strip__seg--lead { background: var(--ink); }
+.strip-legend {
+  display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; margin: 0.5rem 0 0; padding: 0;
+  list-style: none; font-family: var(--mono); font-size: var(--mono-xs);
+  letter-spacing: var(--track-meta); color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+/* relevance histogram — kept vs skipped, side by side per score */
+.hist {
+  display: grid; grid-template-columns: repeat(11, 1fr); gap: 0.35rem;
+  align-items: end; height: 8rem; margin-top: var(--space-4);
+  border-bottom: 1px solid var(--hairline-bold); padding-bottom: 0;
+}
+.hist__col { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; align-items: end; height: 100%; }
+.hist__kept { background: var(--ink-soft); min-height: 0; }
+.hist__skipped { background: var(--hairline-bold); min-height: 0; }
+.hist__col--lead .hist__kept { background: var(--accent); }
+.hist__x {
+  display: grid; grid-template-columns: repeat(11, 1fr); gap: 0.35rem;
+  margin-top: 0.35rem; font-family: var(--mono); font-size: var(--mono-xs);
+  color: var(--ink-faint); text-align: center; font-variant-numeric: tabular-nums;
+}
+
+/* rhythm heatmap — 7 x 24, ink levels, never orange */
+.heatmap { display: grid; gap: 2px; margin-top: var(--space-4); }
+.heatmap__row { display: grid; grid-template-columns: 2.4rem repeat(24, 1fr); gap: 2px; align-items: center; }
+.heatmap__day {
+  font-family: var(--mono); font-size: var(--mono-xs); letter-spacing: var(--track-meta);
+  text-transform: uppercase; color: var(--ink-faint);
+}
+.heatmap__cell { aspect-ratio: 1; background: var(--ground-2); }
+.heatmap__cell--l1 { background: color-mix(in srgb, var(--ink) 18%, var(--ground-2)); }
+.heatmap__cell--l2 { background: color-mix(in srgb, var(--ink) 38%, var(--ground-2)); }
+.heatmap__cell--l3 { background: color-mix(in srgb, var(--ink) 62%, var(--ground-2)); }
+.heatmap__cell--l4 { background: var(--ink); }
+
+/* editions calendar — weeks as columns, Mon-first */
+.editions { display: flex; gap: 3px; margin-top: var(--space-4); overflow-x: auto; padding-bottom: 0.3rem; }
+.editions__week { display: grid; gap: 3px; }
+.editions__day, .editions__weekly {
+  width: 0.8rem; height: 0.8rem; background: var(--ground-2);
+  border: 1px solid var(--hairline); display: block;
+}
+.editions__day--filled { background: var(--ink-faint); border-color: var(--ink-faint); }
+a.editions__day--filled:hover { background: var(--accent); border-color: var(--accent); }
+.editions__weekly { margin-top: 0.35rem; }
+.editions__weekly--filled { background: var(--accent); border-color: var(--accent); }
+.editions__specials { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; margin-top: var(--space-3); }
+
+/* stat-card 7d delta + band footnotes */
+.stat__delta {
+  display: block; margin-top: 0.15rem; font-family: var(--mono);
+  font-size: var(--mono-xs); letter-spacing: var(--track-meta);
+  color: var(--ink-faint); font-variant-numeric: tabular-nums;
+}
+.chart-note {
+  margin: var(--space-3) 0 0; max-width: var(--measure-prose);
+  color: var(--ink-soft); font-size: var(--small); text-wrap: pretty;
+}
+@media (max-width: 40rem) {
+  .funnel__row { grid-template-columns: 1fr auto; grid-template-areas: "label label" "track val"; row-gap: 0.25rem; }
+  .funnel__label { grid-area: label; }
+  .funnel__track { grid-area: track; }
+  .funnel__val { grid-area: val; }
+  .heatmap__row { grid-template-columns: 1.6rem repeat(24, 1fr); }
+}
+
 /* ── footer — the colophon grid: every column reads top-down ──────────── */
 .foot {
   border-top: 2px solid var(--ink); margin-top: var(--space-8);

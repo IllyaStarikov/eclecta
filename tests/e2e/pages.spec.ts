@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { BASE_URL } from '../../playwright.config';
 import { CATEGORIES } from '../../src/lib/taxonomy';
+import stats from '../../src/data/stats.json' with { type: 'json' };
 
 const u = (path: string) => `${BASE_URL}${path}`;
 const here = dirname(fileURLToPath(import.meta.url));
@@ -38,7 +39,6 @@ const routes = [
   '/archive/',
   '/feeds/',
   '/preferences/',
-  '/stats/',
   '/contact/',
   '/about/',
 ];
@@ -74,3 +74,18 @@ for (const route of consoleRoutes) {
     expect(errors, `console errors on ${route}`).toEqual([]);
   });
 }
+
+test('/stats/ redirects to /coverage/', async ({ page }) => {
+  await page.goto(u('/stats/'));
+  await page.waitForURL('**/coverage/');
+  expect(page.url()).toContain('/coverage/');
+});
+
+test('/coverage/ renders the v2 bands', async ({ page }) => {
+  test.skip(!('series_daily' in stats), 'thin stats.json: v2 bands hidden by design; sync the deployed pipeline to restore them');
+  await page.goto(u('/coverage/'));
+  await expect(page.getByText('Ninety days on the wire')).toBeVisible();
+  await expect(page.getByText('The funnel')).toBeVisible();
+  await expect(page.getByText('The models')).toBeVisible();
+  await expect(page.getByText('Rhythm')).toBeVisible();
+});

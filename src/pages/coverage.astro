@@ -1,11 +1,18 @@
 ---
+import { getCollection } from 'astro:content';
 import Base from '../layouts/Base.astro';
-import { site, href } from '../site';
+import { site, href, KIND_LABEL, type DigestKind } from '../site';
 import { parseStats } from '../lib/schema';
 import rawStats from '../data/stats.json';
+import sourcesData from '../data/sources.json';
+import {
+  columnChart, curatedStrip, editionsCalendar, fmtDay, funnelRows,
+  heatLevels, histogramRows, seriesCaption, stripSegments,
+} from '../lib/coverage';
 
 const stats = parseStats(rawStats);
 const n = (x: number) => x.toLocaleString('en-US');
+const pct1 = (x: number) => (Math.round(x * 10) / 10).toString();
 const generated = stats.generated_at.slice(0, 19).replace('T', ' ') + ' UTC';
 
 const SRC_CAT_LABEL: Record<string, string> = {
@@ -23,24 +30,102 @@ const SRC_CAT_LABEL: Record<string, string> = {
   security: 'Security',
 };
 const label = (k: string) => SRC_CAT_LABEL[k] ?? k.replaceAll('_', ' ');
-const pct = (v: number, max: number) => Math.max(2, Math.round((v / max) * 100));
+const barPct = (v: number, max: number) => Math.max(2, Math.round((v / max) * 100));
 
+/* ── band 3: ninety days on the wire ── */
+const series = stats.series_daily && stats.series_daily.length > 0 ? stats.series_daily : null;
+const chart = series ? columnChart(series, 900, 140) : null;
+const strip = series ? curatedStrip(series) : null;
+const firstTracked = series ? series.findIndex((p) => p.items > 0) : -1;
+const capSeries = series && firstTracked > 0 ? series.slice(firstTracked) : series;
+const cap = capSeries && capSeries.length > 0 ? seriesCaption(capSeries) : null;
+const clusters7d = series ? series.slice(-7).reduce((a, p) => a + p.clusters, 0) : null;
+
+/* ── band 4: the funnel ── */
+const funnel = stats.funnel ?? null;
+const funnelAll = funnel ? funnelRows(funnel.all_time) : null;
+const keptShare = funnel && funnel.all_time.items > 0
+  ? (funnel.all_time.published / funnel.all_time.items) * 100
+  : null;
+
+/* ── band 5: who feeds the wire ── */
 const byCat = Object.entries(stats.sources.by_category)
   .filter(([, c]) => c > 0)
   .sort((a, b) => b[1] - a[1]);
 const maxCat = Math.max(...byCat.map(([, c]) => c), 1);
-
-const TIER_NOTE: Record<string, string> = { '1': 'flagship', '2': 'core', '3': 'niche' };
-const byTier = Object.entries(stats.sources.by_tier).sort((a, b) => a[0].localeCompare(b[0]));
-const maxTier = Math.max(...byTier.map(([, c]) => c), 1);
-// exactly one orange leader per chart (byCat + surfaces are sorted desc, so it's
-// index 0; byTier is sorted by tier, so find the largest)
-const tierLeadIdx = byTier.findIndex(([, c]) => c === maxTier);
-
-const surfaces = stats.top_surfaces_7d.slice(0, 14);
+const TIER_LABEL: Record<string, string> = { '1': 'flagship', '2': 'core', '3': 'niche' };
+const tierStrip = stripSegments(
+  Object.entries(stats.sources.by_tier)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([t, c]) => ({ label: `tier ${t} ${TIER_LABEL[t] ?? ''}`.trim(), value: c }))
+);
+const tierLeadIdx = tierStrip.reduce(
+  (best, s, i) => (s.value > tierStrip[best].value ? i : best),
+  0
+);
+const paywalledCount = (sourcesData as { paywalled: boolean }[]).filter((s) => s.paywalled).length;
+const paywalledPct = (paywalledCount / Math.max((sourcesData as unknown[]).length, 1)) * 100;
+const topSources = stats.top_sources_30d && stats.top_sources_30d.length > 0 ? stats.top_sources_30d : null;
+const maxTopSource = topSources ? Math.max(...topSources.map((s) => s.items), 1) : 1;
+const surfaces = stats.top_surfaces_7d.slice(0, 10);
 const maxSurface = Math.max(...surfaces.map((s) => s.clusters), 1);
+const echo = stats.echo_dist ?? null;
+const echoStrip = echo
+  ? stripSegments([
+      { label: 'surfaces once', value: echo['1'] },
+      { label: 'twice', value: echo['2'] },
+      { label: '3 to 5 times', value: echo['3_5'] },
+      { label: '6+ times', value: echo['6_plus'] },
+    ])
+  : null;
+
+/* ── band 6: the models ── */
+const STAGE_LABEL: Record<string, string> = { triage: 'Triage', deep: 'Deep read', digest: 'Digest' };
+const configured = ['triage', 'deep', 'digest']
+  .filter((t) => stats.models[t])
+  .map((t) => ({ stage: STAGE_LABEL[t], model: stats.models[t] }));
+const used = stats.models_used_30d && stats.models_used_30d.length > 0 ? stats.models_used_30d : null;
+const usedCuration = used ? used.filter((m) => m.scope === 'curation') : [];
+const usedDigest = used ? used.filter((m) => m.scope === 'digest') : [];
+const curationStrip = stripSegments(usedCuration.map((m) => ({ label: m.model, value: m.count })));
+const digestStrip = stripSegments(usedDigest.map((m) => ({ label: m.model, value: m.count })));
+
+/* ── band 7: the bar ── */
+const hist = stats.relevance_hist_30d ? histogramRows(stats.relevance_hist_30d) : null;
+const histLead = hist && hist.max > 0
+  ? hist.rows.reduce((best, r) => (r.kept > best.kept ? r : best), hist.rows[0]).score
+  : -1;
+const fetchStrip = stats.fetch_30d
+  ? stripSegments([
+      { label: 'read', value: stats.fetch_30d.ok },
+      { label: 'paywalled', value: stats.fetch_30d.paywalled },
+      { label: 'failed', value: stats.fetch_30d.failed },
+      { label: 'skipped', value: stats.fetch_30d.skipped },
+    ])
+  : null;
+
+/* ── band 8: rhythm ── */
+const heat = stats.rhythm_7x24 ? heatLevels(stats.rhythm_7x24) : null;
+const heatTotal = stats.rhythm_7x24
+  ? stats.rhythm_7x24.reduce((a, row) => a + row.reduce((b, v) => b + v, 0), 0)
+  : 0;
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+/* ── band 9: editions ── */
+const digests = await getCollection('digests');
+const calendar = editionsCalendar(
+  digests.map((d) => ({
+    kind: d.data.kind,
+    date: d.data.date,
+    id: d.id,
+    title: d.data.title,
+    period: d.data.period,
+  })),
+  new Date(stats.generated_at)
+);
+const latest = stats.digests.latest ?? null;
 ---
-<Base title={`Coverage | ${site.name}`} description="What Eclecta reads and indexes: sources by category and tier, the loudest surfaces, and the volume behind every edition. Generated by the pipeline, not by hand.">
+<Base title={`Coverage | ${site.name}`} description="The wire, instrumented: ninety days of ingest, the funnel from firehose to picks, the sources, the models that did the reading, and every edition filed. Generated by the pipeline, not by hand.">
   <div class="section-head section-head--page">
     <h1>Coverage</h1>
     <span class="count">as of {generated}</span>
@@ -53,66 +138,356 @@ const maxSurface = Math.max(...surfaces.map((s) => s.clusters), 1);
     <a href={href('/sources/')}>sources</a> page.
   </p>
 
+  <div class="rail">
+    <span class="rail__label">The wire</span>
+    <span class="rail__rule"></span>
+    <span class="rail__count">running totals</span>
+  </div>
   <div class="stat-grid">
     <div class="stat"><b>{n(stats.sources.verified)}</b><span>verified sources</span></div>
-    <div class="stat"><b>{n(stats.pipeline.items_total)}</b><span>items ingested</span></div>
-    <div class="stat"><b>{n(stats.pipeline.clusters_total)}</b><span>stories clustered</span></div>
-    <div class="stat"><b>{n(stats.pipeline.curations_done)}</b><span>curated picks</span></div>
+    <div class="stat">
+      <b>{n(stats.pipeline.items_total)}</b><span>items ingested</span>
+      {stats.pipeline.items_7d != null && <span class="stat__delta">{n(stats.pipeline.items_7d)} this week</span>}
+    </div>
+    <div class="stat">
+      <b>{n(stats.pipeline.clusters_total)}</b><span>stories clustered</span>
+      {clusters7d != null && <span class="stat__delta">{n(clusters7d)} this week</span>}
+    </div>
+    <div class="stat">
+      <b>{n(stats.pipeline.curations_done)}</b><span>curated picks</span>
+      {stats.pipeline.curated_7d != null && <span class="stat__delta">{n(stats.pipeline.curated_7d)} this week</span>}
+    </div>
+    <div class="stat">
+      <b>{n(stats.digests.total)}</b><span>digests published</span>
+      {latest && <span class="stat__delta">latest {latest.date}</span>}
+    </div>
     {stats.pipeline.avg_relevance_7d != null && (
       <div class="stat"><b>{stats.pipeline.avg_relevance_7d.toFixed(1)}</b><span>avg relevance, 7d</span></div>
     )}
   </div>
 
+  {series && chart && strip && cap && (
+    <>
+      <div class="rail">
+        <span class="rail__label">Ninety days on the wire</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">items per day</span>
+      </div>
+      <figure class="wire-chart">
+        <svg viewBox="0 0 900 140" preserveAspectRatio="none" role="img" aria-label={`Items ingested per day over the last ${series.length} days. Busiest day ${fmtDay(cap.busiest.d)} with ${n(cap.busiest.items)} items.`}>
+          {chart.columns.map((c) => (
+            <rect x={c.x} y={c.y} width={c.w} height={c.h}><title>{c.title}</title></rect>
+          ))}
+        </svg>
+        <div class="wire-chart__strip" role="img" aria-label="Curated picks per day, own scale">
+          {strip.map((s) => (
+            <span class={`wire-chart__cell wire-chart__cell--l${s.level}`} title={s.title}></span>
+          ))}
+        </div>
+        <figcaption class="wire-chart__caption">
+          <span>busiest {fmtDay(cap.busiest.d)} {n(cap.busiest.items)}</span>
+          <span>quietest {fmtDay(cap.quietest.d)} {n(cap.quietest.items)}</span>
+          <span>mean {n(cap.mean)} per day</span>
+          {firstTracked > 0 && series && <span>item tracking since {fmtDay(series[firstTracked].d)}</span>}
+          <span>orange strip: picks curated that day</span>
+        </figcaption>
+      </figure>
+    </>
+  )}
+
+  {funnel && funnelAll && (
+    <>
+      <div class="rail">
+        <span class="rail__label">The funnel</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">all time</span>
+      </div>
+      <ul class="funnel">
+        {funnelAll.map((r, i) => (
+          <li class={i === funnelAll.length - 1 ? 'funnel__row funnel__row--lead' : 'funnel__row'}>
+            <span class="funnel__label">{r.label}</span>
+            <span class="funnel__track"><span class="funnel__fill" style={`width:${r.widthPct}%`}></span></span>
+            <span class="funnel__val">{n(r.count)}{r.pct != null && ` (${pct1(r.pct)}%)`}</span>
+          </li>
+        ))}
+      </ul>
+      {keptShare != null && (
+        <p class="chart-note">
+          Read everything, keep almost nothing: of {n(funnel.all_time.items)} items
+          ingested, {n(funnel.all_time.published)} stories were published,
+          {' '}{keptShare < 10 ? keptShare.toFixed(1) : Math.round(keptShare)}% of the
+          firehose. Track widths are log scale; on a linear track every stage
+          after the first would be invisible. Percentages are conversion from
+          the previous stage.
+        </p>
+      )}
+    </>
+  )}
+
   <div class="rail">
-    <span class="rail__label">Sources by category</span>
+    <span class="rail__label">Who feeds the wire</span>
     <span class="rail__rule"></span>
-    <span class="rail__count">{n(stats.sources.verified)} total</span>
+    <span class="rail__count">{n(stats.sources.verified)} sources</span>
   </div>
   <ul class="bars">
     {byCat.map(([cat, c], i) => (
       <li class={i === 0 ? 'bar bar--lead' : 'bar'}>
         <span class="bar__label">{label(cat)}</span>
-        <span class="bar__track"><span class="bar__fill" style={`width:${pct(c, maxCat)}%`}></span></span>
+        <span class="bar__track"><span class="bar__fill" style={`width:${barPct(c, maxCat)}%`}></span></span>
         <span class="bar__val">{n(c)}</span>
       </li>
     ))}
   </ul>
+  {tierStrip.length > 0 && (
+    <>
+      <div class="strip" role="img" aria-label="Sources by tier, proportional">
+        {tierStrip.map((s, i) => (
+          <span
+            class={i === tierLeadIdx ? 'strip__seg strip__seg--lead' : 'strip__seg'}
+            style={`width:${s.pct}%`}
+            title={`${s.label}: ${n(s.value)}`}
+          ></span>
+        ))}
+      </div>
+      <ul class="strip-legend">
+        {tierStrip.map((s) => (<li>{s.label} {n(s.value)}</li>))}
+        <li>paywalled {pct1(paywalledPct)}% of the roll</li>
+      </ul>
+    </>
+  )}
+
+  {topSources && (
+    <>
+      <div class="rail">
+        <span class="rail__label">Loudest feeds, 30 days</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">by items ingested</span>
+      </div>
+      <ul class="bars">
+        {topSources.map((s, i) => (
+          <li class={i === 0 ? 'bar bar--lead' : 'bar'}>
+            <span class="bar__label" title={s.name}>{s.name}</span>
+            <span class="bar__track"><span class="bar__fill" style={`width:${barPct(s.items, maxTopSource)}%`}></span></span>
+            <span class="bar__val">{n(s.items)}</span>
+          </li>
+        ))}
+      </ul>
+    </>
+  )}
 
   <div class="rail">
-    <span class="rail__label">Sources by tier</span>
+    <span class="rail__label">Where stories echo</span>
     <span class="rail__rule"></span>
-    <span class="rail__count">flagship to niche</span>
-  </div>
-  <ul class="bars">
-    {byTier.map(([tier, c], i) => (
-      <li class={i === tierLeadIdx ? 'bar bar--lead' : 'bar'}>
-        <span class="bar__label">Tier {tier} {TIER_NOTE[tier] ?? ''}</span>
-        <span class="bar__track"><span class="bar__fill" style={`width:${pct(c, maxTier)}%`}></span></span>
-        <span class="bar__val">{n(c)}</span>
-      </li>
-    ))}
-  </ul>
-
-  <div class="rail">
-    <span class="rail__label">Loudest surfaces, 7 days</span>
-    <span class="rail__rule"></span>
-    <span class="rail__count">by clusters</span>
+    <span class="rail__count">by clusters, 7 days</span>
   </div>
   <ul class="bars">
     {surfaces.map((s, i) => (
       <li class={i === 0 ? 'bar bar--lead' : 'bar'}>
         <span class="bar__label" title={s.name}>{s.name}</span>
-        <span class="bar__track"><span class="bar__fill" style={`width:${pct(s.clusters, maxSurface)}%`}></span></span>
+        <span class="bar__track"><span class="bar__fill" style={`width:${barPct(s.clusters, maxSurface)}%`}></span></span>
         <span class="bar__val">{n(s.clusters)}</span>
       </li>
     ))}
   </ul>
+  {echoStrip && echoStrip.length > 0 && (
+    <>
+      <div class="strip" role="img" aria-label="How many surfaces each story appears on">
+        {echoStrip.map((s, i) => (
+          <span
+            class={i === echoStrip.length - 1 ? 'strip__seg strip__seg--lead' : 'strip__seg'}
+            style={`width:${s.pct}%`}
+            title={`${s.label}: ${n(s.value)} stories`}
+          ></span>
+        ))}
+      </div>
+      <ul class="strip-legend">
+        {echoStrip.map((s) => (<li>{s.label} {n(s.value)}</li>))}
+      </ul>
+      <p class="chart-note">
+        A surface is a place a story shows up: Hacker News, an arXiv section,
+        a subreddit. Most stories surface once and stay there. The ones that
+        echo across six or more surfaces are the news, and the pipeline
+        clusters every echo into one pick so nothing is counted twice. The
+        echo distribution counts every story ever clustered; the bars above
+        cover the last seven days.
+      </p>
+    </>
+  )}
+
+  <div class="rail">
+    <span class="rail__label">The models</span>
+    <span class="rail__rule"></span>
+    <span class="rail__count">configured, then observed</span>
+  </div>
+  <div class="stat-grid">
+    {configured.map((m) => (
+      <div class="stat"><b style="font-size:1.1rem; font-family:var(--mono); font-weight:500;">{m.model}</b><span>{m.stage}</span></div>
+    ))}
+  </div>
+  {used && (
+    <>
+      {curationStrip.length > 0 && (
+        <>
+          <div class="strip" role="img" aria-label="Curation calls by model, last 30 days">
+            {curationStrip.map((s, i) => (
+              <span
+                class={i === 0 ? 'strip__seg strip__seg--lead' : 'strip__seg'}
+                style={`width:${s.pct}%`}
+                title={`${s.label}: ${n(s.value)} calls`}
+              ></span>
+            ))}
+          </div>
+          <ul class="strip-legend">
+            {usedCuration.map((m) => (
+              <li>{`${m.model}${m.backend ? ` on ${m.backend}` : ''} ${n(m.count)} calls${m.avg_relevance != null ? `, avg relevance ${m.avg_relevance.toFixed(1)}` : ''}`}</li>
+            ))}
+          </ul>
+        </>
+      )}
+      {digestStrip.length > 0 && (
+        <>
+          <div class="strip" role="img" aria-label="Digest runs by model, last 30 days">
+            {digestStrip.map((s, i) => (
+              <span
+                class={i === 0 ? 'strip__seg strip__seg--lead' : 'strip__seg'}
+                style={`width:${s.pct}%`}
+                title={`${s.label}: ${n(s.value)} digests`}
+              ></span>
+            ))}
+          </div>
+          <ul class="strip-legend">
+            {usedDigest.map((m) => (<li>{m.model} {n(m.count)} digests</li>))}
+          </ul>
+        </>
+      )}
+      <p class="chart-note">
+        The cards above are the configured routing; the strips are what
+        actually ran in the last 30 days, straight from the curation log.
+        The pipeline runs on a MacBook; judgment is rented by the token.
+      </p>
+    </>
+  )}
+
+  {hist && hist.max > 0 && (
+    <>
+      <div class="rail">
+        <span class="rail__label">The bar</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">relevance 0 to 10, 30 days</span>
+      </div>
+      <div class="hist" role="img" aria-label="Relevance score distribution, kept versus skipped, last 30 days">
+        {hist.rows.map((r) => (
+          <div class={r.score === histLead ? 'hist__col hist__col--lead' : 'hist__col'}>
+            <span class="hist__kept" style={`height:${(r.kept / hist.max) * 100}%`} title={`score ${r.score}: ${n(r.kept)} kept`}></span>
+            <span class="hist__skipped" style={`height:${(r.skipped / hist.max) * 100}%`} title={`score ${r.score}: ${n(r.skipped)} skipped`}></span>
+          </div>
+        ))}
+      </div>
+      <div class="hist__x">
+        {hist.rows.map((r) => (<span>{r.score}</span>))}
+      </div>
+      <p class="chart-note">
+        Dark columns were kept, pale columns were judged and skipped. You are
+        looking at the cut line: where the pale mass ends and the dark mass
+        begins is the bar a story has to clear.
+      </p>
+    </>
+  )}
+  {fetchStrip && fetchStrip.length > 0 && (
+    <>
+      <div class="strip" role="img" aria-label="Article fetch outcomes, last 30 days">
+        {fetchStrip.map((s, i) => (
+          <span
+            class={i === 0 ? 'strip__seg strip__seg--lead' : 'strip__seg'}
+            style={`width:${s.pct}%`}
+            title={`${s.label}: ${n(s.value)} articles`}
+          ></span>
+        ))}
+      </div>
+      <ul class="strip-legend">
+        {fetchStrip.map((s) => (<li>{s.label} {n(s.value)}</li>))}
+      </ul>
+    </>
+  )}
+
+  {heat && heatTotal > 0 && (
+    <>
+      <div class="rail">
+        <span class="rail__label">Rhythm</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">ingest by hour, UTC, 30 days</span>
+      </div>
+      <div class="heatmap" role="img" aria-label="Items ingested by weekday and hour, UTC, last 30 days">
+        {heat.map((row, d) => (
+          <div class="heatmap__row">
+            <span class="heatmap__day">{DAYS[d]}</span>
+            {row.map((level, h) => (
+              <span
+                class={`heatmap__cell heatmap__cell--l${level}`}
+                title={`${DAYS[d]} ${String(h).padStart(2, '0')}:00 UTC: ${n(stats.rhythm_7x24![d][h])} items`}
+              ></span>
+            ))}
+          </div>
+        ))}
+      </div>
+    </>
+  )}
+
+  {calendar.weeks.length > 0 && (
+    <>
+      <div class="rail">
+        <span class="rail__label">Editions</span>
+        <span class="rail__rule"></span>
+        <span class="rail__count">{n(stats.digests.total)} filed</span>
+      </div>
+      <div class="editions">
+        {calendar.weeks.map((w) => (
+          <div class="editions__week">
+            {w.days.map((day) =>
+              day.entry ? (
+                <a
+                  class="editions__day editions__day--filled"
+                  href={href(`/digests/${day.entry.id}/`)}
+                  title={`${KIND_LABEL[day.entry.kind as DigestKind] ?? day.entry.kind} ${day.entry.period}`}
+                ></a>
+              ) : (
+                <span class="editions__day" title={day.date}></span>
+              )
+            )}
+            {w.weekly ? (
+              <a
+                class="editions__weekly editions__weekly--filled"
+                href={href(`/digests/${w.weekly.id}/`)}
+                title={`${KIND_LABEL['weekly']} ${w.weekly.period}`}
+              ></a>
+            ) : (
+              <span class="editions__weekly"></span>
+            )}
+          </div>
+        ))}
+      </div>
+      {calendar.specials.length > 0 && (
+        <ul class="strip-legend editions__specials">
+          {calendar.specials.map((s) => (
+            <li><a href={href(`/digests/${s.id}/`)}>{KIND_LABEL[s.kind as DigestKind] ?? s.kind} {s.period}</a></li>
+          ))}
+        </ul>
+      )}
+      {latest && (
+        <p class="chart-note">
+          Latest edition: <a href={href(`/digests/${latest.kind}/${latest.period.toLowerCase()}/`)}>{latest.title}</a> ({KIND_LABEL[latest.kind as DigestKind] ?? latest.kind}, {latest.date}).
+          Squares are daily briefs; the row beneath each week marks its weekly
+          digest. Orange on hover means it links.
+        </p>
+      )}
+    </>
+  )}
 
   <p class="coverage-foot">
-    A “surface” is a place a story shows up: Hacker News, an arXiv section, a
-    subreddit. One story usually surfaces in several; the pipeline clusters them
-    into one pick, so the same news isn't counted twice. For the raw tables
-    (picks per section, the models behind each stage), see
-    <a href={href('/stats/')}>the numbers</a>.
+    Method, briefly: the pipeline reads every source on a cadence, clusters
+    the same story across surfaces, fetches and reads the strongest link,
+    scores relevance on a 0 to 10 rubric, and keeps almost nothing. Every
+    number on this page regenerates on each publish. The full feed roll is
+    on the <a href={href('/sources/')}>sources</a> page.
   </p>
 </Base>

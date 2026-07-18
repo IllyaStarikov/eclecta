@@ -56,7 +56,6 @@ const routes = [
   '/archive/',
   '/feeds/',
   '/preferences/',
-  '/stats/',
   '/contact/',
   '/about/',
   '/404.html',
