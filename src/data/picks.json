@@ -51,11 +51,66 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 229121,
+    "story_id": "s_c51510cea2eac4d1",
+    "title": "–end-of-options",
+    "relevance": 8,
+    "score": 5.301,
+    "why": "If your tool forks git with an untrusted URL or ref, one of nineteen surveyed package managers actually uses the flag that stops that string being parsed as an option, so the safe pattern is almost universally missing from code you depend on.",
+    "notes": [
+      "git has two distinct terminators: `--` separates revisions from pathspecs (so `git log main -- README.md` reads as commits on main touching that file), leaving the revision slot with no terminator; `--end-of-options`, added in git 2.24.0 (Nov 2019), fills that gap. The safe invocation for an untrusted revision is `git log --end-of-options \"$rev\" -- \"$path\"`, with both markers doing separate jobs.",
+      "Subcommand support was staggered: rev-parse only got the flag in 2.30.0 (its own hand-rolled parser), and checkout/reset rejected it until 2.43.1 (Feb 2024) because they parse `--` themselves and left `--end-of-options` in the argv where their parsers choked.",
+      "CWE-88 argument injection needs no shell: the wrapper builds a clean argv and calls exec directly, but git parses a dash-leading argument as an option such as `--upload-pack=<cmd>`, `-c core.sshCommand=<cmd>`; hg has `--config=alias...=!<shell>`, ssh has `-oProxyCommand=<cmd>`. CVE-2019-13139 hit `docker build` this way via a git URL `#ref:dir` fragment.",
+      "On one day in Aug 2017, git, Mercurial, Subversion and CVS disclosed near-identical ssh `-oProxyCommand` hostname injections (CVE-2017-1000117 / -1000116 / CVE-2017-9800 / -12836); per Phabricator's post-mortem only Subversion fixed it with `--`, git and Mercurial validated hostname format instead because `--` isn't supported by every ssh implementation.",
+      "Of 19 package managers checked, 17 fork the git binary by default; only Go's cmd/go uses `--end-of-options`, added across the board in Jan 2026 as the CVE-2025-68119 fix (plus `HGPLAIN=+strictflags` for hg). Cargo defaults to libgit2 and Poetry to dulwich (since 1.2.0). Most other guards (Bundler, CocoaPods, Poetry) were added only as CVE patches, not in original implementations.",
+      "Composer's CVE-2022-24828 advisory names `--end-of-options` as the correct fix but rejects dash-leading branch names instead because it supports pre-2.24.0 git; the author's own Homebrew PR raises the floor only to 2.30.0 and leaves checkout/reset alone, since covering them needs 2.43.1, still ahead of several supported distros (Ubuntu 20.04 ships 2.25.1)."
+    ],
+    "summary": "The article audits adoption of git's `--end-of-options` flag, which exists because git had already repurposed `--` to separate revisions from pathspecs, leaving untrusted revision strings that start with a dash to be parsed as options. This enables CWE-88 argument injection, a shell-free attack where a clean argv reaches git and a dash-leading argument becomes a dangerous option like `--upload-pack=<cmd>` or ssh's `-oProxyCommand`; the author cites CVE-2019-13139 in docker build and a four-VCS coordinated disclosure in Aug 2017. Support for the flag rolled out unevenly (2.24.0 in 2019, rev-parse in 2.30.0, checkout/reset only in 2.43.1), which complicates adoption for tools supporting older git. Of 19 package managers surveyed, 17 fork the git binary and only Go's cmd/go uses `--end-of-options` (added Jan 2026 for CVE-2025-68119); most others rely on `--` or leading-dash checks added reactively as CVE patches, and several tools maintain minimum-git floors below 2.24.0. Alternatives like libgit2, gitoxide, go-git, JGit and dulwich avoid the argv boundary entirely but must track every upstream checkout-safety fix themselves. The author closes by filing a Homebrew PR raising its git floor to 2.30.0 and adding the flag to clone, remote set-url, ls-remote and rev-parse calls.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "audit of --end-of-options adoption across 19 package managers",
+    "audience": "software engineers building tooling that shells out to git/hg/ssh with untrusted input",
+    "source_url": "https://nesbitt.io/2026/07/21/end-of-options.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/cxz7vd/git_end_options",
+        "points": 8,
+        "comments": 1,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://nesbitt.io/2026/07/21/end-of-options.html",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://nesbitt.io/2026/07/21/end-of-options.html",
+        "points": null,
+        "comments": null,
+        "name": "Andrew Nesbitt"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-07-21T10:00:00+00:00",
+    "published_at": "2026-07-21T14:27:06.277526+00:00",
+    "curated_at": "2026-07-21T14:27:06.277526+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 225033,
     "story_id": "s_98f9ae96cf678cc8",
     "title": "Agent swarms and the new model economics",
     "relevance": 8,
-    "score": 7.235,
+    "score": 7.192,
     "why": "Cursor reports the same task built for $1,339 with an Opus-planner/Composer-worker split versus $10,565 with a single frontier model, evidence that routing planning to expensive models and execution to cheap ones is where agent-fleet economics now live.",
     "notes": [
       "The test: implement the full 835-page SQLite manual in Rust with source code, test suites, the SQLite binary, and internet access withheld; graded against sqllogictest (millions of queries), which the swarm was never told existed. Cursor manually reviewed runs for cheating.",
@@ -84,8 +139,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48982535",
-        "points": 232,
-        "comments": 103,
+        "points": 241,
+        "comments": 116,
         "name": "Hacker News"
       },
       {
@@ -106,7 +161,7 @@
     "story_id": "s_ef1eda8a6e38cce8",
     "title": "Human mathematicians are being outcounterexampled",
     "relevance": 8,
-    "score": 7.514,
+    "score": 7.471,
     "why": "A Lean maintainer reports that in a single summer AI systems went from disproving one open conjecture to auto-generating 1.2M lines of machine-checked proof and knocking off three long-standing problems, so verification, not discovery, is becoming the bottleneck for trusting math.",
     "notes": [
       "Timeline (as reported by Kevin Buzzard): ChatGPT disproved Erdős' Unit Distance conjecture on 20 May 2026 using a Golod-Shafarevich construction; Logical Intelligence (cofounded by Yann LeCun, CSO Fields Medallist Mike Freedman) autoformalized the paper's key implication in Lean within a week; OpenAI's Boris Alexeev used a new model 'Sol' to formalize it from axioms, including hard global class field theory results the author had thought a fantasy to formalize in 2025.",
@@ -136,8 +191,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48983382",
-        "points": 393,
-        "comments": 181,
+        "points": 416,
+        "comments": 191,
         "name": "Hacker News"
       },
       {
@@ -182,7 +237,7 @@
     "story_id": "s_721b28d7d9648dc9",
     "title": "Who’s Afraid of Chinese Models?",
     "relevance": 8,
-    "score": 7.637,
+    "score": 7.594,
     "why": "If you buy inference, the piece argues the Chinese-model price gap is mostly a compute-shortage mirage: frontier labs are charging far above marginal cost, and once supply catches up the real battle is cost-per-unit-of-intelligence, not sticker price per token.",
     "notes": [
       "Reframes open-weights economics: 'free' refers only to R&D (a fixed cost); COGS scales with revenue. Example: $0.50 inference cost per $1 of revenue means $50M COGS at $100M revenue, $50K at $100K.",
@@ -209,8 +264,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48977128",
-        "points": 757,
-        "comments": 569,
+        "points": 815,
+        "comments": 623,
         "name": "Hacker News"
       },
       {
@@ -726,7 +781,7 @@
     "story_id": "s_45df728b9c33c0c9",
     "title": "Trump administration reportedly reviving push to ban Chinese AI models following Kimi K3 launch, citing cybersecurity concerns — downloadable open weights could make an outright U.S. ban nearly impossible to enforce amid growing adoption",
     "relevance": 7,
-    "score": 5.508,
+    "score": 5.465,
     "why": "If the administration follows through, US enterprises self-hosting cheap Chinese open-weight models like Kimi and DeepSeek face procurement bans and Entity List threats rather than a clean legal prohibition, so the risk shifts from \"is it allowed\" to \"will your vendors and cloud providers cut you off.\"",
     "notes": [
       "Per a July 20 Axios report cited by Tom's Hardware, the Trump administration is reviving earlier, paused efforts to curb Chinese AI models after the launch of Moonshot AI's Kimi K3, citing cybersecurity concerns.",
@@ -784,7 +839,7 @@
     "story_id": "s_2a7734777bc31df2",
     "title": "Flock Credibility Lost as It Repeatedly Lies to City Councils, Police, & Public",
     "relevance": 7,
-    "score": 5.857,
+    "score": 5.814,
     "why": "If your city runs Flock ALPR cameras, the vendor's own statements about heat maps, federal access, and abuse controls have been documented as false, so the surveillance surface is wider than officials were told.",
     "notes": [
       "Oshkosh, WI set a record: the council revoked its Flock contract one day after approving it, after Flock's CISO told members the system did not 'create a pattern or heat map of an individual's movement.' Flock later admitted the system produces a heat map of where a vehicle's images were captured for up to a month, and dismissed the false statement as 'one small misconception' and 'a minor nuance.'",
@@ -833,7 +888,7 @@
     "story_id": "s_c1afa676eb900115",
     "title": "Linux kernel will support $ORIGIN, sort of",
     "relevance": 7,
-    "score": 7.448,
+    "score": 7.85,
     "why": "A programmable binfmt_misc hook headed for -next lets the kernel rewrite PT_INTERP at exec time, which is the missing piece for building relocatable Nix, Bazel, and Buck binaries that find their loader via $ORIGIN instead of a hardcoded /nix/store path.",
     "notes": [
       "The author (Farid Zakaria) first proposed direct $ORIGIN support in the VFS layer on the LKML; VFS maintainer Christian Brauner instead steered it toward eBPF struct_ops attached to binfmt_misc, so the interpreter is chosen by a verified in-kernel program rather than a fixed rule.",
@@ -866,7 +921,7 @@
       },
       {
         "url": "https://lobste.rs/s/msg39b/linux_kernel_will_support_origin_sort",
-        "points": 2,
+        "points": 6,
         "comments": 0,
         "name": "Lobsters"
       },
@@ -875,9 +930,15 @@
         "points": null,
         "comments": null,
         "name": "Hacker News"
+      },
+      {
+        "url": "https://fzakaria.com/2026/07/20/linux-kernel-will-support-origin-sort-of",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
       }
     ],
-    "sources_count": 3,
+    "sources_count": 4,
     "first_seen": "2026-07-21T06:29:22+00:00",
     "published_at": "2026-07-21T09:24:43.122269+00:00",
     "curated_at": "2026-07-21T09:24:43.122269+00:00",
@@ -888,7 +949,7 @@
     "story_id": "s_485ab95149152bfd",
     "title": "7 Sandbox Escape Vulnerabilities Across 4 Coding Agent Vendors",
     "relevance": 7,
-    "score": 6.06,
+    "score": 6.017,
     "why": "If you run Cursor, Codex, Gemini CLI, or Antigravity on a dev box, the sandbox does not contain the agent's blast radius: it can write config that an unsandboxed helper on the same machine executes microseconds later, reaching your SSH keys, cloud tokens, and release paths.",
     "notes": [
       "Pillar Research reports reproducing 7 sandbox escapes across 4 vendors (Cursor, Codex, Gemini CLI, Antigravity); these are vendor-attributed self-reported findings released as a daily 'Week of Sandbox Escapes' series, with no CVEs or vendor responses cited in the text.",
@@ -940,7 +1001,7 @@
     "story_id": "s_84945a709ec6cf77",
     "title": "An ordinary laptop solved a problem thought to require a quantum computer",
     "relevance": 7,
-    "score": 5.947,
+    "score": 5.904,
     "why": "The D-Wave dynamics simulation that a March 2025 Science paper called beyond classical reach now runs on a laptop, moving the classical-quantum frontier and raising the bar for what counts as quantum advantage.",
     "notes": [
       "Team: Simons Foundation Flatiron Institute CCQ (Joseph Tindall, first author; Miles Stoudenmire) with Boston University collaborators, published in Science 2026 (vol 392, p868, DOI 10.1126/science.adx2728).",
@@ -1003,7 +1064,7 @@
     "story_id": "s_576cc4ef6137be85",
     "title": "Understanding Reasoning from Pretraining to Post-Training",
     "relevance": 7,
-    "score": 6.125,
+    "score": 6.102,
     "why": "If you budget RL post-training, this argues you can predict post-RL reasoning performance from pretraining loss before spending any RL compute, and that longer pretraining raises the ceiling RL can reach.",
     "notes": [
       "Uses chess as a controlled testbed: pretrain LMs from 5M to 1B params on human games, SFT on synthetic reasoning traces, then RL on puzzles with verifiable rewards, isolating pretraining vs RL contributions.",
@@ -1063,7 +1124,7 @@
     "story_id": "s_75e917cc2638bdec",
     "title": "Meta Garbage Collection: Using OCaml's GC to GC Rust",
     "relevance": 7,
-    "score": 6.418,
+    "score": 6.374,
     "why": "A verification tool cut a common quadratic blowup to linear in about 40 lines by making OCaml's garbage collector reclaim Tree Borrows state, turning a 3.02s run into 0.54s.",
     "notes": [
       "Soteria Rust is an OCaml symbolic-execution tool that checks Rust programs against Tree Borrows, tracking every reference to a memory location as a tree of five-state nodes; each read/write updates node states, and reaching the fault state signals UB.",
@@ -1113,7 +1174,7 @@
     "story_id": "s_e6b3c8f68e68013f",
     "title": "How we measured AI writing across arXiv, and where the measurement breaks",
     "relevance": 7,
-    "score": 6.831,
+    "score": 6.788,
     "why": "Roughly a third of new arXiv papers, and about 65% in computer science, now read as machine-written by a detector calibrated so that pre-ChatGPT text flags at only 0.4%, which sets a defensible floor under the usual \"N% is now AI\" headline.",
     "notes": [
       "Method: 12,750 papers scored across ten field groups, ~25 papers/field/month from Jan 2023 to Jul 2026, plus eight control months in 2021-2022; version-1 PDFs only, so 2026 revisions cannot leak modern text into 2023 slots.",
@@ -1162,7 +1223,7 @@
     "story_id": "s_e65193d53deef4a2",
     "title": "You only need the frontier model for one single edit",
     "relevance": 7,
-    "score": 7.114,
+    "score": 7.07,
     "why": "If an agent's bill is dominated by reads, the standard plan-then-cheap-execute split doubles the expensive part; the article's own benchmarks put frontier-quality work at roughly half the cost by handing off the live context window instead of a plan document.",
     "notes": [
       "The core claim: an agent's cost scales as O(reads), not compute. In one anecdotal trace ~9% of tokens were edits and the rest was reading, so a plan handoff makes both models read everything (once at frontier prices, once at cheap prices) rather than moving the expensive part.",
@@ -1191,8 +1252,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48916512",
-        "points": 188,
-        "comments": 58,
+        "points": 199,
+        "comments": 71,
         "name": "Hacker News"
       },
       {
@@ -1213,7 +1274,7 @@
     "story_id": "s_a6289b435253c23f",
     "title": "Five US tech giants' hidden debts soar to $1.65tn on opaque AI funding",
     "relevance": 7,
-    "score": 8.75,
+    "score": 8.694,
     "why": "The AI buildout is being financed through obligations that don't show up as debt on balance sheets, so the risk you're pricing into these five stocks understates their real leverage by an estimated $1.65tn.",
     "notes": [
       "Nikkei estimates off-balance-sheet debt across five US tech giants at $1.65tn, up roughly eightfold in about four years; the figure now exceeds these companies' reported on-balance-sheet debt.",
@@ -1276,7 +1337,7 @@
     "story_id": "s_3aad57bdd1e880c2",
     "title": "China’s open-weights AI strategy is winning",
     "relevance": 7,
-    "score": 7.794,
+    "score": 7.75,
     "why": "If a16z's cited 80% figure holds, the open Chinese models most startups already depend on are commoditizing the exact layer OpenAI and Anthropic charge for, putting the AI-driven portion of US spending at risk.",
     "notes": [
       "Core argument: model weights themselves carry little moat because API access makes swapping vendors trivial; the durable moat sits in enterprise services, integrations, and contracts around the model.",
@@ -1305,8 +1366,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=48979269",
-        "points": 1154,
-        "comments": 864,
+        "points": 1170,
+        "comments": 878,
         "name": "Hacker News"
       },
       {
@@ -1327,7 +1388,7 @@
     "story_id": "s_fb6b99462b8ef7c9",
     "title": "Hacker wipes Romania's land registry database",
     "relevance": 7,
-    "score": 8.374,
+    "score": 8.33,
     "why": "A single attacker with valid credentials halted Romania's entire real-estate market for a week and forced a national agency to rebuild its network from scratch, a reminder that destructive extortion against public registries is now a repeat pattern, not a one-off.",
     "notes": [
       "Per Risky Business sources, the hacker logged into Romania's ANCPI cadastre agency with valid credentials, mapped internal systems, then wiped systems and backups after failing to extort the agency; data deletion began July 14, and stolen data (employee credentials, internal documents, network details) went up for sale on a hacking forum a day later.",
@@ -1383,7 +1444,7 @@
     "story_id": "s_51d7793edae75944",
     "title": "Generative Compilation: On-the-Fly Compiler Feedback as AI Generates Code",
     "relevance": 7,
-    "score": 5.265,
+    "score": 5.238,
     "why": "If you generate Rust with an LLM, this method catches type and borrow errors during decoding instead of after a full generation, cutting non-compiling outputs without white-box model access.",
     "notes": [
       "The core device is a 'sealor': a mostly syntax-guided transform that completes a partial program into one a standard off-the-shelf compiler can diagnose, so feedback works on black-box models.",
@@ -1434,7 +1495,7 @@
     "story_id": "s_b4df0f03f652abcf",
     "title": "Stop Means Stop: Measuring and Repairing the Enforcement Gap in Agent-Framework Control Primitives",
     "relevance": 7,
-    "score": 5.21,
+    "score": 5.186,
     "why": "If you run an LLM agent behind a human-approval gate, a rejected action can still fire during the pause: 215 of 1,200 live runs executed the gated side effect before anyone said yes.",
     "notes": [
       "Tested six widely used open-source agent frameworks; the implied barrier contract (no gated side effect runs while a run is paused, cancelled, or timed out) held on none of them.",
@@ -1492,7 +1553,7 @@
     "story_id": "s_d882d50519d5145b",
     "title": "WordPress Core \"wp2shell\" RCE flaws get public exploits, patch now",
     "relevance": 7,
-    "score": 3.882,
+    "score": 3.874,
     "why": "Any default WordPress 6.9.0–6.9.4 or 7.0.0–7.0.1 site is now a pre-auth RCE target with public PoCs and confirmed in-the-wild exploitation, so patching to 6.9.5 or 7.0.2 is time-sensitive.",
     "notes": [
       "The chain combines CVE-2026-63030, a REST API batch-route confusion bug added in WordPress 6.9, with CVE-2026-60137, a SQL injection in the WP_Query 'author__not_in' parameter, to reach unauthenticated RCE.",
@@ -1543,7 +1604,7 @@
     "story_id": "s_09dc685644e84757",
     "title": "Python 3.15's JIT is now back on track",
     "relevance": 7,
-    "score": 3.859,
+    "score": 3.852,
     "why": "After a year where the CPython JIT was often slower than the interpreter and its sponsor pulled funding, a volunteer team now reports the 3.15 alpha JIT beating the interpreter by 5-12%, so JIT-on-by-default in a future CPython is again plausible.",
     "notes": [
       "Reported speedups (geometric means, preliminary): 11-12% faster than the tail-calling interpreter on macOS AArch64, 5-6% faster than the standard interpreter on x86_64 Linux; per-benchmark results range from ~20% slowdown to over 100% speedup, excluding the unpack_sequence microbenchmark. These are self-reported numbers from JIT contributor Ken Jin.",
@@ -1594,7 +1655,7 @@
     "story_id": "s_ec0a802926eccbcf",
     "title": "AI Mania Is Eviscerating Global Decision-Making",
     "relevance": 7,
-    "score": 7.035,
+    "score": 7.028,
     "why": "If you are being measured on token spend or asked to \"AI-wash\" work you did by hand, this essay names the incentive trap and argues from consulting fieldwork that the productivity numbers your leadership repeats are, as a rule, fabricated.",
     "notes": [
       "Nikhil Suresh (Ludicity) writes from consulting experience: ~300 professional catchups and lead technical work on most of his firm's engagements. He claims a 0% success rate across every AI project his team observed over 18 months, including projects they weren't hired for. This is self-reported anecdote, not audited data, and 'failure' is his own judgment.",
@@ -1655,7 +1716,7 @@
     "story_id": "s_afac9dbaaeb75cae",
     "title": "Speech Recognition and TTS in less than 500kb",
     "relevance": 7,
-    "score": 4.907,
+    "score": 4.902,
     "why": "A full offline voice loop, wake-word to spoken reply, now fits on an 80-cent RP2350 with no cloud, no phone, and no network dependency, making voice control viable on the cheapest microcontrollers.",
     "notes": [
       "Reference platform is the Raspberry Pi RP2350 (~$0.80 retail, 520 KiB SRAM); the demo pipeline provisions ~468 KiB SRAM and ~3.6 MiB flash, including the embedded neural voice pack.",
@@ -1759,7 +1820,7 @@
     "story_id": "s_0fd1aab3b10380c5",
     "title": "Regressive JPEGs",
     "relevance": 7,
-    "score": 7.581,
+    "score": 7.539,
     "why": "You can smuggle a playing video, or a stateful single-page app, into one standards-compliant JPEG with no JavaScript or CSS, using only how browsers render progressive scans over a slow connection.",
     "notes": [
       "Progressive JPEGs split compressed data into multiple scans, each with its own header setting channels, DCT spectral (bin) range, and precision; a partial download renders at reduced quality instead of cutting off.",
@@ -2646,7 +2707,7 @@
     "story_id": "s_837ac4de69d841c5",
     "title": "Meta in Talks to Lease Computing Power to Anthropic in Potential $10 Billion Deal",
     "relevance": 7,
-    "score": 5.677,
+    "score": 5.664,
     "why": "If confirmed, Meta renting compute to Anthropic would mark a structural shift: a frontier lab and social-media giant becoming an infrastructure landlord to a direct model rival, a sign of how scarce and monetizable AI compute has become.",
     "notes": [
       "NYT reports (2026-07-17) that Meta is in talks to lease computing power to Anthropic in a deal potentially worth ~$10 billion; framed as talks, not a signed agreement.",
@@ -2727,7 +2788,7 @@
     "story_id": "s_bbc8d77ede8ed283",
     "title": "LongStraw: Long-Context RL Beyond 2M Tokens under a Fixed GPU Budget",
     "relevance": 7,
-    "score": 7.242,
+    "score": 7.198,
     "why": "If your agents accumulate million-token trajectories, this paper argues you can push RL post-training past 2M tokens on a fixed, commodity GPU budget instead of leaning on length generalization at deployment.",
     "notes": [
       "The problem framing: inference is approaching million-token contexts while RL post-training often stays at 256K tokens or below, forcing reliance on length generalization at deployment; this matters most for agents whose observations, tool outputs, documents, and prior decisions accumulate over long trajectories.",
@@ -3241,69 +3302,6 @@
     "first_seen": "2026-07-15T04:00:00+00:00",
     "published_at": "2026-07-16T17:30:44.105493+00:00",
     "curated_at": "2026-07-16T17:30:44.105493+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 163179,
-    "story_id": "s_205260e0ab26ff39",
-    "title": "How Our Rust-to-Zig Rewrite Is Going",
-    "relevance": 7,
-    "score": 6.104,
-    "why": "A rare longitudinal retrospective on a real 300K-line Rust-to-Zig compiler rewrite, with concrete build-time benchmarks and memory-safety bug counts, gives you evidence instead of forum tribalism when weighing the two languages for systems work.",
-    "notes": [
-      "The rewrite of Roc's compiler took 487 days to reach feature parity; the codebase grew from ~354K Rust LoC to ~464K Zig LoC as features were added alongside the port, so it is explicitly not an apples-to-apples comparison. The author contrasts this with Bun's 11-day Zig-to-Rust port, noting theirs was a direct port while Roc's was a rewrite motivated by architectural changes.",
-      "Build times: Zig 0.17 with `zig build --watch -fincremental` rebuilds a change in ~35ms vs. Rust 1.97's 3.4s incremental (down from Rust 1.85's 10.0s over the same 18 months). Caveat: `-fincremental` is broken by a bug in stable Zig 0.16.0 and only works on x86-64, so Roc has not yet reaped this in practice; getting the fix requires nightly 0.17.0 with breaking changes.",
-      "Memory-corruption bug counts, classified by Claude Opus 4.8: 21 of 2,596 total reports in the Rust era, 10 of 431 in the Zig era. None of the 21 Rust cases were in compiler logic (all miscompilations from emitted code); 8 of 10 Zig cases were miscompilations, and the 2 remaining were use-after-frees in error-reporting paths (roc check, roc bundle) that the borrow checker would have caught. Author's takeaway: choosing Rust, Zig ReleaseFast, or Zig ReleaseSafe would have made no appreciable difference.",
-      "Rationale for Zig: the original Rust compiler already had ~1,200 `unsafe` uses because emitting machine code is inherently memory-unsafe work, blunting Rust's safe-subset advantage. Other cited factors: faster builds, Zig's ecosystem-wide assumption of granular/arena allocators and struct-of-arrays (vs. Rust's global-allocator assumption), and more relevant off-the-shelf Zig code for niche needs like emitting LLVM bitcode.",
-      "Zero-parse deserialization: all compiler data structures use arrays with 32-bit indices in struct-of-arrays form, so on-disk cache can be written as-is and reloaded via pointer relocations with no parsing step (a technique borrowed from Zig's compiler and game programming).",
-      "New-compiler wins for Roc programmers: `roc build --opt=size` produces a 31KB wasm binary for the sample game vs. >62KB originally; string interpolation inside pattern matching enables type-safe HTTP routing with zero heap allocations; automatic hot code loading and deterministic cross-compilation (e.g. `--target=x64musl`). A formal 0.1.0 release is targeted for later in the year."
-    ],
-    "summary": "Richard Feldman reports on the Roc team's 487-day rewrite of their ~300K-line compiler from Rust to Zig, which recently reached feature parity (formal 0.1.0 targeted later this year). The piece frames the choice as workload-specific rather than a verdict on either language: because a compiler emitting machine code is inherently memory-unsafe (the Rust version already carried ~1,200 `unsafe` uses), Zig was chosen for faster builds, granular/arena allocator and struct-of-arrays support, and better tooling for unavoidably unsafe code. On memory safety, bug counts classified by Claude Opus 4.8 show 21/2,596 corruption bugs in the Rust era vs. 10/431 in the Zig era, with only 2 Zig cases (UAFs in error reporting) that Rust's borrow checker would have caught; the author concludes the tooling choice made no appreciable practical difference. On build times, Zig 0.17's `-fincremental` hits ~35ms rebuilds vs. Rust 1.97's 3.4s, though that feature is broken in stable 0.16 and x86-64 only, so the gain is not yet realized. The rewrite also unlocked user-facing features: a 31KB (vs. >62KB) wasm game binary, hot code loading, deterministic cross-compilation, zero-parse cache deserialization, and zero-allocation HTTP routing via string interpolation in pattern matching. The author repeatedly stresses the comparison is not apples-to-apples given ~50% codebase growth and many concurrent design changes.",
-    "channels": [
-      "devtools",
-      "security"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "First longitudinal retrospective of a real 300K+ LoC Rust→Zig compiler rewrite with concrete build-time benchmarks and memory-safety bug-count data across both eras.",
-    "audience": "Systems programmers and compiler engineers evaluating Rust vs. Zig for long-lived, memory-intensive codebases.",
-    "source_url": "https://rtfeldman.com/rust-to-zig",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=48933149",
-        "points": 396,
-        "comments": 221,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lobste.rs/s/axdfjx/how_our_rust_zig_rewrite_is_going",
-        "points": 185,
-        "comments": 70,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://rtfeldman.com/rust-to-zig",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://rtfeldman.com/rust-to-zig",
-        "points": null,
-        "comments": null,
-        "name": "Tildes"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-07-16T11:39:27+00:00",
-    "published_at": "2026-07-16T16:59:19.298877+00:00",
-    "curated_at": "2026-07-16T16:59:19.298877+00:00",
     "model": "claude-opus-4-8"
   }
 ]
