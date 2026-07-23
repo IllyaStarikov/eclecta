@@ -133,10 +133,17 @@ def query_items(
         "LEFT JOIN articles a ON a.cluster_id = c.id "
         "WHERE cu.status='done' AND cu.skip=0 AND cu.relevance_score >= ?"
     )
-    args: List[Any] = [
-        int(min_rel) if min_rel is not None
-        else int(cfg.funnel.get("min_relevance_for_feed", 6))
-    ]
+    if min_rel is not None:
+        _eff_rel = int(min_rel)
+    else:
+        import datetime as _dt
+
+        from . import adaptive
+        _eff_rel = adaptive.effective_min_relevance(
+            conn, cfg.funnel.get("adaptive", {}),
+            _dt.datetime.now(_dt.timezone.utc),
+            base=int(cfg.funnel.get("min_relevance_for_feed", 6)))
+    args: List[Any] = [_eff_rel]
     if channel:
         sql += " AND cu.channels LIKE ?"
         args.append('%%"%s"%%' % channel)

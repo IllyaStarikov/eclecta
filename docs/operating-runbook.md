@@ -108,6 +108,38 @@ against it. This mirrors `digest.py:run` without the model call:
 6. Verify (`npm run check && npm run build && npm test`), then restore `push`
    and let the worker ship.
 
+## Self-learning layer
+
+Four repo-side capabilities let the pipeline (and the nightly pass) improve
+curation over time. All are opt-in or additive; none touch live services.
+
+- **Eval sets** (`eval/`). A versioned gold corpus + judge replay.
+  `signal eval grow` adds provisional candidates from the DB (read-only,
+  `published_ledger` = featured truth); `signal eval run` re-scores the current
+  judge against the gold set on the **free local backend** ($0) and writes
+  `eval/results/<date>.json` (agreement / precision / recall / MAE / category).
+  A drop with the gold unchanged is a judge regression. `signal eval label`
+  confirms/corrects a label.
+- **Adaptive bar** (`funnel.adaptive`, default **off**). When enabled, the
+  selection gates (curate finalists, picks, editions, feed) use a trailing-window
+  percentile clamped to a floor/ceiling that ramps upward over `ramp_days`, so
+  "featured" hardens over time. A floor guarantees the site never starves; the
+  effective bar is recorded in `runs.stats`. Flipping `enabled` true is a staged
+  config change (reloads per job).
+- **Momentum** (`momentum`, default **off** for the score multiplier). The daily
+  `momentum` worker job writes `kb/momentum.json` (per-category volume, momentum,
+  `rising|steady|fading`, `emerging`). When enabled, `score.py` scales the
+  `topic_match` term by a clamped per-category multiplier — leaning toward what's
+  gaining momentum. The artifact is always written; only the multiplier is gated.
+- **Library** (`/library/`). The daily `library` worker job grows a non-person
+  entity registry a few at a time and rebuilds a few entity pages from coverage
+  (`kb/library/` canonical notes + reader-safe `src/content/library/*.md`).
+  `signal library refresh -k 3` / `signal library propose`. `src/content/library/`
+  is a pipeline-owned path (the dirt-guard allows it).
+
+New worker jobs: `momentum` (`momentum_cron`, default `40 7 * * *`) and
+`library` (`library_cron`, `50 7 * * *`), alongside `kb_trends`.
+
 ## Tuning hyperparameters
 
 All in `signal.json`; safe to stage, effective next job. Change one axis at a

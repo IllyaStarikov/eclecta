@@ -191,6 +191,7 @@ class Config:
         strings, tracking hashes) so cosmetic edits don't fork the version."""
         tunables = {
             "funnel": self.data.get("funnel", {}),
+            "momentum": self.data.get("momentum", {}),
             "score_weights": self.data.get("score_weights", {}),
             "cadences": self.data.get("cadences", {}),
             "spend": self.data.get("spend", {}),
