@@ -67,7 +67,7 @@
     "story_id": "s_c1c44eeb2e61bcd0",
     "title": "AMD acquires AI chip startup Taalas to boost inference performance by etching models into silicon",
     "relevance": 8,
-    "score": 8.54,
+    "score": 8.717,
     "why": "If model-specific silicon ships, inference for a fixed model gets cheaper and faster than running it on general-purpose GPUs, and AMD just bought the team betting on that trade-off against its own Instinct line.",
     "notes": [
       "AMD acquired Taalas, a startup whose approach etches a specific trained model directly into silicon as a model-specific integrated circuit rather than running it on general-purpose accelerators.",
@@ -96,8 +96,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=49201970",
-        "points": 128,
-        "comments": 72,
+        "points": 224,
+        "comments": 156,
         "name": "Hacker News"
       },
       {
@@ -309,7 +309,7 @@
     "story_id": "s_70f21260bf111f85",
     "title": "rust-lang/rust is adopting an LLM policy",
     "relevance": 7,
-    "score": 7.681,
+    "score": 7.639,
     "why": "If you contribute to rust-lang/rust, LLM-generated PRs now must carry tests and disclosure, must avoid soundness-critical code, and can be closed no-questions-asked when they touch docs, diagnostics, or unsafe internals.",
     "notes": [
       "Scope: adopted by five teams for the rust-lang/rust monorepo only, explicitly not a project-wide or official Rust stance; the author says Rust operates by consensus and has no BDFL to ban or bless LLMs outright.",
@@ -338,7 +338,7 @@
     "surfaces": [
       {
         "url": "https://lobste.rs/s/czvkjy/rust_lang_rust_is_adopting_llm_policy",
-        "points": 153,
+        "points": 154,
         "comments": 52,
         "name": "Lobsters"
       },
@@ -372,7 +372,7 @@
     "story_id": "s_7762680d5d70c2a9",
     "title": "Humans missed 1 in 3 threats approving AI agent commands across 40k game runs",
     "relevance": 7,
-    "score": 7.323,
+    "score": 7.289,
     "why": "If you approve AI coding-agent commands under time pressure, this data says you will wave through roughly a third of real threats, and the exfiltration commands that actually leak credentials are the ones you miss most.",
     "notes": [
       "Dataset: a browser game where the player is the human-in-the-loop, analyzed across 40,000 runs and 409,000 approve/deny decisions. Mean threat-catch accuracy was 66.3%; 32.9% of sessions ended net-negative; 7% of players approved every prompt.",
@@ -402,8 +402,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=49195468",
-        "points": 223,
-        "comments": 178,
+        "points": 231,
+        "comments": 181,
         "name": "Hacker News"
       },
       {
@@ -424,7 +424,7 @@
     "story_id": "s_7293cef8fd536831",
     "title": "NVIDIA’s Vera Whitepaper Has a Thread Loose",
     "relevance": 7,
-    "score": 7.789,
+    "score": 7.745,
     "why": "If you plan capacity around Nvidia's Vera, the real x86 gap is roughly 1.9x memory bandwidth and a 3% two-socket integer-rate lead, not the 3x and 1.8x figures the whitepaper leads with.",
     "notes": [
       "Olympus is a 10-wide Arm v9.2 out-of-order core: neural branch predictor, value prediction, memory renaming, six 128-bit SVE pipes, 96KB L1D, 2MB private L2 (~10-cycle), 88 cores on a monolithic die behind a 3.4TB/s fabric and 164MB system-level cache; memory is 8 SOCAMM2 LPDDR5X modules, up to 1.5TB and a claimed 1.2TB/s at ~50W.",
@@ -1416,54 +1416,109 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 276845,
-    "story_id": "s_b205e5045d620efb",
-    "title": "Show HN: Distilling DeepSeek into GPT-OSS doesn't transfer censorship. Try it",
-    "relevance": 7,
-    "score": 4.381,
-    "why": "If you distill from a Chinese open-weight teacher for a scoped task, this gives an empirical reason to expect capability but not political refusals to cross over, plus a released benchmark and a 120B that runs on one H100 to verify it yourself.",
+    "id": 304050,
+    "story_id": "s_5e9de07e2c289f14",
+    "title": "ABSeeker: Training Long-Horizon Search Agents via Answer-Backtracked Credit Assignment",
+    "relevance": 6,
+    "score": 6.488,
+    "why": "A 4B model trained on 8.5k examples reportedly matches ~30B search agents on BrowseComp, suggesting the bottleneck is credit assignment, not scale.",
     "notes": [
-      "Matched-pair design: 152 pairs twin each China-sensitive prompt with a structurally identical non-China control (Great Leap Forward vs Holodomor, Tiananmen vs Gwangju, Henan bank freeze vs Cyprus bail-in) to separate country-specific avoidance from generally weak answers.",
-      "Pooled teacher censorship gap +32.02, positive on 79% of pairs, ~7 SD above chance, p<0.0001; the three GPT-OSS-120B student arms sit at +3.94, +3.70, +2.58, effectively at the untouched base's small positive gap.",
-      "Scoring used four judges from four labs (Grok 4.20, Gemini 3.5 Flash, GPT-5 Mini, Claude Sonnet 4.6), validated against 96 human-scored samples: Pearson r 0.948, MAE 6.08, within 10 points on 81.3% of responses. Teacher was self-hosted via vLLM to exclude provider-side moderation.",
-      "Self-distillation (model trained on its own hint-corrected on-policy continuations, reverse-KL over the next 100 tokens) matched the DeepSeek-taught arm on every seed with 12.5% fewer output tokens; the shipped model has no external model in its training signal.",
-      "Claimed FinanceReasoning at an 8,000-token budget: 120B scores 83.61% (finishes 98.7% of problems) vs Kimi K3 81.93% and Inkling 65.13%, which truncate; at 100k tokens the large models win on raw accuracy. Cost per query: $0.00025939 (120B) vs $0.04141 (Kimi K3), ~160x. These are self-reported.",
-      "Stated scope limits: zero China-sensitive content in training data and no shared teacher-student initialization, so only the subliminal channel is tested; safety training and refusal behavior were not tested; the shared-lineage case (e.g. Qwen on DeepSeek outputs) and representational analysis are future work. 20B rows rest on ~half the sample due to decoding loops."
+      "The core method, Answer-Backtracked Credit Assignment (ABC), converts sparse trajectory-level pass/fail signals into dense step-level rewards, so useful actions get credit even inside a failed trajectory and redundant or wrong steps get suppressed.",
+      "Two stages: Answer-Backtracked Clue Recovery traces from the ground-truth answer to the intermediate clues needed to solve the query; Clue-Anchored Step Scoring then grades each search step against those recovered clues.",
+      "The scores feed two training variants: ABC-SFT reweights per-turn loss, and ABC-GRPO uses step-level scores as rewards inside GRPO reinforcement learning.",
+      "ABSeeker is built on Qwen3.5-4B with only 8.5k training examples; self-reported results are 37.3% on BrowseComp and 39.1% on BrowseComp-ZH, rising to 55.3% and 52.9% with context management.",
+      "Authors claim it outperforms same-scale (4B) agents and matches roughly 30B agents; all numbers are from the paper with no independent verification, and the context-management component driving the larger gains is not detailed in the abstract."
     ],
-    "summary": "CTGT distilled a Chinese frontier teacher (DeepSeek V4 Flash) into American open bases (GPT-OSS-120B and 20B) on quantitative finance problems, then tested whether the teacher's political censorship transferred with the skill. Using LineageEval, 304 prompts in 152 matched pairs scored 0-100 by four independent judge models, they report the teacher was +32.02 points more censored on China-sensitive prompts than on structurally identical controls (p<0.0001), while the distilled student showed +3.94, statistically indistinguishable from the untouched base. A self-distillation arm, where the model trained on its own hint-corrected continuations with no external teacher, matched the DeepSeek-taught arm on every seed, so the capability gain was not censorship-linked; they ship the self-taught model. At an 8,000-token budget the 120B scored 83.61% on FinanceReasoning, above Kimi K3 (81.93%) and Inkling (65.13%), which truncate, at a claimed 160x lower cost per query than Kimi K3; at a 100k budget the larger models win on raw accuracy. The authors stress the setup shares no initialization between teacher and student and contains zero China-sensitive content in training data, so it measures only the subliminal channel, and did not test safety or refusal behavior. The shared-lineage case (e.g. Qwen on DeepSeek outputs) and representational analysis are named as next steps.",
+    "summary": "ABSeeker is a long-horizon web-search agent trained with Answer-Backtracked Credit Assignment (ABC), a framework that turns sparse binary trajectory outcomes into dense step-level supervision. ABC first works backward from the known answer to recover the intermediate clues required to solve an obscure query, then scores each search step against those clues, rewarding useful actions (including in failed trajectories) and penalizing erroneous or redundant ones. These step scores drive two training modes: ABC-SFT reweights per-turn loss, and ABC-GRPO uses the scores as reinforcement-learning rewards. Trained on Qwen3.5-4B with 8.5k examples, ABSeeker reports 37.3% on BrowseComp and 39.1% on BrowseComp-ZH, improving to 55.3% and 52.9% with context management, which the authors say matches ~30B-scale agents. All results are self-reported and lack independent replication.",
     "channels": [
       "ai",
       "ml-research"
     ],
     "category": "ai",
     "subcategories": [
-      "models"
+      "agents"
     ],
     "state": "confident",
-    "novelty": "empirical test shows political censorship doesn't distill into student models",
-    "audience": "ML practitioners fine-tuning/distilling from Chinese open-weight models",
-    "source_url": "https://ctgt.ai/research/distillation-censorship-transfer",
+    "novelty": "dense step-level credit assignment via backtracking answers to intermediate clues",
+    "audience": "researchers/engineers building long-horizon search/retrieval agents and RL training pipelines",
+    "source_url": "https://arxiv.org/abs/2608.05102",
     "read_kind": "publication-free",
     "free_link": null,
     "paywalled": false,
     "surfaces": [
       {
-        "url": "https://news.ycombinator.com/item?id=49113599",
-        "points": 79,
-        "comments": 57,
-        "name": "Hacker News"
+        "url": "https://huggingface.co/papers/2608.05102",
+        "points": 53,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
       },
       {
-        "url": "https://www.ctgt.ai/research/distillation-censorship-transfer",
+        "url": "https://arxiv.org/abs/2608.05102",
         "points": null,
         "comments": null,
-        "name": "Hacker News"
+        "name": "arXiv cs.AI"
       }
     ],
     "sources_count": 2,
-    "first_seen": "2026-07-30T18:13:06+00:00",
-    "published_at": "2026-07-30T23:44:56.771556+00:00",
-    "curated_at": "2026-07-30T23:44:56.771556+00:00",
+    "first_seen": "2026-08-06T04:00:00+00:00",
+    "published_at": "2026-08-07T00:15:02.202390+00:00",
+    "curated_at": "2026-08-07T00:15:02.202390+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 303912,
+    "story_id": "s_c729d0a8c644535c",
+    "title": "Just One Function, 10x Faster? Reading a Rust Performance PR",
+    "relevance": 6,
+    "score": 6.552,
+    "why": "A memory-only conversion function was burning a third of CPU on the Prometheus remote-read path; the fix is a reusable pattern (borrow from Arrow, don't rebuild per-row) that turned ~2M rows/sec into up to 34.8M rows/sec.",
+    "notes": [
+      "The hot function `recordbatches_to_timeseries` (in `src/servers/src/prom_store.rs`) converts columnar Arrow `RecordBatch` output into row-oriented Prometheus `TimeSeries`; the author's CPU profile (300k series, 4 concurrent reads, not reproduced by the writer) showed it at 36.2% of CPU, with dictionary materialization alone at 8.9%.",
+      "Root cause: cost scaled with row count R rather than series count S. The old code called `to_string()` per row (R·L string copies), allocated one `Vec<Label>` per row, and did a BTreeMap lookup per row, rebuilding the same label set repeatedly even though a typical remote read has few series with many points each.",
+      "Counterintuitive finding: dictionary-encoded columns (`Dictionary<UInt32,Utf8>`, the real PromQL layout) ran ~35% slower than plain Utf8 pre-fix, because `iter_column_as_string` didn't recognize dictionaries and expanded 3 shared strings back into 1000 owned Strings plus a per-row lookup.",
+      "The fix borrows `&str` straight from Arrow arrays via a `LabelValues` enum (one branch each for StringArray, LargeStringArray, StringViewArray, DictionaryArray), replaces the BTreeMap with a Vec plus a hash index, and adds a previous-series fast path exploiting that Mito's SeqScan sorts by primary key so samples of one series are mostly contiguous; copies drop from R·L to S·L, and a single final sort preserves the old BTreeMap output ordering.",
+      "Measured results (Apple M4 Max, macOS, 100 criterion samples, p<0.05): adjacent dictionary cases hit 12.4–16.5x (e.g. 1000×100: 55.6ms → 3.38ms); interleaved cases 4–5x; overall throughput 1.8–3.2M rows/sec → 9.6–34.8M rows/sec, no case slower. Ships in GreptimeDB v1.2.0-beta.1.",
+      "Caveats stated in the piece: the author didn't ship benchmark code (the writer rewrote it against the public entry point), the writer disputes the PR's 'silent skip' claim (arguing the old path actually panicked out of bounds), grouping is per-RecordBatch so series spanning batches aren't merged, and `hash_timeseries` uses DefaultHasher (SipHash-1-3, no stable-API guarantee) with ahash floated as a future experiment."
+    ],
+    "summary": "A GreptimeDB engineer walks through PR #8587, which rewrites `recordbatches_to_timeseries`, the function that converts columnar Arrow `RecordBatch` results into row-oriented Prometheus `TimeSeries` on the remote-read path. A CPU profile showed the step consuming 36.2% of CPU (dictionary materialization 8.9%) despite touching no disk, because the old implementation's cost scaled with row count: per-row `to_string()` calls, per-row Vec allocations, and per-row BTreeMap lookups that rebuilt identical label sets repeatedly. The rewrite borrows string values directly from Arrow arrays via a `LabelValues` enum (with a dedicated dictionary branch), replaces the BTreeMap with a Vec plus hash index and a previous-series fast path keyed on the data's natural primary-key ordering, and adds one final sort to preserve output order. Because the PR shipped no benchmark, the author wrote a criterion suite varying encoding, ordering, and series/sample counts and ran both sides of the change. On an M4 Max, adjacent dictionary cases sped up 12.4–16.5x and interleaved cases 4–5x, lifting throughput from 1.8–3.2M to 9.6–34.8M rows/sec with no regressions; it ships in v1.2.0-beta.1. The takeaway the author emphasizes: don't copy what you can borrow, don't repeat per-row work you can do once, and dictionary encoding kept upstream can be silently undone by one downstream materialization.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [
+      "languages"
+    ],
+    "state": "confident",
+    "novelty": "detailed walkthrough of a 10x Rust hot-path optimization via profiling+benchmarking",
+    "audience": "systems/backend engineers optimizing Rust data-processing hot paths",
+    "source_url": "https://greptime.com/blogs/2026-07-31-prom-read-conversion-optimization.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/sv9hwi/just_one_function_10x_faster_reading_rust",
+        "points": 3,
+        "comments": 0,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://greptime.com/blogs/2026-07-31-prom-read-conversion-optimization",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://www.greptime.com/blogs/2026-07-31-prom-read-conversion-optimization.html",
+        "points": null,
+        "comments": null,
+        "name": "GreptimeDB"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-08-06T00:00:00+00:00",
+    "published_at": "2026-08-06T23:59:20.996557+00:00",
+    "curated_at": "2026-08-06T23:59:20.996557+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -1471,7 +1526,7 @@
     "story_id": "s_7d5ad6bdc11cccf8",
     "title": "How to Make a Nintendo 64 Game in 2026",
     "relevance": 6,
-    "score": 7.168,
+    "score": 7.141,
     "why": "The open-source N64 homebrew stack is now good enough to ship a 60 FPS commercial cartridge game with a modern C engine, and this is a step-by-step account of exactly which tools do the work.",
     "notes": [
       "Xibalba 64 is a Wolfenstein 3D-like FPS shipping as a physical cartridge launch title for ModRetro's M64 (a modern N64 clone); the author calls it the second new physical N64 release since the console's original life, after Bitmap Bureau's Xeno Crisis (2023); the last officially published N64 game was Tony Hawk's Pro Skater 3 in 2002.",
@@ -1498,13 +1553,13 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=49168622",
-        "points": 436,
-        "comments": 220,
+        "points": 447,
+        "comments": 242,
         "name": "Hacker News"
       },
       {
         "url": "https://lobste.rs/s/j8ytwa/how_make_nintendo_64_game_2026",
-        "points": 15,
+        "points": 16,
         "comments": 2,
         "name": "Lobsters"
       },
@@ -1532,7 +1587,7 @@
     "story_id": "s_3576f95b10e1b725",
     "title": "Mistral's Shieldstral: 3B open-weights model for multimodal moderation",
     "relevance": 6,
-    "score": 7.427,
+    "score": 7.406,
     "why": "If you ship a model, you can now run text and image moderation on one 16GB GPU and change the harm policy by editing a prompt instead of retraining a guardrail classifier.",
     "notes": [
       "3B open-weights classifier under Apache 2.0, released with NVIDIA as an inaugural member of the Open Secure AI Alliance, and built on Mistral's Forge training platform.",
@@ -1590,7 +1645,7 @@
     "story_id": "s_c6ff59bd7b77ca1b",
     "title": "Prime Agent: A self-improving RLM agent",
     "relevance": 6,
-    "score": 7.171,
+    "score": 7.127,
     "why": "Prime Intellect ships an open-source coding harness where the model's only tool is a persistent Python REPL and the scaffolding itself (prompts, skills, memory, sub-agents) is CRUD-editable by the agent mid-run, a design worth studying if you build or evaluate agent frameworks.",
     "notes": [
       "Two abstractions: the Recursive Language Model (RLM) treats context as REPL variables and subagent delegation as async function calls (await rlm(\"task\")), each spawning a full session with its own kernel and history; the Continual Harness exposes prompts, skills, memory, and sub-agents as a CRUD surface the agent edits from its own trajectory. The base system prompt stays immutable; /refine only edits the surrounding layer, with rollback by refinement ID.",
@@ -1640,7 +1695,7 @@
     "story_id": "s_a35f0e54f6c1a8bb",
     "title": "The next chapter of our AI momentum",
     "relevance": 6,
-    "score": 8.02,
+    "score": 7.976,
     "why": "Google DeepMind's day-to-day leadership passes from Demis Hassabis to Koray Kavukcuoglu, and Jeff Dean and Sanjay Ghemawat are leaving Google entirely to start their own company — a reshuffle of the people who set Gemini's direction.",
     "notes": [
       "Hassabis moves to Chair of GDM and Chief Scientist of Alphabet, keeping Isomorphic Labs and an advisory role across models and research; he frames the move as freeing time for AGI strategy and external engagement.",
@@ -1693,7 +1748,7 @@
     "story_id": "s_1acdcda66996c43c",
     "title": "Cloudflare OS: an open platform for agents, apps, and work",
     "relevance": 6,
-    "score": 8.351,
+    "score": 8.306,
     "why": "The interesting part is not the agent chat but the authorization model: Cloudflare open-sourced a system that logs every resource an agent observes and re-checks each viewer against those observations, so a shared dashboard cannot leak the warehouse table behind it.",
     "notes": [
       "Diagnosis of the MCP gap: MCP restricts which tools an agent can call but does not record which underlying resources it observed, so agents can join data across systems and surface it through apps or outputs to people not cleared to see the source.",
@@ -3306,60 +3361,6 @@
     "first_seen": "2026-07-31T11:15:54+00:00",
     "published_at": "2026-08-01T08:19:59.713274+00:00",
     "curated_at": "2026-08-01T08:19:59.713274+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 278655,
-    "story_id": "s_1b82915a158b2af2",
-    "title": "Demystifying DRAM Read Disturbance: Bridging the Gap Between Experimental Characterization and Device-Level Modeling of RowHammer and RowPress Phenomena",
-    "relevance": 6,
-    "score": 4.901,
-    "why": "Anyone designing RowHammer defenses is building on device-level physics models that this paper shows fail to reproduce three basic measured behaviors, so mitigations tuned to those models may target the wrong mechanism.",
-    "notes": [
-      "The authors argue existing device-level models of RowHammer and RowPress do not explain major empirical observations, and they test this against three metrics: bitflip direction, bitflip counts, and ACmin (the minimum number of aggressor-row activations that triggers the first bitflip).",
-      "Their method is TCAD (technology CAD) device simulation, tuned to reproduce phenomena seen in real-chip experimental characterization rather than deriving mitigations purely from empirical data.",
-      "They report identifying specific modeling and simulation parameters that determine whether TCAD results match real DRAM chip characterization, and offer updated device-level error mechanisms for both effects.",
-      "RowHammer and RowPress are read-disturbance faults where repeatedly accessing DRAM rows flips bits in other, unaccessed rows; RowPress is the newer variant driven by keeping rows open longer.",
-      "Scope caveat: this is an arXiv preprint aimed at reconciling models with existing data; it proposes no new mitigation, and the specific chips, process nodes, and simulation parameters are not stated in the abstract."
-    ],
-    "summary": "This arXiv preprint attempts to close the gap between experimental characterization of DRAM read disturbance (RowHammer and RowPress) and device-level physical models that, the authors say, fail to account for major measured behaviors. They focus on three metrics they argue should map to first-order physical mechanisms: bitflip direction, bitflip counts, and ACmin, the minimum aggressor-row activations needed to cause the first bitflip. Using a set of TCAD device simulations, they reproduce phenomena observed in real-chip measurements and then identify which modeling and simulation parameters control whether simulations agree with hardware. The stated outputs are updated device-level error mechanisms for RowHammer and RowPress plus guidance for future characterization methodology and mitigation design. As an abstract-level preprint, it does not include the concrete chip set, parameter values, or a proposed mitigation.",
-    "channels": [
-      "hardware",
-      "security"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "TCAD simulations reconcile RowHammer/RowPress physics with real-chip bitflip data",
-    "audience": "hardware security researchers and DRAM/memory-controller engineers",
-    "source_url": "https://arxiv.org/abs/2607.28233",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49128323",
-        "points": 51,
-        "comments": 28,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://arxiv.org/abs/2607.28233",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CR"
-      },
-      {
-        "url": "https://arxiv.org/abs/2607.28233",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-07-31T04:00:00+00:00",
-    "published_at": "2026-08-01T08:05:11.437056+00:00",
-    "curated_at": "2026-08-01T08:05:11.437056+00:00",
     "model": "claude-opus-4-8"
   }
 ]
