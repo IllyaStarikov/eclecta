@@ -1160,105 +1160,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 294328,
-    "story_id": "s_260c32976b4654be",
-    "title": "FIPS 140-3 is not a security guarantee, and auditors know it",
-    "relevance": 7,
-    "score": 4.951,
-    "why": "If you are chasing FIPS 140-3 paper before the September 21, 2026 cutover, this argues the certificate covers only the module boundary, not key ceremonies, configuration drift, or side channels, which is where every cited incident actually happened.",
-    "notes": [
-      "Scope of a FIPS 140-3 validation: it attests that a specific firmware version in a specific configuration implements approved algorithms correctly, zeroizes keys, runs power-up self-tests, and (levels 2-4) resists tampering. It says nothing about the calling application, access control, key management, operators, or the key-generation ceremony.",
-      "Certified-and-broken examples: ROCA (2017) Infineon RSA key-gen flaw shipped since ~2012 under FIPS 140-2 and CC EAL5+ for five years, prompting Estonia to suspend ID cards; EUCLEAK (2024) non-constant-time ECDSA modular inversion went unnoticed 14 years across ~80 top-tier CC evaluations and hit YubiKey 5 FIPS and YubiHSM 2 FIPS (fix required hardware replacement); Dual_EC_DRBG stayed a NIST-approved, correctly-implemented DRBG for a decade until removed from SP 800-90A in 2014.",
-      "The 2019 YubiKey FIPS bug (firmware 4.4.2/4.4.4) was caused by FIPS requirements: leftover power-up self-test data left up to 80 predictable bits in 256-bit ECDSA nonces; the non-FIPS consumer key was unaffected, so the certified product was measurably weaker. FIPS mandates no constant-time or side-channel resistance at common levels.",
-      "The freeze problem: CMVP queue historically runs 12-18 months, so vendors either ship a fix and fall off the validated list or keep shipping known-vulnerable validated builds. Go 1.24 shipped a native pure-Go module (CMVP cert #5247, v1.0.0 frozen from Go 1.24) while v1.26.0 sits in Modules In Process, meaning a binary built today against the certified module runs crypto two major releases old.",
-      "Author's own Go 1.24/1.25.1 benchmark (GODEBUG=fips140 on vs off): ECDSA P-256 keygen 17µs to 110µs (the per-key pairwise consistency test), crypto/rand 32 bytes 85ns to 355ns (DRBG construction); ECDSA signing and AES-256-GCM unchanged. Approved mode also bans ChaCha20-Poly1305 without AES hardware and Argon2.",
-      "Digital assets are structurally incompatible: secp256k1, Keccak-256, and RIPEMD-160 are not FIPS-approved (AWS CloudHSM offers secp256k1/Ed25519 only on non-FIPS clusters), and BIP32 keys off the 12-character 'Bitcoin seed' constant (96 bits, below the 112-bit HMAC floor), so fips140=only panics on the first derivation. The 90%-run-it-off figure is a single unverified vendor sales-engineer anecdote."
-    ],
-    "summary": "A practitioner argues that FIPS 140-3 validation attests only that a specific module firmware and configuration implements approved algorithms correctly, and not that the surrounding product, key management, or operating configuration is secure. It marshals a history of certified-but-broken modules (ROCA, EUCLEAK, Dual_EC_DRBG, and a 2019 YubiKey bug caused by the FIPS self-test machinery itself) to show the certificate's scope excludes side channels, ceremonies, and configuration drift where real incidents occur. It documents the certification freeze: a 12-18 month CMVP queue forces vendors to keep shipping known-vulnerable validated builds, illustrated by Go's crypto module being certified two releases behind. Author-run Go benchmarks quantify FIPS mode's cost (roughly 6-9x on ECDSA keygen, 3-6x on random reads, none on signing or bulk AES) and note it buys no attack resistance. A detailed section shows cryptocurrency stacks (secp256k1, Keccak-256, RIPEMD-160, BIP32's sub-112-bit HMAC key) cannot run in approved mode, explaining why buyers reportedly disable it. The piece concludes that auditors accept the certificate in seconds and spend their time on key provenance, configuration attestation, quorum custody, and ceremony evidence; it recommends buying validated, attesting the actual running configuration on a schedule, and documenting in writing when FIPS mode is off.",
-    "channels": [
-      "security"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "FIPS certification history shows it certifies snapshots, not ongoing security",
-    "audience": "security engineers, compliance/procurement leads dealing with crypto modules and HSMs",
-    "source_url": "https://808bits.com/articles/fips-140-3-not-a-security-guarantee",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49176634",
-        "points": 25,
-        "comments": 11,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://808bits.com/articles/fips-140-3-not-a-security-guarantee/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-08-04T23:21:33+00:00",
-    "published_at": "2026-08-08T05:05:57.531812+00:00",
-    "curated_at": "2026-08-08T05:05:57.531812+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 292327,
-    "story_id": "s_cb115c5c85c3b24a",
-    "title": "DiffusionGemma Technical Report",
-    "relevance": 7,
-    "score": 4.957,
-    "why": "Converting an existing autoregressive model to discrete diffusion for under 10% of its original token budget yields roughly 1,500 output tokens/sec on one H100, a route to fast inference that skips training from scratch.",
-    "notes": [
-      "DiffusionGemma is a fine-tune of the MoE Gemma 4 (3.8B activated, 25.2B total parameters), not a from-scratch model; it uses discrete diffusion to refine blocks of 256 tokens in parallel instead of decoding token by token.",
-      "Two-stage training: supervised fine-tuning teaches bidirectional denoising, then reinforcement learning combined with sampler distillation jointly targets generation quality and inference efficiency, using under 10% of the AR model's total training token budget.",
-      "Self-reported speed: averaged across the evaluation suite, ~20 tokens per forward pass and ~1,500 output tokens/sec on a single NVIDIA H100, claimed faster than AR models even with state-of-the-art speculative decoding.",
-      "Retains the base model's thinking mode, multimodal inputs, and long-context support, and can still perform AR generation with only minor degradation, which the authors frame as a path to hybrid diffusion-AR decoding.",
-      "Labeled experimental open-weight; the abstract reports no benchmark accuracy numbers, hardware batch sizes, or the specific tasks in the 'full evaluation suite' behind the Pareto-frontier claim."
-    ],
-    "summary": "DiffusionGemma is an experimental open-weight language model that applies discrete diffusion to text generation, iteratively refining 256-token blocks in parallel rather than decoding sequentially. It is produced by fine-tuning the mixture-of-experts Gemma 4 model (3.8B activated, 25.2B total parameters) with a two-stage pipeline: supervised fine-tuning for bidirectional denoising, followed by reinforcement learning plus sampler distillation, consuming under 10% of the original AR model's training token budget. The authors report roughly 20 tokens per forward pass and about 1,500 output tokens/sec on a single H100, which they claim beats AR models using state-of-the-art speculative decoding, and they position the result as a new speed-versus-capability Pareto frontier. The model retains thinking mode, multimodal inputs, and long contexts, and can still generate autoregressively with minor degradation, suggesting hybrid diffusion-AR decoding. The abstract provides no accuracy benchmarks or methodology detail, so quality and speed claims are self-reported.",
-    "channels": [
-      "ai",
-      "ml-research"
-    ],
-    "category": "research",
-    "subcategories": [
-      "ml",
-      "science"
-    ],
-    "state": "confident",
-    "novelty": "diffusion fine-tune of Gemma hits 1,500 tok/s on one H100",
-    "audience": "researchers/engineers working on LLM inference speed and diffusion LMs",
-    "source_url": "https://arxiv.org/abs/2608.00146",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2608.00146",
-        "points": 21,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2608.00146",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.CL"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-08-04T04:00:00+00:00",
-    "published_at": "2026-08-08T04:49:18.035915+00:00",
-    "curated_at": "2026-08-08T04:49:18.035915+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 322034,
     "story_id": "s_0a4248a4b1b7cbd9",
     "title": "Nvidia reportedly testing lower memory configs of Rubin Ultra as memory shortage bites back — designs tested include as little as 192 GB and step back to HBM4",
@@ -3217,6 +3118,107 @@
     "first_seen": "2026-08-08T22:32:50+00:00",
     "published_at": "2026-08-09T03:47:21.124583+00:00",
     "curated_at": "2026-08-09T03:47:21.124583+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 314216,
+    "story_id": "s_281a05edf9940ad7",
+    "title": "Thinking in Silico: Goodfire CTO Dan Balsam on Concept Manifolds & a $1000/Month ML Research Agent",
+    "relevance": 6,
+    "score": 3.846,
+    "why": "Goodfire is pricing its internal interpretability-based ML research agent at $1,000/month per enterprise seat, two orders of magnitude below its seven-figure human research engagements, making automated model debugging and steering work purchasable rather than a bespoke consulting contract.",
+    "notes": [
+      "Silico is a long-horizon agentic ML research platform, originally an internal Goodfire tool, priced at $1,000/month per seat for enterprise; Goodfire frames it as ~100x cheaper than its forward-deployed research engagements that can reach seven figures.",
+      "Goodfire says it will introduce discounted pricing and grants for safety and alignment researchers; the interviewer (Nathan Labenz) states he intends to apply, so uptake and terms are unconfirmed.",
+      "Predictive Data Debugging, per Goodfire, uses interpretability to identify which concepts a network update is likely to affect, so anomalies can be caught before they surface; no benchmark or evaluation methodology is given in the text.",
+      "Goodfire's papers claim LLMs represent advanced concepts with geometric/spatial structure, including the Periodic Table and the Tree of Life, framed as an evolution of the linear representation hypothesis and used to improve model steering.",
+      "Balsam signed the 'pacing the frontier' letter and argues monitoring alone is insufficient: he favors intentionally designing training-time techniques to control what models learn, and avoiding certain training methods he considers likely to cause problems.",
+      "Format is a long-form podcast/newsletter interview, not hard news; claims are self-reported by Goodfire's CTO with no independent verification in the text."
+    ],
+    "summary": "In a Cognitive Revolution interview, Goodfire CTO and co-founder Dan Balsam discusses the launch of Silico, a long-horizon agentic ML research platform that began as an internal tool and packages the company's interpretability expertise, GPU cluster management, and validation techniques. It costs $1,000/month per enterprise seat, which Goodfire positions as two orders of magnitude cheaper than its seven-figure high-touch research engagements, with planned discounts and grants for safety and alignment researchers. The conversation also covers Goodfire research: Predictive Data Debugging, which uses interpretability to flag concepts likely affected by training updates before anomalies appear, and a series of papers claiming LLMs encode advanced concepts like the Periodic Table and Tree of Life in geometric structures that extend the linear representation hypothesis and inform steering. Balsam argues for open-source models to avoid concentration of power, explains why he signed the 'pacing the frontier' letter, and contends that monitoring must be paired with deliberate training-time control over what models learn. All performance and pricing claims are self-reported by Goodfire and unverified in the text.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "startups"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "Goodfire launches Silico, $1000/mo agentic ML research platform built on interpretability",
+    "audience": "ML researchers and interpretability practitioners tracking mech-interp startups and agentic research tools",
+    "source_url": "https://cognitiverevolution.ai/thinking-in-silico-goodfire-cto-dan-balsam-on-concept-manifolds-a-1000-month-ml-research-agent-newsletter",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.cognitiverevolution.ai/thinking-in-silico-goodfire-cto-dan-balsam-on-concept-manifolds-a-1000-month-ml-research-agent/",
+        "points": null,
+        "comments": null,
+        "name": "The Cognitive Revolution"
+      },
+      {
+        "url": "https://www.cognitiverevolution.ai/thinking-in-silico-goodfire-cto-dan-balsam-on-concept-manifolds-a-1000-month-ml-research-agent-newsletter/",
+        "points": null,
+        "comments": null,
+        "name": "The Cognitive Revolution"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-08-08T20:48:26+00:00",
+    "published_at": "2026-08-09T03:30:37.827298+00:00",
+    "curated_at": "2026-08-09T03:30:37.827298+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 314181,
+    "story_id": "s_feaf12d31e882f36",
+    "title": "Building a local positioning system to track runners using Ultra-Wideband",
+    "relevance": 6,
+    "score": 4.28,
+    "why": "A working multi-tag UWB positioning stack that costs roughly 15-25 euros per node instead of the 5,000-euro Pozyx starter kit, with the coordination code that off-the-shelf open source doesn't provide.",
+    "notes": [
+      "Hardware: 5 DWM3000 modules (19-25 euros for official Qorvo packaging, ~12 for aftermarket clones with integrated MCU) driven by ESP32-WROOM boards (~4 euros) in the Arduino framework; Qorvo's SDK covers only NRF52/STM32, so the team used a community Arduino port of the DW3000 driver.",
+      "Positioning works by two-sided time-of-flight ranging: 500 MHz bandwidth plus picosecond-accurate clocks let the chip pin the start of a packet and derive distance from flight time, then triangulate a tag against multiple fixed anchors (same principle as GPS).",
+      "Measured results (self-reported): ~50 m range after tuning frame structure and transmit power (target was 30 m), ~2 cm tolerance within 5 m, ~10 cm at longer distance after per-module calibration; range degrades without line of sight or near metal.",
+      "Multi-tag scaling is the hard part: all modules share one channel, so anchors use a shared monotonic clock (highest tick count propagated over existing UWB messages) and assigned time slots. A 60 Hz interval across 3 anchors and 2 tags yields 10 position fixes/sec per tag; slots can be reused between anchors never in range of the same tag.",
+      "Field pipeline reused the race's existing 7 Raspberry Pi stations over Ethernet: anchors connect via USB, a publisher script forwards measurements to a central RabbitMQ server, and a Bevy dashboard runs triangulation and lap counting.",
+      "Status is proof-of-concept: tested on one corner of the Ghent 12Urenloop course the day before the race; still needs tags integrated into the batons and real power/reliability measurements. Full estimate is 7-10 anchors to cover the circuit. Code is on GitHub."
+    ],
+    "summary": "A member of Zeus WPI built a do-it-yourself ultra-wideband local positioning system to track relay runners at the 12Urenloop race in Ghent, aiming to replace a Bluetooth speed-estimation system with actual centimeter-scale position measurements and per-team start-line lap counting. The build uses 5 DWM3000 UWB modules (12-25 euros each) on ESP32-WROOM boards in Arduino, avoiding commercial RTLS kits like Pozyx that start near 5,000 euros. Because open-source UWB code targets single-tag tracking, the author wrote custom time-slot coordination over the single shared channel, using a shared monotonic clock distributed through normal UWB messages so anchors take turns without colliding. Reported test results were roughly 50 m range, ~2 cm accuracy within 5 m and ~10 cm at longer range after calibration, and 10 position fixes per second per tag with 3 anchors and 2 tags at 60 Hz. Aggregation ran through the race's existing Raspberry Pi stations, a central RabbitMQ server, and a Bevy dashboard doing triangulation. The system remains a proof-of-concept, tested on one corner of the course; open items include integrating tags into batons, covering the full circuit with an estimated 7-10 anchors, and measuring power and reliability.",
+    "channels": [
+      "hardware",
+      "devtools"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "DIY multi-tag UWB positioning stack from ~12-19 euro modules",
+    "audience": "hardware hackers and embedded/RF engineers interested in DIY localization systems",
+    "source_url": "https://zeus.ugent.be/blog/25-26/12urenloop-uwb",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49133850",
+        "points": 98,
+        "comments": 8,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://zeus.ugent.be/blog/25-26/12urenloop-uwb/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-08-01T12:30:10+00:00",
+    "published_at": "2026-08-09T02:43:14.368226+00:00",
+    "curated_at": "2026-08-09T02:43:14.368226+00:00",
     "model": "claude-opus-4-8"
   }
 ]
