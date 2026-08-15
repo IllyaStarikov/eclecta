@@ -944,63 +944,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 288328,
-    "story_id": "s_df2d072cba8b62d8",
-    "title": "Pass the Passkey: A Novel Attack Surface in Passwordless Authentication",
-    "relevance": 7,
-    "score": 4.858,
-    "why": "If unprivileged malware already runs on a Windows box, Unit 42 shows it can sign valid Google passkey assertions, register an attacker-controlled biometric key, and dump the 32-byte master secret that decrypts every synced passkey, with no device unlock or user interaction and no way to rotate the compromised secret.",
-    "notes": [
-      "Scope: three disclosed attacks against Google's synced passkeys via Chrome's cloud (enclave) authenticator on Windows devices with a TPM and Google Password Manager; all assume malware is already present and running as a standard user. Findings are Unit 42's, responsibly disclosed.",
-      "Reconnaissance: Chrome persists synced passkey records as proto-encoded WebauthnCredentialSpecifics in %LocalAppData%\\Google\\Chrome\\User Data\\<Profile>\\Sync Data\\LevelDB, readable without elevation, exposing usernames, credential IDs, and encrypted private keys.",
-      "Pass-ta-key: Chrome exports the TPM-backed identity key as an NCRYPT_OPAQUE_KEY_BLOB (wrapped_identity_private_key) in passkey_enclave_state; malware reuses it via CNG APIs to produce valid assertions, but the User Verified (UV) flag stays 0. It succeeds where relying parties set userVerification=preferred or fail to validate the UV flag; eBay accepted despite requiring UV (fixed after report), GitHub correctly rejected.",
-      "Silver Pass-ta-key: attacker deletes passkey_enclave_state or issues device/forget to force re-onboarding, then during the uv_key_pending window sends device/add_uv_key with an attacker-controlled public key; the cloud authenticator does not check attestation of new UV keys, yielding reusable, offline assertions with UV=1 even when verification is enforced.",
-      "Golden Pass-ta-key: the 32-byte security domain secret (SDS) that unwraps all synced passkey private keys was leaked to chrome://device-log/FIDO (removed after report) and still sits in Chrome process memory during onboarding; dumping it decrypts all current and future passkeys, and Google's implementation offers no way to rotate or revoke the SDS.",
-      "Fixes recommended: relying parties should set userVerification=required and validate the UV flag; credential managers should verify origin/attestation of newly registered UV and identity keys and monitor for unexpected recovery-PIN prompts or re-onboarding after passkey-state file changes."
-    ],
-    "summary": "Unit 42's third installment on passkey security discloses three attacks, nicknamed Pass-ta-key, Silver Pass-ta-key, and Golden Pass-ta-key, against Google's synced passkey ecosystem and the cloud (enclave) authenticator used by Chrome on Windows TPM devices, all assuming malware already runs unprivileged on the victim's machine. The base Pass-ta-key attack reuses Chrome's exported hardware-bound identity key (wrapped_identity_private_key) to generate valid assertions without user interaction, but leaves the UV flag unset; it defeats relying parties that request rather than require user verification or that fail to validate the flag, with eBay shown accepting logins despite requiring verification before fixing it. Silver Pass-ta-key forces device re-onboarding and exploits an unvalidated device/add_uv_key call to register an attacker-controlled user-verification key, producing reusable assertions with UV=1 from the attacker's own environment even when verification is enforced. Golden Pass-ta-key extracts the 32-byte security domain secret (SDS) from Chrome's memory (previously also from FIDO device logs) to decrypt all synced passkey private keys, providing persistence that cannot be remediated because Google offers no SDS rotation or revocation. Google removed the SDS from logs and eBay patched its UV validation after disclosure. The piece recommends relying parties require and validate user verification, and that credential managers verify attestation of newly registered keys and monitor for anomalous recovery flows.",
-    "channels": [
-      "security",
-      "ai"
-    ],
-    "category": "security",
-    "subcategories": [
-      "research"
-    ],
-    "state": "confident",
-    "novelty": "first disclosed attacks defeating Google's synced passkey cloud authenticator",
-    "audience": "security engineers and identity/auth architects evaluating passkey deployments",
-    "source_url": "https://unit42.paloaltonetworks.com/passwordless-authentication-security-risks",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49176644",
-        "points": 40,
-        "comments": 33,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://unit42.paloaltonetworks.com/passwordless-authentication-security-risks/",
-        "points": null,
-        "comments": null,
-        "name": "Unit 42 (Palo Alto Networks)"
-      },
-      {
-        "url": "https://unit42.paloaltonetworks.com/passwordless-authentication-security-risks/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-08-03T10:00:35+00:00",
-    "published_at": "2026-08-08T07:28:06.907447+00:00",
-    "curated_at": "2026-08-08T07:28:06.907447+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 322034,
     "story_id": "s_0a4248a4b1b7cbd9",
     "title": "Nvidia reportedly testing lower memory configs of Rubin Ultra as memory shortage bites back — designs tested include as little as 192 GB and step back to HBM4",
@@ -3221,6 +3164,67 @@
     "first_seen": "2026-08-08T13:33:06+00:00",
     "published_at": "2026-08-09T01:55:21.200394+00:00",
     "curated_at": "2026-08-09T01:55:21.200394+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 314471,
+    "story_id": "s_59553a74b9bd43d1",
+    "title": "My server is a phone now",
+    "relevance": 6,
+    "score": 6.258,
+    "why": "If a rootable ARM64 phone is gathering dust, this shows you can retire a paid VPS for personal services while DRAM prices make new hardware a bad buy, keeping stock Android for drivers and reaching apps from anywhere over Cloudflare Tunnel and Tailscale.",
+    "notes": [
+      "Hardware: CMF Phone 1, 8 ARM cores, 8GB RAM, 128GB flash, Wi-Fi 6, 5G modem, built-in battery acting as a small UPS; the trigger was Chrome-heavy 'Surf' workloads starving cheap Hetzner shared VPSes while dedicated-CPU instances cost too much.",
+      "postmarketOS was the first dead end: the device port left Wi-Fi, Bluetooth, and hardware acceleration broken, soft-bricked the phone, and recovery required the Windows-only MediaTek flashing tool (attempted via QEMU, then a real Windows box) to restore stock Nothing OS.",
+      "Working stack keeps stock Android and treats Termux as the host control plane: OpenSSH, runit, Caddy, Cloudflared, Termux:Boot for restart persistence, plus Tailscale as an always-on VPN for a stable private address (ssh cmf).",
+      "An Ansible-applied Android profile fights power management: persistent wake lock, disabled light/deep idle, background-restriction exemptions for Termux/Termux:Boot/Tailscale, disabled child-process limiter, no Wi-Fi suspension. Recovery chain is Android boot -> Tailscale -> Termux:Boot -> runit -> services -> local and public health checks.",
+      "proot-distro ran Debian ARM64 OCI images without root via userspace syscall interception, fine for light web apps but too slow for Chrome/Surf; the author rooted the phone to enter the same Debian filesystem via real chroot with native syscalls, calling the speedup 'not subtle.' These chroots are compatibility layers, not security boundaries, since everything shares Android's kernel and network stack.",
+      "Ingress without a static IP: HTTP apps use an outbound-only Cloudflare Tunnel to Caddy on loopback; Surf's latency-sensitive, pinned-TLS backend uses Cloudflare DDNS plus one forwarded port at home, and while roaming wraps its end-to-end TLS inside a WebSocket (author saw ~60ms iPad latency, roughly one extra round trip). Author warns against irreplaceable data without off-device backups and against treating chroots as isolation."
+    ],
+    "summary": "The author replaced a Hetzner VPS with a rooted CMF Phone 1 running personal infrastructure: the Surf remote-browser backend with a desktop arm64 Chrome, a SQLite finance tracker, screen sharing, and smaller web apps. An initial attempt to flash postmarketOS failed because Wi-Fi, Bluetooth, and hardware acceleration were unsupported, and recovery to stock Nothing OS required a Windows-only MediaTek flashing tool. The working design keeps stock Android for its drivers and uses Termux as a host control plane (OpenSSH, runit, Caddy, Cloudflared, Termux:Boot), with Tailscale as an always-on VPN and an Ansible-applied profile that disables Android's battery idle and background restrictions. Applications ship as ARM64 OCI images; light ones first ran under proot-distro's userspace syscall interception, but the Chrome workload was moved to a rooted chroot with native syscalls for a large latency win. Ingress uses outbound-only Cloudflare Tunnels to Caddy on loopback, plus DDNS/port-forward and a WebSocket-wrapped TLS stream to preserve Surf's pinned end-to-end connection while roaming. The whole host is reproducible from an Ansible/Git repo with digest-pinned releases, atomic current symlinks, health-check-gated rollbacks, and 1Password-derived Vault secrets; the author cautions that chroots are compatibility layers, not isolation, and that irreplaceable data needs off-device backups.",
+    "channels": [
+      "devtools",
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "turning a CMF Phone 1 into a home Linux server host",
+    "audience": "self-hosters and devtools tinkerers frustrated with VPS costs/DRAM prices",
+    "source_url": "https://seg6.space/posts/phone-server",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49226636",
+        "points": 459,
+        "comments": 223,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lobste.rs/s/ykuqrc/my_server_is_phone_now",
+        "points": 29,
+        "comments": 8,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://seg6.space/posts/phone-server/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://seg6.space/posts/phone-server/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-08-08T22:49:23+00:00",
+    "published_at": "2026-08-09T01:39:27.374311+00:00",
+    "curated_at": "2026-08-09T01:39:27.374311+00:00",
     "model": "claude-opus-4-8"
   }
 ]
