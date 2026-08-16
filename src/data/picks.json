@@ -651,55 +651,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 244373,
-    "story_id": "s_825e5967f2db5af3",
-    "title": "Why Software Factories Fail (or: harness engineering is not enough)",
-    "relevance": 7,
-    "score": 4.607,
-    "why": "If you are handing an agent your production codebase, the argument here is that \"lights-off\" factories break down after 3-6 months on maintainability, and no amount of prompt or harness tuning fixes it because the reward signal for good design does not exist.",
-    "notes": [
-      "Core thesis: coding models can't maintain codebase quality over time without human steering because RLVR rewards are one-dimensional. SWE-bench-style tasks score a binary FAIL_TO_PASS/PASS_TO_PASS (did you fix it, did you break anything), with no penalty for eroding maintainability, so training incentivizes try/catch-everything and lazy type casts. Tests give a pass/fail in seconds; the cost of bad architecture surfaces in weeks or months, so RL has no fast oracle for design quality.",
-      "Author's own experience (HumanLayer): went full lights-off in July 2025, hit un-agent-fixable bugs roughly three times by November 2025 with site outages each time, then rewrote from scratch. Claims agent-built codebases start to slow down after ~3-6 months, faster than traditional 10-year-old-Java 'brownfield' decay.",
-      "Faros AI report (cited): since Jan/Feb AI-tool adoption, PR review quality is down (more/longer comments, many PRs merged with no review), incidents up, bugs per developer up. Author flags this as a correlation signal, not a verified smoking gun.",
-      "Claude Code cited going from nothing to ~$4B then ~$9B revenue in under a year; the 'canonically-accepted' explanation is Anthropic RL'd the model inside its own harness, the first lab to train a model against the exact tools it ships. An OpenAI talk is quoted: build a harness without owning the weights and you're always at a disadvantage to a team owning both.",
-      "New evals aimed at maintainability, per author: SWE-Marathon (Abundant AI), ~400-hour tasks with a compound reward instead of one bit; DeepSWE (Datacurve), large OSS tasks never built in reality to dodge contamination; Frontier Code (Cognition), multi-PR tasks that penalize tests failing to fail on pre-patch code (mutation testing) plus a judge model over the diff. Author still wouldn't bet a codebase on them.",
-      "Prescription: put code review back and front-load a 4-phase process (Product Requirements, System Architecture, Program Design, Vertical Slices) with HTML mockups, sequence diagrams, contract/schema definitions, and author-opt-in reviews. Disclosed bias: author runs HumanLayer, a human/agent collaboration tooling company; StrongDM's lights-off factory has no definitive public outcome data; author states claims are unproven vibes."
-    ],
-    "summary": "A HumanLayer founder argues that \"software factories\" where agents write code and humans stop reviewing it fail on maintainability, and that this is a model-training problem no harness or prompt engineering can fix. The mechanism: RLVR and benchmarks like SWE-bench score coding traces on binary pass/fail (fix the issue, don't break existing tests) with no reward for code design, because maintainability has no fast, reliable oracle the way tests do. As a result models get better at one-off tasks and greenfield sites but not at keeping large codebases changeable, producing defensive try/catch and lazy casts that pass tests while eroding structure. The author cites a Faros AI correlation report (review quality down, incidents and bugs up post-adoption), his own lights-off attempt that led to repeated outages and a from-scratch rewrite, and Claude Code's rise as evidence that owning the weights and RL-ing inside the harness beats harness-only teams. He notes newer maintainability-oriented evals (SWE-Marathon, DeepSWE, Frontier Code) as pointed the right way but not yet trustworthy. His remedy is to restore human review and front-load planning across product, architecture, program design, and vertical-slice phases; he discloses his commercial bias and that key claims are unproven.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "argues slop is a model-training problem, not a harness/prompting one",
-    "audience": "engineers and eng leaders deploying AI coding agents in production",
-    "source_url": "https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/wsff.md",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49023019",
-        "points": 137,
-        "comments": 125,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/wsff.md",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-07-23T15:18:48+00:00",
-    "published_at": "2026-08-09T10:15:17.169617+00:00",
-    "curated_at": "2026-08-09T10:15:17.169617+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 322034,
     "story_id": "s_0a4248a4b1b7cbd9",
     "title": "Nvidia reportedly testing lower memory configs of Rubin Ultra as memory shortage bites back — designs tested include as little as 192 GB and step back to HBM4",
@@ -2400,54 +2351,6 @@
     "first_seen": "2026-08-03T04:00:00+00:00",
     "published_at": "2026-08-09T10:30:20.649029+00:00",
     "curated_at": "2026-08-09T10:30:20.649029+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 314851,
-    "story_id": "s_209a6a29117c4860",
-    "title": "Microsoft Word for Windows 1.1a, Native X64 Port",
-    "relevance": 6,
-    "score": 4.69,
-    "why": "The 1990 Word for Windows codebase now compiles and runs as a real Win32 x64 binary, so you can read and step through original Microsoft application code instead of an emulator's black box.",
-    "notes": [
-      "Ports Word for Windows 1.1a (codename Opus) so the original C and resource files stay the authoritative implementation; the author states it is not an emulator or a reimplementation on a modern editor control.",
-      "Platform work is limited to the port boundary: 16-bit x86 assembly entry points translated to fixed-width C/C++, segmented and double-indirect memory handles mapped to an x64-safe runtime, and Win16 startup/messaging/graphics/file/resource behavior adapted to current Win32 APIs.",
-      "Builds with CMake 3.25+ presets and the Visual Studio 2022 x64 generator; targets include WORD1 (the executable), opus_original_engine, opus_x64_runtime, and a UI test driver.",
-      "Test suite (via ctest) covers the ported runtime, original data structures and command tables, process startup, and automated UI workflows: typing, selection, formatting, dialogs, and saving.",
-      "Legacy assembly tree is inventoried by CMake but not compiled into native targets; it is kept as reference so all shipped code is valid AMD64.",
-      "No top-level license file is included and original Microsoft/third-party copyright notices are retained, leaving redistribution rights unresolved."
-    ],
-    "summary": "A GitHub project builds the original Microsoft Word for Windows 1.1a source (historical codename Opus) into a native 64-bit Windows executable rather than running it under emulation or reimplementing it on a modern editor control. The original C and resource files remain authoritative; the port only translates 16-bit x86 assembly entry points to fixed-width C/C++, maps segmented and double-indirect memory handles to an x64-safe runtime, and adapts Win16 startup, messaging, graphics, file, and resource behavior to current Win32 APIs. It uses CMake presets with Visual Studio 2022 and ships an automated UI test suite covering typing, selection, formatting, dialogs, and saving. The legacy assembly tree is inventoried but not compiled, kept as a reference collection. The repository includes no top-level license and retains original Microsoft and third-party copyright notices, so redistribution rights are unclear.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "Original Word 1.1a (Opus) source ported to native x64, no emulation",
-    "audience": "systems programmers and retrocomputing/reverse-engineering enthusiasts",
-    "source_url": "https://github.com/jmarshall23/msword",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49228663",
-        "points": 149,
-        "comments": 61,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/jmarshall23/msword",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-08-09T05:23:41+00:00",
-    "published_at": "2026-08-09T08:53:34.265867+00:00",
-    "curated_at": "2026-08-09T08:53:34.265867+00:00",
     "model": "claude-opus-4-8"
   }
 ]
