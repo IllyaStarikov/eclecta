@@ -546,63 +546,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 306379,
-    "story_id": "s_c57dbc0fa15f6b7b",
-    "title": "CSS:the bomb inside your inbox",
-    "relevance": 7,
-    "score": 5.098,
-    "why": "Anyone building or trusting webmail's HTML/CSS sanitizers is exposed: the same allow-listed CSS that renders email can hijack Outlook's UI, prompt-inject OpenAI's Atlas browser, and exfiltrate login tokens from a single paste or click, with the Outlook bug unfixed at publication.",
-    "notes": [
-      "Gareth Heyes (PortSwigger) tested Yahoo Mail, AOL Mail, Fastmail, ProtonMail, Gmail, Outlook, plus Firefox and OpenAI's Atlas browser. The Outlook <label for> bug (targeting element IDs like RibbonModeToggle to open the ribbon and pin an attacker's message) was still unfixed at publication; at least three webmail clients allowed unfiltered label 'for' attributes.",
-      "Atlas prompt injection: ::before/::after content hides text from the user (rendered French shown), while a near-zero opacity block (opacity 0.00000001) feeds the LLM hidden 'debugging' instructions triggered by the word 'translate'. The payload exfiltrates the victim's name letter-by-letter by opening tabs to https://02.rs/debug#<LETTER>; per-letter URLs matched the model's own output, bypassing Atlas's tab-open confirmation.",
-      "Clipboard-to-webmail attack (spotted by James Kettle): pasting attacker HTML/CSS into contenteditable fields flashed page text red in AOL and Yahoo Mail, exposing a race condition where CSS is not sanitized in time. Browser behavior differs: Chrome rewrites inline <style> into style attributes, Safari drops styles, Firefox keeps inline style tags and background-image requests, making Firefox the best target.",
-      "Token exfiltration via nested attribute selectors: a 12-char hex Medium login token (e.g. token=c2e16a1781ed) is stolen by matching 5 chars at the start and 5 at the end plus multiple 5-char 'contains' chunks, using CSS nesting and :not() to shrink payload size; the two middle chars are reconstructed server-side by overlapping the chunks. Works on almost any 12-char hex token lacking 4-char duplicate substrings.",
-      "CSP that blocks external resources is bypassed for numeric text tokens using a font-height oracle: per-digit @font-face rules with descent-override:200% and unicode-range, driven by keyframe animations and CSS if()/style() queries, count digit frequency; the inset property plus max() with 100% fallbacks positions the correct exfiltration link full-screen so a single click leaks the token.",
-      "Sanitizer-bypass catalog: many ways to trigger external requests (image-set/-webkit-image-set, @import variants, -webkit-mask-box-image, sourceMappingURL comments), lax CSS parsing (calc/percent before url(), curly braces and other chars ignored before property names in Firefox), inconsistent comment rules, and hex escapes between slashes (url(/\\0a/evil)) that make absolute URLs look relative, which led to a Fastmail bug and an image-proxy bypass; full vectors to be released after the author's talk."
-    ],
-    "summary": "PortSwigger's Gareth Heyes documents techniques that break webmail CSS/HTML sanitizers to spoof UI, inject prompts into AI browsers, and steal authentication tokens across Yahoo Mail, AOL Mail, Fastmail, ProtonMail, Gmail, Outlook, Firefox, and OpenAI's Atlas. Unfiltered HTML <label for> attributes let an email control Outlook's UI (opening the ribbon, pinning a message), a bug reported as unfixed at publication. Using ::before/::after content plus near-zero opacity, he creates a gap between what a user sees and what an LLM reads, achieving indirect prompt injection in Atlas that auto-opens tabs to exfiltrate the victim's name while evading tab-open confirmations. He shows CSS token exfiltration via nested attribute selectors (recovering a 12-char hex Medium login token) and, when CSP blocks external resources, a font-height oracle built from @font-face descent-override, animations, and the inset/max() trick to leak numeric tokens on a single click. The piece also catalogs numerous sanitizer bypasses: multiple CSS external-request sinks, lax parsing quirks, ambiguous comment rules, and hex escapes between slashes that disguise absolute URLs as relative, one of which yielded a Fastmail image-proxy bypass. All findings are the author's own research; additional vectors are promised after his talk.",
-    "channels": [
-      "security",
-      "ai"
-    ],
-    "category": "software",
-    "subcategories": [
-      "web"
-    ],
-    "state": "confident",
-    "novelty": "CSS sanitizer bypasses enable UI hijacking and AI prompt injection in webmail",
-    "audience": "security researchers and engineers building/sanitizing HTML email or AI browser agents",
-    "source_url": "https://portswigger.net/research/css-the-bomb-inside-your-inbox",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49230066",
-        "points": 64,
-        "comments": 18,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://portswigger.net/research/css-the-bomb-inside-your-inbox",
-        "points": null,
-        "comments": null,
-        "name": "PortSwigger Research"
-      },
-      {
-        "url": "https://portswigger.net/research/css-the-bomb-inside-your-inbox",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-08-06T22:00:00+00:00",
-    "published_at": "2026-08-09T12:54:59.733639+00:00",
-    "curated_at": "2026-08-09T12:54:59.733639+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 322034,
     "story_id": "s_0a4248a4b1b7cbd9",
     "title": "Nvidia reportedly testing lower memory configs of Rubin Ultra as memory shortage bites back — designs tested include as little as 192 GB and step back to HBM4",
