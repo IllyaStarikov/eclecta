@@ -382,3 +382,23 @@ describe('parseStats — synthetic', () => {
     ).toThrow();
   });
 });
+
+describe('novelty clamp', () => {
+  it('clamps a runaway novelty instead of rejecting the export', () => {
+    const long = 'n'.repeat(400);
+    const [p] = parsePicks([minimalPick({ novelty: long })]);
+    expect(p.novelty).not.toBeNull();
+    expect((p.novelty as string).length).toBeLessThanOrEqual(200);
+    expect((p.novelty as string).endsWith('\u2026')).toBe(true);
+  });
+
+  it('leaves a sane novelty untouched', () => {
+    const [p] = parsePicks([minimalPick({ novelty: 'one sharp phrase' })]);
+    expect(p.novelty).toBe('one sharp phrase');
+  });
+
+  it('keeps null novelty null', () => {
+    const [p] = parsePicks([minimalPick({ novelty: null })]);
+    expect(p.novelty).toBeNull();
+  });
+});

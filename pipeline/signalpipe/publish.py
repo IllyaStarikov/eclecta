@@ -176,7 +176,10 @@ def export_picks(conn: sqlite3.Connection, cfg) -> List[Dict[str, Any]]:
             "category": category,
             "subcategories": subcategories,
             "state": "confident",
-            "novelty": r["novelty"],
+            # Export-side budget: rows persisted before the curate.py [:160]
+            # clamp deployed can carry runaway novelties forever; clamp at the
+            # exit too so the site contract holds regardless of row age.
+            "novelty": (r["novelty"] or "")[:160] or None,
             "audience": r["audience"],
             "source_url": source_url,
             "read_kind": r["read_kind"],

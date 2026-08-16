@@ -40,7 +40,14 @@ export const pickSchema = z.object({
   story_id: z.string().optional(),
   state: z.enum(['confident', 'developing']).optional(),
   published_at: z.string().nullable().optional(),
-  novelty: z.string().nullable(),
+  // Clamped, not rejected: rows persisted before the pipeline's [:160]
+  // novelty clamp deployed can exceed any cap, and a hard .max() here would
+  // fail the build on a stale export. Tighten to a rejecting tripwire once
+  // the deployed pipeline carries the clamp end-to-end.
+  novelty: z
+    .string()
+    .nullable()
+    .transform((v) => (v && v.length > 200 ? `${v.slice(0, 199).trimEnd()}…` : v)),
   audience: z.string().nullable(),
   source_url: z.string().min(1),
   read_kind: z.string().nullable(),

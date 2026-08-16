@@ -585,6 +585,38 @@ def test_export_picks_full(conn, seed, cfg, monkeypatch):
 
 
 @pytest.mark.integration
+def test_export_picks_clamps_runaway_novelty(conn, seed, cfg, monkeypatch):
+    """Export-side novelty budget: rows written before the curate.py [:160]
+    persistence clamp deployed must still leave publish within the contract."""
+    _install_frozen_clock(monkeypatch)
+    c = seed.cluster(
+        canonical_url="https://example.com/nov", title="Runaway novelty story"
+    )
+    seed.curation(
+        c, relevance_score=9, curated_at=_iso(-1), novelty="x" * 400
+    )
+    seed.article(
+        c, source_url="https://example.com/nov", read_url="https://example.com/nov"
+    )
+
+    picks = publish.export_picks(conn, cfg)
+    p = _pick_by_id(picks, c)
+    assert p is not None
+    assert p["novelty"] is not None
+    assert len(p["novelty"]) <= 160
+
+    # empty-string novelty rows export as None, never ""
+    c2 = seed.cluster(canonical_url="https://example.com/nov2", title="Empty novelty")
+    seed.curation(c2, relevance_score=9, curated_at=_iso(-1), novelty="")
+    seed.article(
+        c2, source_url="https://example.com/nov2", read_url="https://example.com/nov2"
+    )
+    p2 = _pick_by_id(publish.export_picks(conn, cfg), c2)
+    assert p2 is not None
+    assert p2["novelty"] is None
+
+
+@pytest.mark.integration
 def test_export_picks_never_leaks_fulltext_or_archive(conn, seed, cfg, monkeypatch):
     """Fair-use / privacy guardrail: a published pick carries summaries + links
     only — never the stored full article text, the INTERNAL paywall-bypass
