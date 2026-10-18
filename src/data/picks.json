@@ -118,6 +118,57 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 602772,
+    "story_id": "s_9a31c406b9a93137",
+    "title": "One parser, two bugs, many routers: Exploiting Broadcom WiFi across eCos, Linux",
+    "relevance": 8,
+    "score": 6.486,
+    "why": "If you connect to WiFi on untrusted networks, a bug Broadcom has known about since 2018 still lets an attacker across the street get an unauthenticated root shell and your PSK on millions of unpatched cable gateways, with no CVE to track it.",
+    "notes": [
+      "The flaw is a WPS EAP reassembly overflow in Broadcom's proprietary 802.11 parser, present in the SDK since at least 2010; a 2018 patch was incomplete and silently shipped, after which Broadcom recommended OEMs move to hostapd.",
+      "It is a definitive forever-day on eCos platforms (BCM3380, BCM3383, BCM33834) and a potential forever-day on Linux platforms (BCM3390, BCM65xx, BCM68xx) that depends on OEM migration.",
+      "Triggered remotely over WiFi without the network key or a completed WPS enrollment, yielding controlled info disclosure and arbitrary code execution; the author demos RCE on an Orange ASKEY TCG3000 (shellcode reads PSK from NVRAM and exfiltrates it over 802.11) and a reverse shell over 802.11 frames on a Proximus/Sagemcom BBOX3V+.",
+      "Broadcom, itself a CVE Numbering Authority, refused to assign a CVE or publish an advisory; a CERT/CC case opened via VINCE on 04/08/2026 was closed the same day for that reason. Author says Broadcom has known since 2018 and received reports from other external entities.",
+      "Napkin-math estimates (medium confidence, from IBPT data and ISP announcements): Proximus ~850,000 affected gateways, VOO legacy fleet ~500,000, Orange Belgium ~210,000; Telenet F@ST models to be confirmed. None patched as of October 15, 2026.",
+      "Disclosure followed a 90-day timeline from the 18/07/2026 Broadcom PSIRT report, with the deadline hitting at the 16/10/2026 Hexacon talk. Author credits AI frontier models with cutting the research from months to under a week; a fingerprinting script and YARA rule are offered to map the blast radius."
+    ],
+    "summary": "A researcher disclosed a WPS EAP reassembly overflow in Broadcom's proprietary 802.11 parser, present in the SDK since at least 2010 and only partially patched in a silent 2018 release. It is exploitable remotely over WiFi without the network key or a WPS enrollment, granting controlled information disclosure and arbitrary code execution; it is a definitive forever-day on eCos chips (BCM3380/3383/33834) and a potential forever-day on Linux chips (BCM3390/65xx/68xx) pending OEM migration to hostapd. The author demonstrated unauthenticated RCE on Belgian ISP CPEs, including an Orange ASKEY TCG3000 (exfiltrating the PSK from NVRAM over 802.11) and a Proximus/Sagemcom BBOX3V+ (reverse shell over 802.11 frames), and estimates well over a million affected gateways across Proximus, VOO, and Orange, none patched as of October 15, 2026. Broadcom, a CVE Numbering Authority, declined to assign a CVE or publish an advisory, which the author argues is why OEMs never patched; a CERT/CC case was closed the same day it opened. Disclosure followed a 90-day window from the 18/07/2026 PSIRT report to the 16/10/2026 Hexacon talk. The author attributes rapid discovery to AI frontier models (under a week versus months) and released a fingerprinting script and YARA rule, framing support-window gaps as a durable attacker opportunity for nearest-neighbor and hotel-network attacks. Affected-vendor counts and ISP remediation status remain self-reported or unknown.",
+    "channels": [
+      "security",
+      "hardware"
+    ],
+    "category": "security",
+    "subcategories": [
+      "research"
+    ],
+    "state": "confident",
+    "novelty": "unpatched forever-day in Broadcom WiFi SDK since 2010, millions of routers affected",
+    "audience": "security researchers and embedded/firmware engineers working on router or IoT security",
+    "source_url": "https://quentinkaiser.be/security/2026/10/16/one-parser-two-bugs",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50122058",
+        "points": 29,
+        "comments": 6,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://quentinkaiser.be/security/2026/10/16/one-parser-two-bugs/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-16T18:07:44+00:00",
+    "published_at": "2026-10-18T23:06:29.663845+00:00",
+    "curated_at": "2026-10-18T23:06:29.663845+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 576282,
     "story_id": "s_407c136a9332cf6b",
     "title": "Redesigning source control at Anthropic",
@@ -294,7 +345,7 @@
     "story_id": "s_f181db51d3690f76",
     "title": "Online ads weaponised to deliver ‘zero-click’ spyware, researchers say",
     "relevance": 8,
-    "score": 6.831,
+    "score": 6.827,
     "why": "Being shown an ad on a website you visit is now a described infection vector: Citizen Lab says the real-time bidding auction itself hands your identity and IP to a spyware operator who can hack you with zero taps.",
     "notes": [
       "Citizen Lab (University of Toronto) attributes the campaign to Israeli ad agency Discover-Tech and its platform Controlium, which it says mass-profiles and deanonymizes users through programmatic ad auctions, then hands selected targets to third-party mercenary spyware firms.",
@@ -498,7 +549,7 @@
     "story_id": "s_3355ce59522cca71",
     "title": "Big Fish: Exploiting a 37-Year-Old Kernel Bug in OpenBSD",
     "relevance": 8,
-    "score": 7.308,
+    "score": 7.3,
     "why": "A counter overflow that has sat in BSD source for ~37 years yields local root on a fully hardened OpenBSD (KARL, SMAP, SMEP) with no information leak, because KARL never randomized the kernel's allocators.",
     "notes": [
       "The root bug: shm_nattch, the shared-memory attach counter, was a signed 16-bit short in the original BSD sources. The exploit maps 127 SysV shm segments, unmaps them, and forks 259 processes to wrap the counter to -32,643, producing an integer overflow that leads to a use-after-free via a race.",
@@ -635,7 +686,7 @@
     "story_id": "s_25c26fd606d28db2",
     "title": "Claude reveals ECDSA curve origins",
     "relevance": 8,
-    "score": 8.207,
+    "score": 8.169,
     "why": "The 25-year suspicion that NSA backdoored the NIST P-curves loses its footing: the seeds turn out to be plain lrand48() output from a Unix clock, reproducible by anyone, which narrows the room for deliberate subversion.",
     "notes": [
       "The curve seeds were not hashes of any passphrase (the long-rumored 'Give Bob and Jerry a raise' story was wrong). They are raw output of the C library's lrand48 PRNG seeded via srand48 with a Unix timestamp; P-256's published seed is candidate 1842 of its run.",
@@ -852,7 +903,7 @@
     "story_id": "s_c0d692f02ffdf565",
     "title": "Someone on Torrent Sites Kept Fucking with My Sonarr",
     "relevance": 7,
-    "score": 6.278,
+    "score": 6.266,
     "why": "If you point Sonarr or Radarr at public indexers, this stealer will land in your downloads folder, and one double-click exfiltrates your browser passwords, SSH/AWS/cloud configs, and crypto wallets.",
     "notes": [
       "The lure was a South Park episode renamed with a .exe extension, uploaded to public trackers with 2,392 seeders; Sonarr auto-grabbed it and retried import every 90 seconds. qBittorrent marked it finished with total_downloaded: 0, so the author re-downloaded it deliberately to analyze it.",
@@ -912,7 +963,7 @@
     "story_id": "s_a9a2f113defd36d1",
     "title": "Lean Now Ships with Verified Kernels",
     "relevance": 7,
-    "score": 6.291,
+    "score": 6.263,
     "why": "After AI agents found exploitable bugs in Lean's proof checker, the Lean FRO shipped `lake check --paranoid`, which rechecks your development against five independent kernels, so a single kernel implementation bug no longer silently invalidates a proof.",
     "notes": [
       "con-leche is the first Lean kernel written in Lean with a machine-checked consistency proof: every environment it accepts has a set-theoretic model following Mario Carneiro's model of Lean's type theory. It was implemented and proven consistent by Claude (Fable and Opus) under heavy supervision by Joachim Breitner. The proof is checked by the official kernel and assumes the consistency of the underlying set theory.",
@@ -1166,7 +1217,7 @@
     "story_id": "s_1f83e541482cff51",
     "title": "You could have invented transformers from memory",
     "relevance": 7,
-    "score": 6.631,
+    "score": 6.622,
     "why": "If you build or debug transformers, this gives you a back-of-envelope formula for how many distinct facts each layer type can recall before interference drowns the signal: ~64 for a linear layer, ~2,700 for a squared-ReLU MLP, ~1.2 million for softmax attention at 64-dim keys.",
     "notes": [
       "The unifying metric is the interference-to-signal ratio: query a store with a stored key k_j, recover v_j (signal) plus a weighted sum of all other values (interference); capacity is the number of memories M at which that ratio hits 1.",
@@ -1596,7 +1647,7 @@
     "story_id": "s_34ab6d7ac427d919",
     "title": "Local and Distributed Large LLM Inference with MLX and RDMA on Mac Studio",
     "relevance": 7,
-    "score": 7.119,
+    "score": 7.111,
     "why": "Four Mac Studios wired over Thunderbolt 5 RDMA run an 816B-parameter MoE model at 36+ tok/s in a private, ~300W-peak setup, putting trillion-scale local inference on a desk instead of in a GPU rack.",
     "notes": [
       "The multi-machine link is new plumbing: macOS 26.2 ships a low-latency RDMA-over-Thunderbolt 5 driver, and MLX v0.30.1+ adds `jaccl` communication collectives on top, launched via `mlx.launch --backend jaccl` with an experimental `MLX_METAL_FAST_SYNCH=1` flag for CPU-GPU sync.",
@@ -1654,7 +1705,7 @@
     "story_id": "s_752a66a3b8b11eb7",
     "title": "JPEG XL vs AVIF for web use-cases",
     "relevance": 7,
-    "score": 6.97,
+    "score": 6.945,
     "why": "JPEG XL now decodes in every major browser, but on today's encoders AVIF still produces smaller files for almost every web image, so the default serving format does not change.",
     "notes": [
       "Lossy photos: the best JPEG XL output is 15-25% larger than AVIF at default effort settings and 6-20% larger at max effort, with occasional outliers (e.g. the weasel image) where JPEG XL ties or wins; the author advises trying both per image.",
@@ -1800,7 +1851,7 @@
     "story_id": "s_99f05b519ea2a39a",
     "title": "How to Formalize All of Mathematics",
     "relevance": 7,
-    "score": 7.34,
+    "score": 7.33,
     "why": "The people who build Lean and Mathlib are telling you that AI-dumped proofs like Claude's 13-million-line Fermat verification carry almost no research value, and they name the vetted channels (Mathlib, Tau Ceti, Formal Frontier, Palomar) where machine-generated formalization is actually worth building on.",
     "notes": [
       "Written collectively by Jeremy Avigad, Kevin Buzzard, Johan Commelin, Remy Degenne, Kim Morrison, Oliver Nash, and Adam Topaz; they explicitly disclaim speaking for any organization. Their core argument: a formal artifact is worthless if nobody uses it, so correctness alone does not justify formalization.",
@@ -1869,7 +1920,7 @@
     "story_id": "s_9f263e66e563514c",
     "title": "90% of US working hours are spent on tasks not covered well by AI benchmarks",
     "relevance": 7,
-    "score": 7.381,
+    "score": 7.372,
     "why": "If you cite leaderboard scores to argue a model is or isn't ready for real work, this maps where those benchmarks are silent: by Mercor's count, 90% of US working hours fall on tasks with little or no benchmark coverage.",
     "notes": [
       "Built from 29 benchmarks selected for quality and economic relevance, mapped by an LLM judge onto the O*NET taxonomy of 923 occupations and 18,797 tasks; a task counts as 'covered' only if tied to at least 5 prompts. The LLM tagging was validated against human expert tags on Mercor's APEX subset.",
@@ -2059,7 +2110,7 @@
     "story_id": "s_6e746911f5a93d4f",
     "title": "Hybrid Reasoning Agents",
     "relevance": 6,
-    "score": 6.556,
+    "score": 7.255,
     "why": "If the self-reported numbers hold, you get agent reasoning that cuts tokens 35.5%-54.7% and runs 1.8x-2.6x faster by letting the model think in a latent (non-text) medium and surface to text only to call tools.",
     "notes": [
       "Core idea: agents reason in latent space internally but act through text externally; a lightweight HybridLink module switches between the two modes inside a single generation pass, and a continuous working memory carries hybrid context across turns.",
@@ -2088,19 +2139,25 @@
     "paywalled": false,
     "surfaces": [
       {
+        "url": "https://news.ycombinator.com/item?id=50145337",
+        "points": 106,
+        "comments": 46,
+        "name": "Hacker News"
+      },
+      {
         "url": "https://huggingface.co/papers/2610.18861",
         "points": 23,
         "comments": null,
         "name": "Hugging Face Daily Papers"
       },
       {
-        "url": "https://news.ycombinator.com/item?id=50145337",
-        "points": 16,
-        "comments": 1,
+        "url": "https://arxiv.org/abs/2610.18861",
+        "points": null,
+        "comments": null,
         "name": "Hacker News"
       }
     ],
-    "sources_count": 2,
+    "sources_count": 3,
     "first_seen": "2026-10-12T20:00:00.000Z",
     "published_at": "2026-10-18T21:29:50.818917+00:00",
     "curated_at": "2026-10-18T21:29:50.818917+00:00",
@@ -2325,7 +2382,7 @@
     "story_id": "s_55ad04f0b81a8eea",
     "title": "Libreboot 26.10 \"Ominous Olive\" released with UEFI, Chromebook support",
     "relevance": 6,
-    "score": 6.293,
+    "score": 6.288,
     "why": "If you run coreboot on a ThinkPad or a desktop with a discrete GPU, the default payload just flipped to EDK2, so UEFI operating systems (including Windows) now boot on free firmware without a proprietary BIOS.",
     "notes": [
       "EDK2 (Intel's BSD-licensed UEFI reference implementation, via MrChromebox's coreboot-payload fork) becomes the default on nearly all 64-bit boards, replacing bare-metal GRUB/SeaBIOS, which are now shipped as EFI builds reachable from the EDK2 menu via ESC and are deprecated. 32-bit-only hardware stays on the old GRUB/SeaBIOS setup.",
@@ -2573,7 +2630,7 @@
     "story_id": "s_76eabaec2ffc42bb",
     "title": "Inside the Intel 8087 chip: floating-point addition and subtraction",
     "relevance": 6,
-    "score": 8.254,
+    "score": 8.197,
     "why": "If you have ever wondered what \"normalize the significand\" costs in silicon, this traces every micro-instruction the 8087 runs for a single float add, down to the two-bit expAdj counter and the trick that tells addition from subtraction.",
     "notes": [
       "Shirriff decapped the chip with a chisel and imaged the die under a microscope; the microcode ROM in the center holds 1648 micro-instructions, and the datapath below handles 80-bit values via a 69-bit integer adder, an arbitrary-count bit shifter, a leading-zero counter, and an exponent converter.",
@@ -2601,8 +2658,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50142449",
-        "points": 73,
-        "comments": 17,
+        "points": 79,
+        "comments": 23,
         "name": "Hacker News"
       },
       {
@@ -2635,7 +2692,7 @@
     "story_id": "s_e5fbf38f1fb351ac",
     "title": "Will it be a golden age or a dark age for mathematics (and science)?",
     "relevance": 6,
-    "score": 8.56,
+    "score": 8.503,
     "why": "A Fields Medalist is publicly weighing whether AI tools strengthen or erode mathematical research practice, and his read shapes how the math community treats proof assistants and automated reasoning.",
     "notes": [
       "Written by Terence Tao, Fields Medalist, on his blog What's New; the piece is an opinion/framing essay, not a result.",
@@ -2862,7 +2919,7 @@
     "story_id": "s_6157a41ba14af5a3",
     "title": "Microsoft pulls out of AI datacentre project in Essex over power supply concerns",
     "relevance": 6,
-    "score": 6.461,
+    "score": 6.415,
     "why": "Grid power, not capital or demand, is now the binding constraint killing hyperscale AI buildout: Microsoft walked away from an Essex datacentre because the local supply could not feed it.",
     "notes": [
       "Microsoft dropped a planned AI datacentre project in Essex, UK, per the Guardian headline.",
@@ -2889,7 +2946,7 @@
     "surfaces": [
       {
         "url": "https://www.theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-        "points": 79,
+        "points": 83,
         "comments": null,
         "name": "Mastodon trending links"
       },
@@ -3190,7 +3247,7 @@
     "story_id": "s_2ea386b95413d659",
     "title": "Anthropic’s proposed AI safety bill only kicks in if 50 deaths or $1 billion in damages are on the line",
     "relevance": 6,
-    "score": 8.204,
+    "score": 8.158,
     "why": "If this draft becomes law, Commerce would be the sole agency able to halt a model release, and only after a risk crosses 50 deaths/injuries or $1B in damages, so most model shipping stays untouched by federal pre-release review.",
     "notes": [
       "The trigger is narrow: a model release can be blocked only if it risks 50+ deaths or injuries or $1B in damages, scoped to bioweapons, AI-enabled cyberattacks, or a lab losing control of a model or agents.",
@@ -3252,7 +3309,7 @@
     "story_id": "s_eb77817ddd321284",
     "title": "The Decoherence Trap: When AI slop drowns out the signal in an endless sea of noise",
     "relevance": 6,
-    "score": 6.954,
+    "score": 6.905,
     "why": "If your team is shipping AI-generated code into an existing codebase, three cited studies say you are trading a 30% jump in code volume for 49% longer reviews and lasting complexity, not more finished work.",
     "notes": [
       "Defines 'decoherence' as the accumulation of locally valid but mutually incompatible or redundant models in a system, where the cost of change comes to be dominated by translating among them and preventing side effects; the author frames it as worse than ordinary tech debt.",
@@ -3551,7 +3608,7 @@
     "story_id": "s_d68b32bbb8e23369",
     "title": "Interactive refactoring in gopls",
     "relevance": 6,
-    "score": 6.841,
+    "score": 6.82,
     "why": "If you use gopls, struct-tag, interface-stub, and move-declaration refactorings now prompt for input instead of guessing, and the mechanism is a proposed LSP standard that could bring the same to every language server.",
     "notes": [
       "Shipping now: gopls v0.24.0 and the VS Code Go extension v0.56.0; proof-of-concept client integrations explored for Neovim and Emacs.",
@@ -3606,63 +3663,6 @@
     "first_seen": "2026-10-17T01:12:09+00:00",
     "published_at": "2026-10-18T13:48:00.603438+00:00",
     "curated_at": "2026-10-18T13:48:00.603438+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 574634,
-    "story_id": "s_4dec684ccb2c1ee0",
-    "title": "Banks are now trying to offload the AI data center debt they just underwrote",
-    "relevance": 6,
-    "score": 7.119,
-    "why": "If the thread's claims hold, the banks that underwrote AI datacenter loans are now repricing that risk onto insurers at a discount, and a single hyperscaler's near-junk credit rating is already stalling billions in buildout.",
-    "notes": [
-      "Bond yields cited in the thread: CoreWeave debt pushed toward 16%, Oracle toward 8% (reportedly 6% a week earlier). These are forum-stated figures, not sourced to filings.",
-      "The underwriting banks are said to be securitizing datacenter loans and selling the slices at a discount, with insurance companies named as the buyers chasing yield; a commenter frames this as routine commercial-real-estate practice (getting loans off balance sheets to avoid holding capital while keeping management fees), not necessarily a distress signal.",
-      "Specific stall claims, all unverified: Wisconsin's law requiring high credit rating or collateral for fast-tracked power projects allegedly blocks an Oracle datacenter's electricity; a New Mexico site stuck on water and gas-turbine contracts with Oracle invoking force majeure; Texas blocking new grid hookups over electricity-price backlash, killing an Oracle expansion. Oracle's July downgrade to near-junk is cited as the trigger.",
-      "A thread technical point worth keeping: unlike residential MBS bundling hundreds of small loans into risk tranches, datacenter loans are so large that a bond may hold only one or two, so tranching and diversification barely apply, and default events are correlated rather than independent when projects compete for the same power.",
-      "The core speculative theory, explicitly labeled personal opinion: Oracle taken private after a stock collapse, then acquired by OpenAI to wipe ~$500B in obligations and buy next-gen hardware cheaply, with creditors offered equity instead of cash. No evidence supports this.",
-      "Source is a Lemmy/HN comment thread (327 HN points), mixing a self-identified commercial-real-estate worker's explanation with heavy editorializing; treat all numbers and narratives as claims, not reporting."
-    ],
-    "summary": "A Lemmy/Hacker News thread argues that the banks that underwrote AI datacenter construction loans are now securitizing and selling that debt, reportedly at a discount, with insurance companies as the main buyers. Commenters cite bond yields moving against borrowers (CoreWeave toward 16%, Oracle toward 8%) and tie the risk to Oracle's July downgrade to near-junk, which they say is stalling datacenter projects in Wisconsin, New Mexico, and Texas over power, water, and grid-hookup constraints. One contributor who works in commercial real estate frames loan securitization as standard bank practice for shedding capital requirements while keeping fees, and notes that datacenter loans are too large and too few per bond to tranche or diversify like residential MBS, making correlated default a real concern. Much of the thread is explicit speculation, including a theory that Oracle is a 'sacrificial lamb' to be taken private and absorbed by OpenAI to erase debt and acquire cheap hardware. None of the figures or project claims are sourced to filings or primary reporting, so they should be read as forum assertions rather than verified facts.",
-    "channels": [
-      "ai",
-      "startups"
-    ],
-    "category": "hardware",
-    "subcategories": [
-      "datacenter"
-    ],
-    "state": "confident",
-    "novelty": "banks offloading AI datacenter debt to insurers amid credit downgrades",
-    "audience": "investors and engineers tracking AI infrastructure financing risk",
-    "source_url": "https://lemmy.world/post/53130523",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50092664",
-        "points": 327,
-        "comments": 232,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://startupfortune.com/banks-are-now-trying-to-offload-the-ai-data-center-debt-they-just-underwrote/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lemmy.world/post/53130523",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-14T19:05:50+00:00",
-    "published_at": "2026-10-18T13:32:08.609680+00:00",
-    "curated_at": "2026-10-18T13:32:08.609680+00:00",
     "model": "claude-opus-4-8"
   }
 ]
