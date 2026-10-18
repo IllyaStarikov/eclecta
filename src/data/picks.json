@@ -140,7 +140,7 @@
     "story_id": "s_f181db51d3690f76",
     "title": "Online ads weaponised to deliver ‘zero-click’ spyware, researchers say",
     "relevance": 8,
-    "score": 6.854,
+    "score": 6.844,
     "why": "Being shown an ad on a website you visit is now a described infection vector: Citizen Lab says the real-time bidding auction itself hands your identity and IP to a spyware operator who can hack you with zero taps.",
     "notes": [
       "Citizen Lab (University of Toronto) attributes the campaign to Israeli ad agency Discover-Tech and its platform Controlium, which it says mass-profiles and deanonymizes users through programmatic ad auctions, then hands selected targets to third-party mercenary spyware firms.",
@@ -344,7 +344,7 @@
     "story_id": "s_3355ce59522cca71",
     "title": "Big Fish: Exploiting a 37-Year-Old Kernel Bug in OpenBSD",
     "relevance": 8,
-    "score": 7.352,
+    "score": 7.333,
     "why": "A counter overflow that has sat in BSD source for ~37 years yields local root on a fully hardened OpenBSD (KARL, SMAP, SMEP) with no information leak, because KARL never randomized the kernel's allocators.",
     "notes": [
       "The root bug: shm_nattch, the shared-memory attach counter, was a signed 16-bit short in the original BSD sources. The exploit maps 127 SysV shm segments, unmaps them, and forks 259 processes to wrap the counter to -32,643, producing an integer overflow that leads to a use-after-free via a race.",
@@ -481,7 +481,7 @@
     "story_id": "s_25c26fd606d28db2",
     "title": "Claude reveals ECDSA curve origins",
     "relevance": 8,
-    "score": 8.414,
+    "score": 8.327,
     "why": "The 25-year suspicion that NSA backdoored the NIST P-curves loses its footing: the seeds turn out to be plain lrand48() output from a Unix clock, reproducible by anyone, which narrows the room for deliberate subversion.",
     "notes": [
       "The curve seeds were not hashes of any passphrase (the long-rumored 'Give Bob and Jerry a raise' story was wrong). They are raw output of the C library's lrand48 PRNG seeded via srand48 with a Unix timestamp; P-256's published seed is candidate 1842 of its run.",
@@ -535,6 +535,113 @@
     "first_seen": "2026-10-16T18:55:59+00:00",
     "published_at": "2026-10-18T11:37:06.666552+00:00",
     "curated_at": "2026-10-18T11:37:06.666552+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 600675,
+    "story_id": "s_a9a2f113defd36d1",
+    "title": "Lean Now Ships with Verified Kernels",
+    "relevance": 7,
+    "score": 6.381,
+    "why": "After AI agents found exploitable bugs in Lean's proof checker, the Lean FRO shipped `lake check --paranoid`, which rechecks your development against five independent kernels, so a single kernel implementation bug no longer silently invalidates a proof.",
+    "notes": [
+      "con-leche is the first Lean kernel written in Lean with a machine-checked consistency proof: every environment it accepts has a set-theoretic model following Mario Carneiro's model of Lean's type theory. It was implemented and proven consistent by Claude (Fable and Opus) under heavy supervision by Joachim Breitner. The proof is checked by the official kernel and assumes the consistency of the underlying set theory.",
+      "Self-reported performance: on the full Mathlib export con-leche runs 0.69x the instructions of the official kernel and checks the library in about 100 seconds on eight threads (per PERF.md); the consistency proof eliminates kernel-implementation bugs without a performance penalty.",
+      "con-ron is an AI-generated Rust translation of con-leche, with Aeneas (a tool for verifying Rust via Lean) used to prove the Rust version refines con-leche's checking algorithm. Checking with both guards against bugs in Lean's compiler/runtime and bignum library, since the same bug is unlikely to exist in the Rust toolchain.",
+      "lake check (new in v4.35.0) exports a development and rechecks it with leanchecker in a sandbox (disable via --inadvisably-no-sandbox). --paranoid runs four added kernels (nanoda, lean4lean, con-leche, con-ron) plus a hardened-allocator variant of the official kernel that turns memory corruption into a checked abort.",
+      "Stated motivation: two August postmortems (Aug 1, Aug 24) where AI agents found vulnerabilities in the kernel. lean4lean verification, mirroring the official C++ implementation, is expected within months as a third verified kernel.",
+      "Scalability is called out as unsolved: FLT is 13M+ LoC, Mathlib 2.5M, Tau Ceti 3M+, the Courtade-Kumar repo 50M+, with proposals for 1B+ LoC libraries; the current external-kernel approach does not scale and needs binary export formats and incremental checking."
+    ],
+    "summary": "Lean v4.35.0 adds `lake check`, which exports a development and rechecks it with the standalone official kernel (leanchecker) inside a sandbox, and `lake check --paranoid`, which reruns the check against four additional kernels (nanoda, lean4lean, con-leche, con-ron) plus a hardened-allocator variant that converts memory corruption into a checked abort. The work responds to AI agents finding kernel vulnerabilities, documented in two August 2026 postmortems. con-leche is described as the first Lean kernel written in Lean with a machine-checked consistency proof (following Mario Carneiro's set-theoretic model), implemented by Claude under Joachim Breitner's supervision; it is claimed to run at 0.69x the official kernel's instruction count and check all of Mathlib in roughly 100 seconds on eight threads. con-ron is an AI-generated Rust port of con-leche, proven via Aeneas to refine its checking algorithm, so running both protects against compiler/runtime/bignum bugs that are unlikely shared across toolchains. The authors note remaining gaps: lean4lean verification is expected within months as a third verified kernel, and current external checking does not scale to multi-million- or billion-LoC developments, requiring binary export formats and incremental checking.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "AI-written and formally verified proof kernel shipped in production",
+    "audience": "formal methods researchers and Lean/Mathlib developers",
+    "source_url": "https://leodemoura.github.io/blog/2026-10-15-lean-now-ships-with-verified-kernels",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50114758",
+        "points": 187,
+        "comments": 66,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://leodemoura.github.io/blog/2026-10-15-lean-now-ships-with-verified-kernels/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-16T06:16:13+00:00",
+    "published_at": "2026-10-18T17:45:32.265409+00:00",
+    "curated_at": "2026-10-18T17:45:32.265409+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 495777,
+    "story_id": "s_7e22bedf886fa253",
+    "title": "Evolving programming languages in the AI era",
+    "relevance": 7,
+    "score": 6.407,
+    "why": "If you are building language tooling, the argument here is concrete: ship a queryable program database and runtime observability for agents instead of syntax tweaks or LSP endpoints, because agents track symbols and traces, not file/line/column positions.",
+    "notes": [
+      "Written by Jose Valim (creator of Elixir) on the Dashbit blog; split into speculative 'Reflections' and opinionated 'Agentic tooling' sections. Discloses AI was used for style and grammar editing.",
+      "Rejects 'languages for coding agents' that optimize syntax or token efficiency, calling it building around current model limits; says agents experience HTML/CSS/JS/Elixir/Rust/Lean as tokens-in, tokens-out and are unbothered by boilerplate like explicit null checks vs optional chaining.",
+      "Argues agents writing raw assembly instead of using compilers is implausible: you still need an architecture-independent representation plus lowering (i.e., a compiler), and no single language unifies systems, theorem provers, query, concurrency (Erlang/Elixir), and hardware-description domains.",
+      "Proposes replacing LSPs with a 'program database' exposing symbols, references, call graphs, type and data-flow info via a query language (SQLite, Datalog, or a DSL); LSPs are biased toward file/line/column positions agents do not track precisely. Based on experience building Tidewave.",
+      "Argues for stronger static guarantees over type inference convenience, since inferable type systems are a subset of checkable ones; lists four reinforcing techniques: correct-by-construction, statically established, runtime-enforced, and empirically validated (tests, property-based testing, fuzzing).",
+      "Pitches runtime observability over step-debuggers so agents can instrument, trace, and diagnose production live; cites the Erlang VM's built-in inspection of processes, supervisors, ETS tables, and message queues, with the open gap being exposing those safely to agents. Caveat: monkey-patching and action-at-a-distance stay hard to trace even with program databases."
+    ],
+    "summary": "Jose Valim, creator of Elixir, argues that if coding agents write most code, language design should stop optimizing for human ergonomics and token efficiency and instead optimize for guarantees and agent-friendly tooling. He dismisses syntax-focused 'languages for coding agents' as building around current model limits, and rejects the idea of agents replacing compilers by writing assembly, since you still need an architecture-independent representation and no single language spans all domains. On tooling, he proposes exposing language-server information (symbols, references, call graphs, types, data flow) as a queryable program database rather than position-based LSP endpoints, which agents can compose into queries impractical as IDE features. He also favors stronger static guarantees over convenient type inference, combining correct-by-construction, static, runtime, and empirical (test/fuzz) techniques, and runtime observability over step-debuggers so agents can instrument and diagnose live systems, citing the Erlang VM's built-in introspection. The piece is framed as speculative 'ramblings,' informed by building Tidewave, and notes AI was used only for style and grammar.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [
+      "languages"
+    ],
+    "state": "confident",
+    "novelty": "essay questioning language design priorities when agents write most code",
+    "audience": "language designers and tooling engineers thinking about AI-driven coding",
+    "source_url": "https://dashbit.co/blog/evolving-ai-era",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49839567",
+        "points": 48,
+        "comments": 34,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://dashbit.co/blog/evolving-ai-era",
+        "points": null,
+        "comments": null,
+        "name": "Dashbit Blog"
+      },
+      {
+        "url": "https://dashbit.co/blog/evolving-ai-era",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-09-24T00:00:00+00:00",
+    "published_at": "2026-10-18T17:29:50.685736+00:00",
+    "curated_at": "2026-10-18T17:29:50.685736+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -689,7 +796,7 @@
     "story_id": "s_1f83e541482cff51",
     "title": "You could have invented transformers from memory",
     "relevance": 7,
-    "score": 6.682,
+    "score": 6.661,
     "why": "If you build or debug transformers, this gives you a back-of-envelope formula for how many distinct facts each layer type can recall before interference drowns the signal: ~64 for a linear layer, ~2,700 for a squared-ReLU MLP, ~1.2 million for softmax attention at 64-dim keys.",
     "notes": [
       "The unifying metric is the interference-to-signal ratio: query a store with a stored key k_j, recover v_j (signal) plus a weighted sum of all other values (interference); capacity is the number of memories M at which that ratio hits 1.",
@@ -1119,7 +1226,7 @@
     "story_id": "s_34ab6d7ac427d919",
     "title": "Local and Distributed Large LLM Inference with MLX and RDMA on Mac Studio",
     "relevance": 7,
-    "score": 7.163,
+    "score": 7.144,
     "why": "Four Mac Studios wired over Thunderbolt 5 RDMA run an 816B-parameter MoE model at 36+ tok/s in a private, ~300W-peak setup, putting trillion-scale local inference on a desk instead of in a GPU rack.",
     "notes": [
       "The multi-machine link is new plumbing: macOS 26.2 ships a low-latency RDMA-over-Thunderbolt 5 driver, and MLX v0.30.1+ adds `jaccl` communication collectives on top, launched via `mlx.launch --backend jaccl` with an experimental `MLX_METAL_FAST_SYNCH=1` flag for CPU-GPU sync.",
@@ -1177,7 +1284,7 @@
     "story_id": "s_752a66a3b8b11eb7",
     "title": "JPEG XL vs AVIF for web use-cases",
     "relevance": 7,
-    "score": 7.108,
+    "score": 7.05,
     "why": "JPEG XL now decodes in every major browser, but on today's encoders AVIF still produces smaller files for almost every web image, so the default serving format does not change.",
     "notes": [
       "Lossy photos: the best JPEG XL output is 15-25% larger than AVIF at default effort settings and 6-20% larger at max effort, with occasional outliers (e.g. the weasel image) where JPEG XL ties or wins; the author advises trying both per image.",
@@ -1323,7 +1430,7 @@
     "story_id": "s_99f05b519ea2a39a",
     "title": "How to Formalize All of Mathematics",
     "relevance": 7,
-    "score": 7.392,
+    "score": 7.37,
     "why": "The people who build Lean and Mathlib are telling you that AI-dumped proofs like Claude's 13-million-line Fermat verification carry almost no research value, and they name the vetted channels (Mathlib, Tau Ceti, Formal Frontier, Palomar) where machine-generated formalization is actually worth building on.",
     "notes": [
       "Written collectively by Jeremy Avigad, Kevin Buzzard, Johan Commelin, Remy Degenne, Kim Morrison, Oliver Nash, and Adam Topaz; they explicitly disclaim speaking for any organization. Their core argument: a formal artifact is worthless if nobody uses it, so correctness alone does not justify formalization.",
@@ -1392,7 +1499,7 @@
     "story_id": "s_9f263e66e563514c",
     "title": "90% of US working hours are spent on tasks not covered well by AI benchmarks",
     "relevance": 7,
-    "score": 7.43,
+    "score": 7.409,
     "why": "If you cite leaderboard scores to argue a model is or isn't ready for real work, this maps where those benchmarks are silent: by Mercor's count, 90% of US working hours fall on tasks with little or no benchmark coverage.",
     "notes": [
       "Built from 29 benchmarks selected for quality and economic relevance, mapped by an LLM judge onto the O*NET taxonomy of 923 occupations and 18,797 tasks; a task counts as 'covered' only if tied to at least 5 prompts. The LLM tagging was validated against human expert tags on Mercor's APEX subset.",
@@ -1578,6 +1685,62 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 602073,
+    "story_id": "s_e5fbf38f1fb351ac",
+    "title": "Will it be a golden age or a dark age for mathematics (and science)?",
+    "relevance": 6,
+    "score": 8.006,
+    "why": "A Fields Medalist is publicly weighing whether AI tools strengthen or erode mathematical research practice, and his read shapes how the math community treats proof assistants and automated reasoning.",
+    "notes": [
+      "Written by Terence Tao, Fields Medalist, on his blog What's New; the piece is an opinion/framing essay, not a result.",
+      "Central framing: AI tools point mathematics and science toward either a 'golden age' or a 'dark age,' with the outcome dependent on how the tools are adopted.",
+      "Drew 58 points and 60 comments on Hacker News, indicating active debate but not a technical consensus.",
+      "No article text was available for this write-up; the title, author, and surfacing context are the only grounded inputs, so the specific mechanisms, examples, and arguments Tao makes are not captured here."
+    ],
+    "summary": "Terence Tao, writing on his blog What's New, poses whether AI tools will produce a golden age or a dark age for mathematics and science. The title frames a dual-use argument: the same automated reasoning and AI assistance that could accelerate research might also degrade its culture or rigor. The post generated discussion on Hacker News (58 points, 60 comments). No article text was available for this summary, so the specific claims, evidence, and recommendations Tao offers are not represented; readers should consult the primary source for his actual argument and any concrete examples he cites.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "science"
+    ],
+    "category": "research",
+    "subcategories": [
+      "math"
+    ],
+    "state": "confident",
+    "novelty": "Tao's framing of AI's dual-use risk to mathematical research culture",
+    "audience": "researchers and engineers tracking AI's impact on scientific practice",
+    "source_url": "https://terrytao.wordpress.com/2026/10/18/will-it-be-a-golden-age-or-a-dark-age-for-mathematics-and-science",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50141681",
+        "points": 81,
+        "comments": 99,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://terrytao.wordpress.com/2026/10/18/will-it-be-a-golden-age-or-a-dark-age-for-mathematics-and-science/",
+        "points": null,
+        "comments": null,
+        "name": "What's New (Terence Tao)"
+      },
+      {
+        "url": "https://terrytao.wordpress.com/2026/10/18/will-it-be-a-golden-age-or-a-dark-age-for-mathematics-and-science/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-18T15:00:40+00:00",
+    "published_at": "2026-10-18T17:29:10.301317+00:00",
+    "curated_at": "2026-10-18T17:29:10.301317+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 485251,
     "story_id": "s_e27018bd5e1dd35a",
     "title": "Textbook review: Is Parallel Programming Hard, And, If So, What Can You Do About It?",
@@ -1747,7 +1910,7 @@
     "story_id": "s_6157a41ba14af5a3",
     "title": "Microsoft pulls out of AI datacentre project in Essex over power supply concerns",
     "relevance": 6,
-    "score": 6.624,
+    "score": 6.583,
     "why": "Grid power, not capital or demand, is now the binding constraint killing hyperscale AI buildout: Microsoft walked away from an Essex datacentre because the local supply could not feed it.",
     "notes": [
       "Microsoft dropped a planned AI datacentre project in Essex, UK, per the Guardian headline.",
@@ -1768,13 +1931,13 @@
     "novelty": "Microsoft exits UK datacentre over grid power limits",
     "audience": "AI infra/policy watchers tracking datacenter buildout constraints",
     "source_url": "https://theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-    "read_kind": null,
+    "read_kind": "publication-free",
     "free_link": null,
     "paywalled": false,
     "surfaces": [
       {
         "url": "https://www.theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-        "points": 54,
+        "points": 71,
         "comments": null,
         "name": "Mastodon trending links"
       },
@@ -2075,7 +2238,7 @@
     "story_id": "s_2ea386b95413d659",
     "title": "Anthropic’s proposed AI safety bill only kicks in if 50 deaths or $1 billion in damages are on the line",
     "relevance": 6,
-    "score": 7.826,
+    "score": 8.353,
     "why": "If this draft becomes law, Commerce would be the sole agency able to halt a model release, and only after a risk crosses 50 deaths/injuries or $1B in damages, so most model shipping stays untouched by federal pre-release review.",
     "notes": [
       "The trigger is narrow: a model release can be blocked only if it risks 50+ deaths or injuries or $1B in damages, scoped to bioweapons, AI-enabled cyberattacks, or a lab losing control of a model or agents.",
@@ -2137,7 +2300,7 @@
     "story_id": "s_eb77817ddd321284",
     "title": "The Decoherence Trap: When AI slop drowns out the signal in an endless sea of noise",
     "relevance": 6,
-    "score": 7.019,
+    "score": 7.113,
     "why": "If your team is shipping AI-generated code into an existing codebase, three cited studies say you are trading a 30% jump in code volume for 49% longer reviews and lasting complexity, not more finished work.",
     "notes": [
       "Defines 'decoherence' as the accumulation of locally valid but mutually incompatible or redundant models in a system, where the cost of change comes to be dominated by translating among them and preventing side effects; the author frames it as worse than ordinary tech debt.",
@@ -2436,7 +2599,7 @@
     "story_id": "s_d68b32bbb8e23369",
     "title": "Interactive refactoring in gopls",
     "relevance": 6,
-    "score": 6.962,
+    "score": 6.911,
     "why": "If you use gopls, struct-tag, interface-stub, and move-declaration refactorings now prompt for input instead of guessing, and the mechanism is a proposed LSP standard that could bring the same to every language server.",
     "notes": [
       "Shipping now: gopls v0.24.0 and the VS Code Go extension v0.56.0; proof-of-concept client integrations explored for Neovim and Emacs.",
