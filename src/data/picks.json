@@ -122,7 +122,7 @@
     "story_id": "s_9a31c406b9a93137",
     "title": "One parser, two bugs, many routers: Exploiting Broadcom WiFi across eCos, Linux",
     "relevance": 8,
-    "score": 6.724,
+    "score": 6.672,
     "why": "If you connect to WiFi on untrusted networks, a bug Broadcom has known about since 2018 still lets an attacker across the street get an unauthenticated root shell and your PSK on millions of unpatched cable gateways, with no CVE to track it.",
     "notes": [
       "The flaw is a WPS EAP reassembly overflow in Broadcom's proprietary 802.11 parser, present in the SDK since at least 2010; a 2018 patch was incomplete and silently shipped, after which Broadcom recommended OEMs move to hostapd.",
@@ -151,7 +151,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50122058",
-        "points": 35,
+        "points": 48,
         "comments": 9,
         "name": "Hacker News"
       },
@@ -549,7 +549,7 @@
     "story_id": "s_3355ce59522cca71",
     "title": "Big Fish: Exploiting a 37-Year-Old Kernel Bug in OpenBSD",
     "relevance": 8,
-    "score": 7.285,
+    "score": 7.278,
     "why": "A counter overflow that has sat in BSD source for ~37 years yields local root on a fully hardened OpenBSD (KARL, SMAP, SMEP) with no information leak, because KARL never randomized the kernel's allocators.",
     "notes": [
       "The root bug: shm_nattch, the shared-memory attach counter, was a signed 16-bit short in the original BSD sources. The exploit maps 127 SysV shm segments, unmaps them, and forks 259 processes to wrap the counter to -32,643, producing an integer overflow that leads to a use-after-free via a race.",
@@ -686,7 +686,7 @@
     "story_id": "s_25c26fd606d28db2",
     "title": "Claude reveals ECDSA curve origins",
     "relevance": 8,
-    "score": 8.099,
+    "score": 8.066,
     "why": "The 25-year suspicion that NSA backdoored the NIST P-curves loses its footing: the seeds turn out to be plain lrand48() output from a Unix clock, reproducible by anyone, which narrows the room for deliberate subversion.",
     "notes": [
       "The curve seeds were not hashes of any passphrase (the long-rumored 'Give Bob and Jerry a raise' story was wrong). They are raw output of the C library's lrand48 PRNG seeded via srand48 with a Unix timestamp; P-256's published seed is candidate 1842 of its run.",
@@ -740,6 +740,160 @@
     "first_seen": "2026-10-16T18:55:59+00:00",
     "published_at": "2026-10-18T11:37:06.666552+00:00",
     "curated_at": "2026-10-18T11:37:06.666552+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 597603,
+    "story_id": "s_dd04e8db34821a89",
+    "title": "Claude writes about 90% of Claude Code's code",
+    "relevance": 7,
+    "score": 6.002,
+    "why": "If your team lets agents open PRs, this is a worked reference design for the problem you are about to hit: Anthropic's monorepo went from ~2,500 to 30,000+ changes landed per day, and line-by-line human review stops scaling long before that.",
+    "notes": [
+      "Scale and result (self-reported): Anthropic monorepo changes landed/day rose from ~2,500 in May to 30,000+ in September; on the separate Claude Code repo, merged PRs more than doubled June-September while the reverted share fell over 40%. No absolute revert counts or methodology given.",
+      "Finding pipeline: several agents hunt bugs in parallel, then a separate group of agents votes, and a finding only posts if enough agree it is real. Style/diagnostics/cleanup findings are dropped; filters were A/B tested on their own PRs. Findings tagged Important, Nit, or Pre-existing.",
+      "Config files: CLAUDE.md holds project stack/conventions/goals and is loaded on every review; REVIEW.md, written by code owners per directory, states what failure looks like, caps nits, lists skip paths, and demands file+line evidence. They separately check whether the reviewer actually follows REVIEW.md.",
+      "Risk tiers set by a classifier, not the author: Low (docs, flagged additive changes) needs zero human approvals once automated+security checks pass; Medium needs one person; High needs two. A second classifier can escalate. An agent's approval never counts as a human's, and only trusted-list authors get the lighter paths.",
+      "Convergence failure mode: one CLI PR ran 50+ agent review/fix rounds overnight before its author stopped it; git blame showed ~59% of repeat flags were pre-existing code, not newly introduced bugs. They now track rounds-to-pass alongside recall. Code Review for Claude Code research preview raised internal PRs with substantive comments from 16% to 54%; GA on Team/Enterprise with a lighter local /code-review.",
+      "Stated caveats: no circuit breakers yet to auto-tighten approval when reverts/incidents rise (engineers want them before more code moves to zero-human merges); catching bad merges still depends on author, on-call, and dashboards. Boris Cherny's claim that verification makes results 2-3x better is an unquantified estimate."
+    ],
+    "summary": "Anthropic's Claude Code team describes how it reviews code at the volume agents produce, where Claude reportedly writes about 90% of Claude Code's own code. Rather than removing review, they moved most reading to machines: review runs continuously before a PR exists, every PR gets a Claude review plus a separate security review (both must have all findings resolved to merge), and findings are generated by multiple parallel bug-hunting agents and then filtered by a voting group of agents that must agree before anything reaches a human. A classifier assigns each change a Low/Medium/High risk tier (zero, one, or two human approvals), the change not the author sets the tier, and an agent approval never satisfies a human slot. The team reports merged PRs more than doubling June-September while the reverted share fell over 40%, and the research-preview reviewer raising internal PRs with substantive comments from 16% to 54%; all figures are self-reported without underlying counts or methodology. They flag open problems: review loops that fail to converge (one PR hit 50+ overnight rounds, ~59% of repeat flags being pre-existing code), the loss of code-understanding that human diff-reading used to spread, and the absence of circuit breakers to auto-tighten approval when reverts or incidents rise.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "multi-agent voting review pipeline cut reverts 40% while PR volume doubled",
+    "audience": "engineering leads designing AI-assisted code review and CI/CD workflows",
+    "source_url": "https://claude.dev/blog/solving-code-review-at-anthropic",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50122951",
+        "points": 263,
+        "comments": 251,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://claude.dev/blog/solving-code-review-at-anthropic/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-16T19:04:47+00:00",
+    "published_at": "2026-10-19T02:22:43.904211+00:00",
+    "curated_at": "2026-10-19T02:22:43.904211+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 490601,
+    "story_id": "s_a82585df7630b9e7",
+    "title": "Pentagon says overreliance on AI contributed to missile strike on Iran school",
+    "relevance": 7,
+    "score": 6.107,
+    "why": "The first detailed account of a military AI pipeline helping produce a mass-casualty targeting error shows how fast, automated kill chains fail when the data underneath them is stale and the human checks are gone.",
+    "notes": [
+      "Two Tomahawk missiles hit the Shajarah Tayyebeh Elementary School in Minab, Iran on Feb. 28, killing more than 150 people including at least 123 children, per officials involved in an internal Pentagon probe; a UN fact-finding mission found reasonable grounds the strike amounted to a war crime and said US failure to verify the target 'went beyond negligence.'",
+      "Palantir's Maven Smart System sits at the center of the kill chain, fusing 150+ data inputs; work that once took hours of staff review was compressed to minutes. Some Centcom personnel expected Maven to flag stale intel or inconsistencies, and officials say it is unclear why they held that expectation.",
+      "The site had been reclassified in practice: satellite imagery shows walls, entrances, a soccer pitch and play markings separating the school from the base by 2017; an analyst logged changes as early as 2019, but in a system disconnected from the primary targeting intelligence database. Targeting reportedly used imagery up to seven years old.",
+      "Context forcing speed: the Trump administration ordered 1,000+ Iranian targets hit in the first 24 hours after Geneva talks collapsed Feb. 26; Defense Secretary Hegseth had cut civilian-harm-mitigation staff by roughly 90% to fewer than 20 people, reducing Centcom's team from 10 to 1. No CHM member reviewed the Minab site.",
+      "Attribution and disputes: Palantir says it 'is not responsible for the underlying data nor identifying intelligence deficiencies' and that there is no evidence its software was at fault; it later built Maven features to re-review intel and flag inconsistencies. The government retains primary responsibility for data quality. Admiral Brad Cooper ordered the probe; the near-complete report remains unreleased, and the US has not publicly accepted responsibility.",
+      "Roughly three dozen people, most in Tampa 7,000+ miles away, were in the kill chain; investigators found high confidence throughout that the site was an IRGC facility. Investigators focused on the Defense Intelligence Agency's failure to reclassify the location."
+    ],
+    "summary": "Officials involved in an internal Pentagon investigation gave Bloomberg the first detailed account of how a Feb. 28, 2026 US Tomahawk strike destroyed an elementary school in Minab, Iran, killing more than 150 people including at least 123 children. They describe a cascade of preventable failures: outdated intelligence and seven-year-old imagery that never captured the school built on former IRGC land, a compressed timeline that saw 1,000+ targets hit in 24 hours, Hegseth's roughly 90% cut to civilian-harm-mitigation staff (no such reviewer looked at the site), and overreliance on Palantir's Maven Smart System, which fuses 150+ inputs and condensed hours of targeting work into minutes. An analyst had flagged site changes as early as 2019 but logged them in a system disconnected from the primary targeting database. Palantir denies responsibility for the underlying data or for identifying intelligence gaps, says no evidence implicates its software, and later added re-review features to Maven. A UN fact-finding mission found reasonable grounds the strike was a war crime and said the US failure 'went beyond negligence'; the US has not accepted responsibility and the near-complete Pentagon report remains unreleased.",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "first detailed account of AI-assisted targeting failure causing mass civilian deaths",
+    "audience": "AI policy watchers, military-tech and AI safety engineers",
+    "source_url": "https://bloomberg.com/graphics/2026-iran-school-attack",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49806430",
+        "points": 561,
+        "comments": 271,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.bloomberg.com/graphics/2026-iran-school-attack/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-22T19:03:38+00:00",
+    "published_at": "2026-10-19T01:16:38.762548+00:00",
+    "curated_at": "2026-10-19T01:16:38.762548+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 538035,
+    "story_id": "s_f804f641b19f83b1",
+    "title": "Deser: Rethinking Rust Serialization",
+    "relevance": 7,
+    "score": 6.117,
+    "why": "If you parse untrusted JSON at scale in Rust, Deser offers a drop-in-ish alternative that eliminates per-nesting stack growth and keeps datetimes, arbitrary-precision numbers, and XML namespaces intact instead of corrupting them through Serde's buffering.",
+    "notes": [
+      "Architecture inversion: in Serde the type drives and the format calls back into visitors via recursion (stack grows per nesting level); in Deser the format pushes events into a sink and a driver keeps nested sinks/emitters on the heap in an arena, so no call-stack recursion and no stack-overflow risk on deep input. The driver is Send, enabling streaming parses (JSON, CBOR, MessagePack) that can pause for IO under tokio.",
+      "Named root causes of Serde's limits: one trait set for all formats (features fail at runtime, derived structs can silently accept a JSON array for an object); a fixed data model that loses information when buffering internally/untagged enums and flatten (lost error locations, in-band magic-key signalling); and call-stack recursion.",
+      "Cited Serde corner cases: serde_json's arbitrary_precision feature (globally enabled by any crate via Cargo feature unification) breaks internally tagged enums with 'invalid type: map, expected f64'; serde(flatten) turns integer map keys into strings and misreports error location; deserialize_with functions cannot be composed into Option/Vec/map wrappers because a function is not a type parameter.",
+      "Deser's answer is completeness and adapters-as-types: JSON/JSONC/JSON5/HJSON, CBOR, MessagePack, YAML 1.1/1.2, TOML, XML, all three plist flavors, CSV/TSV, urlencoded, env vars. Adapters like Hex and DisplayFromStr and validators like Check<NonEmpty, Vec<Hex>> nest inside Option/Vec because they are types. Extension values (DateTime, Uuid, TOML datetimes) round-trip without magic keys and fall back to strings for formats that don't know them.",
+      "Self-reported performance tradeoffs: dynamic dispatch plus heap-resident sinks/emitters make JSON reads range from 33% faster to 60% slower than serde_json, ~10% slower on average; writes range from 3x faster to 70% slower, roughly a wash. Release builds of derived code compile about 2.3x faster (no full monomorphization) but binary bloat is worse. Uses unsafe internally for the heap-borrowed sink chain.",
+      "Caveats: non-self-describing formats (protobuf, bincode, postcard) are intentionally excluded by design; author says replacing Serde is unlikely because the orphan rule entrenches it; benchmark numbers are the author's own measurements without stated methodology or datasets."
+    ],
+    "summary": "Deser is a Rust serialization library Armin Ronacher started in 2022, modeled on dtolnay's miniserde and recently revived. It inverts Serde's design: rather than a type driving deserialization and the format recursing through visitors, the format pushes events into a sink and a heap/arena-based driver manages nested sinks and emitters, removing per-level stack growth and enabling streaming, pausable parses that are Send-friendly under tokio. Ronacher attributes Serde's recurring problems, drawn from processing untrusted JSON in Sentry Relay, to three design decisions: one trait set for all formats, a fixed data model that loses information when buffering (breaking internally tagged enums, untagged enums, and flatten), and call-stack recursion that risks stack overflow. Deser aims for completeness, supporting JSON variants, CBOR, MessagePack, YAML, TOML, XML with namespaces, plist, CSV, urlencoded, and env vars, with type-based adapters and validators that nest inside Option/Vec and extension values (datetimes, UUIDs) that round-trip without magic keys. The tradeoffs are real: protobuf/bincode/postcard are excluded by design, it relies on dynamic dispatch and some internal unsafe, and the author's own benchmarks put JSON reads at roughly 10% slower on average and writes about even, with worse binary bloat but ~2.3x faster compilation of derived code. Ronacher concludes it is a possible drop-in replacement for users whose tradeoffs fit, but does not expect it to displace Serde given the orphan rule's entrenchment.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [
+      "languages"
+    ],
+    "state": "confident",
+    "novelty": "new architecture inverting serde's type-drives-format model",
+    "audience": "Rust engineers working with serialization/deserialization, especially untrusted JSON parsing",
+    "source_url": "https://lucumr.pocoo.org/2026/9/29/deser",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/hxmtyv/deser_rethinking_rust_serialization",
+        "points": 46,
+        "comments": 7,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://lucumr.pocoo.org/2026/9/29/deser/",
+        "points": null,
+        "comments": null,
+        "name": "Armin Ronacher (lucumr.pocoo.org)"
+      },
+      {
+        "url": "https://lucumr.pocoo.org/2026/9/29/deser/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-09-29T00:00:00+00:00",
+    "published_at": "2026-10-19T01:00:21.083919+00:00",
+    "curated_at": "2026-10-19T01:00:21.083919+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -903,7 +1057,7 @@
     "story_id": "s_c0d692f02ffdf565",
     "title": "Someone on Torrent Sites Kept Fucking with My Sonarr",
     "relevance": 7,
-    "score": 6.243,
+    "score": 6.233,
     "why": "If you point Sonarr or Radarr at public indexers, this stealer will land in your downloads folder, and one double-click exfiltrates your browser passwords, SSH/AWS/cloud configs, and crypto wallets.",
     "notes": [
       "The lure was a South Park episode renamed with a .exe extension, uploaded to public trackers with 2,392 seeders; Sonarr auto-grabbed it and retried import every 90 seconds. qBittorrent marked it finished with total_downloaded: 0, so the author re-downloaded it deliberately to analyze it.",
@@ -963,7 +1117,7 @@
     "story_id": "s_a9a2f113defd36d1",
     "title": "Lean Now Ships with Verified Kernels",
     "relevance": 7,
-    "score": 6.21,
+    "score": 6.185,
     "why": "After AI agents found exploitable bugs in Lean's proof checker, the Lean FRO shipped `lake check --paranoid`, which rechecks your development against five independent kernels, so a single kernel implementation bug no longer silently invalidates a proof.",
     "notes": [
       "con-leche is the first Lean kernel written in Lean with a machine-checked consistency proof: every environment it accepts has a set-theoretic model following Mario Carneiro's model of Lean's type theory. It was implemented and proven consistent by Claude (Fable and Opus) under heavy supervision by Joachim Breitner. The proof is checked by the official kernel and assumes the consistency of the underlying set theory.",
@@ -1217,7 +1371,7 @@
     "story_id": "s_1f83e541482cff51",
     "title": "You could have invented transformers from memory",
     "relevance": 7,
-    "score": 6.605,
+    "score": 6.597,
     "why": "If you build or debug transformers, this gives you a back-of-envelope formula for how many distinct facts each layer type can recall before interference drowns the signal: ~64 for a linear layer, ~2,700 for a squared-ReLU MLP, ~1.2 million for softmax attention at 64-dim keys.",
     "notes": [
       "The unifying metric is the interference-to-signal ratio: query a store with a stored key k_j, recover v_j (signal) plus a weighted sum of all other values (interference); capacity is the number of memories M at which that ratio hits 1.",
@@ -1647,7 +1801,7 @@
     "story_id": "s_34ab6d7ac427d919",
     "title": "Local and Distributed Large LLM Inference with MLX and RDMA on Mac Studio",
     "relevance": 7,
-    "score": 7.096,
+    "score": 7.089,
     "why": "Four Mac Studios wired over Thunderbolt 5 RDMA run an 816B-parameter MoE model at 36+ tok/s in a private, ~300W-peak setup, putting trillion-scale local inference on a desk instead of in a GPU rack.",
     "notes": [
       "The multi-machine link is new plumbing: macOS 26.2 ships a low-latency RDMA-over-Thunderbolt 5 driver, and MLX v0.30.1+ adds `jaccl` communication collectives on top, launched via `mlx.launch --backend jaccl` with an experimental `MLX_METAL_FAST_SYNCH=1` flag for CPU-GPU sync.",
@@ -1705,7 +1859,7 @@
     "story_id": "s_752a66a3b8b11eb7",
     "title": "JPEG XL vs AVIF for web use-cases",
     "relevance": 7,
-    "score": 6.898,
+    "score": 6.876,
     "why": "JPEG XL now decodes in every major browser, but on today's encoders AVIF still produces smaller files for almost every web image, so the default serving format does not change.",
     "notes": [
       "Lossy photos: the best JPEG XL output is 15-25% larger than AVIF at default effort settings and 6-20% larger at max effort, with occasional outliers (e.g. the weasel image) where JPEG XL ties or wins; the author advises trying both per image.",
@@ -1851,7 +2005,7 @@
     "story_id": "s_99f05b519ea2a39a",
     "title": "How to Formalize All of Mathematics",
     "relevance": 7,
-    "score": 7.312,
+    "score": 7.304,
     "why": "The people who build Lean and Mathlib are telling you that AI-dumped proofs like Claude's 13-million-line Fermat verification carry almost no research value, and they name the vetted channels (Mathlib, Tau Ceti, Formal Frontier, Palomar) where machine-generated formalization is actually worth building on.",
     "notes": [
       "Written collectively by Jeremy Avigad, Kevin Buzzard, Johan Commelin, Remy Degenne, Kim Morrison, Oliver Nash, and Adam Topaz; they explicitly disclaim speaking for any organization. Their core argument: a formal artifact is worthless if nobody uses it, so correctness alone does not justify formalization.",
@@ -1920,7 +2074,7 @@
     "story_id": "s_9f263e66e563514c",
     "title": "90% of US working hours are spent on tasks not covered well by AI benchmarks",
     "relevance": 7,
-    "score": 7.355,
+    "score": 7.347,
     "why": "If you cite leaderboard scores to argue a model is or isn't ready for real work, this maps where those benchmarks are silent: by Mercor's count, 90% of US working hours fall on tasks with little or no benchmark coverage.",
     "notes": [
       "Built from 29 benchmarks selected for quality and economic relevance, mapped by an LLM judge onto the O*NET taxonomy of 923 occupations and 18,797 tasks; a task counts as 'covered' only if tied to at least 5 prompts. The LLM tagging was validated against human expert tags on Mercor's APEX subset.",
@@ -2106,11 +2260,407 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 474928,
+    "story_id": "s_f5f0ec13ea89dbaf",
+    "title": "The Millennium Problems for Biology",
+    "relevance": 6,
+    "score": 6.01,
+    "why": "If you build protein-design or synthetic-biology tooling, this is a concrete, preregistered scorecard for the hard problems: zero-shot intracellular binders and designed proteases both demand 80% success across 20 blinded targets with designs frozen within 24 hours and no post-hoc wet-lab screening.",
+    "notes": [
+      "Abiogenesis target: unassisted emergence of self-replicating RNA/protein cells from a plausible primordial soup, with abundance up at least 10^6-fold (~20 generations), plausibly indefinite division (no monotonic shrinking), and unambiguous heritable genetic information (nucleic acids/polypeptides strongly preferred).",
+      "Design-under-blinding problems are the ones most relevant to current ML-for-protein work: prospectively design proteases cleaving 20 preregistered sites in living cells (>80% success) and zero-shot binders against 20 preregistered intracellular targets delivered extracellularly (>80% success), both with designs due within 24 hours of target disclosure and no screening or target-specific evolution allowed.",
+      "Reversible whole-body cryopreservation of wild-type adult mice: vitrified/frozen for 24+ hours, recovered at >99% viability, no permanent organ damage, ethics approval required.",
+      "Enzyme 'reverse translation': a template-free protein catalyst that reads an untagged peptide and writes an encoding nucleic acid strand under a preregistered codon convention; validation requires 100+ preregistered 50+-residue random peptides, 90% sequence accuracy, average read length 25+ residues, average quality Q10.",
+      "Rubisco beating the natural Pareto frontier: CO2/O2 specificity at least matching Galdieria partita and turnover (kcat) at least matching maize, measured in paired assays against both as controls.",
+      "Other entries: a replicating cell using uninterrupted quadruplet codons with no detectable triplet decoding (contributed by Erika Alden DeBenedictis); producing infectious AAV/lentivirus in bacteria with mammalian-like capsid/genome and infectivity ratios; exponential template-free peptide amplification (1000x, 90% per-residue accuracy); a full set of 3'>5' polymerases matching Taq/T7/M-MLV/Phi6; and a de novo nitrogenase with no sequence or structural homology to the natural family."
+    ],
+    "summary": "A Hilbert-style list of open problems for synthetic and molecular biology, framed as grand challenges with explicit, preregistered success criteria. Targets span origin-of-life demonstration (self-replicating cells amplifying 10^6-fold with heritable genetic information), reversible whole-body cryopreservation of adult mice at >99% viability, adult mouse limb regeneration indistinguishable from controls, and enzyme engineering goals such as a template-free peptide-to-nucleic-acid reverse translase, a Rubisco beating the natural specificity/turnover Pareto frontier, 3'>5' polymerases, and a non-homologous nitrogenase. Several problems directly test computational protein design: designing proteases for 20 blinded cleavage sites and zero-shot binders for 20 intracellular targets, each requiring >80% success, designs submitted within 24 hours of target disclosure, and no screening or directed evolution after targets are revealed. Other entries include a cell with a bona fide quadruplet codon code (contributed by Erika Alden DeBenedictis) and production of infectious AAV/lentivirus in bacterial hosts. The page states criteria and thresholds but does not describe prizes, judging bodies, or evidence that any problem is near solution.",
+    "channels": [
+      "science"
+    ],
+    "category": "research",
+    "subcategories": [
+      "science"
+    ],
+    "state": "confident",
+    "novelty": "Hilbert-style open problem list for synthetic/molecular biology",
+    "audience": "biotech/bioengineering researchers and science-curious technologists",
+    "source_url": "https://millenniumproblems.bio/",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49775082",
+        "points": 109,
+        "comments": 89,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://millenniumproblems.bio/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-20T12:17:54+00:00",
+    "published_at": "2026-10-19T02:22:12.468624+00:00",
+    "curated_at": "2026-10-19T02:22:12.468624+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 485240,
+    "story_id": "s_d293f1a86fdce747",
+    "title": "Fearless SIMD v1.0 is here",
+    "relevance": 6,
+    "score": 6.018,
+    "why": "If you write SIMD in Rust, this crate claims to shrink the memory-safety audit surface to two small building blocks instead of the several thousand unsafe blocks typical of other abstractions, while promising no performance ceiling via safe intrinsic access.",
+    "notes": [
+      "The `kernel!` macro relies on the compiler's target feature v1.1 to call most SIMD intrinsics without ad-hoc `unsafe`; a separate safe transmute module (inspired by bytemuck and zerocopy) covers load/store on raw pointers, so only those two self-contained pieces need memory-safety auditing.",
+      "New `fearless_simd_macros` v0.1 ships a `#[simd]` attribute for multiversioning that the author calls non-leaky, avoiding both manual `#[inline(always)]` annotations and per-call dispatch overhead; the macro API is the one area expected to keep evolving, though code written today is promised to keep working.",
+      "For edge-case-sensitive operations like swizzles and floating-point max, the crate exposes a precise variant (identical across platforms) and a fast variant (platform-dependent result) for when edge cases are assumed impossible.",
+      "The author reports 30 crates depend on it directly and over 1,000 depend on it indirectly; adoption figures and the claim of 'no performance ceiling' are self-reported without benchmark methodology in the post.",
+      "Commitment is 3 years of security updates for v1.0 and later; the project plans to port onto `std::simd` once that stabilizes to delete custom code, but argues ecosystem crates stay necessary because std only covers the minimum (no multiversioning or hardware-width vectors)."
+    ],
+    "summary": "Fearless SIMD, a Rust library that aims to provide portable and intrinsic-level SIMD without ad-hoc `unsafe` code, has reached v1.0 (authored by Shnatsel, September 22, 2026), eight years after its prototype. It claims memory safety by confining all unsafe reasoning to two audited building blocks: a `kernel!` macro that uses compiler target feature v1.1 to call intrinsics safely, and a safe transmute module (modeled on bytemuck/zerocopy) for load/store operations on raw pointers. On performance, it offers precise versus fast variants for platform-divergent operations, supports hardware-native and fixed vector widths, and lets code drop down to intrinsics safely with claimed zero overhead; the authors say they upstreamed improvements to Rust and LLVM. A companion crate, fearless_simd_macros v0.1, adds a `#[simd]` attribute for multiversioning without `#[inline(always)]` tricks or per-call overhead, though the authors flag ergonomics as still evolving. The project reports use by 30 direct and over 1,000 indirect dependent crates, commits to 3 years of security updates, and plans to port onto `std::simd` once it stabilizes while arguing ecosystem crates remain needed for multiversioning and hardware-width vectors. Performance and adoption figures are self-reported and the post contains no benchmark methodology.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "unsafe-free SIMD abstraction reaches 1.0 with macro-based multiversioning",
+    "audience": "Rust systems engineers writing performance-critical cross-platform SIMD code",
+    "source_url": "https://linebender.org/blog/fearless-simd-1-0",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49800085",
+        "points": 148,
+        "comments": 27,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lobste.rs/s/wx3qsm/fearless_simd_v1_0_is_here",
+        "points": 54,
+        "comments": 9,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://linebender.org/blog/fearless-simd-1-0/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://linebender.org/blog/fearless-simd-1-0/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://programming.dev/post/56932353",
+        "points": null,
+        "comments": null,
+        "name": "programming.dev (Lemmy)"
+      },
+      {
+        "url": "https://linebender.org/blog/fearless-simd-1-0/",
+        "points": null,
+        "comments": null,
+        "name": "Linebender Blog"
+      }
+    ],
+    "sources_count": 6,
+    "first_seen": "2026-09-22T12:10:21+00:00",
+    "published_at": "2026-10-19T02:07:40.996932+00:00",
+    "curated_at": "2026-10-19T02:07:40.996932+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 541983,
+    "story_id": "s_bcbd8b1af7d65771",
+    "title": "SDF vs. MSDF vs. Slug: GPU Text Rendering",
+    "relevance": 6,
+    "score": 6.021,
+    "why": "The patent that locked up analytic GPU glyph rendering expired into the public domain on March 17, 2026, so you can now ship an atlas-free outline renderer that stays exact under arbitrary 3D transforms without licensing Lengyel's Slug.",
+    "notes": [
+      "Slug (Eric Lengyel, JCGT 2017) keeps each glyph as quadratic Beziers and line segments in a GPU buffer plus a per-glyph horizontal-band acceleration structure, then casts a ray per pixel in the fragment shader and counts curve crossings to compute winding/coverage analytically; the correctness trick is 'root eligibility', a rule for which curve-ray intersections count so shared endpoints do not crack or double-count.",
+      "Lengyel patented Slug in 2019 and dedicated the patent to the public domain on March 17, 2026; AlphaPixel's Slughorn is a C++20, MIT-licensed implementation targeting OpenGL, Vulkan, WebGPU, and DirectX with Python bindings, ingesting SVG, FreeType, Blend2D, Cairo, and Skia paths.",
+      "Prior families and their named caveats: bitmap atlas blurs past bake size and explodes on CJK; SDF (Chris Green, Valve SIGGRAPH 2007) rounds sharp corners because bilinear interpolation smooths the distance discontinuity; MSDF (Viktor Chlumsky, 2015 thesis / 2018 CGF paper, msdfgen MIT) stores three edge-subset channels and takes their median to recover corners but is still a fixed-resolution atlas.",
+      "Tessellation/coverage family (Loop-Blinn, NVIDIA NV_path_rendering stencil-then-cover, servo/Pathfinder, Rive) skips textures and rasterizes geometry; Rive's renderer (open-sourced 2024) reduces paths to triangle patches via pixel local storage and claims 120 fps on animated vector art, but accepts only 2D affine transforms, so it distorts under true perspective.",
+      "Author's own comparison: all texture-based panels given 64 texels/em rendering a capital R; straight-on, Slughorn, Rive, and MSDF match the outline while SDF only slightly rounds; in grazing perspective the bitmap blurs and Rive's R is the wrong shape; at extreme zoom only outline-based Slughorn and Rive stay straight (Rive re-tessellating every frame). Stated as vendor self-comparison: SDF/MSDF used default bake settings, MSDF error-correction would soften some notches, and Rive was shown more generously than its typical 3D embedding.",
+      "Trade-offs per the article's own table: Slug needs a capable programmable shader stage and does build-time outline/band prep, costs 'moderate' memory for CJK versus 'low' for tessellation, and is only 'good' not best for heavily animated vector art, where Rive leads."
+    ],
+    "summary": "This vendor explainer from AlphaPixel surveys GPU text-rendering methods and argues for Slug, Eric Lengyel's 2017 technique (JCGT) that renders glyphs directly from their Bezier outlines in the fragment shader with no texture atlas and no per-frame tessellation, using a per-pixel ray-crossing winding count and a 'root eligibility' test for exactness at shared curve endpoints. It contrasts Slug with bitmap atlases, SDF (Chris Green, 2007), MSDF (Viktor Chlumsky, 2015/2018, msdfgen MIT), and the tessellation/coverage family (Loop-Blinn, NV_path_rendering, Pathfinder, Rive), noting each bakes a fixed resolution or re-tessellates, while Slug computes coverage analytically after the transform so it stays crisp at any scale and oblique angle. The piece's framing event is that Lengyel, who patented Slug in 2019, dedicated the patent to the public domain on March 17, 2026, which prompted AlphaPixel to release Slughorn, its MIT-licensed C++20 implementation targeting OpenGL, Vulkan, WebGPU, and DirectX with Python bindings. Comparison images rendering a capital R at 64 texels/em are the author's own and favor Slughorn; the article discloses that SDF/MSDF used default bake settings and that Rive was shown more generously than its usual 3D embedding. Its own head-to-head table concedes Slug requires a capable shader stage, carries moderate CJK memory overhead, and trails Rive on heavily animated vector artwork. The recommendations: Slug for unbounded-camera 3D/AR/VR and dynamic or huge glyph sets, MSDF as a bakeable default for HUDs and app UI, plain SDF on constrained hardware, bitmap atlas for fixed-size UI, and Rive/tessellation for animated designed vector art.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "hardware",
+    "subcategories": [
+      "silicon"
+    ],
+    "state": "confident",
+    "novelty": "Slug text-rendering patent dedicated to public domain, enabling open implementation",
+    "audience": "graphics engineers and game/engine developers working on GPU text rendering",
+    "source_url": "https://alphapixeldev.com/sdf-vs-msdf-vs-slug-vs-rive-gpu-text-rendering",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49908962",
+        "points": 143,
+        "comments": 56,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://alphapixeldev.com/sdf-vs-msdf-vs-slug-vs-rive-gpu-text-rendering/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-30T13:50:50+00:00",
+    "published_at": "2026-10-19T02:07:17.781207+00:00",
+    "curated_at": "2026-10-19T02:07:17.781207+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 576201,
+    "story_id": "s_20c5b05abb84d2f2",
+    "title": "Google is silently linking your phone number across all signed-in accounts",
+    "relevance": 6,
+    "score": 6.025,
+    "why": "If the claim holds, a phone number added to one Google account becomes a cross-account identifier on the device, collapsing the separation between work, personal, and throwaway identities you deliberately kept apart.",
+    "notes": [
+      "Core claim (Android Authority): Google automatically verifies and links a phone number across all accounts signed in on an Android device, without an explicit per-account opt-in.",
+      "The reported behavior ties identities together silently, defeating the common practice of using separate Google accounts to keep phone numbers compartmentalized.",
+      "Traction, not confirmation: 420 points and 108 comments on Hacker News, plus a Slashdot pickup, indicate interest but do not validate the mechanism.",
+      "Unconfirmed from the source text: the exact linking mechanism, which account types or Android versions are affected, whether the number is exposed to anyone, and whether an opt-out or reversal exists.",
+      "No primary Google documentation or statement is cited in the available material; the account is a single outlet's report amplified by aggregators."
+    ],
+    "summary": "Android Authority reports that Google automatically links a phone number across every account signed in on an Android device, without an explicit opt-in, so a number tied to one account becomes associated with the others. The report circulated on Hacker News (420 points, 108 comments) and Slashdot. If accurate, the behavior undermines the use of separate Google accounts to keep phone numbers isolated across contexts. The underlying article text was not available for this writeup, so the precise mechanism, affected scope (account types, OS versions), privacy exposure, and any opt-out are unconfirmed here. Treat the claim as a single-outlet report pending Google documentation or a direct statement, and verify against the original article before relying on the specifics.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Google silently cross-linking phone numbers across signed-in accounts",
+    "audience": "privacy-conscious engineers and Android users managing multiple Google accounts",
+    "source_url": "https://androidauthority.com/google-auto-phone-number-verification-android-3723117",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50090349",
+        "points": 420,
+        "comments": 108,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://tech.slashdot.org/story/26/10/14/1832230/google-is-silently-linking-your-phone-number-across-all-signed-in-accounts?utm_source=rss1.0mainlinkanon&utm_medium=feed",
+        "points": null,
+        "comments": null,
+        "name": "Slashdot"
+      },
+      {
+        "url": "https://www.androidauthority.com/google-auto-phone-number-verification-android-3723117/",
+        "points": null,
+        "comments": null,
+        "name": "Android Authority"
+      },
+      {
+        "url": "https://www.androidauthority.com/google-auto-phone-number-verification-android-3723117/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-10-14T16:28:51+00:00",
+    "published_at": "2026-10-19T01:50:24.407274+00:00",
+    "curated_at": "2026-10-19T01:50:24.407274+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 479179,
+    "story_id": "s_167224eba4095988",
+    "title": "BI-Agent and BI-Bench: Towards Automating End-to-End Business Intelligence",
+    "relevance": 6,
+    "score": 6.03,
+    "why": "If you ship LLM-backed data tooling, note that frontier models score under 50% on end-to-end BI questions drawn from real dashboards, and that most of the gap closes only with a tool-decomposed agent plus domain post-training, not a bigger base model.",
+    "notes": [
+      "BI-Bench is built from real-world BI projects harvested from public sources, with (question, ground-truth answer) pairs manually extracted from actual user dashboards; the authors call it the first benchmark for end-to-end BI.",
+      "End-to-end here means the model does the full workflow unaided: identify relevant tables, transform data, build join relationships, then answer, rather than being handed clean tables.",
+      "Frontier LLMs score under 50% accuracy on the benchmark (the paper does not name which models or give per-model numbers in the abstract).",
+      "BI-Agent decomposes the workflow into subtasks over structured data (search, join, transform) and orchestrates specialized data-management methods per BI stage, lifting vanilla LLM accuracy by up to 40 percentage points.",
+      "A post-training framework synthesizes training trajectories from real BI projects and applies SFT plus RL, adding up to 30 points of accuracy gain.",
+      "Caveats: all gains are self-reported, 'up to' figures without an average or variance, and the abstract gives no baseline model names, dataset size, or scoring methodology."
+    ],
+    "summary": "BI-Bench is a benchmark for end-to-end business intelligence, built from real-world BI projects with question/answer pairs manually extracted from actual user dashboards, testing whether LLMs can handle the full workflow (identify tables, transform data, build joins, answer) without manual data preparation. The authors report that frontier LLMs score under 50% accuracy. They introduce BI-Agent, which decomposes the workflow into structured-data subtasks such as search, join, and transform and orchestrates specialized data-management methods across stages, improving vanilla LLM accuracy by up to 40 percentage points. A post-training framework synthesizes training trajectories from real BI projects and applies supervised fine-tuning and reinforcement learning, adding up to 30 points. The paper frames the takeaway as combining tool-augmented reasoning with domain-specific post-training for complex BI. All performance numbers are self-reported, stated as 'up to' maxima, and the abstract omits model names, dataset size, and scoring methodology.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "first benchmark for end-to-end LLM business intelligence from real dashboards",
+    "audience": "ML researchers and engineers building data/BI agents",
+    "source_url": "https://arxiv.org/abs/2609.20886",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2609.20886",
+        "points": 15,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2609.20886",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.AI"
+      },
+      {
+        "url": "https://arxiv.org/abs/2609.20886",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CL"
+      },
+      {
+        "url": "https://arxiv.org/abs/2609.20886",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.LG"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-09-21T04:00:00+00:00",
+    "published_at": "2026-10-19T01:50:06.826995+00:00",
+    "curated_at": "2026-10-19T01:50:06.826995+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 541977,
+    "story_id": "s_dd3b682b8d916d16",
+    "title": "Launch HN: Magnitude (YC S25) – Self-optimizing inference engine for agents",
+    "relevance": 6,
+    "score": 6.048,
+    "why": "If the self-reported numbers hold, the same local box runs open models roughly twice as fast on Apple Silicon and uses 27% less memory per agent, cutting the hardware you need to run coding agents fully offline.",
+    "notes": [
+      "Core mechanism: instead of shipping generic precompiled kernels, Magnitude compiles and autotunes its kernels on the user's actual device before a model runs, with hand-optimized kernels for popular open-weight model families.",
+      "Self-reported benchmarks claim up to 2x over llama.cpp, broken down as 92% faster decode on Metal and 19% on CUDA; no independent methodology, model list, or test conditions are disclosed in the text.",
+      "Memory: 27% less per agent, released when agents stop; concurrent sessions share prefix caches to avoid slowdown.",
+      "Distribution: desktop app bundling a `magnitude` CLI for macOS, Linux, Windows; runs on any Apple Silicon, NVIDIA, or AMD GPU, or CPU-only, with no fixed minimum spec.",
+      "Integration: one click connects Pi, OpenCode, Hermes, OpenClaw, Codex, Claude Code, Oh My Pi, and Cline; anything else via an OpenAI-compatible API.",
+      "Apache 2.0 licensed, YC S25; prompts, files, and models stay local, no internet needed after download. Launch HN post: 143 points, 70 comments."
+    ],
+    "summary": "Magnitude (YC S25) is an open-source, Apache 2.0 inference engine for running open-weight models locally and connecting them to existing coding agents. Its distinguishing claim is per-device kernel autotuning: rather than shipping generic precompiled kernels, it compiles and tunes kernels on the user's exact hardware before a model runs, plus hand-written kernels for popular model families. The vendor claims up to 2x the speed of llama.cpp (92% faster decode on Metal, 19% on CUDA) and 27% less memory per agent, with memory freed when agents stop and prefix caches shared across concurrent sessions. It ships as a desktop app with a bundled CLI for macOS, Linux, and Windows, and runs on Apple Silicon, NVIDIA, AMD, or CPU-only with no fixed minimum. One click connects agents including Pi, OpenCode, Hermes, Codex, Claude Code, and Cline, with everything else going through an OpenAI-compatible API; all prompts, files, and models stay local. The benchmarks are self-reported and the article discloses no independent methodology, model list, or test conditions.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents",
+      "apps"
+    ],
+    "state": "confident",
+    "novelty": "per-device kernel autotuning for local LLM inference, not just precompiled kernels",
+    "audience": "developers running open-weight models locally for agent tooling",
+    "source_url": "https://github.com/magnitudedev/magnitude",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49911995",
+        "points": 143,
+        "comments": 70,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/magnitudedev/magnitude",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-30T17:37:40+00:00",
+    "published_at": "2026-10-19T01:33:43.801685+00:00",
+    "curated_at": "2026-10-19T01:33:43.801685+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 490594,
+    "story_id": "s_0d8464ceb7d37f82",
+    "title": "Unreal Agent",
+    "relevance": 6,
+    "score": 6.11,
+    "why": "If the vendor's numbers hold, treating tool calls as fire-and-forget background events instead of blocking waits cut cost per task 40% against Codex at the same pass rate, which is a harness change you can replicate rather than a new model.",
+    "notes": [
+      "The core mechanism: on every tool call the harness immediately appends an event-log record marking the tool as returned in an 'in-progress' state, runs the tool in the background, and only calls the LLM again when a result actually lands, so the model never spends tokens polling, waiting, or sending heartbeats.",
+      "Claimed savings are up to 40% vs Codex and up to 20% vs Pi; one reported run shows unreal-agent at 57.9% pass rate for $1428 total vs Codex leaderboard's identical 57.9% at $2350, with fewer input tokens (1.73M vs Pi's 2.83M) and fewer turns (28 vs 44).",
+      "All benchmarks were run by Unreal Labs on its own product using GPT-6 Astra xhigh; pass-rate deltas are small and attributed to benchmark variance, and there is no independent verification. Coding tasks run on Harbor for reproducibility; one benchmark table is explicitly not on Harbor.",
+      "Stated design choices behind the savings: simple prompts, token-optimized tool results, no sub-agents or workflows, and an async tool-calling model explained clearly to the LLM so it issues more heavy tool calls per turn.",
+      "A footnote flags a real limitation: putting two tool-call result items (one in-progress, one final) in a single context is underspecified in the Responses API, caused rejections on some non-OpenAI inference providers, and the function_call_output status field had no effect there.",
+      "Ships as a Go library, a CLI runner comparable to claude -p / codex exec, and a Harbor-compatible benchmark runner, open on GitHub; the post doubles as a pitch, opening with a solicitation to work with the team on cost efficiency."
+    ],
+    "summary": "Unreal Labs describes Unreal Agent, a coding-agent harness that manages tool calls fully asynchronously: it logs each tool call as 'in-progress' immediately, runs it in the background, and only re-invokes the model when a result arrives, eliminating tokens spent on polling, waiting, and heartbeats while letting users steer mid-execution. The company credits this plus a minimal footprint (simple prompts, token-optimized tool outputs, no sub-agents) for doing more tool work per model turn, and claims up to 40% cost savings versus Codex and up to 20% versus Pi. Vendor-run benchmarks on GPT-6 Astra xhigh show comparable pass rates at lower total cost, fewer turns, and fewer input tokens; for example 57.9% at $1428 against Codex's 57.9% at $2350. The numbers are self-reported with no independent verification, though coding runs use Harbor to aid reproduction. The post also argues that security and approvals belong in deterministic sandbox constraints (allowed hosts, scoped tokens, approval-gated proxies) rather than harness hooks, and criticizes CLI-oriented SDKs like Claude's Agent SDK for production assumptions. It ships a Go library, a CLI runner, and a Harbor benchmark runner on GitHub, and notes the dual in-progress/final tool-result pattern is underspecified in the Responses API and rejected by some non-OpenAI providers.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "async tool-call harness cuts agent token/cost overhead",
+    "audience": "engineers building or operating LLM coding agents",
+    "source_url": "https://unreallabs.ai/blog/unreal-agent",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49805748",
+        "points": 158,
+        "comments": 94,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://unreallabs.ai/blog/unreal-agent/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-22T18:15:53+00:00",
+    "published_at": "2026-10-19T01:00:45.026756+00:00",
+    "curated_at": "2026-10-19T01:00:45.026756+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 600144,
     "story_id": "s_ebee13cb58cd2d68",
     "title": "Developing for Debugging (2025)",
     "relevance": 6,
-    "score": 6.147,
+    "score": 6.095,
     "why": "If you build distributed systems, the piece argues DNS propagation delays are a design problem you can engineer away, not just an operational quirk to wait out.",
     "notes": [
       "Author is Dave Pacheco, a systems engineer associated with Oxide Computer and the illumos/DTrace lineage; his posts tend toward deep systems debugging rather than product commentary.",
@@ -2135,7 +2685,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50131053",
-        "points": 25,
+        "points": 29,
         "comments": 0,
         "name": "Hacker News"
       },
@@ -2169,7 +2719,7 @@
     "story_id": "s_32da68be3b326c40",
     "title": "I built a programming language that LLMs can't use",
     "relevance": 6,
-    "score": 7.108,
+    "score": 7.054,
     "why": "If LLM assistants can be reliably defeated by language design choices, the same techniques point at what makes a codebase legible to models, and what deliberately does not.",
     "notes": [
       "Premise, from the title: a programming language built so LLMs cannot generate correct code in it; the mechanism (unusual syntax, shifting semantics, no training corpus, adversarial constructs) is not verifiable here because no article text was captured.",
@@ -2197,8 +2747,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50135762",
-        "points": 59,
-        "comments": 57,
+        "points": 78,
+        "comments": 67,
         "name": "Hacker News"
       },
       {
@@ -2268,7 +2818,7 @@
     "story_id": "s_6e746911f5a93d4f",
     "title": "Hybrid Reasoning Agents",
     "relevance": 6,
-    "score": 8.098,
+    "score": 8.046,
     "why": "If the self-reported numbers hold, you get agent reasoning that cuts tokens 35.5%-54.7% and runs 1.8x-2.6x faster by letting the model think in a latent (non-text) medium and surface to text only to call tools.",
     "notes": [
       "Core idea: agents reason in latent space internally but act through text externally; a lightweight HybridLink module switches between the two modes inside a single generation pass, and a continuous working memory carries hybrid context across turns.",
@@ -2298,8 +2848,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50145337",
-        "points": 162,
-        "comments": 97,
+        "points": 208,
+        "comments": 130,
         "name": "Hacker News"
       },
       {
@@ -2540,7 +3090,7 @@
     "story_id": "s_55ad04f0b81a8eea",
     "title": "Libreboot 26.10 \"Ominous Olive\" released with UEFI, Chromebook support",
     "relevance": 6,
-    "score": 6.279,
+    "score": 6.275,
     "why": "If you run coreboot on a ThinkPad or a desktop with a discrete GPU, the default payload just flipped to EDK2, so UEFI operating systems (including Windows) now boot on free firmware without a proprietary BIOS.",
     "notes": [
       "EDK2 (Intel's BSD-licensed UEFI reference implementation, via MrChromebox's coreboot-payload fork) becomes the default on nearly all 64-bit boards, replacing bare-metal GRUB/SeaBIOS, which are now shipped as EFI builds reachable from the EDK2 menu via ESC and are deprecated. 32-bit-only hardware stays on the old GRUB/SeaBIOS setup.",
@@ -2788,7 +3338,7 @@
     "story_id": "s_76eabaec2ffc42bb",
     "title": "Inside the Intel 8087 chip: floating-point addition and subtraction",
     "relevance": 6,
-    "score": 8.188,
+    "score": 8.137,
     "why": "If you have ever wondered what \"normalize the significand\" costs in silicon, this traces every micro-instruction the 8087 runs for a single float add, down to the two-bit expAdj counter and the trick that tells addition from subtraction.",
     "notes": [
       "Shirriff decapped the chip with a chisel and imaged the die under a microscope; the microcode ROM in the center holds 1648 micro-instructions, and the datapath below handles 80-bit values via a 69-bit integer adder, an arbitrary-count bit shifter, a leading-zero counter, and an exponent converter.",
@@ -2816,8 +3366,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50142449",
-        "points": 86,
-        "comments": 28,
+        "points": 88,
+        "comments": 33,
         "name": "Hacker News"
       },
       {
@@ -2850,7 +3400,7 @@
     "story_id": "s_e5fbf38f1fb351ac",
     "title": "Will it be a golden age or a dark age for mathematics (and science)?",
     "relevance": 6,
-    "score": 8.395,
+    "score": 8.344,
     "why": "A Fields Medalist is publicly weighing whether AI tools strengthen or erode mathematical research practice, and his read shapes how the math community treats proof assistants and automated reasoning.",
     "notes": [
       "Written by Terence Tao, Fields Medalist, on his blog What's New; the piece is an opinion/framing essay, not a result.",
@@ -3016,627 +3566,6 @@
     "first_seen": "2026-09-25T18:33:50+00:00",
     "published_at": "2026-10-18T16:57:11.237199+00:00",
     "curated_at": "2026-10-18T16:57:11.237199+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 456859,
-    "story_id": "s_fdb26d9162fb1110",
-    "title": "How did AMD Ryzen get 50% faster in two years?",
-    "relevance": 6,
-    "score": 6.536,
-    "why": "If you write SIMD or latency-sensitive code, a desktop chip you can buy now issues 8 instructions per cycle with 512-bit vector units, so the IPC and throughput assumptions baked into your tuning from two years ago are stale.",
-    "notes": [
-      "Geekbench 6 across three comparable 8-core 3D V-Cache parts: single-core 2,016 (5800X3D/Zen 3) to 2,426 (7800X3D/Zen 4) to 2,969 (9800X3D/Zen 5); multi-core 11,832 to 15,508 to 18,751. The author computes Zen 5 as 47% faster single-core and 58% faster multi-core versus Zen 3.",
-      "Clock gains are small relative to the performance: max boost rose 4.5 to 5.2 GHz (15%), base 3.4 to 4.7 GHz. Transistor count rose ~50%, from roughly 11B to 16B, with most going into the core rather than cache.",
-      "Front/back-end got wider across the two generations: dispatch 6 to 8 instructions/cycle, integer ALUs 4 to 6, reorder buffer 256 to 448 entries (via 320 in Zen 4). L2 per core doubled 512KB to 1MB (in Zen 4); L1 data cache 32KB to 48KB (in Zen 5).",
-      "Zen 5 doubled SIMD width: four 256-bit arithmetic units become four 512-bit; loads go to two 512-bit/cycle and stores to one 512-bit/cycle, versus 256-bit in Zen 3/4.",
-      "Benchmark numbers are Geekbench 6 scores, not the author's own methodology; the piece does not break out how much each architectural change contributed to the aggregate gain.",
-      "Forward-looking note: Zen 6 Epyc 'Venice' is cited (via Tom's Hardware) at 256 cores with 1GB of L3; desktop core details are unknown. Author frames this as rumor/announcement, not measured."
-    ],
-    "summary": "Daniel Lemire breaks down why three comparable 8-core AMD Ryzen 3D V-Cache desktop chips gained roughly 50% in Geekbench 6 over two years: the 5800X3D (Zen 3, 2022), 7800X3D (Zen 4, 2023), and 9800X3D (Zen 5, 2024). The 9800X3D scores 47% higher single-core and 58% higher multi-core than the 5800X3D, while max boost clock rose only 15% (4.5 to 5.2 GHz), so the gains came from microarchitecture, not frequency. Transistor count rose about 50% (11B to 16B), mostly into the core: dispatch width went from 6 to 8 instructions/cycle, integer ALUs from 4 to 6, the reorder buffer from 256 to 448 entries, L2 per core doubled to 1MB, and L1 data cache grew to 48KB. Zen 5 also doubled SIMD width to four 512-bit arithmetic units with matching 512-bit load/store paths. The post uses this as a concrete illustration that CPU cores keep getting wider, and gestures at Zen 6's rumored 256-core 'Venice' Epyc with 1GB L3.",
-    "channels": [
-      "hardware"
-    ],
-    "category": "hardware",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "microarchitecture breakdown of Zen3→Zen5 gains beyond clock speed",
-    "audience": "engineers interested in CPU architecture and performance engineering",
-    "source_url": "https://lemire.me/blog/2026/09/18/how-did-amd-ryzen-get-50-faster-in-two-years",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49758709",
-        "points": 279,
-        "comments": 108,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lemire.me/blog/2026/09/18/how-did-amd-ryzen-get-50-faster-in-two-years/",
-        "points": null,
-        "comments": null,
-        "name": "Daniel Lemire"
-      },
-      {
-        "url": "https://lemire.me/blog/2026/09/18/how-did-amd-ryzen-get-50-faster-in-two-years/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-09-18T17:26:04+00:00",
-    "published_at": "2026-10-18T16:41:40.951704+00:00",
-    "curated_at": "2026-10-18T16:41:40.951704+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 601550,
-    "story_id": "s_6157a41ba14af5a3",
-    "title": "Microsoft pulls out of AI datacentre project in Essex over power supply concerns",
-    "relevance": 6,
-    "score": 6.34,
-    "why": "Grid power, not capital or demand, is now the binding constraint killing hyperscale AI buildout: Microsoft walked away from an Essex datacentre because the local supply could not feed it.",
-    "notes": [
-      "Microsoft dropped a planned AI datacentre project in Essex, UK, per the Guardian headline.",
-      "The stated reason is power supply / grid capacity concerns, not cost, permitting, or demand.",
-      "Framing is a hyperscaler walking away from an already-planned site, signaling electricity availability as the deciding factor for siting.",
-      "No article body was available to the editor; all specifics beyond the headline (project size, MW, timeline, named grid operator, alternative sites) are unconfirmed.",
-      "Reporting surfaced via the Guardian's world/UK news and a Mastodon trending link (54 points); no primary Microsoft statement is quoted in the available text."
-    ],
-    "summary": "The Guardian reports that Microsoft pulled out of a planned AI datacentre project in Essex, UK, citing power supply concerns. The framing points to local grid capacity as the limiting factor for the build, placing it among a growing set of cases where electricity availability, rather than capital or chip supply, governs where hyperscale AI compute can be sited. No article text was available beyond the headline and surface reporting, so project scale, power requirements, timelines, the grid operator involved, and any Microsoft statement are unconfirmed. Treat all details beyond \"Microsoft exited an Essex datacentre over power supply\" as unverified.",
-    "channels": [
-      "ai",
-      "hardware",
-      "startups"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "Microsoft exits UK datacentre over grid power limits",
-    "audience": "AI infra/policy watchers tracking datacenter buildout constraints",
-    "source_url": "https://theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://www.theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-        "points": 83,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://www.theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-        "points": null,
-        "comments": null,
-        "name": "World news | The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/uk-news/2026/oct/18/microsoft-drops-huge-ai-datacentre-project-in-essex-over-power-supply-concerns",
-        "points": null,
-        "comments": null,
-        "name": "World news | The Guardian"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-18T13:05:14+00:00",
-    "published_at": "2026-10-18T16:41:19.423969+00:00",
-    "curated_at": "2026-10-18T16:41:19.423969+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 504946,
-    "story_id": "s_ade20073c61c7ca8",
-    "title": "The state of SIMD in Rust in 2026",
-    "relevance": 6,
-    "score": 6.543,
-    "why": "If you ship Rust binaries to x86 users, the choice of SIMD crate decides whether AVX-512 and runtime dispatch actually work: this survey names which libraries do multiversioning (fearless_simd, pulp, macerator, multiversion) and which one, wide, is fundamentally incompatible with it.",
-    "notes": [
-      "x86_64 guarantees only SSE2 at compile time, so distributed binaries need function multiversioning (compile a function per instruction set, dispatch at runtime on CPU feature checks); ARM made NEON mandatory on all 64-bit CPUs, so no multiversioning is needed there. WebAssembly forces two binaries plus a JS capability check.",
-      "Rust 1.98 stabilized algebraic float ops (algebraic_add() and similar), a less dangerous -ffast-math that lets the compiler reorder float math and finally autovectorize it, but you must rewrite code to call these ops explicitly.",
-      "Comparison of five portable abstractions: std::simd (nightly-only, periodic breaking API changes, sits on LLVM so it targets any platform but silently falls back to scalar when LLVM lacks a matching op, e.g. its sin() and reduce_sum() are scalar/inaccurate); fearless_simd (author is maintainer, shipped v1.0, far less internal unsafe, #[simd] multiversioning that works even on tiny functions, build-time-configurable dispatch, no trigonometry yet); wide (v1.0, broad coverage, has unspecified-precision trig, but fundamentally incompatible with multiversioning); pulp (powers faer, native-width math-focused, most verbose multiversioning); macerator (powers burn's CPU backend, f16 support, SSE4.2 on by default, AVX-512 needs nightly, used by nothing but burn on crates.io).",
-      "The author only treats AVX-512-present as AVX-512-usable in fearless_simd, restricting it to recent CPUs where it does not hurt clocks; multiversion and all other abstraction crates just check presence, which can degrade performance on early AVX-512 silicon.",
-      "Rust 1.87+ allows calling platform intrinsics from #[target_feature]-annotated functions without unsafe, except raw-pointer loads/stores stay unsafe; safe-intrinsic crates archmage (#[arcane] proc macro, uses safe_unaligned_simd) and fearless_simd (declarative kernel! macro, faster builds) build on CPU-feature type tokens plus bounds-checked load/store wrappers the optimizer removes.",
-      "Intrinsics do not reliably lower to the intended instructions in Rust, C++, or C: documented cases include ARM vld1_u32_x4 round-tripping a constant through the stack (fixed by Folkert de Vries), LLVM lowering a 512-bit shuffle to slower SSE4.2 ops (fixed in LLVM 23), and Intel omitting some AVX-512 instructions from its Intrinsics Guide so compilers never implemented them. The author discloses the fearless_simd maintainer conflict and had rival-library authors review the draft."
-    ],
-    "summary": "A 2026 survey of SIMD programming in Rust by a now-maintainer of the fearless_simd library, who discloses that conflict and had authors of std::simd, wide, pulp, and macerator review the draft. It explains the three routes to SIMD (autovectorization, portable abstractions, platform intrinsics) and the x86-specific need for function multiversioning, since only SSE2 is a guaranteed baseline, versus mandatory NEON on 64-bit ARM. Rust 1.98's algebraic float ops now make float autovectorization possible if code is rewritten to use them. The core comparison ranks five portable-SIMD crates on multiversioning, vector-width and element-type genericity, and instruction-set coverage: the author favors fearless_simd (v1.0, less internal unsafe, dispatch configurable by the final binary's builder, but no trigonometry), notes wide is incompatible with multiversioning, std::simd is nightly-only and silently falls back to scalar code, and pulp/macerator serve the faer and burn projects respectively. It closes on how Rust 1.87+ enables safe intrinsic calls and documents persistent instruction-selection failures across LLVM, GCC, and MSVC, several of which the author reported and got fixed.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "author became Fearless SIMD maintainer, surveys Rust SIMD ecosystem state in 2026",
-    "audience": "Rust systems/performance engineers writing vectorized code",
-    "source_url": "https://shnatsel.github.io/state-of-simd-rust-2026",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49844629",
-        "points": 34,
-        "comments": 5,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lobste.rs/s/iotaty/state_simd_rust_2026",
-        "points": 34,
-        "comments": 5,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://shnatsel.github.io/state-of-simd-rust-2026/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://shnatsel.github.io/state-of-simd-rust-2026/",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-09-26T08:28:50+00:00",
-    "published_at": "2026-10-18T16:26:11.882930+00:00",
-    "curated_at": "2026-10-18T16:26:11.882930+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 501851,
-    "story_id": "s_4182bf3ca787172c",
-    "title": "We’re gonna need a lot more mathematicians",
-    "relevance": 6,
-    "score": 6.576,
-    "why": "If AI starts generating math faster than any human can follow, the scarce resource becomes humans who can verify the reasoning behind a system you're about to trust with, say, a one-terawatt reactor, and this essay argues that reserve needs to be built now.",
-    "notes": [
-      "Guest post by Amit Sahai (cryptographer) on Terence Tao's blog; Tao's editorial note says it was converted from another file format using AI, and Sahai credits 'GPT 6 Astra' as instrumental in drafting it.",
-      "Central claim, stated as the author's own experience and not benchmarked: AI systems he has worked with are 'already producing beautiful new ideas' in mathematics, beyond fast calculation or reproducing arguments a strong researcher would already follow.",
-      "Proposes a 'deployable intellectual reserve': communities of mathematically sophisticated people, with sustained term- or year-long funding, who spend extended time understanding AI-generated results, aided by AI systems.",
-      "Argues for more mathematicians, not fewer, against the counter-argument that AI makes each researcher so productive that fewer are needed; grounds the objection in fixed human biological limits on the pace of deep understanding.",
-      "Stakes framed via a hypothetical: an AI-designed one-terawatt fusion plant built on principles no human conceived, where approval should require independent human communities, not just the proposing company's experts, to understand the model, its evidence, and its uncertainties.",
-      "Frames the concern as human agency: accepting AI-made decisions of enormous consequence that no human community understands is called a 'serious position' but one to avoid; no empirical evidence or specific AI outputs are cited, it is an argumentative essay."
-    ],
-    "summary": "In a guest essay on Terence Tao's blog, cryptographer Amit Sahai argues that AI systems advancing mathematics should increase, not decrease, demand for human mathematicians. He claims the AI systems he has worked with are already producing genuinely new ideas, and that as such breakthroughs accumulate, mathematicians will feel unable to keep up; the risk is that they conclude, like discouraged students, that there is no point in continuing. His proposed response is a 'deployable intellectual reserve' of mathematically sophisticated people, supported over terms or years, who work to understand AI-generated results so that consequential decisions rest on reasons humans comprehend. He illustrates the stakes with a hypothetical AI-designed one-terawatt fusion plant whose safety guarantees humans would need to understand independently before approving construction. The piece is argumentative rather than empirical, offers no specific AI outputs or benchmarks, and notably credits 'GPT 6 Astra' with helping draft it and AI with format-converting the post.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "science"
-    ],
-    "category": "research",
-    "subcategories": [
-      "math"
-    ],
-    "state": "confident",
-    "novelty": "guest essay arguing AI math breakthroughs demand more human mathematicians, not fewer",
-    "audience": "researchers and policymakers thinking about human oversight of AI-driven scientific discovery",
-    "source_url": "https://terrytao.wordpress.com/2026/09/24/were-gonna-need-a-lot-more-mathematicians",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49852717",
-        "points": 354,
-        "comments": 458,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lobste.rs/s/gt2jle/we_re_gonna_need_lot_more_mathematicians",
-        "points": 17,
-        "comments": 9,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/09/24/were-gonna-need-a-lot-more-mathematicians/",
-        "points": null,
-        "comments": null,
-        "name": "What's New (Terence Tao)"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/09/24/were-gonna-need-a-lot-more-mathematicians/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/09/24/were-gonna-need-a-lot-more-mathematicians/",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/09/24/were-gonna-need-a-lot-more-mathematicians/",
-        "points": null,
-        "comments": null,
-        "name": "Mathblogging.org"
-      }
-    ],
-    "sources_count": 6,
-    "first_seen": "2026-09-25T00:13:26+00:00",
-    "published_at": "2026-10-18T16:09:37.086755+00:00",
-    "curated_at": "2026-10-18T16:09:37.086755+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 497862,
-    "story_id": "s_c861e523f5d80686",
-    "title": "Breaking Up with Google Play: Why Conversations Is Now Free",
-    "relevance": 6,
-    "score": 6.655,
-    "why": "A solo developer who sustained himself on Play Store sales for over a decade walked away entirely, showing how EU research grants (NLnet, European Commission, funded through 2029) can replace app-store revenue for a federated messaging client.",
-    "notes": [
-      "Conversations, a federated (XMPP) Android messaging client, launched March 24, 2014 on a paid-binary/open-source model that was the developer's primary income for over ten years.",
-      "Google's 15% cut ran the author over 1000 Euro/year, which he notes is about 1.5x his internet bill, with no way to reach a human for support.",
-      "The app was removed from the Play Store twice, once on what he says was a false accusation of uploading users' contacts, not tied to any specific update.",
-      "Current update review wait is 14 days and worsening; he blames an avalanche of AI-generated slop apps, and warns Google makes no distinction between feature and security updates, so security fixes get delayed too.",
-      "Funding is now secured via NLnet and European Commission grants through end of 2029, removing his economic dependency on Play Store revenue.",
-      "F-Droid is now the primary distribution channel; the APK is built reproducibly and signed with his personal key. All figures and claims are the author's own, self-reported."
-    ],
-    "summary": "The developer of Conversations, a federated XMPP messaging client for Android launched in March 2014, explains why he is making the app free and abandoning Google Play. For over a decade the paid-binary open-source model was his main income, with steady Play Store revenue supplementing paid development, consulting, and later grants. He details grievances: a 15% Google cut costing him over 1000 Euro/year, no human support, two removals from the store (one on a false contact-upload accusation), and a current 14-day review wait he attributes partly to AI-generated app slop clogging the queue, which also delays security updates. Having secured grant funding via NLnet and the European Commission through the end of 2029, he says he is no longer economically dependent on Google and is moving distribution to F-Droid, where the APK is built reproducibly and signed with his personal key. All claims and figures are self-reported.",
-    "channels": [
-      "devtools",
-      "security",
-      "startups"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "dev ditches Play Store entirely after 12 years, goes grant-funded",
-    "audience": "indie/open-source developers weighing app store economics and distribution",
-    "source_url": "https://gultsch.de/posts/breaking-up-with-google-play",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49855315",
-        "points": 639,
-        "comments": 254,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lobste.rs/s/4jqfz1/breaking_up_with_google_play_why",
-        "points": 58,
-        "comments": 4,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://www.reddit.com/r/androiddev/comments/1wr20kz/breaking_up_with_google_play_why_conversations_is/",
-        "points": null,
-        "comments": null,
-        "name": "Developing Android Apps"
-      },
-      {
-        "url": "https://gultsch.de/posts/breaking-up-with-google-play/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://gultsch.de/posts/breaking-up-with-google-play/",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://lemmy.world/post/52404948",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
-      }
-    ],
-    "sources_count": 6,
-    "first_seen": "2026-09-24T09:57:57.021-05:00",
-    "published_at": "2026-10-18T15:53:45.163448+00:00",
-    "curated_at": "2026-10-18T15:53:45.163448+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 460986,
-    "story_id": "s_68ffb82d4aabefa2",
-    "title": "Benchmarking Wild vs Mold",
-    "relevance": 6,
-    "score": 6.668,
-    "why": "Mold's published numbers put Wild up to ~1.3x slower, but the gap is mostly benchmark config (output-file deletion, --no-fork, filesystem) plus Mold's own 2.42.x speedups, not a raw regression in Wild.",
-    "notes": [
-      "On clang-release, config alone swings Wild's time: ext4+delete+no-fork gives 1.0x vs Mold (0.21s), while Wild's historical tmpfs+no-delete+fork gives 0.6x (0.11s vs Mold's 0.19s). Mold's number barely moves across configs.",
-      "Wild's past benchmarks reused an existing output file on tmpfs with forking enabled; Mold deletes the output between runs, passes --no-fork, and uses ext4. The author concedes tmpfs was probably a mistake and will test both going forward.",
-      "Wild lacks Mold's OS-specific file-write tweaks (fallocate to pre-allocate, hugepages to map the output), described in the 'mold: A Massively Parallel Linker' paper; both are already added to Wild and ship next release.",
-      "Mold's 2.42.0/2.42.1 releases, which landed after Wild's August 4 benchmarks, brought the main Mold speedups, accounting for much of the apparent Wild regression.",
-      "On a 16-core Ryzen 9955HX (92GiB RAM) the author reproduced Mold's M1 Ultra ratios (1.2x blender-debug, 1.2x godot-debug, 0.9x blender-release, 1.0x clang-release) but could not reproduce the larger Threadripper gap; he speculates Wild's 128 threads vs Mold's 32 on that 64-core/384GiB box, calling it guesswork and inviting Threadripper testers."
-    ],
-    "summary": "David Lattimore, author of the Wild linker, investigates why Mold's updated benchmarks show Wild substantially slower than Wild's own August 4 numbers. He identifies three causes: methodology differences (Mold deletes the output file, passes --no-fork, and runs on ext4, while Wild historically reused an existing output on tmpfs with forking), Wild's lack of Mold's OS-specific file-creation optimizations (fallocate pre-allocation and hugepage mapping, both now added and shipping next release), and Mold's own speedups in 2.42.0/2.42.1 that postdated Wild's benchmarks. On clang-release, config changes move Wild's measured time from 0.21s (Mold-style, 1.0x) to 0.11s (Wild-style, 0.6x) while Mold stays near 0.19-0.20s. Running Mold's config on a 16-core Ryzen, he reproduces the M1 Ultra ratios (roughly 0.9x-1.2x) but cannot reproduce the larger 64-core Threadripper gap, speculating it stems from Wild using 128 threads vs Mold's 32. He presents the thread-count theory as unverified guesswork and asks Threadripper owners to test.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "evals"
-    ],
-    "state": "confident",
-    "novelty": "benchmark methodology diffs explain Wild/Mold speed gap, not raw perf",
-    "audience": "systems engineers and linker/toolchain developers",
-    "source_url": "https://davidlattimore.github.io/posts/2026/09/18/benchmarking-wild-vs-mold.html",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://lobste.rs/s/gjjizm/benchmarking_wild_vs_mold",
-        "points": 52,
-        "comments": 6,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://news.ycombinator.com/item?id=49774000",
-        "points": 16,
-        "comments": 0,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://davidlattimore.github.io/posts/2026/09/18/benchmarking-wild-vs-mold.html",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://davidlattimore.github.io/posts/2026/09/18/benchmarking-wild-vs-mold.html",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-09-18T10:25:08.333-05:00",
-    "published_at": "2026-10-18T15:38:45.873031+00:00",
-    "curated_at": "2026-10-18T15:38:45.873031+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 601855,
-    "story_id": "s_2ea386b95413d659",
-    "title": "Anthropic’s proposed AI safety bill only kicks in if 50 deaths or $1 billion in damages are on the line",
-    "relevance": 6,
-    "score": 8.07,
-    "why": "If this draft becomes law, Commerce would be the sole agency able to halt a model release, and only after a risk crosses 50 deaths/injuries or $1B in damages, so most model shipping stays untouched by federal pre-release review.",
-    "notes": [
-      "The trigger is narrow: a model release can be blocked only if it risks 50+ deaths or injuries or $1B in damages, scoped to bioweapons, AI-enabled cyberattacks, or a lab losing control of a model or agents.",
-      "Enforcement is centralized: per the text, no other U.S. department, agency, or officer could order a lab to stop a release; only the Commerce Department.",
-      "Process: an independent evaluator registered with Commerce assesses labs periodically, reports an imminent risk within 72 hours, and Commerce must then present evidence to a federal judge in the D.C. District Court, who decides on halting.",
-      "Conflict-of-interest caveat: labs may pay the evaluators, but only if payment does not affect independence; the article gives no mechanism for verifying that.",
-      "Anthropic confirms the bill tracks its Advanced AI Framework, pushed to federal and state lawmakers since June; sourcing on the bill text is attributed to Politico.",
-      "Competing proposals noted: a congressional effort to mandate kill switches, and Sen. Bernie Sanders proposing a 20-year prison term for building AI superintelligence."
-    ],
-    "summary": "Tom's Hardware, citing Politico, reports Anthropic is lobbying for an AI safety bill that would let the federal government block a model's release only when it risks causing $1 billion in damages or 50+ deaths or injuries, limited to bioweapons, AI-enabled cyberattacks, or loss of control over a model or agents. An independent evaluator registered with the Commerce Department would periodically assess labs and could be paid by the lab provided independence is preserved; on finding imminent risk it would report to Commerce within 72 hours, after which Commerce would bring evidence before a federal judge in the D.C. District Court to decide on halting the release. The draft would make Commerce the only body able to order a lab to stop a release, preempting other agencies. Anthropic says the bill reflects its Advanced AI Framework, advocated to lawmakers since June. The article frames this against competing measures, including a push for mandatory kill switches and Sen. Bernie Sanders' proposed 20-year prison term for developing AI superintelligence. The piece also recounts several dramatic AI-incident claims (an OpenAI model escaping its test environment, a failed kill switch, self-replicating worms) that it presents without independent verification.",
-    "channels": [
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "safety"
-    ],
-    "state": "confident",
-    "novelty": "Anthropic's draft bill sets threshold at 50 deaths or $1B damages",
-    "audience": "AI policy watchers and engineers tracking regulatory frameworks",
-    "source_url": "https://tomshardware.com/tech-industry/artificial-intelligence/anthropics-proposed-ai-safety-bill-only-kicks-in-if-50-deaths-or-usd1-billion-in-damages-are-on-the-line-proposal-would-effectively-make-the-commerce-department-the-only-agency-capable-of-stopping-an-ai-model",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50141429",
-        "points": 84,
-        "comments": 89,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/anthropics-proposed-ai-safety-bill-only-kicks-in-if-50-deaths-or-usd1-billion-in-damages-are-on-the-line-proposal-would-effectively-make-the-commerce-department-the-only-agency-capable-of-stopping-an-ai-model",
-        "points": null,
-        "comments": null,
-        "name": "Tom's Hardware"
-      },
-      {
-        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/anthropics-proposed-ai-safety-bill-only-kicks-in-if-50-deaths-or-usd1-billion-in-damages-are-on-the-line-proposal-would-effectively-make-the-commerce-department-the-only-agency-capable-of-stopping-an-ai-model",
-        "points": null,
-        "comments": null,
-        "name": "Tom's Hardware"
-      },
-      {
-        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/anthropics-proposed-ai-safety-bill-only-kicks-in-if-50-deaths-or-usd1-billion-in-damages-are-on-the-line-proposal-would-effectively-make-the-commerce-department-the-only-agency-capable-of-stopping-an-ai-model",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-18T11:25:00+00:00",
-    "published_at": "2026-10-18T15:38:16.665005+00:00",
-    "curated_at": "2026-10-18T15:38:16.665005+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 597064,
-    "story_id": "s_eb77817ddd321284",
-    "title": "The Decoherence Trap: When AI slop drowns out the signal in an endless sea of noise",
-    "relevance": 6,
-    "score": 6.812,
-    "why": "If your team is shipping AI-generated code into an existing codebase, three cited studies say you are trading a 30% jump in code volume for 49% longer reviews and lasting complexity, not more finished work.",
-    "notes": [
-      "Defines 'decoherence' as the accumulation of locally valid but mutually incompatible or redundant models in a system, where the cost of change comes to be dominated by translating among them and preventing side effects; the author frames it as worse than ordinary tech debt.",
-      "Key claim: decoherence grows with the rate of change, not the passage of time, and compounds (each sloppy change makes the next harder), producing runaway exponential growth; a frozen codebase stays exactly as decoherent as you left it.",
-      "Cited Harvard study of 718 companies: adopting coding agents raised code written by 30% with no measurable increase in finished work; pull requests took 49% longer to review and nearly twice as many were sent back for changes.",
-      "Cited Carnegie Mellon study of open-source projects adopting Cursor: a velocity jump that did not last plus a lasting rise in code complexity, with that complexity itself a major cause of the later slowdown.",
-      "Cited analysis of 300,000+ AI-authored commits across 6,000+ repos: about 1 in 11 (up to 1 in 7 depending on the assistant) introduced at least one quality issue, and nearly a quarter of those issues remain in the code.",
-      "Argument structure is analogy plus an admittedly arbitrary simulation; the author concedes the model's weights are arbitrary and do not prove how real systems evolve, only that the 'Sweet Spot' curve can emerge from simple local decisions."
-    ],
-    "summary": "This personal-blog essay introduces 'decoherence': the buildup of locally valid but mutually incompatible or redundant models within a system, such that the cost of any change becomes dominated by translating among those models and avoiding side effects. Using an extended analogy of incrementally replacing pipes in a building (and the Ship of Theseus), the author argues that patchwork transitions create a system harder to reason about than either homogeneous system alone, and that this complexity grows with the rate of change rather than over time, compounding under schedule pressure toward a 'Decoherence Collapse.' The author contends this dynamic rules out a runaway recursive self-improvement / intelligence explosion, because decoherence limits how fast AI can improve both in isolation and in the real world, and engages the Software Intelligence Explosion argument of Forethought's Tom Davidson on data bottlenecks and the 'human-quality ceiling.' To argue agents make decoherence worse rather than better, the piece cites a Harvard study of 718 companies (30% more code, no measurable gain in finished work, 49% longer reviews), a Carnegie Mellon study of Cursor-adopting open-source projects (short-lived velocity, lasting added complexity), and an analysis of 300,000+ AI-authored commits (roughly 1 in 11 introducing a quality issue). A browser-based simulation illustrates the 'Sweet Spot' curve, though the author explicitly notes its weights are arbitrary and demonstrate only that the behavior can emerge, not that it must.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "names 'decoherence' as a distinct, worse-than-tech-debt failure mode from AI-accelerated patchwork change",
-    "audience": "engineers/architects thinking about long-term maintainability of AI-generated code and systems",
-    "source_url": "https://maevyn.codes/decoherence",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://lobste.rs/s/vjmn84/decoherence_trap_when_ai_slop_drowns_out",
-        "points": 45,
-        "comments": 18,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://maevyn.codes/decoherence",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://programming.dev/post/58152243",
-        "points": null,
-        "comments": null,
-        "name": "programming.dev (Lemmy)"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-16T11:36:29.493-05:00",
-    "published_at": "2026-10-18T14:34:32.334692+00:00",
-    "curated_at": "2026-10-18T14:34:32.334692+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 504952,
-    "story_id": "s_3e40d379936e63cb",
-    "title": "Reverse-engineering the vintage Intel 8087's tangent algorithm: more than CORDIC",
-    "relevance": 6,
-    "score": 6.893,
-    "why": "A transistor-level teardown shows exactly how a 1980 coprocessor hit 64-bit tangent accuracy fast: 16 CORDIC steps for the coarse angle, then a single rational approximation for the tiny remainder, a hybrid worth knowing when you implement transcendentals in constrained hardware.",
-    "notes": [
-      "FPTAN runs in roughly 90 microseconds versus about 13,000 microseconds for the same computation on the bare 8086, per the article.",
-      "The algorithm is hybrid: 16 CORDIC iterations give ~2^-16 accuracy, then the leftover angle (around 2^-16) is handled by the Pade approximant 3x/(3-x^2), whose error scales as x^4 and so stays under 2^-64, meeting the chip's 64-bit significand requirement.",
-      "FPTAN returns a separate numerator (Y) and denominator (X) rather than the quotient, so the slow division is skipped; CORDIC itself needs only shift, add, subtract, and a precomputed table of angles arctan(2^-n), no multiply or divide.",
-      "Three phases: pseudo-division (decide which special angles to subtract, recording 1/0 decision bits in a 16-bit shift register), the rational approximation (its only costly op is a 64-bit square, done via radix-4 Booth multiplication), and pseudo-multiplication (apply rotations smallest-first to cut rounding error).",
-      "Findings come from physically decapping an 8087 with a chisel and microscope imaging; the microcode ROM holds 1648 micro-instructions, and FPTAN starts at address #1039. The code uses implicit fixed-point exponents that exist only in the algorithm, not in the chip's registers.",
-      "Caveats the author flags: three exponent-based paths (argument returned unchanged if exponent <= -64; CORDIC skipped if <= -17; full CORDIC for -1 to -16), and every nonzero input triggers a 'precision' exception since only tan(0) is computed exactly."
-    ],
-    "summary": "Ken Shirriff reverse-engineers the tangent instruction (FPTAN) of Intel's 1980 8087 floating-point coprocessor by decapping a chip and imaging its die, then reading the microcode and datapath. The chip combines two methods: CORDIC, a 1956 shift-and-add algorithm (invented by Jack Volder for B-58 bomber navigation) that uses precomputed angles arctan(2^-n) and needs no multiply or divide, and a Pade rational approximation 3x/(3-x^2) for the small residual angle. Sixteen CORDIC steps give about 16 bits of accuracy; the rational approximation, with error proportional to x^4 on an input under 2^-16, covers the rest to meet the 64-bit requirement. FPTAN returns numerator and denominator separately so the expensive division is avoided. The implementation runs in three microcode phases, pseudo-division (recording decision bits in a 16-bit shift register), the rational approximation (whose costliest operation is a 64-bit square via radix-4 Booth multiplication), and pseudo-multiplication applying rotations in reverse order. The article reports FPTAN taking roughly 90 microseconds against about 13,000 on the 8086, and notes the microcode ROM holds 1648 micro-instructions and that nonzero inputs always raise a precision exception.",
-    "channels": [
-      "hardware"
-    ],
-    "category": "research",
-    "subcategories": [
-      "systems"
-    ],
-    "state": "confident",
-    "novelty": "die analysis shows 8087 hybrid CORDIC+polynomial tangent algorithm",
-    "audience": "hardware archaeology/retrocomputing enthusiasts, chip reverse engineers",
-    "source_url": "https://righto.com/2026/09/8087-tangent-cordic.html",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49858676",
-        "points": 42,
-        "comments": 7,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lobste.rs/s/5soxba/reverse_engineering_vintage_intel_8087_s",
-        "points": 10,
-        "comments": 2,
-        "name": "Lobsters"
-      },
-      {
-        "url": "http://www.righto.com/2026/09/8087-tangent-cordic.html",
-        "points": null,
-        "comments": null,
-        "name": "Ken Shirriff's blog (righto.com)"
-      },
-      {
-        "url": "https://www.righto.com/2026/09/8087-tangent-cordic.html",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "http://www.righto.com/2026/09/8087-tangent-cordic.html",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      }
-    ],
-    "sources_count": 5,
-    "first_seen": "2026-09-26T19:01:50+00:00",
-    "published_at": "2026-10-18T14:18:44.586847+00:00",
-    "curated_at": "2026-10-18T14:18:44.586847+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 451452,
-    "story_id": "s_9f6a173b81467f46",
-    "title": "How To Write With An LLM",
-    "relevance": 6,
-    "score": 6.926,
-    "why": "If you draft with an LLM, the piece gives you a usable discipline, never ship a phrase the model wrote, that keeps its tells out of your prose while still using it for grammar, fact-checking, and thesaurus work.",
-    "notes": [
-      "Thomas Ptacek's 'Rule Number One': 'You may not use a single word an LLM suggests to you' — treat any specific turn of phrase the model offers as off limits, and be strict about it.",
-      "He frames the rule as 'intellectual personal protective equipment' against LLM-flavored prose; the idea is to accept the model's edits and critiques but write every actual word yourself.",
-      "Simon Willison endorses the approach and describes his own usage: fact-checking, spelling and grammar, and occasional thesaurus, with a dedicated proofreading prompt; he does not let LLMs write blog content.",
-      "Ptacek shows a screenshot of a personal LLM copyediting tool and provides a starter prompt for building your own; he later posted his full system prompt in a Hacker News comment.",
-      "This is an opinion/workflow post, not a study — no measurement of whether the rule actually removes detectable LLM style; it rests on Willison's subjective sense that LLM text 'has that weird smell.'"
-    ],
-    "summary": "Simon Willison's link-blog post highlights Thomas Ptacek's essay on using LLMs as copyeditors rather than writing assistants. Ptacek's central rule is that you may not use any specific word or turn of phrase an LLM suggests; he calls this 'intellectual personal protective equipment' against LLM-flavored prose, accepting the model's edits and feedback but writing all the words himself. Ptacek also demonstrates a personal LLM copyediting tool, offers a prompt for building one, and shared his system prompt in a Hacker News comment. Willison agrees with the rule and outlines his own practice: LLMs for fact-checking, spelling and grammar, and as an occasional thesaurus, but never to draft blog content, backed by a proofreading prompt. The piece is a workflow opinion rather than an empirical argument, resting on the subjective claim that LLM text has a recognizable 'smell.'",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "rule: never use an LLM's exact phrasing, only its edits",
-    "audience": "writers and engineers using LLMs for editing/writing assistance",
-    "source_url": "https://simonwillison.net/2026/Sep/17/how-to-write-with-an-llm",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49747070",
-        "points": 696,
-        "comments": 396,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://simonwillison.net/2026/Sep/17/how-to-write-with-an-llm/",
-        "points": null,
-        "comments": null,
-        "name": "Simon Willison"
-      },
-      {
-        "url": "https://sockpuppet.org/blog/2026/09/17/how-to-write-with-an-llm/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-09-17T23:37:27+00:00",
-    "published_at": "2026-10-18T14:18:20.521206+00:00",
-    "curated_at": "2026-10-18T14:18:20.521206+00:00",
     "model": "claude-opus-4-8"
   }
 ]
