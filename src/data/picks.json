@@ -53,7 +53,7 @@
     "story_id": "s_651535a673664630",
     "title": "Node2Shell evolves to HTTP2Shell. Brotli flaw (CVE-2026-111497) blast radius affects many libraries & apps using HTTPs.",
     "relevance": 8,
-    "score": 6.016,
+    "score": 6.006,
     "why": "If your service decodes Brotli-compressed HTTP traffic, a remote unauthenticated attacker can corrupt memory and potentially run code in both directions, yet pip-audit, Dependabot, and Safety will not flag your vulnerable Python packages because the advisory databases do not map the CVE to PyPI yet.",
     "notes": [
       "CVE-2026-111497 is an out-of-bounds write in Google's Brotli decoder, versions 1.0.3 through 1.2.0, rated CVSS v4.0 9.2; the CVE record pairs CWE-252 (unchecked return value) with CWE-787 (out-of-bounds write). Fixed in Brotli 1.2.1, brotlicffi 1.2.1.0, and backported 1.0.10 / 1.1.1.",
@@ -82,8 +82,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50219177",
-        "points": 350,
-        "comments": 171,
+        "points": 355,
+        "comments": 180,
         "name": "Hacker News"
       },
       {
@@ -110,7 +110,7 @@
     "story_id": "s_bea987627031ca18",
     "title": "LLMs are making formal software verification feasible at a much larger scale",
     "relevance": 8,
-    "score": 5.509,
+    "score": 5.503,
     "why": "Claude-generated proofs covered 239 fuzz entry points across 123 real libraries at the RISC-V binary level, putting memory-safety guarantees that once cost tens of person-years (seL4: 20) within reach of ordinary open-source projects.",
     "notes": [
       "The pipeline converts a project's existing OSS-Fuzz fuzz test into a formal spec ('this entry point never crashes, including ASan violations, for any input under 64 MB'), then has Claude prove it against Theorem's RISC-V instruction and Linux process semantics; proving the spec makes further fuzzing of that entry point superfluous.",
@@ -166,7 +166,7 @@
     "story_id": "s_bf65b355e5136be0",
     "title": "Websites across world hit by millions of attempts to exploit PHP code flaw",
     "relevance": 8,
-    "score": 4.951,
+    "score": 4.946,
     "why": "If you run PHP anywhere exposed, patch now: CloudFlare went from tens of thousands of exploit attempts to millions within two hours of disclosure, and the fix reportedly fails on older installs that must be replaced outright.",
     "notes": [
       "Dubbed PHP2Shell, the flaw sits in PHP, which the article says underpins ~70% of the world's websites; the US NSA says it could let attackers seize web servers, steal data, disrupt services, and move laterally into networks.",
@@ -960,70 +960,105 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 475367,
-    "story_id": "s_b1ba49de755b985b",
-    "title": "ChatGPT now knows what you do on other websites via ad collector",
-    "relevance": 8,
-    "score": 6.539,
-    "why": "If you use ChatGPT on Chrome for Android and allowed analytics but refused marketing, OpenAI still resolves your browsing on 936 advertiser sites back to your account, because __obi is the one OpenAI cookie set SameSite=None.",
+    "id": 631814,
+    "story_id": "s_f683d8eabdec4247",
+    "title": "Cerebras Deploys Trillion-Parameter AI Models",
+    "relevance": 7,
+    "score": 6.62,
+    "why": "If you evaluate inference backends, this gives the concrete wafer-count math for Cerebras's alternative to GPU tensor-parallel serving: a 3T-parameter model mapped to 59 wafers as a pipeline, with activations (not weights) crossing wafers at ~2 microseconds per RDMA-over-Ethernet hop.",
     "notes": [
-      "The mechanism: chatgpt.com generates 16 random bytes, gets an RS256 JWT (iss chatgpt-wadi, aud bzr.openai.com, 60s expiry) binding the account 'sub' to the 'obi' id, then POSTs it to bzr.openai.com/v1/obi/sync, which returns Set-Cookie __obi, Domain=.openai.com, SameSite=none, Secure, Max-Age=31536000 (one year). Every other OpenAI cookie is SameSite=Lax or domain-mismatched and blocked cross-site.",
-      "The script-tag load of bzrcdn.openai.com/sdk/oaiq.min.js carries __obi before any OpenAI code runs, so the SDK's 'no credentials' path does not prevent disclosure; loading the tag alone leaks the id.",
-      "The SDK scrapes identity from form fields, rendered page text, and the tag-manager bus (it replaces window.dataLayer.push, reads adobeDataLayer, parses the l= param off gtm.js). Scraped identity outnumbered advertiser-supplied 685 to 255 events. Email/phone/name are SHA-256 hashed; country, region, city, postal code sent in clear. v0.1.31 also took names and geography until scope was narrowed 27 August. URLs reduced to origin+path (none of 23,929 carried a query string), but paths reaching the collector included a medical condition, a debt funnel, and a litigation intake form.",
-      "Automatic matching was on for 638 of 881 pixels with a known setting, including every observed credit/lending advertiser. A denylist excludes passwords, OTPs, card numbers, SSN, DOB, medical history, diagnosis, court fields.",
-      "Every decoded sync token carried consent_decision: analytics_allowed, and __obi is listed in OpenAI's policy only as an Analytics cookie; a user who grants analytics and refuses marketing still gets it. Of 932 decoded tokens, 736 were account_user and 196 anonymous; the anonymous device id persisted 27+ days.",
-      "Caveats stated by the author: observed only on Chrome for Android (Safari ITP and iOS WebKit block it, desktop Chrome untested); ~1 session in 5 produced a sync token; the server-side join to the account was not observed (202 only confirms acceptance, resolution is inferred from design). OpenAI Support acknowledged the 14 September inquiry but answered neither question."
+      "Each WSE-3T wafer has 44GB on-chip SRAM; a 3T-param model at 4-bit weights is ~16GB per layer across 93 layers, so entire layers fit on-chip and weights never move between wafers.",
+      "Mapping rule: one dense (full-attention) layer per wafer to reserve SRAM for KV cache, but two linear-attention layers per wafer (2x16GB=32GB) since linear attention keeps a fixed-size per-request state instead of a growing KV cache.",
+      "Kimi K3's 69 linear + 24 dense layers yields 35 + 24 = 59 wafers; Cerebras claims 1000-2000+ tokens/sec, keeping the pipeline full via many fine-grained stages plus micro-batching so stages serve different concurrent requests rather than idling.",
+      "Concurrency ceiling is set by leftover KV-cache space on dense-layer wafers (44GB minus one dense layer), divided by per-request cache cost at an assumed 256k average request size and 8-bit KV cache; the article states the formulas but omits the resulting numeric totals.",
+      "Benchmark claims are vendor-presented: Kimi K3 scores 88.3% on Terminal-Bench 2.1 (vs GPT-5.6 Sol 88.8%) and 91.2% on BrowseComp (vs 90.4%); no independent verification or methodology is given.",
+      "Cerebras argues the honest efficiency metric is tokens per second per megawatt at matched generation speed, not concurrency or batch size; no power numbers are provided in the post."
     ],
-    "summary": "An independent researcher reverse-engineered OpenAI's advertising pixel and reports that ChatGPT sets a cross-site tracking cookie, __obi, scoped to .openai.com with SameSite=None, Secure, and a one-year lifetime, bound to the user's ChatGPT account via a short-lived RS256 JWT. Advertisers that install OpenAI's conversion pixel (the same model as Meta and Google tags) cause __obi to be sent back to OpenAI along with page data and scraped identity, letting OpenAI resolve off-site browsing to a ChatGPT account server-side. The author reproduced the full flow on his own Android phone across 12 commercial sites (Chewy, Wayfair, Coursera, Eventbrite, HelloFresh, SeatGeek and others), verified with two capture methods, and cross-checked against months of traffic spanning 936 advertiser pixels and 1,029 hostnames. Key findings: the SDK script-tag load leaks the cookie before opt-out code runs; scraped identity (form fields, page text, GTM dataLayer) outnumbered advertiser-supplied identity 685 to 255; hashed email/phone/name but cleartext location; automatic matching enabled for 638 of 881 pixels including all observed lenders; and the id works logged-out via a device-stable anonymous subject. Every decoded token carried analytics_allowed consent, and __obi appears in OpenAI's policy only as an analytics cookie, so users who refused marketing consent still receive it. The author flags limits: Chrome-for-Android only, ~1-in-5 sessions sync, the account join is inferred from design rather than observed, and OpenAI Support acknowledged but did not answer his 14 September questions.",
+    "summary": "Cerebras explains how it deploys multi-trillion-parameter models across multiple WSE-3T wafers, each with 44GB of on-chip SRAM, using the open-weight Kimi K3 (3T params, 69 linear-attention + 24 dense layers) as a worked example. At 4-bit quantization each layer is roughly 16GB; dense layers take one wafer each to leave room for KV cache, while linear-attention layers pack two per wafer because they keep a fixed-size per-request state, giving a 59-wafer pipeline. Layers stay resident on-chip so weights never move, and only activations cross wafers via RDMA over Ethernet at about 2 microseconds per hop. Throughput (claimed at 1000-2000+ tokens/sec) comes from keeping the pipeline full with many fine-grained stages and micro-batches, so each stage processes different concurrent requests instead of idling. Maximum concurrency is bounded by remaining KV-cache space on dense-layer wafers given an assumed 256k-token request size and 8-bit KV cache. Benchmark scores cited for Kimi K3 are vendor-presented and the post omits the final numeric concurrency and power figures.",
     "channels": [
       "ai",
-      "security"
+      "hardware",
+      "devtools"
     ],
     "category": "ai",
     "subcategories": [],
     "state": "confident",
-    "novelty": "reverse-engineered OpenAI's cross-site ad-tracking cookie mechanism",
-    "audience": "engineers/privacy researchers tracking AI platform data practices and ad-tech identity leakage",
-    "source_url": "https://buchodi.com/chatgpt-now-knows-what-you-do-on-other-websites-via-ad-collector",
+    "novelty": "concrete wafer-scale pipeline-parallel deployment math for 3T-param model",
+    "audience": "ML infra/systems engineers working on large-model inference serving",
+    "source_url": "https://cerebras.ai/blog/how-we-deploy-trillion-parameter-frontier-models-on-cerebras",
     "read_kind": "publication-free",
     "free_link": null,
     "paywalled": false,
     "surfaces": [
       {
-        "url": "https://news.ycombinator.com/item?id=49776729",
-        "points": 659,
-        "comments": 343,
+        "url": "https://news.ycombinator.com/item?id=50227356",
+        "points": 272,
+        "comments": 92,
         "name": "Hacker News"
       },
       {
-        "url": "https://lobste.rs/s/jbnmj9/chatgpt_now_knows_what_you_do_on_other",
-        "points": 27,
-        "comments": 1,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://www.buchodi.com/chatgpt-now-knows-what-you-do-on-other-websites-via-ad-collector/",
+        "url": "https://www.cerebras.ai/blog/how-we-deploy-trillion-parameter-frontier-models-on-cerebras",
         "points": null,
         "comments": null,
         "name": "Hacker News"
-      },
-      {
-        "url": "https://www.buchodi.com/chatgpt-now-knows-what-you-do-on-other-websites-via-ad-collector/",
-        "points": null,
-        "comments": null,
-        "name": "Lobsters"
-      },
-      {
-        "url": "https://lemmy.world/post/52157576",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
       }
     ],
-    "sources_count": 5,
-    "first_seen": "2026-09-20T15:18:44+00:00",
-    "published_at": "2026-10-18T16:26:40.293998+00:00",
-    "curated_at": "2026-10-18T16:26:40.293998+00:00",
+    "sources_count": 2,
+    "first_seen": "2026-10-25T01:33:49+00:00",
+    "published_at": "2026-10-25T16:45:26.860103+00:00",
+    "curated_at": "2026-10-25T16:45:26.860103+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 630797,
+    "story_id": "s_e4b7793d89e1c1d3",
+    "title": "GPU-unlock: FP/BF16 instruction issue rate on Nvidia 3000's cards",
+    "relevance": 7,
+    "score": 6.723,
+    "why": "If you run matrix-heavy workloads on an RTX 3000 card, this kernel module roughly doubles your BF16/TF32 FMA issue rate for free: user reports put a 3090 at 157.41 TFLOPS BF16 (up from 87.50) with bit-identical outputs.",
+    "notes": [
+      "Mechanism: a Linux kernel module that combines the CMP unlocker's V67/PLM technique with UEFI-style pre-driver timing. It runs the unlock, writes speed selectors SS0 0x88888888 (full BF16 rate) and 4-bit SS1 0x8 (IMLA4), and does an FLR before the unmodified NVIDIA driver binds. It is loaded from initramfs ahead of the nvidia module, so no manual re-patching is needed per driver release.",
+      "Reported single-card gains (user benchmarks, not vendor): FP16 87.46 to 118.39 TFLOPS; BF16 87.50 to 157.41; TF32 42.58 to 82.61. BF16 GEMM gains span +25% to ~+80% across GA102/GA103/GA104/GA106; the +25% low is a card capped at 225 W, so power limit dominates.",
+      "Workload effect: LLM prefill +14-36%, plus diffusion and FlashAttention speedups. Memory-bandwidth-bound LLM decode and INT8 work see no change. Reports that compared outputs found them bit-identical before and after.",
+      "Caveats and failures: the RTX 3080 Ti 20 GB OEM (GA102-250, 10de:2205) completes the unlock but BF16 stays at half rate; GA103 (10de:2414) has no reports. Gains come from each report's own benchmark and are not directly comparable.",
+      "Scope: works on up to four cards per machine, the display-driving card, and cards passed to a VM via vfio-pci. Re-applies on resume-from-RAM via a suspend notifier before nvidia resumes (adds ~1s); hibernation is not covered. Loading the module by hand after nvidia has bound a card does nothing.",
+      "Licensing/trust: kernel module and packaging are GPL-2.0-only; the generated payload derives from the pinned CMP reference and NVIDIA firmware remains under its own terms. Each build downloads pinned NVIDIA/CachyOS inputs over HTTPS and checks SHA-256. The repo is a third-party project ending with a donation address for crypto GPU funds."
+    ],
+    "summary": "gpu-unlock is a GPL-2.0 Linux kernel module that raises the FP/BF16 FMA-into-FP32 instruction issue rate on consumer Nvidia Ampere cards (GA102, GA103, GA104, GA106) to their professional-tier rate. It combines the CMP unlocker's V67/PLM technique with UEFI-style pre-driver timing: loaded from initramfs before the stock nvidia driver binds, it writes speed selectors SS0 0x88888888 and SS1 0x8, performs an FLR, then lets nvidia bind normally, avoiding per-driver manual patching. User-reported benchmarks show a roughly doubled issue rate (e.g. RTX 3090 BF16 from 87.50 to 157.41 TFLOPS), with BF16 GEMM gains of +25% to ~+80% depending heavily on power limit, and bit-identical outputs where compared. Matrix-heavy work (LLM prefill +14-36%, diffusion, FlashAttention) speeds up while memory-bandwidth-bound decode and INT8 do not. It supports multiple cards, the display card, and vfio-pci passthrough, and re-applies on resume from RAM; one OEM 3080 Ti variant unlocks but stays at half rate, and all performance figures are self-reported from non-standardized benchmarks.",
+    "channels": [
+      "ai",
+      "hardware",
+      "devtools"
+    ],
+    "category": "hardware",
+    "subcategories": [
+      "silicon"
+    ],
+    "state": "confident",
+    "novelty": "kernel module unlocks pro-tier FP16/BF16 rates on consumer RTX 3000 GPUs",
+    "audience": "engineers running local LLM/ML inference on consumer Ampere GPUs",
+    "source_url": "https://github.com/Zagitta/gpu-unlock",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50219700",
+        "points": 303,
+        "comments": 74,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/Zagitta/gpu-unlock",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-24T09:58:27+00:00",
+    "published_at": "2026-10-25T16:44:59.201325+00:00",
+    "curated_at": "2026-10-25T16:44:59.201325+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -1031,7 +1066,7 @@
     "story_id": "s_ca3d81e81c2fd3c9",
     "title": "Why is AI-generated language so hard to understand?",
     "relevance": 7,
-    "score": 6.058,
+    "score": 6.03,
     "why": "If you ship LLM-generated prose to human readers, this quantifies the specific syntactic habits that make it hard to parse, and names a training pressure (optimizing for density) that makes those habits worse.",
     "notes": [
       "Study compares a new corpus of AI-generated text across domains against human writing and round-trip-translation paraphrases, using psycholinguistic features known to raise human processing difficulty: object relative clauses, long syntactic dependencies, low-frequency n-grams.",
@@ -1088,7 +1123,7 @@
     "story_id": "s_e1f4f678b6bfe3dd",
     "title": "The Goose Programming Language",
     "relevance": 7,
-    "score": 6.581,
+    "score": 6.554,
     "why": "A systems language that keeps C++/Rust-class performance with zero lifetime annotations and no unsafe is worth a read if you write memory-bound code and resent fighting the borrow checker.",
     "notes": [
       "Memory model: no heap, GC, refcounting, or destructors. Every dynamic value lives inline on one of N compiler-assigned data stacks (2 GB reserved address space each, committed on use), growth is a bump-pointer advance, and freeing is a single store to the stack top regardless of nesting depth. At most one resizable value is live per stack.",
@@ -1139,7 +1174,7 @@
     "story_id": "s_9b720d259d7035e4",
     "title": "We should be more ambitious with the software we build",
     "relevance": 7,
-    "score": 5.878,
+    "score": 5.861,
     "why": "The gap to watch isn't \"can the model one-shot it\" but the author's claim that each stronger model widens the distance between what it can implement and what it can verify without hand-holding, which is where your review time now goes.",
     "notes": [
       "Author reports building a tweakable regex engine, a ripgrep fork using that engine's native-code compiler, and a Rust build speedup in low single-digit hours with AI, work he estimates would have taken him a year-plus solo given no background in regexes, compilers, or interpreters; he stresses these are 'works for me' quality, not product quality.",
@@ -1166,8 +1201,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50225695",
-        "points": 545,
-        "comments": 499,
+        "points": 581,
+        "comments": 561,
         "name": "Hacker News"
       },
       {
@@ -1188,7 +1223,7 @@
     "story_id": "s_96bcb40f275c120e",
     "title": "AI and the Fall? of the Creative Class",
     "relevance": 7,
-    "score": 7.561,
+    "score": 7.546,
     "why": "The same business-model collapse that cut newspaper payrolls ~85% is now visible in a 100k-job drop in movie and TV, and the piece names tech coding jobs as the next \"creative-adjacent\" sector already bleeding.",
     "notes": [
       "US 'creative' industries lost 200k+ jobs over four years, ~50k in the last year, a stretch the author says matches the 2001 and 2008 recessions in intensity and duration despite no general recession now.",
@@ -1215,8 +1250,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50226419",
-        "points": 415,
-        "comments": 444,
+        "points": 440,
+        "comments": 458,
         "name": "Hacker News"
       },
       {
@@ -1243,7 +1278,7 @@
     "story_id": "s_eb0f842fedd300d8",
     "title": "‘Black October’: cybersecurity experts sound the alarm over new era of AI-enabled hacking",
     "relevance": 7,
-    "score": 5.349,
+    "score": 5.328,
     "why": "If you run anything on PHP, the window to patch is already closed: Cloudflare says exploit attempts went from thousands to millions within hours of the October 21 disclosure.",
     "notes": [
       "A critical PHP vulnerability was announced on October 21; the article says the underlying flaws had been present for decades, and some experts (unnamed) estimated 70% of all internet sites were at risk.",
@@ -1316,7 +1351,7 @@
     "story_id": "s_65d416cce8116a68",
     "title": "UUIDv7 doesn't have the properties you think it does",
     "relevance": 7,
-    "score": 4.912,
+    "score": 4.897,
     "why": "If you picked UUIDv7 for sortable keys or a free creation-time column, RFC 9562 lets a compliant generator lie about the timestamp and emit out-of-order IDs, so uniqueness is the only guarantee you can actually rely on.",
     "notes": [
       "RFC 9562 §6.1/§6.2 explicitly permit implementations to alter the timestamp field and to increment it ahead of the system clock; the spec makes no guarantee about how close the clock value is to actual time.",
@@ -1364,7 +1399,7 @@
     "story_id": "s_0ed94c3bb82b8625",
     "title": "How close can pure functional programming get to C?",
     "relevance": 7,
-    "score": 6.112,
+    "score": 6.096,
     "why": "A memory-safe functional language with no unsafe escape hatch landed within a single-digit median of hand-tuned SIMD C on real DEFLATE compression, which reframes the usual safety-versus-speed tradeoff for anyone picking a language for hot-path library code.",
     "notes": [
       "roc-deflate ran 144 benchmarks on the Silesia corpus against libdeflate: median 8.9% slower on an AMD Ryzen 9 3900X, 2.6% slower on a 2021 M1 MacBook Pro, verified to produce identical output.",
@@ -1413,7 +1448,7 @@
     "story_id": "s_0c920decd4263bbc",
     "title": "Is this the new cyber normal?",
     "relevance": 7,
-    "score": 5.002,
+    "score": 4.988,
     "why": "The author's central claim: the window between \"there's a bad RCE in this project\" and live, automated exploitation has collapsed from weeks to hours because LLMs turn vague vulnerability descriptions and patch diffs into working exploits, so announcing a patch should now be treated as the last moment before the exploit is already circulating.",
     "notes": [
       "PHP2Shell (CVE-2026-109618/109619): two PHP RCE bugs the author says were found by security firms Calif (via OpenAI's \"Patch the Planet\") and Wiz (Google Cloud) using GPT-5.6 Sol and Gemini 4 Argon to build exploits; one bug had been flagged in a 2024 PHP Foundation audit funded by the Sovereign Tech Agency but dismissed as non-exploitable. Claimed to affect ~70% of the internet (Wikimedia, DeviantArt, UK government, Japanese banking); affected-site and 70% figures are Wiz/vendor claims, not independently verified in the piece.",
@@ -1462,7 +1497,7 @@
     "story_id": "s_5945067b18db5505",
     "title": "AI Is Changing Everything About Hacking. No One Knows What Happens Next",
     "relevance": 7,
-    "score": 5.129,
+    "score": 5.115,
     "why": "If you run PHP, Node.js, GitLab, Plex, or anything internet-facing, exploit traffic for AI-found bugs now scales from thousands to millions of attempts within hours of disclosure, so patch windows measured in days are gone.",
     "notes": [
       "PHP2Shell was found by researchers at Wiz, Calif, and OpenAI using AI; OpenAI frames its disclosure as a 'Defender's Window' for governments and critical infrastructure to prepare before public release.",
@@ -1517,7 +1552,7 @@
     "story_id": "s_c995974ce9700481",
     "title": "Twelve Years of Distributed SQLite",
     "relevance": 7,
-    "score": 8.251,
+    "score": 8.199,
     "why": "If you need a fault-tolerant relational store you run yourself, this maps the three design corners (consensus, streaming, CRDT merge) so you pick by the question you are actually asking, not the vendor pitching you.",
     "notes": [
       "rqlite launched September 2014 as, per the author, the first open-source system to combine Raft and SQLite; it started on goraft (the library etcd and InfluxDB used) and switched to Hashicorp's Raft in early 2016.",
@@ -1574,7 +1609,7 @@
     "story_id": "s_178af70e5349114a",
     "title": "Kimi K3.1 Pro and K3.1 Pro Highspeed",
     "relevance": 7,
-    "score": 5.535,
+    "score": 5.522,
     "why": "A 3T-parameter open-weight model with full weights due Nov 4 claims Terminal-Bench 4.0 coding scores within a point of Claude Opus 5.5, meaning a frontier-adjacent coding agent will soon run on infrastructure you control.",
     "notes": [
       "All numbers are Moonshot's own, mostly on internal or self-harnessed benchmarks; proprietary competitors (GPT-6 Astra, Claude Opus 5.5) are scored from their own reports or leaderboards, and many Kimi runs use the Claude-Code harness at reasoning effort 'max', temperature 1.0, top-p 0.95.",
@@ -1622,7 +1657,7 @@
     "story_id": "s_4048b8c88f3b82c9",
     "title": "Faster than earcut: triangulating 3.7M map polygons in 489 ms",
     "relevance": 7,
-    "score": 4.602,
+    "score": 4.597,
     "why": "If you ship a web map, swapping earcut for this ISC-licensed drop-in cut triangulation of 3.74M polygons from 557 ms to 489 ms natively and 1.4-2.1x in the browser, with the same API and triangle output.",
     "notes": [
       "earstrip is one C++ header plus a WebAssembly/npm build that takes earcut's arguments; self-reported 14% faster than earcut.hpp 3.2.4 natively and 1.4-2.1x faster than earcut.js 3.2.4 in-browser, depending on call path (direct calls, all polygons in one call, hit the 2.1x figure in JavaScriptCore).",
@@ -1670,7 +1705,7 @@
     "story_id": "s_3d10d751d1048ee5",
     "title": "333 Tor exit nodes hijacked to intercept SSH traffic and retrieve plaintext email",
     "relevance": 7,
-    "score": 4.505,
+    "score": 4.499,
     "why": "If your SSH or CI configs use passwords and accept-new host key handling, a single hostile Tor exit node can pin its own key on first connection, steal your password, and backdoor the server with no warning ever firing.",
     "notes": [
       "333 Tor exit nodes were compromised at once, more than 10% of the roughly 3,000-node network, and routed through 12 SSH interception servers run by the attacker.",
@@ -1732,7 +1767,7 @@
     "story_id": "s_b6ee77d8635d56ae",
     "title": "Speeding up code review with `small-change`",
     "relevance": 7,
-    "score": 4.82,
+    "score": 4.815,
     "why": "If AI-assisted coding is raising your team's merge rate, human PR review becomes the bottleneck Larson describes: his p50 review time doubled from 33 to 77 minutes in two years, and this is a concrete recipe for routing low-risk PRs around human review without dropping quality.",
     "notes": [
       "Self-reported metrics from Imprint: average engineer merges 4x more PRs than two years ago, two teams at 10x, one engineer at 25x the old average; p50 review time rose from ~33 to ~77 min, correlated with merge volume.",
@@ -1789,7 +1824,7 @@
     "story_id": "s_8f6f212df865a4ff",
     "title": "Show HN: Run full iOS 16.5 firmware on Android Devices",
     "relevance": 7,
-    "score": 4.889,
+    "score": 4.884,
     "why": "An unmodified iOS 16.5 userland now reaches the SpringBoard home screen on a $300 Snapdragon Android phone with no Apple binaries modified, proving the whole stack can be driven by replacement drivers and an injected library rather than Apple silicon.",
     "notes": [
       "Boots Apple's open-source XNU (xnu-8796.121.2, the iOS 16.5 kernel) under a custom EFI loader and a Mu-Silicium UEFI port, then runs the stock launchd to backboardd to SpringBoard chain unchanged; the iOS frameworks and dyld shared cache are not altered by a byte, with missing pieces supplied by driver replacements or a library injected via DYLD_INSERT_LIBRARIES.",
@@ -1839,7 +1874,7 @@
     "story_id": "s_e24af946c92f8b59",
     "title": "Quad9 (DNS Resolver) to Exit France",
     "relevance": 7,
-    "score": 5.269,
+    "score": 5.264,
     "why": "If you run 9.9.9.9 for threat filtering, DNS from your French networks stops resolving on November 24, 2026, and the ruling establishes that a single national court can order a passive resolver to lie about DNS answers.",
     "notes": [
       "A French court ruled for beIN, a Qatari-owned company with French offices, ordering Quad9 to stop recursive DNS resolution for domains beIN says infringe its sports-broadcast rights; the per-day penalty was cut from EUR 580,000 to EUR 1,000.",
@@ -1888,7 +1923,7 @@
     "story_id": "s_bc60526cdd98b807",
     "title": "OpenShell – A safe, private runtime for fleets of autonomous AI agents",
     "relevance": 7,
-    "score": 6.409,
+    "score": 6.404,
     "why": "If you run coding agents that need real credentials and shell access, this is a per-sandbox way to inject secrets only for approved endpoints and to gate policy expansions behind a verifier before an agent reaches a new host or API.",
     "notes": [
       "NVIDIA open-source project (Apache 2.0); the 0.1.x line adds a stated stable release cadence, new isolation primitives, an expanded extension surface, and new APIs.",
@@ -2095,7 +2130,7 @@
     "story_id": "s_a930fb0f944ab4c6",
     "title": "Announcing DuckDB 2.0.0 LTS “Cinnamon Teal”",
     "relevance": 7,
-    "score": 5.922,
+    "score": 5.917,
     "why": "The in-process database now ships a client-server protocol, async object-storage I/O, and a CLI that reshapes its output for coding agents, so DuckDB can serve remote databases and cut agent token consumption without leaving its embedded roots.",
     "notes": [
       "The Quack protocol (introduced in 1.5.3) gets a polished client-server mode with a new CONNECT statement; CONNECT also targets Postgres and MySQL, where a remote pushdown optimizer ships queries to the server instead of pulling tables over the wire. Server defaults to localhost; allow_other_hostname is testing-only, with TLS reverse proxy recommended for remote access.",
@@ -3227,63 +3262,6 @@
     "first_seen": "2026-10-16T06:16:13+00:00",
     "published_at": "2026-10-18T17:45:32.265409+00:00",
     "curated_at": "2026-10-18T17:45:32.265409+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 495777,
-    "story_id": "s_7e22bedf886fa253",
-    "title": "Evolving programming languages in the AI era",
-    "relevance": 7,
-    "score": 6.407,
-    "why": "If you are building language tooling, the argument here is concrete: ship a queryable program database and runtime observability for agents instead of syntax tweaks or LSP endpoints, because agents track symbols and traces, not file/line/column positions.",
-    "notes": [
-      "Written by Jose Valim (creator of Elixir) on the Dashbit blog; split into speculative 'Reflections' and opinionated 'Agentic tooling' sections. Discloses AI was used for style and grammar editing.",
-      "Rejects 'languages for coding agents' that optimize syntax or token efficiency, calling it building around current model limits; says agents experience HTML/CSS/JS/Elixir/Rust/Lean as tokens-in, tokens-out and are unbothered by boilerplate like explicit null checks vs optional chaining.",
-      "Argues agents writing raw assembly instead of using compilers is implausible: you still need an architecture-independent representation plus lowering (i.e., a compiler), and no single language unifies systems, theorem provers, query, concurrency (Erlang/Elixir), and hardware-description domains.",
-      "Proposes replacing LSPs with a 'program database' exposing symbols, references, call graphs, type and data-flow info via a query language (SQLite, Datalog, or a DSL); LSPs are biased toward file/line/column positions agents do not track precisely. Based on experience building Tidewave.",
-      "Argues for stronger static guarantees over type inference convenience, since inferable type systems are a subset of checkable ones; lists four reinforcing techniques: correct-by-construction, statically established, runtime-enforced, and empirically validated (tests, property-based testing, fuzzing).",
-      "Pitches runtime observability over step-debuggers so agents can instrument, trace, and diagnose production live; cites the Erlang VM's built-in inspection of processes, supervisors, ETS tables, and message queues, with the open gap being exposing those safely to agents. Caveat: monkey-patching and action-at-a-distance stay hard to trace even with program databases."
-    ],
-    "summary": "Jose Valim, creator of Elixir, argues that if coding agents write most code, language design should stop optimizing for human ergonomics and token efficiency and instead optimize for guarantees and agent-friendly tooling. He dismisses syntax-focused 'languages for coding agents' as building around current model limits, and rejects the idea of agents replacing compilers by writing assembly, since you still need an architecture-independent representation and no single language spans all domains. On tooling, he proposes exposing language-server information (symbols, references, call graphs, types, data flow) as a queryable program database rather than position-based LSP endpoints, which agents can compose into queries impractical as IDE features. He also favors stronger static guarantees over convenient type inference, combining correct-by-construction, static, runtime, and empirical (test/fuzz) techniques, and runtime observability over step-debuggers so agents can instrument and diagnose live systems, citing the Erlang VM's built-in introspection. The piece is framed as speculative 'ramblings,' informed by building Tidewave, and notes AI was used only for style and grammar.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "essay questioning language design priorities when agents write most code",
-    "audience": "language designers and tooling engineers thinking about AI-driven coding",
-    "source_url": "https://dashbit.co/blog/evolving-ai-era",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=49839567",
-        "points": 48,
-        "comments": 34,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://dashbit.co/blog/evolving-ai-era",
-        "points": null,
-        "comments": null,
-        "name": "Dashbit Blog"
-      },
-      {
-        "url": "https://dashbit.co/blog/evolving-ai-era",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-09-24T00:00:00+00:00",
-    "published_at": "2026-10-18T17:29:50.685736+00:00",
-    "curated_at": "2026-10-18T17:29:50.685736+00:00",
     "model": "claude-opus-4-8"
   }
 ]
