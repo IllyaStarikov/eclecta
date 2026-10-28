@@ -333,199 +333,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 610517,
-    "story_id": "s_23a50dd84a975b46",
-    "title": "DeepInfer: High-performance inference framework for DeepSeek models",
-    "relevance": 8,
-    "score": 6.775,
-    "why": "DeepSeek open-sourced the actual inference engine behind its production serving, including the batch-invariant and deterministic-sampling modes that make identical inputs reproduce identical outputs across batch compositions on NVIDIA hardware.",
-    "notes": [
-      "Targets DeepSeek-V4.1-Flash (default checkpoint DeepSeek-V4.1-Flash-1017) and runs on NVIDIA SM100 GPUs (CUDA 13) or Huawei Ascend 950 NPUs (CANN 9.2); Apache 2.0, Linux, GCC >=13, Python 3.12.",
-      "Ships custom kernels (FlashMLA, DeepGEMM, DeepEP, TileKernels, DeepSelect, TileLang) and parallelism: attention DP, balanced CP, MoE expert parallel with EPLB load balancing.",
-      "DSpark speculative decoding with confidence-scheduled verification (DEEPINFER_ENABLE_MTP_VARLEN=1, max draft length default 5) plus SWA bounded replay to cut decoder prefill work, and a zero-overhead async batch scheduler on by default.",
-      "Batch-invariant inference and deterministic sampling are NVIDIA-only, gated behind env flags (DEEPINFER_BATCH_INVARIANT=1, fixed seq_seed); also supports structured outputs via regex/JSON schema/EBNF.",
-      "Benchmarks were self-reported on 4 SM100 GPUs for prefill and 64 for decode, each within one scale-up domain; the posted prefill/decode table has no numbers in the provided text.",
-      "Not a complete serving stack: the release omits the KV cache system, VE/prefill/decode disaggregation, and data-parallel load balancing; built on vLLM with inspiration from SGLang and TensorRT-LLM."
-    ],
-    "summary": "DeepInfer is DeepSeek's open-source inference framework, described as the engine powering its large-scale production services, released under Apache 2.0 for offline inference of DeepSeek-V4.1-Flash. It runs on NVIDIA SM100 GPUs (CUDA 13) and Huawei Ascend 950 NPUs (CANN 9.2), and bundles custom kernels (FlashMLA, DeepGEMM, DeepEP, TileKernels, DeepSelect, TileLang), attention DP / balanced CP parallelism, MoE expert parallelism with EPLB, DSpark speculative decoding with confidence-scheduled verification, SWA bounded replay, and a zero-overhead asynchronous batch scheduler. It adds NVIDIA-only batch-invariant inference and deterministic sampling (identical outputs for identical inputs across batch compositions, via env flags and a fixed seq_seed), plus structured outputs constrained by regex, JSON schema, or EBNF. DeepSeek states it was originally built on vLLM with inspiration from SGLang and TensorRT-LLM. The release is not a full production service: it omits a KV cache system, prefill/decode disaggregation, and data-parallel load balancing. Benchmarks are self-reported, measured on 4 SM100 GPUs for prefill and 64 for decode within one scale-up domain, with a reproduction script provided.",
-    "channels": [
-      "ai",
-      "devtools",
-      "hardware"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "apps"
-    ],
-    "state": "confident",
-    "novelty": "DeepSeek open-sources its internal production inference engine",
-    "audience": "ML infra/serving engineers deploying large MoE models at scale",
-    "source_url": "https://github.com/deepseek-ai/DeepInfer",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50163277",
-        "points": 2221,
-        "comments": 853,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/deepseek-ai/DeepInfer",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-20T09:08:54+00:00",
-    "published_at": "2026-10-21T22:54:32.848029+00:00",
-    "curated_at": "2026-10-21T22:54:32.848029+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 610520,
-    "story_id": "s_8dac5d5276a0d3ab",
-    "title": "Tsrs: A Port of TypeScript to Rust",
-    "relevance": 8,
-    "score": 7.572,
-    "why": "If the benchmarks hold, type-checking a large TypeScript codebase gets up to 8x faster at ~70% less memory, and the no-GC Rust build makes running a full TypeScript toolchain in WebAssembly (browser, Workers, embedded) practical.",
-    "notes": [
-      "tsrs is a Rust port of the TypeScript compiler, built by Cloudflare and VoidZero with Max Schwenk of Owner.com, incubated inside the Oxc toolchain. Cloudflare says it is explicitly not a fork and that the TypeScript team keeps full control of language design.",
-      "Self-reported benchmark: tsrs is up to 8x faster and uses ~70% less memory than TypeScript 7.0 at equal type-check worker counts; Cloudflare says it worked with the TS team to match configurations. By default tsrs ships an adaptive config that trades more memory for even higher speed.",
-      "TypeScript 7.1 beta is already up to 2.5x faster than 7.0, with some optimizations upstreamed from tsrs. No methodology, machine specs, or codebase details are given for any of these numbers.",
-      "Rust was chosen over Go (the language of TS's own native port) mainly for WebAssembly: compiling Go to Wasm drags in its garbage collector, while Rust's memory model allows direct guest/host memory interaction. Cloudflare recently added native Rust in Workers via an Emscripten target for wasm-bindgen.",
-      "Maintenance plan copies Cloudflare's Vinext/Next.js sync: agents review upstream diffs each morning and open tracking issues, and a nightly run regenerates a compatibility matrix against the TypeScript test suite; performance wins are to be contributed back to the TS Go codebase.",
-      "Known gaps: behavior differs from upstream today (for example, the order diagnostics are printed); Cloudflare aims to minimize this before a stable release. Work with Theo Browne will merge tsc-rs and tsrs into one package supporting LSP and content mappers. Install via npm (npm install tsrs)."
-    ],
-    "summary": "Cloudflare and VoidZero, working with Max Schwenk of Owner.com and in collaboration with the TypeScript team, announced tsrs, a Rust port of the TypeScript compiler incubated inside the Oxc JavaScript toolchain. Cloudflare states this is not a fork: the TypeScript team retains sole control over language design, and tsrs is meant to track upstream strictly. Early self-reported benchmarks claim tsrs is up to 8x faster and uses about 70% less memory than TypeScript 7.0 at equal worker counts, while the TypeScript 7.1 beta is already up to 2.5x faster than 7.0, partly from optimizations upstreamed from tsrs. Rust was chosen over Go (used by TypeScript's own native port) primarily for WebAssembly: Rust's no-GC memory model enables efficient guest/host memory sharing, enabling full dev toolchains to run in browsers, Cloudflare Workers, or embedded devices. Maintenance will mirror Cloudflare's Vinext/Next.js approach, using agents for daily diff review and nightly compatibility testing against TypeScript's suite, with performance fixes contributed back to the Go codebase. Current differences from upstream, such as diagnostic print order, are acknowledged and slated for reduction before a stable release; no benchmark methodology is disclosed.",
-    "channels": [
-      "devtools",
-      "ai"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "Rust port of TypeScript compiler, built by Cloudflare/VoidZero with TS team",
-    "audience": "TypeScript/JS tooling engineers and compiler/devtools builders",
-    "source_url": "https://blog.cloudflare.com/typescript-rust-port",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50165953",
-        "points": 391,
-        "comments": 192,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://blog.cloudflare.com/typescript-rust-port/",
-        "points": null,
-        "comments": null,
-        "name": "Cloudflare Blog"
-      },
-      {
-        "url": "https://blog.cloudflare.com/typescript-rust-port/?ref=console.dev",
-        "points": null,
-        "comments": null,
-        "name": "Console.dev"
-      },
-      {
-        "url": "https://blog.cloudflare.com/typescript-rust-port/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-20T13:18:07+00:00",
-    "published_at": "2026-10-21T22:54:13.056268+00:00",
-    "curated_at": "2026-10-21T22:54:13.056268+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 610507,
-    "story_id": "s_4ea3757018f01d59",
-    "title": "eMudhra intermediate CA compromise",
-    "relevance": 8,
-    "score": 6.875,
-    "why": "Any non-browser TLS client that skips revocation checks, curl, Go, Node, Python, and the system trust stores behind them, keeps trusting eight impersonation-grade intermediates until you install the specific patched package versions listed here.",
-    "notes": [
-      "The private keys for eight eMudhra intermediate CAs can be recovered directly from their public certificates because of flawed key generation; the certificates chain to roots in the Mozilla, Microsoft, Apple, and Chrome programs, so holding any one key lets an attacker impersonate any website.",
-      "Exposure dates to April 2025 when the certs were created. There are no Certificate Transparency log entries for them in that window, so CT-enforcing browsers (Firefox, Chrome, Edge, Safari) could not have been attacked; the article states exploitation against non-CT-enforcing clients is unknown, not ruled out.",
-      "Reporter 'Wayne' proved compromise by signing 'We have a problem here - Wayne' with each intermediate's private key; proof.zip ships each cert, public key, and SHA-384 signature verifiable with openssl dgst. Disclosed to root programs Oct 17, downstream trust stores Oct 19.",
-      "Browser revocation landed Oct 17 (Firefox/Chrome via OneCRL/CRLite/CRLSets), Oct 19 (Apple), Oct 20 (Microsoft); eMudhra also revoked the intermediates. Clients that do not consume revocation data need software updates instead.",
-      "macOS blocks the intermediates system-wide, but built-in /usr/bin/curl verifies against /etc/ssl/cert.pem with no revocation check and that file was not updated; the page gives an awk command to strip the AAA Certificate Services and emSign ECC Root CA - G3 roots.",
-      "Patched versions are enumerated across the stack, Go 1.27.3/1.26.10, Python certifi 2026.10.19, Rust rustls-webpki 0.103.16, Electron 44.9.1, curl CA bundle 2026-10-20, distro ca-certificates packages, with Node.js, Bun, and FreeBSD ca_root_nss listed as pending. Page published by Dennis Jackson, source on GitHub."
-    ],
-    "summary": "Private keys for eight eMudhra intermediate CA certificates were generated so poorly that anyone can recover them from the public certificates, a flaw present since the certs were created in April 2025. Because these intermediates chain to roots trusted by Mozilla, Microsoft, Apple, and Chrome, a key holder could impersonate any website or service. The reporter 'Wayne' demonstrated control by signing a message with each private key and disclosed to root programs on Oct 17 and downstream trust stores on Oct 19; the page provides OpenSSL commands and proof files to verify. Browsers blocked the certs between Oct 17 and Oct 20 via OneCRL, CRLite, and CRLSets, and eMudhra revoked them, but the absence of Certificate Transparency entries means CT-enforcing browsers were never exposed while non-CT clients' exposure is unknown. Clients that do not check revocation, including curl, language runtimes, and OS trust stores, require package updates; macOS's built-in curl in particular keeps trusting the roots via an unpatched /etc/ssl/cert.pem. The page (published by Dennis Jackson) lists patched versions across distributions and runtimes, with Node.js, Bun, and FreeBSD still pending, plus manual root-distrust commands for expert users.",
-    "channels": [
-      "security"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "CA generated intermediate keys that anyone can derive from the cert itself",
-    "audience": "security engineers and ops teams managing TLS trust stores/CA bundles",
-    "source_url": "https://emudhra.we-have-a-problem.com/",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50166579",
-        "points": 860,
-        "comments": 376,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://simonwillison.net/2026/Oct/20/emudhra-certificates/",
-        "points": null,
-        "comments": null,
-        "name": "Simon Willison"
-      },
-      {
-        "url": "https://www.infoq.com/news/2026/10/emudhra-ca-compromise/?utm_campaign=infoq_content&utm_source=infoq&utm_medium=feed&utm_term=global",
-        "points": null,
-        "comments": null,
-        "name": "InfoQ"
-      },
-      {
-        "url": "https://lwn.net/Articles/1101643/",
-        "points": null,
-        "comments": null,
-        "name": "LWN.net"
-      },
-      {
-        "url": "https://lwn.net/Articles/1101643/",
-        "points": null,
-        "comments": null,
-        "name": "LWN.net"
-      },
-      {
-        "url": "https://emudhra.we-have-a-problem.com/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://emudhra.we-have-a-problem.com/",
-        "points": null,
-        "comments": null,
-        "name": "Tildes"
-      }
-    ],
-    "sources_count": 7,
-    "first_seen": "2026-10-20T13:58:33+00:00",
-    "published_at": "2026-10-21T22:53:50.424773+00:00",
-    "curated_at": "2026-10-21T22:53:50.424773+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 496655,
     "story_id": "s_a2b110621277b0b2",
     "title": "How I Found a $113,337 AF_ALG Linux Local Privilege Escalation Before Copy Fail",
@@ -2428,7 +2235,7 @@
     "story_id": "s_faa3e902f53870fc",
     "title": "F-Zero X on Nintendo 3DS",
     "relevance": 6,
-    "score": 4.395,
+    "score": 4.39,
     "why": "A single developer steering one Claude session and 147+ subagents shipped a working, 60fps-in-3D N64 port to both 3DS consoles, and the decisive wins came from hardware instruction-cache profiling, not model cleverness: a concrete data point on where agentic coding actually pays off and where the human still has to make the call.",
     "notes": [
       "One person directed throughout; one long-lived Claude session orchestrated 147 subagents in a 24-day phase 1 (2026-08-11 to 09-03) and many more in a 43-day phase 2 (2026-09-07 to 10-19), porting the inspectredc/fzerox decompilation (upstream untouched) plus a patch stack, on top of libultraship (untouched, plus a 13-line newlib fix for devkitARM); port/3ds was 15,039 lines at end of phase 1.",
@@ -2929,7 +2736,7 @@
     "story_id": "s_6b23ec95f3f9d07c",
     "title": "The State of Context Engineering",
     "relevance": 6,
-    "score": 5.177,
+    "score": 5.173,
     "why": "The fix for a misbehaving long-running agent is usually to delete context, not swap models: the author's practical warning line is ~200K tokens, and the same six-move toolbox still handles the newest \"agents that drive their own harness\" failures.",
     "notes": [
       "Four long-context failure modes: poisoning (a bad fact lodges and won't clear, e.g. Gemini 2.5 playing Pokemon Red kept trying to bribe a guard with iced tea from FireRed's weights instead of the correct lemonade), distraction (long context overrides base knowledge), confusion (irrelevant facts skew answers), and clash (tools/skills/memory conflict).",
@@ -3032,7 +2839,7 @@
     "story_id": "s_e70ec2a4c66ef175",
     "title": "OpenAI and Anthropic cut their LLM prices by up to 80% within a few months. Why?",
     "relevance": 6,
-    "score": 6.604,
+    "score": 6.6,
     "why": "If the headline claim holds, the input/output token cost of building on frontier OpenAI and Anthropic models has dropped by up to 80% in a single quarter, which resets the unit economics of any agent or pipeline you are pricing right now.",
     "notes": [
       "Central claim: OpenAI and Anthropic each cut LLM API prices by up to 80% within a few months, per the title; the specific models, tiers, and token types behind the 80% figure are not available in the provided text.",
@@ -3184,7 +2991,7 @@
     "story_id": "s_673a8fe1ef8369cb",
     "title": "Anthropic sued for allegedly using 274 Elvis Presley songs to train AI models",
     "relevance": 6,
-    "score": 4.756,
+    "score": 4.751,
     "why": "If an estate can win statutory damages for a model reproducing lyrics despite added guardrails, the legal exposure for training on copyrighted music shifts from licensing negotiations with labels to per-track suits from individual rights holders.",
     "notes": [
       "Authentic Brands Group, which owns both Presley's music catalogue and likeness, filed suit Friday (first reported by Billboard) alleging Anthropic trained Claude on 274 Presley songs without permission, naming tracks including Can't Help Falling in Love, All Shook Up, and A Little Less Conversation.",
@@ -3244,6 +3051,162 @@
     "first_seen": "2026-10-25T18:25:59+00:00",
     "published_at": "2026-10-25T22:03:35.286270+00:00",
     "curated_at": "2026-10-25T22:03:35.286270+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 576641,
+    "story_id": "s_d159df81b3cdc55f",
+    "title": "Doc2Harness: Benchmarking LLMs on Long-Horizon Harness Engineering of Coding Agents",
+    "relevance": 6,
+    "score": 5.31,
+    "why": "If your agent's reliability depends on the harness as much as the model, this is the first deterministic test of whether a model can build that harness, and the best one still fails nearly half the cases.",
+    "notes": [
+      "Two-stage design: Stage 1 has a build model, inside a fixed builder harness, construct a full candidate harness from an interface-only contract skeleton plus a development document; Stage 2 freezes that harness and drives it end to end with a scripted mock model, one isolated container per test case.",
+      "Scoring reads four observable channels, requests sent to the model, files on disk, process exit code, and command output; positive controls are used to rule out vacuous passes.",
+      "Scale: 19 frontier models, 3 independent builds each, 328 test cases. The paper reports GPT-6 Astra on top at a self-stated 53.05% pass rate and the weakest at 27.44%, a spread of about 26 points.",
+      "Even the strongest model fails nearly half the cases; reported failures cluster around how cross-cutting functionality gets split across modules.",
+      "The development document consolidates behavior patterns from twelve frontier agent harnesses, so the task is reconstructing known harness behavior rather than inventing it from scratch.",
+      "Claimed as the first deterministic benchmark for long-horizon harness engineering; numbers are from the paper abstract, with no external methodology audit provided here."
+    ],
+    "summary": "Doc2Harness is a benchmark that evaluates how well LLM agents can engineer the harness that wraps a model on long-horizon, tool-using tasks, rather than measuring downstream task success under a fixed harness. It runs in two stages: a build model constructs a complete candidate harness in an isolated container from an interface-only contract skeleton and a development document consolidating behavior from twelve frontier harnesses; the frozen harness is then tested in separate per-case containers driven by a scripted mock model. Scoring uses four observable channels (model requests, filesystem state, process exit code, command output), with positive controls to prevent vacuous passes. Across 19 frontier models, each with three independent builds on 328 test cases, the paper reports GPT-6 Astra highest at 53.05% and the weakest at 27.44%, roughly a 26-point gap, with even the top model failing nearly half the cases. Failures reportedly cluster around splitting cross-cutting functionality across modules. The authors describe it as the first deterministic benchmark for long-horizon harness engineering; all figures are self-reported in the abstract.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents",
+      "evals"
+    ],
+    "state": "confident",
+    "novelty": "first benchmark measuring agents building their own harness, not just task success",
+    "audience": "engineers building/evaluating long-horizon coding agent frameworks",
+    "source_url": "https://arxiv.org/abs/2610.20344",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.20344",
+        "points": 87,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.20344",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.SE"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-13T20:00:00.000Z",
+    "published_at": "2026-10-25T21:32:27.925339+00:00",
+    "curated_at": "2026-10-25T21:32:27.925339+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 625059,
+    "story_id": "s_b2541b0fa5739226",
+    "title": "Tracing Subliminal Learning Through Pretraining",
+    "relevance": 6,
+    "score": 4.243,
+    "why": "On-policy (soft-label) distillation, now standard in post-training pipelines, transmits a teacher's unrelated preferences more reliably and with less training than hard-label distillation, so your student model can inherit traits that never appear in the visible training data.",
+    "notes": [
+      "Subliminal learning here means a student model inheriting traits unrelated to its training data; tested in hard-label distillation (training on numbers from a biased teacher) and on-policy soft-label distillation (student generates data, teacher's logits supply the signal), using Pythia, PolyPythia, and DataDecide OLMo checkpoints.",
+      "Transfer persisted across differences in weight initialization, pretraining data order, pretraining corpus, model size, and architecture.",
+      "Teaching ability and learning ability develop separately across pretraining checkpoints: some checkpoints are strong teachers but weak students and vice versa, and cross-model transfer can be strongly asymmetric when teacher/student roles are swapped.",
+      "Synthetic number sequences that match the teacher's number frequencies but have no dependence on the prompt or preceding numbers still induced substantial transfer in the hard-label setting, implicating raw token frequency rather than prompt-conditioned structure.",
+      "In top-K soft-label distillation, removing animal tokens from the loss reduced transfer but did not eliminate it in the same-model setting.",
+      "The authors report soft-label distillation produced more consistent transfer with less extensive training than hard-label; claims are self-reported from their own experiments with no external replication."
+    ],
+    "summary": "This arXiv paper studies subliminal learning, where a language model distilled from another model inherits traits unrelated to the training data, across both hard-label distillation (students train on numbers from a biased teacher) and on-policy soft-label distillation (students generate data, teacher logits provide the signal). Using Pythia, PolyPythia, and DataDecide OLMo model families and multiple pretraining checkpoints, the authors report that preference transfer persists across differences in weight initialization, data order, corpus, model size, and architecture. They find that the ability to transmit a preference and the ability to acquire one develop separately across checkpoints, and that cross-model transfer can be strongly asymmetric when teacher and student roles are reversed. Probing the carrier of the signal, they show synthetic number sequences matching only the teacher's number frequencies (with no prompt or sequence dependence) still induce substantial transfer in the hard-label setting, while removing animal tokens from the loss in top-K soft-label distillation reduces but does not eliminate transfer in the same-model case. They report soft-label distillation yields more consistent transfer with less training than hard-label, framing unintended preference transfer as relevant to the growing use of on-policy distillation in post-training.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "traces subliminal trait transfer across pretraining checkpoints and distillation modes",
+    "audience": "ML researchers studying distillation safety and model training dynamics",
+    "source_url": "https://arxiv.org/abs/2610.30884",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arxiv.org/abs/2610.30884",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.LG"
+      },
+      {
+        "url": "https://www.lesswrong.com/posts/53XwjN2gAKzjKCp5s/tracing-subliminal-learning-through-pretraining",
+        "points": null,
+        "comments": null,
+        "name": "LessWrong (AI posts)"
+      },
+      {
+        "url": "https://www.lesswrong.com/posts/53XwjN2gAKzjKCp5s/tracing-subliminal-learning-through-pretraining",
+        "points": null,
+        "comments": null,
+        "name": "LessWrong (AI posts)"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-23T04:00:00+00:00",
+    "published_at": "2026-10-25T20:12:10.521324+00:00",
+    "curated_at": "2026-10-25T20:12:10.521324+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 635416,
+    "story_id": "s_47bda0d5c980876e",
+    "title": "A 10-year-old CNN outperforms frontier LLMs for skin cancer diagnosis",
+    "relevance": 6,
+    "score": 5.01,
+    "why": "If the claim holds up, a purpose-built image classifier from a decade ago still beats general-purpose frontier LLMs on a clinical imaging task, a caution against swapping specialized diagnostic models for prompt-driven multimodal systems.",
+    "notes": [
+      "Central claim: a roughly 10-year-old convolutional neural network outperforms current frontier LLMs at skin cancer diagnosis from images. No article text was available, so the dataset, model identities, metrics (sensitivity, specificity, AUC), and test protocol are unverified here.",
+      "The comparison pits a task-specific supervised CNN against general multimodal LLMs; the framing suggests specialization still wins on narrow medical imaging, but the magnitude and task definition are not confirmed from the source.",
+      "Which frontier LLMs were tested, how they were prompted, and whether they saw raw images or descriptions are not available in the provided material.",
+      "No information on sample size, class balance, or whether results are peer-reviewed versus a self-published lab write-up (hosted on lynchlab.net).",
+      "Surfaced on Hacker News at 154 points with 84 comments as of first sighting on 2026-10-25; discussion volume is a signal of interest, not of methodological rigor."
+    ],
+    "summary": "A write-up hosted at lynchlab.net claims that a convolutional neural network roughly ten years old outperforms current frontier large language models at diagnosing skin cancer from medical images. The piece is used as evidence that task-specific, supervised vision models can still beat general-purpose multimodal LLMs on narrow clinical imaging tasks. The full article text was not available for this assessment, so the dataset, the specific CNN and LLMs compared, the prompting setup, and the evaluation metrics (such as sensitivity, specificity, or AUC) could not be verified. It is also unclear whether the work is peer-reviewed or a self-published lab analysis. The post drew attention on Hacker News (154 points, 84 comments) on 2026-10-25. The central claim should be treated as a self-reported result pending access to the methodology.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "science"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "old specialized CNN beats frontier LLMs on medical imaging task",
+    "audience": "ML practitioners skeptical of LLM-for-everything hype",
+    "source_url": "https://lynchlab.net/llm-skin-cancer",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50233779",
+        "points": 504,
+        "comments": 227,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lynchlab.net/llm-skin-cancer",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-25T17:15:38+00:00",
+    "published_at": "2026-10-25T19:56:37.559394+00:00",
+    "curated_at": "2026-10-25T19:56:37.559394+00:00",
     "model": "claude-opus-4-8"
   }
 ]
