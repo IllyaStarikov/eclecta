@@ -278,61 +278,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 616982,
-    "story_id": "s_f11e17a497c87385",
-    "title": "Security Disclosure: Wednesday October 21st",
-    "relevance": 8,
-    "score": 6.664,
-    "why": "If you store secrets in Railway, rotate every API key, database credential, and private registry login now: the platform says an attacker reached decrypted environment variables for some users, and builds are frozen until the investigation clears.",
-    "notes": [
-      "Railway reports an unauthorized third party accessed encrypted environment variables and, for a subset, obtained the decrypted contents; those variables can hold API keys, database credentials, and registry credentials.",
-      "Railway attributes the incident to a wider campaign against platform companies aimed at compromising AI inference providers, and says it notified those upstream providers to revoke keys proactively.",
-      "All deployments and builds are paused platform-wide; users cannot ship new versions until builds are restored.",
-      "Recommended action is immediate: rotate all env vars, API keys, and private registry credentials stored in Railway, and review service logs for unusual activity.",
-      "Scope is unconfirmed. Railway's initial analysis suggests impact 'may be limited to a subset of users' but it is still recommending action for everyone; affected accounts will be emailed directly, and updates will post to status.railway.com."
-    ],
-    "summary": "Railway disclosed that it detected anomalous activity on systems storing customer environment variables, and that an unauthorized third party may have accessed encrypted environment variables and, for some, obtained their decrypted contents. Those variables can contain secrets such as API keys and database or registry credentials. Railway says it believes the incident is part of a broader series of attacks on platform companies aimed at compromising AI inference providers, and that it has notified upstream providers to revoke keys proactively. It paused all deployments and builds during the investigation and told users they cannot roll out new versions until builds resume. Railway recommends every user immediately rotate all environment variables, API keys, and private registry credentials and audit their service logs, while noting initial analysis suggests impact may be limited to a subset of accounts. The company says it will contact affected customers by email and post updates on its status page as it narrows the scope; the disclosure provides no root-cause detail or confirmed count of impacted accounts.",
-    "channels": [
-      "security",
-      "devtools",
-      "ai"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "live breach disclosure tied to AI inference provider key theft campaign",
-    "audience": "engineers using Railway or similar PaaS platforms storing secrets/API keys",
-    "source_url": "https://blog.railway.com/p/security-disclosure-wednesday-october-21st",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50188228",
-        "points": 352,
-        "comments": 196,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://blog.railway.com/p/security-disclosure-wednesday-october-21st",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://blog.railway.com/p/security-disclosure-wednesday-october-21st",
-        "points": null,
-        "comments": null,
-        "name": "Railway Blog"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-21T20:44:02+00:00",
-    "published_at": "2026-10-22T00:42:54.125014+00:00",
-    "curated_at": "2026-10-22T00:42:54.125014+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 496655,
     "story_id": "s_a2b110621277b0b2",
     "title": "How I Found a $113,337 AF_ALG Linux Local Privilege Escalation Before Copy Fail",
@@ -2002,186 +1947,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 615779,
-    "story_id": "s_147839732e76e7e8",
-    "title": "The bridge to agent-scale Git infrastructure",
-    "relevance": 7,
-    "score": 6.338,
-    "why": "If you push to GitHub from CI or coding agents, the write path just stopped serializing on a repo-wide lock: concurrent pushes to different branches now run in parallel and saw 3-4x higher throughput in GitHub's internal tests.",
-    "notes": [
-      "GitHub is migrating repo data from its own data centers to Azure, forced by agentic-era traffic growth against hard ceilings on data center power capacity and physical supply chain. First replica landed in Azure Central US in August 2025; most repos now keep two of their five replicas in Azure, and Azure serves about half of Git traffic.",
-      "The old Spokes quorum holds a repository-wide lock per write and waits for every healthy replica (up to a timeout) before moving on, so the slowest replica sets both latency and the throughput ceiling. A cross-region replica is ~1,000 miles / ~25ms per round trip, and a write needs multiple round trips, which the busiest ~0.00001% of repos could not absorb.",
-      "Fix: shrink quorum scope from the whole repository to individual Git references. Consistency only needs to hold per reference (no client sees an older value after an accepted update), so writes to different refs no longer wait on each other. Claimed 3-4x throughput at lower latency in internal testing with realistic traffic.",
-      "Next, read/write decoupling: data lands durably in Azure Blob Storage, which joins the quorum as a 'virtual replica,' a fully ephemeral bridge node that streams writes (a write is not acked until durable in object storage), serves no reads, coalesces disjoint-reference transactions into one set of object-storage I/Os, and currently runs compaction.",
-      "Virtual read replicas then scale out on demand, warming cache from Blob Storage and reconciling in the background without joining the quorum; repos run 100-1000 reads per write. Caveat: background reconciliation does not fit all read workloads, and the quorum remains the bound on further write throughput.",
-      "Spokes is more than a quorum: an intelligent routing/load-balancing layer and unified API handling 'well over 100 billion operations per day,' plus 'sweeper' background systems for placement, repair, and rebalancing. GitHub states the current commit protocol that reached a billion repos won't reach the next billion; the end-state design, including a remaining small consensus group, is promised in a follow-up post at GitHub Universe."
-    ],
-    "summary": "GitHub describes an interim (\"bridge\") step in re-architecting its Git storage as it migrates repository data from its own data centers to Azure, a move driven by agentic traffic growth colliding with data center power and supply chain limits. Most repositories now hold two of five replicas in Azure, which serves roughly half of Git traffic, but the busiest repositories were blocked by a ~25ms cross-region round trip. Under the old Spokes quorum, a repository-wide lock and waiting on every healthy replica meant the slowest replica set write latency and the throughput ceiling, which cross-region replicas could not sustain. GitHub narrows the quorum from the whole repository to individual references, since Git consistency only needs to hold per reference, letting writes to different branches run concurrently; internal testing claims 3-4x higher throughput at lower latency. The next stage decouples reads from writes by making Azure Blob Storage a quorum member via an ephemeral \"virtual write replica\" and scaling out stateless \"virtual read replicas\" that reconcile against object storage. GitHub says write throughput remains quorum-bound and defers the end-state design, including a remaining small consensus group, to a follow-up post.",
-    "channels": [
-      "devtools",
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents"
-    ],
-    "state": "confident",
-    "novelty": "per-reference quorum replaces repo-wide lock to unblock cross-region writes",
-    "audience": "infra/distributed-systems engineers and GitHub-scale platform architects",
-    "source_url": "https://github.blog/engineering/architecture-optimization/the-bridge-to-agent-scale-git-infrastructure",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50183344",
-        "points": 52,
-        "comments": 16,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.blog/engineering/architecture-optimization/the-bridge-to-agent-scale-git-infrastructure/",
-        "points": null,
-        "comments": null,
-        "name": "GitHub Blog"
-      },
-      {
-        "url": "https://github.blog/engineering/architecture-optimization/the-bridge-to-agent-scale-git-infrastructure/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-21T16:00:00+00:00",
-    "published_at": "2026-10-22T00:26:43.854045+00:00",
-    "curated_at": "2026-10-22T00:26:43.854045+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 618062,
-    "story_id": "s_418075ffdcdce296",
-    "title": "Compromised LiteLLM 1.107.0 on PyPI Installs a Credential Stealer and Backdoor",
-    "relevance": 7,
-    "score": 6.434,
-    "why": "Anyone who ran `pip install litellm==1.107.0` during the compromise window should rotate every credential that process could reach, because safedep.io reports the package shipped a credential stealer and a backdoor.",
-    "notes": [
-      "safedep.io reports LiteLLM 1.107.0, published to PyPI, was compromised to carry a credential stealer and a backdoor; LiteLLM is a widely used LLM proxy/gateway that typically holds provider API keys, making stolen credentials high-value.",
-      "The attack is a software supply-chain compromise of a published package version, not an exploit against a running LiteLLM deployment; the risk is installing the poisoned version from the index.",
-      "No article text was available to the editor; the payload description (credential stealer, backdoor) is sourced from the safedep.io writeup and Hacker News discussion, not an independent confirmation here.",
-      "Specific details not established in the provided material: the attack vector (maintainer account vs. build pipeline), the exact exposure window, which later/earlier versions are clean, and whether the malicious release was pulled from PyPI.",
-      "Community attention was high: 399 points and 125 comments on Hacker News as of first-seen on 2026-10-21."
-    ],
-    "summary": "A safedep.io post reports that LiteLLM version 1.107.0, a popular open-source LLM proxy library, was published to PyPI in a compromised state carrying a credential stealer and a backdoor. Because LiteLLM commonly brokers requests to LLM providers and holds their API keys, a credential stealer in it threatens the very secrets it manages. The item surfaced on Hacker News with 399 points and 125 comments. No primary article text was available for this writeup, so the payload characterization comes from the safedep.io analysis and the HN thread rather than independent verification. Key operational details remain unestablished in the provided material: the compromise vector, the exact window the malicious version was live, which versions are safe, and whether the release has been removed from PyPI. Users who installed 1.107.0 should treat it as a supply-chain compromise and rotate exposed credentials.",
-    "channels": [
-      "security",
-      "ai",
-      "devtools"
-    ],
-    "category": "security",
-    "subcategories": [
-      "supplychain"
-    ],
-    "state": "confident",
-    "novelty": "supply-chain attack on popular LLM proxy library",
-    "audience": "engineers using LiteLLM or managing AI infra dependency security",
-    "source_url": "https://safedep.io/litellm-pypi-compromise-credential-stealer-backdoor",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50181114",
-        "points": 455,
-        "comments": 154,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://safedep.io/litellm-pypi-compromise-credential-stealer-backdoor/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-21T14:00:26+00:00",
-    "published_at": "2026-10-21T23:22:00.166829+00:00",
-    "curated_at": "2026-10-21T23:22:00.166829+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 610429,
-    "story_id": "s_754eb30b4861b308",
-    "title": "PHP warns it plans to release 2 emergency patches imminently",
-    "relevance": 7,
-    "score": 5.476,
-    "why": "Two CVSS 9.2 PHP flaws reportedly reach back to PHP 5 from 2004, so nearly every WordPress, Drupal, Magento, and Laravel deployment is in scope the moment patches land in about 12 hours.",
-    "notes": [
-      "Maintainers plan to ship patches for two vulnerabilities, CVE-2026-109618 and CVE-2026-109619, each rated 9.2/10, roughly 12 hours after the Monday advisory.",
-      "The advisory followed a leaked, still-unconfirmed report; maintainers reserve the right to release early if details go public or active exploitation appears.",
-      "A demo video shows an exploit tool called PHP2Shell running code against WordPress 7.1.3, MediaWiki 1.46.2, phpBB 3.3.17, Magento 2.4.9, Joomla 6.2.0, Laravel 13.36.0 and 8.83.29, Symfony 8.1.9, Drupal 11.4.10, and WHMCS 9.0.9.",
-      "watchTowr says it confirmed both bugs are real and claims they affect every PHP version from PHP 5 (2004) onward.",
-      "Caveat: Ars could not locate the original report, and the leaked exploit details remain unverified; the version list and reach are watchTowr's and the leaker's claims, not vendor confirmation."
-    ],
-    "summary": "PHP maintainers issued a Monday advisory warning that patches for two vulnerabilities, CVE-2026-109618 and CVE-2026-109619, both rated 9.2 out of 10, would drop in a little more than 12 hours, and urged all PHP users to prepare to upgrade immediately. The advisory came after leaked, unconfirmed details surfaced alongside a video of an exploit tool called PHP2Shell executing code on servers running WordPress, MediaWiki, phpBB, Magento, Joomla, Laravel, Symfony, Drupal, and WHMCS. Security firm watchTowr says it confirmed the vulnerabilities are real and claims they affect every PHP version since PHP 5 in 2004. Maintainers said they would release earlier if the details became public or evidence of active exploitation appeared. Ars Technica noted it could not locate the original unconfirmed report, leaving the exploit specifics and version range as claims rather than verified facts.",
-    "channels": [
-      "security",
-      "devtools"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "pre-disclosure emergency patch for CVSS 9.2 PHP RCE affecting all versions since 2004",
-    "audience": "web developers and sysadmins running PHP-based stacks (WordPress, Drupal, Laravel, etc.)",
-    "source_url": "https://arstechnica.com/security/2026/10/php-maintainers-tell-web-devs-to-prepare-themselves-for-critical-security-patches",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://arstechnica.com/security/2026/10/php-maintainers-tell-web-devs-to-prepare-themselves-for-critical-security-patches/",
-        "points": 1,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://tech.slashdot.org/story/26/10/21/054204/php-warns-it-plans-to-release-2-emergency-patches-imminently?utm_source=rss1.0mainlinkanon&utm_medium=feed",
-        "points": null,
-        "comments": null,
-        "name": "Slashdot"
-      },
-      {
-        "url": "https://arstechnica.com/security/2026/10/php-maintainers-tell-web-devs-to-prepare-themselves-for-critical-security-patches/",
-        "points": null,
-        "comments": null,
-        "name": "Ars Technica"
-      },
-      {
-        "url": "https://lemmy.world/post/53411344",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
-      },
-      {
-        "url": "https://arstechnica.com/security/2026/10/php-maintainers-tell-web-devs-to-prepare-themselves-for-critical-security-patches/",
-        "points": null,
-        "comments": null,
-        "name": "Tildes"
-      },
-      {
-        "url": "https://arstechnica.com/security/2026/10/php-maintainers-tell-web-devs-to-prepare-themselves-for-critical-security-patches/",
-        "points": null,
-        "comments": null,
-        "name": "Ars Technica"
-      }
-    ],
-    "sources_count": 6,
-    "first_seen": "2026-10-21T02:12:18+00:00",
-    "published_at": "2026-10-21T23:21:15.281129+00:00",
-    "curated_at": "2026-10-21T23:21:15.281129+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 576176,
     "story_id": "s_933dc45c71b1713c",
     "title": "OpenCode 2.0",
@@ -2235,7 +2000,7 @@
     "story_id": "s_faa3e902f53870fc",
     "title": "F-Zero X on Nintendo 3DS",
     "relevance": 6,
-    "score": 4.39,
+    "score": 4.382,
     "why": "A single developer steering one Claude session and 147+ subagents shipped a working, 60fps-in-3D N64 port to both 3DS consoles, and the decisive wins came from hardware instruction-cache profiling, not model cleverness: a concrete data point on where agentic coding actually pays off and where the human still has to make the call.",
     "notes": [
       "One person directed throughout; one long-lived Claude session orchestrated 147 subagents in a 24-day phase 1 (2026-08-11 to 09-03) and many more in a 43-day phase 2 (2026-09-07 to 10-19), porting the inspectredc/fzerox decompilation (upstream untouched) plus a patch stack, on top of libultraship (untouched, plus a 13-line newlib fix for devkitARM); port/3ds was 15,039 lines at end of phase 1.",
@@ -2839,7 +2604,7 @@
     "story_id": "s_e70ec2a4c66ef175",
     "title": "OpenAI and Anthropic cut their LLM prices by up to 80% within a few months. Why?",
     "relevance": 6,
-    "score": 6.6,
+    "score": 6.597,
     "why": "If the headline claim holds, the input/output token cost of building on frontier OpenAI and Anthropic models has dropped by up to 80% in a single quarter, which resets the unit economics of any agent or pipeline you are pricing right now.",
     "notes": [
       "Central claim: OpenAI and Anthropic each cut LLM API prices by up to 80% within a few months, per the title; the specific models, tiers, and token types behind the 80% figure are not available in the provided text.",
@@ -2991,7 +2756,7 @@
     "story_id": "s_673a8fe1ef8369cb",
     "title": "Anthropic sued for allegedly using 274 Elvis Presley songs to train AI models",
     "relevance": 6,
-    "score": 4.751,
+    "score": 4.743,
     "why": "If an estate can win statutory damages for a model reproducing lyrics despite added guardrails, the legal exposure for training on copyrighted music shifts from licensing negotiations with labels to per-track suits from individual rights holders.",
     "notes": [
       "Authentic Brands Group, which owns both Presley's music catalogue and likeness, filed suit Friday (first reported by Billboard) alleging Anthropic trained Claude on 274 Presley songs without permission, naming tracks including Can't Help Falling in Love, All Shook Up, and A Little Less Conversation.",
@@ -3207,6 +2972,227 @@
     "first_seen": "2026-10-25T17:15:38+00:00",
     "published_at": "2026-10-25T19:56:37.559394+00:00",
     "curated_at": "2026-10-25T19:56:37.559394+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 596083,
+    "story_id": "s_729b2c6d947ae15a",
+    "title": "He Wants AI Benchmarking To Be a Science, Not a Dark Art",
+    "relevance": 6,
+    "score": 5.329,
+    "why": "The headline vendor benchmark number (90% on a math test) tells you almost nothing about a model's absolute capability, but the rank order it produces has held up across datasets for 60 years, and that load-bearing property breaks in the LLM era because builders train on different, benchmark-tuned data mixes.",
+    "notes": [
+      "Moritz Hardt (Max Planck Institute for Intelligent Systems) argues in his 2026 book 'The Emerging Science of Machine Learning Benchmarks' that benchmarks were 'the mistake that made machine learning' and drove progress anyway, 'mostly by sheer luck.'",
+      "His central empirical claim: absolute accuracy swings wildly with small test-set changes (e.g. 90% on one dataset, 73% on a near-identical one), yet relative rankings between models stay stable across datasets, which is what let ML avoid a replication crisis. He stresses there is no comprehensive theory for why rankings stay stable.",
+      "The stability holds only under one condition: models trained on the same training set. LLMs break it because their training data is unknown and can be assembled to favor specific benchmarks, so a worse model can win by 'benchmaxxing' (post-training on earlier benchmarks); the tell is strong scores on benchmarks released before a model and weak scores on ones released just after.",
+      "Historical framing: first benchmark in 1959 (punch-card character recognition with a train-test split); 1987 DARPA speech-to-text benchmark showed AI losing to statistical methods and helped trigger an AI winter; 2012 ImageNet win by an 8-layer net started the deep learning revolution. Hardt says ML ignored the textbook 'holdout method' by publishing test sets online, enabling leakage into development loops.",
+      "Proposed fix ('altitude training', by analogy to the 1968 Mexico City 1,500m won by a high-altitude-trained Kenyan runner): drop the training set entirely, keep a test set, and add a standardized protocol that trains every model briefly on benchmark-relevant data to level the field and restore ranking validity. Caveat he concedes: this yields progress indicators, not valid absolute measurements or mechanistic understanding; he cites CASP protein folding as proof benchmarks can advance science without a prior theory.",
+      "Model names in the piece (GPT-6 Astra, Claude Fable) appear as the article's own examples, not products tied to cited results; all performance figures are illustrative, and no vendor methodology is examined."
+    ],
+    "summary": "In a Quanta interview tied to his 2026 book 'The Emerging Science of Machine Learning Benchmarks,' Moritz Hardt argues that AI benchmarking has been broken for decades but worked anyway by luck. His key distinction: a benchmark's absolute accuracy number is unreliable (small test-set changes produce large swings and should not support claims like 'equal to an expert mathematician'), but the relative ranking of models has stayed stable across datasets for roughly 60 years, which is why ML avoided a replication crisis. That stability depends on all models sharing a training set, a condition LLMs violate because their undisclosed, benchmark-optimized data mixes let worse models win via 'benchmaxxing.' Hardt proposes replacing the training set with a standardized 'altitude training' protocol that prepares each model on benchmark-relevant data before testing, restoring ranking validity even as absolute scores inflate. He concedes this still yields only progress indicators rather than mechanistic understanding, but points to CASP protein folding as evidence that benchmarks can drive scientific gains without a prior theory. He offers no formal theory for why rankings stay stable, calling it an empirical phenomenon.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "evals"
+    ],
+    "state": "confident",
+    "novelty": "rankings are stable even when absolute benchmark scores aren't",
+    "audience": "ML researchers and engineers who rely on benchmark leaderboards",
+    "source_url": "https://quantamagazine.org/he-wants-ai-benchmarking-to-be-a-science-not-a-dark-art-20261016",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.quantamagazine.org/he-wants-ai-benchmarking-to-be-a-science-not-a-dark-art-20261016/",
+        "points": null,
+        "comments": null,
+        "name": "Quanta Magazine"
+      },
+      {
+        "url": "https://www.quantamagazine.org/he-wants-ai-benchmarking-to-be-a-science-not-a-dark-art-20261016/",
+        "points": null,
+        "comments": null,
+        "name": "Quanta Magazine — Computer Science"
+      },
+      {
+        "url": "https://www.quantamagazine.org/he-wants-ai-benchmarking-to-be-a-science-not-a-dark-art-20261016/",
+        "points": null,
+        "comments": null,
+        "name": "Quanta Magazine – Quantum Computing"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMinAFBVV95cUxPMXlhU1kzY09uSjZ3ZkVzWTRGNDFNeHZYRlBPcGRkVHEtTGRhQUJlLVRUZHJHQXpzekdSWGNITDRIWms4LUxwbldZU09pQ01wLTBzY0hkYVoxbnpvWVItTEtsWE4yLV9NS280amEwMVNnRnR6Sl9jNlZZVFQycEVHNVFjTXd4VEhDRkpFT1hKWE5MVWRGTGRMTngtUUU?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News query: \"artificial intelligence\""
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-10-16T13:25:08+00:00",
+    "published_at": "2026-10-25T19:25:49.368393+00:00",
+    "curated_at": "2026-10-25T19:25:49.368393+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 542943,
+    "story_id": "s_e6f21546b9c6b596",
+    "title": "Hackers stole millions of US military personnel records during months-long data breach",
+    "relevance": 6,
+    "score": 5.334,
+    "why": "If you ever served or worked for the DoD, your unencrypted Social Security number, birth date, and service record sat exposed for nine months, and the Pentagon's \"no evidence of misuse\" comes with no stated basis.",
+    "notes": [
+      "Breach ran October 2025 to mid-July 2026, exploiting a vulnerability in an unspecified file-sharing system used by the Defense Manpower Data Center (DMDC); multiple unauthorized users had access.",
+      "A Pentagon official (via CNN and Federal News Network) put the scope at ~2.8M living people and close to 300,000 deceased; for context, the active-duty force was 1.3M as of March.",
+      "Exposed records were unencrypted and included SSNs, name, date of birth, sex, race, and military service details.",
+      "DMDC is the DoD's identity management provider, maintaining 60M+ records and linking personnel to smart cards, passwords, and physical/computer access to Pentagon systems, buildings, and bases.",
+      "DoD says it has no indication the data was misused but did not explain how it reached that conclusion; the attackers are unidentified, and TechCrunch got no reply on whether officials heard from them.",
+      "Follows the September 2026 FBI breach attributed to ShinyHunters and echoes the 2015 OPM breach of 22M+ records broadly attributed to China."
+    ],
+    "summary": "The U.S. government is reportedly notifying millions of current and former military service members and staff that their personal data was stolen in a months-long breach of DMDC personnel records. Per a breach notice shared on Reddit, unauthorized users exploited a vulnerability in an unspecified file-sharing system between October 2025 and mid-July 2026, exposing unencrypted SSNs, names, dates of birth, sex, race, and service information. A Pentagon official cited by CNN and Federal News Network said the breach affects about 2.8 million living people and nearly 300,000 deceased. DMDC maintains over 60 million records and functions as the DoD's identity management provider, tying personnel to credentials used for access to Pentagon systems, buildings, and bases. The DoD said it has no indication the data was misused but offered no basis for that assessment, and the attackers remain unidentified. The incident follows the September 2026 ShinyHunters breach at the FBI and recalls the 2015 OPM breach of more than 22 million records attributed to China.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "unencrypted PII of 3M+ military personnel exposed for 9 months",
+    "audience": "security engineers and policy watchers tracking federal breach patterns",
+    "source_url": "https://techcrunch.com/2026/09/30/hackers-stole-millions-of-us-military-personnel-records-during-months-long-data-breach",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://techcrunch.com/2026/09/30/hackers-stole-millions-of-us-military-personnel-records-during-months-long-data-breach/",
+        "points": 48,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://yro.slashdot.org/story/26/09/30/1947216/hackers-stole-millions-of-us-military-personnel-records-during-months-long-data-breach?utm_source=rss1.0mainlinkanon&utm_medium=feed",
+        "points": null,
+        "comments": null,
+        "name": "Slashdot"
+      },
+      {
+        "url": "https://techcrunch.com/2026/09/30/hackers-stole-millions-of-us-military-personnel-records-during-months-long-data-breach/",
+        "points": null,
+        "comments": null,
+        "name": "TechCrunch"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-09-30T19:29:08+00:00",
+    "published_at": "2026-10-25T19:10:53.438413+00:00",
+    "curated_at": "2026-10-25T19:10:53.438413+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 504818,
+    "story_id": "s_7c17f849ad5beee2",
+    "title": "FLIP Fluid on Flip Dots",
+    "relevance": 6,
+    "score": 5.338,
+    "why": "Driving salvaged flipdot panels fast enough for a fluid sim means solving a 50-amp transient problem on a per-dot budget cheaper than the one remaining vendor's $50,000 floor, and this writeup documents the full dead-end tour that got there.",
+    "notes": [
+      "Each flipdot is a non-volatile bistable mechanism: two permanent magnets (one in the dot, one in the base) and two polarizable cores. A dot takes ~60ms to physically flip but only needs a pulse of roughly 1ms to set the cores; original matrix drive circuits take about one second to refresh the whole panel.",
+      "Panels are 13x28 (dots made in groups of seven give the 28; 13 is attributed to the designer liking primes), date-coded 2007, donated via Look Mum No Computer's obsolete-tech collection. Only one manufacturer (AlfaZeta) reportedly still makes these; old eBay units are mostly Hanover.",
+      "Power is the binding constraint: each coil is ~18 ohms (666mA at 12V), so flipping all dots at once approaches 50A for a millisecond; direct matrix driving would need to push/pull 13A per column. Instead the build uses cheap SOIC-8 motor-driver H-bridges (MX6208/BE6208/LK6208, 0.5A rated) in single-ended mode plus series capacitors, driven by 74595 shift registers.",
+      "The H-bridges are BJT-based, not FET: an enabled output draws ~24mA from base currents even unconnected, so leaving outputs powered to fight capacitor self-discharge was abandoned in favor of periodic re-pulsing (AIN tied to latch as an enable). Flipping high-to-low is faster because low-side switching sinks more current than the high side sources.",
+      "When the power supply sags, pulses demagnetize the cores instead of polarizing them and dots go slack. Fixes across PCB revisions: swapping tiny 0805 ceramics for 47uF caps, adding a P-channel FDN338P to boost latch drive, a 3.3V regulator, 12V sense to refuse pulses during brownout, a polyfuse, and a 100-pack of 1000uF electrolytics for bulk charge.",
+      "Author built a single-schematic-per-row hierarchical KiCad setup (with Python wrangling around the new UUID system) to avoid annotation mismatch when duplicating layouts; eight dots per shift register in single-ended mode halves register count and clocked data versus full H-bridge use."
+    ],
+    "summary": "An EMF2026 installation pairs an LED fluid simulation with electromechanical flipdot displays, chosen so the dots supply the \"swishing\" sound the silent LED version lacks. Because new flipdots are gated behind a single manufacturer and studios quoting $50,000 minimums, the author built from salvaged 13x28 panels (date-coded 2007) donated through Look Mum No Computer. The core challenge is speed and power: dots flip in ~60ms but need only ~1ms pulses, while the original matrix drivers take about a second per update and fast simultaneous flipping approaches 50A. The adopted design solders new boards onto the backs of existing panels, using cheap BJT-based SOIC-8 motor-driver H-bridges run single-ended with series capacitors and 74595 shift registers, grounding one dot pin to avoid cutting traces. The writeup walks through rejected alternatives (desoldering all dots, gate drivers, high-voltage CMOS shift registers, discrete half-bridges) and iterative PCB revisions fixing capacitor selection, latch drive current, and supply brownout. All performance figures and cost claims are the author's own from a work-in-progress build.",
+    "channels": [
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "fluid-sim physics driven on reverse-engineered flipdot matrix hardware",
+    "audience": "hardware hackers and embedded/electronics engineers",
+    "source_url": "https://mitxela.com/projects/flipflip",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49854219",
+        "points": 325,
+        "comments": 22,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lobste.rs/s/4mihv8/flip_fluid_on_flip_dots",
+        "points": 5,
+        "comments": 0,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://mitxela.com/projects/flipflip",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-09-24T15:24:48.343-05:00",
+    "published_at": "2026-10-25T19:10:35.737547+00:00",
+    "curated_at": "2026-10-25T19:10:35.737547+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 528081,
+    "story_id": "s_f77f41756efc07be",
+    "title": "Yes, no AI is now a feature",
+    "relevance": 6,
+    "score": 5.344,
+    "why": "If you deploy LibreOffice across an org that bars cloud data egress, the default install stays AI-free and telemetry-free, and any AI you add comes as a third-party extension you must vet yourself.",
+    "notes": [
+      "LibreOffice 26.8 ships with no AI feature enabled by default; the post frames this as a deliberate policy, not an oversight.",
+      "The Document Foundation lists six conditions any default-on AI must meet: user-chosen inference location (local, user-controlled infra, or independently chosen service), no content transmission without authorization, zero telemetry, no single-provider API lock-in, output in ODF with structure/styles/semantics preserved, and fully optional/installable/removable and absent from the UI for admins who disallow it.",
+      "The project states no current integration meets all six, so none will be shipped on by default or supported across a release lifecycle; it calls this an assessment of the technology, not a judgment on the AI sector's value.",
+      "AI is available today only via third-party extensions maintained by their authors, not TDF; most connect to a local model through Ollama, LM Studio, or another OpenAI-compatible endpoint so the document stays on the machine. TDF warns users to check whether a cloud endpoint is configured and what the provider does with the data.",
+      "The post attributes its stance to being a nonprofit with no subscription tiers, upsells, or data to monetize, contrasting with paid suites where an AI assistant justifies price increases and keeping documents inside vendor infrastructure.",
+      "TDF leaves the door open: it cites improving on-premises inference on standard hardware and faster-than-expected open models, and says it will evaluate any approach that meets all conditions."
+    ],
+    "summary": "The Document Foundation published a post explaining why LibreOffice 26.8 ships with no AI feature enabled by default, responding to a comment asking whether \"no AI\" was itself a feature. It sets six conditions any default-on AI integration must satisfy: user-controlled inference location, no content leaving the computer without authorization, zero telemetry, no single-provider lock-in, ODF output preserving structure and semantics, and being fully optional and removable including for admins deploying at scale. It states that no existing integration meets all six and so none will be enabled by default, framing this as an assessment of current technology rather than a rejection of AI. Users wanting AI can install third-party extensions, most of which route to a locally running model via Ollama, LM Studio, or an OpenAI-compatible endpoint so documents stay on-device; these are maintained by their authors, not TDF, and users are told to verify endpoint and data-handling. The post attributes its divergence from commercial suites to being a nonprofit with no subscriptions or data to monetize, and says it will reevaluate if an approach meeting all conditions emerges as on-premises inference and open models improve.",
+    "channels": [
+      "ai",
+      "devtools",
+      "security"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "nonprofit office suite publishes explicit no-default-AI criteria",
+    "audience": "devs/admins weighing AI feature integration and data governance tradeoffs",
+    "source_url": "https://blog.documentfoundation.org/blog/2026/09/03/yes-no-ai-is-now-a-feature",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/sxcz4v/yes_no_ai_is_now_feature",
+        "points": 121,
+        "comments": 27,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://blog.documentfoundation.org/blog/2026/09/03/yes-no-ai-is-now-a-feature/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-28T04:58:26.129-05:00",
+    "published_at": "2026-10-25T19:10:07.032594+00:00",
+    "curated_at": "2026-10-25T19:10:07.032594+00:00",
     "model": "claude-opus-4-8"
   }
 ]
