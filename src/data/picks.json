@@ -108,126 +108,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 624031,
-    "story_id": "s_bea987627031ca18",
-    "title": "LLMs are making formal software verification feasible at a much larger scale",
-    "relevance": 8,
-    "score": 5.446,
-    "why": "Claude-generated proofs covered 239 fuzz entry points across 123 real libraries at the RISC-V binary level, putting memory-safety guarantees that once cost tens of person-years (seL4: 20) within reach of ordinary open-source projects.",
-    "notes": [
-      "The pipeline converts a project's existing OSS-Fuzz fuzz test into a formal spec ('this entry point never crashes, including ASan violations, for any input under 64 MB'), then has Claude prove it against Theorem's RISC-V instruction and Linux process semantics; proving the spec makes further fuzzing of that entry point superfluous.",
-      "Scale claims (self-reported by Anthropic/Theorem): 239 entry points across 123 OSS-Fuzz libraries, ~180M lines of Rocq, a typical proof ~600,000 lines over binaries with a median of 18,000 RISC-V instructions, produced over a few weeks.",
-      "The trusted base is just three artifacts: the formal RISC-V and Linux-process models, the exact theorem statements, and the Rocq proof checker. 'Formally verified' is explicitly not 'bug-free' - bugs remaining live in those trusted components or outside scope (ASan misses some memory bugs; not all entry points verified).",
-      "Bugs surfaced while proving: a counter underflow causing an out-of-bounds write only on ~20 MB inputs with a rare layout, an OOB read needing a 64 MB input and over 2 GB of memory, and a rediscovery of CVE-2026-56132 in libexpat (deeply nested input); also a non-crashing logic bug where a file-access restriction wasn't always enforced.",
-      "Scope assumptions limit real-world coverage: single-threaded static binaries, fixed memory budget, RISC-V CPU, Linux, linked against musl libc, while most deployments use x86/ARM and glibc.",
-      "Cost-reduction signals (self-reported): Opus 5.5 proved half of 36 tasks with ~40% fewer tokens than Opus 5; a shared proof workspace cut tokens 17% as agents copied and adapted each other's proofs. Side studies: proving the Linux kernel's zlib implements an RFC 1950 spec at the x86 binary level, and a Verus-verified Rust Python interpreter matching CPython on 99.95% of 1.7M random programs."
-    ],
-    "summary": "Anthropic, with collaborator Theorem, reports using Claude to generate formal correctness proofs directly over compiled RISC-V machine code for 239 fuzz entry points across 123 open-source OSS-Fuzz libraries. The method turns a project's existing fuzz test into a specification ('never crashes, including AddressSanitizer violations, for any input under 64 MB') and proves it against Theorem's RISC-V and Linux-process semantics; the proofs total about 180 million lines of Rocq, with a typical proof near 600,000 lines. Because an external proof checker validates the output, the only trusted artifacts are the formal machine models, the theorem statements, and the Rocq checker itself. The company stresses that 'formally verified' is not 'bug-free': the scope assumes single-threaded static musl-linked binaries on RISC-V/Linux, ASan misses some memory bugs, and the spec must still match the real machine. While writing proofs, Claude found and patched hundreds of bugs, including a ~20 MB-input out-of-bounds write and a rediscovery of CVE-2026-56132 in libexpat. All scale, cost, and capability figures (including Opus 5.5 using ~40% fewer tokens than Opus 5 and a 17% token saving from shared proof reuse) are self-reported, and Theorem is publishing a Claude skill plus offering to run the pipeline on other projects.",
-    "channels": [
-      "ai",
-      "security",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "LLM-generated formal proofs at assembly level across 123 real libraries",
-    "audience": "security engineers and devtools researchers interested in AI-assisted formal verification",
-    "source_url": "https://anthropic.com/research/formal-verification",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50202217",
-        "points": 224,
-        "comments": 123,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.anthropic.com/research/formal-verification",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.anthropic.com/research/formal-verification",
-        "points": null,
-        "comments": null,
-        "name": "Tildes"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-22T22:54:43+00:00",
-    "published_at": "2026-10-23T03:02:31.963785+00:00",
-    "curated_at": "2026-10-23T03:02:31.963785+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 621455,
-    "story_id": "s_bf65b355e5136be0",
-    "title": "Websites across world hit by millions of attempts to exploit PHP code flaw",
-    "relevance": 8,
-    "score": 4.926,
-    "why": "If you run PHP anywhere exposed, patch now: CloudFlare went from tens of thousands of exploit attempts to millions within two hours of disclosure, and the fix reportedly fails on older installs that must be replaced outright.",
-    "notes": [
-      "Dubbed PHP2Shell, the flaw sits in PHP, which the article says underpins ~70% of the world's websites; the US NSA says it could let attackers seize web servers, steal data, disrupt services, and move laterally into networks.",
-      "CloudFlare CEO Matthew Prince reported tens of thousands of exploit attempts in the first 45 minutes after disclosure, hundreds of thousands within two hours, and 'millions' after; CloudFlare also claims thousands of attempts in the 10 hours before public announcement, and Prof Alan Woodward says the flaw was revealed a day before the patch landed ('somebody let the cat out of the bag').",
-      "Wiz, a research org that uncovered the bug, claims the underlying flaws existed for decades but required an exploit chain 'at the edge of what human researchers could practically achieve,' and that 'frontier AI models substantially reduced that barrier' — an attribution the article reports as Wiz's own claim, not independently verified.",
-      "UK NCSC sent 50,000 alerts, called the scale 'unprecedented,' reported no confirmed successful hacks, and warned the patch does not work on older systems that must be replaced; 32 UK government services were pulled offline, described as 'largely precautionary.'",
-      "Severity assessments conflict: ex-NCSC chief Ciaran Martin calls it the most serious vulnerability in five years and Amazon Threat Intelligence says PHP2Shell is 'now being broadly exploited in the wild,' while Calif researcher Ryan Austin says widespread exploitation does not yet appear to have taken off.",
-      "South Korea raised its private-sector alert level, China's industry ministry ordered system inspections and upgrades, and Japan's PM told organizations to patch or take sites down; sites reportedly affected include the Internet Archive, Wikipedia, 4Chan, and the BBC's Traitors page."
-    ],
-    "summary": "Cybersecurity firms and governments reported millions of attempts to exploit a newly disclosed PHP vulnerability dubbed PHP2Shell, which the US NSA says could let attackers take over web servers, steal data, and move through networks; PHP is said to underpin about 70% of the world's websites. CloudFlare reported exploit attempts climbing from tens of thousands to millions within two hours of disclosure, plus thousands of attempts in the 10 hours before the public announcement, fueling concern the flaw leaked a day ahead of the patch. The UK NCSC sent 50,000 alerts, called the scale 'unprecedented,' said it had no reports of successful hacks, and warned the patch will not work on older systems that must be replaced; 32 UK government services were taken offline as a precaution. Wiz, one of the discovering organizations, claimed the underlying flaws had existed for decades but that building a working exploit required a chain at the limit of human research, and that 'frontier AI models substantially reduced that barrier' — a claim attributed to Wiz and not independently confirmed. Severity assessments diverge: ex-NCSC chief Ciaran Martin called it the most serious vulnerability in five years and Amazon Threat Intelligence said it was being broadly exploited, while a Calif researcher involved in discovery said widespread exploitation had not yet taken off. South Korea, China, and Japan issued emergency patching guidance.",
-    "channels": [
-      "security",
-      "devtools",
-      "ai"
-    ],
-    "category": "security",
-    "subcategories": [
-      "research"
-    ],
-    "state": "confident",
-    "novelty": "AI-assisted exploit discovery turns decades-old PHP flaw into live weapon",
-    "audience": "backend/infra engineers and security teams running PHP-based services",
-    "source_url": "https://theguardian.com/technology/2026/oct/22/websites-across-world-hit-by-millions-of-attempts-to-exploit-php-code-flaw",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/22/websites-across-world-hit-by-millions-of-attempts-to-exploit-php-code-flaw",
-        "points": null,
-        "comments": null,
-        "name": "The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/22/websites-across-world-hit-by-millions-of-attempts-to-exploit-php-code-flaw",
-        "points": null,
-        "comments": null,
-        "name": "Guardian Technology"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/22/websites-across-world-hit-by-millions-of-attempts-to-exploit-php-code-flaw",
-        "points": null,
-        "comments": null,
-        "name": "World news | The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/22/websites-across-world-hit-by-millions-of-attempts-to-exploit-php-code-flaw",
-        "points": null,
-        "comments": null,
-        "name": "The Guardian"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-22T16:42:54+00:00",
-    "published_at": "2026-10-23T01:10:07.283323+00:00",
-    "curated_at": "2026-10-23T01:10:07.283323+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 496655,
     "story_id": "s_a2b110621277b0b2",
     "title": "How I Found a $113,337 AF_ALG Linux Local Privilege Escalation Before Copy Fail",
@@ -1351,379 +1231,6 @@
     "first_seen": "2026-10-22T09:31:18+00:00",
     "published_at": "2026-10-23T04:52:17.675834+00:00",
     "curated_at": "2026-10-23T04:52:17.675834+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 622134,
-    "story_id": "s_3d10d751d1048ee5",
-    "title": "333 Tor exit nodes hijacked to intercept SSH traffic and retrieve plaintext email",
-    "relevance": 7,
-    "score": 4.454,
-    "why": "If your SSH or CI configs use passwords and accept-new host key handling, a single hostile Tor exit node can pin its own key on first connection, steal your password, and backdoor the server with no warning ever firing.",
-    "notes": [
-      "333 Tor exit nodes were compromised at once, more than 10% of the roughly 3,000-node network, and routed through 12 SSH interception servers run by the attacker.",
-      "When a user ignored the SSH host key change warning, the attacker did three things: stole the SSH password, opened a connection to the real server to observe every typed command (MITM), and opened a second connection to install Ebury, an SSH credential-harvesting malware active for over a decade.",
-      "The core weakness is TOFU: trust-on-first-use only protects from the second connection onward, so a first connection through a hostile exit lets the attacker present its own key and get it pinned with no warning. Key-based auth would still allow session interception but not arbitrary new sessions, since the private key is not exposed.",
-      "In parallel, the attacker blocked ports used for encrypted email while leaving unencrypted email ports open, betting that some clients or services would downgrade to plaintext.",
-      "Volunteer researcher Kaba found the campaign by scripting a poll of all ~3,000 exit nodes against a test server to detect SSH fingerprint mismatches, then ran a honeypot to watch the interception software log in and install Ebury.",
-      "One open question flagged in the discussion: the attacker reached a second Tor server (Switzerland2) over SSH using an RSA key investigators could not find in that server's authorized_keys, with no stated explanation; the Lemmy thread is commentary, not a vendor or first-party writeup."
-    ],
-    "summary": "A reported campaign hijacked 333 Tor exit nodes, over 10% of the ~3,000-node network, to run SSH man-in-the-middle attacks. When a user ignored an SSH host key change warning, the attacker stole the password, relayed the session to observe typed commands, and opened a second connection to infect the server with Ebury, a long-running SSH credential-harvesting malware. The attack exploits trust-on-first-use, which offers no protection on a first connection through a hostile node, a gap worsened by tooling defaults like disabled strict host key checking and accept-new. The attacker also blocked encrypted email ports while leaving plaintext ports open, hoping clients would downgrade. Volunteer researcher Kaba detected it by polling all exit nodes for SSH fingerprint mismatches against a test server and running a honeypot. The piece is a discussion thread summarizing the event; recommended defenses are key-based SSH auth over passwords and rejecting unencrypted email, and one unexplained detail is the attacker's access to a second Tor server via an RSA key not found in its authorized_keys.",
-    "channels": [
-      "security"
-    ],
-    "category": "security",
-    "subcategories": [
-      "vulns"
-    ],
-    "state": "confident",
-    "novelty": "333 Tor exit nodes (10%+ of network) hijacked en masse for SSH MITM",
-    "audience": "security engineers and anyone using Tor/SSH over untrusted networks",
-    "source_url": "https://lemmy.world/post/53460393",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://arstechnica.com/information-technology/2026/10/300-tor-exit-nodes-hijacked-to-intercept-ssh-traffic-and-retrieve-plaintext-email/",
-        "points": 11,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://arstechnica.com/information-technology/2026/10/300-tor-exit-nodes-hijacked-to-intercept-ssh-traffic-and-retrieve-plaintext-email/",
-        "points": null,
-        "comments": null,
-        "name": "Ars Technica"
-      },
-      {
-        "url": "https://lemmy.world/post/53460393",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
-      },
-      {
-        "url": "https://arstechnica.com/information-technology/2026/10/300-tor-exit-nodes-hijacked-to-intercept-ssh-traffic-and-retrieve-plaintext-email/",
-        "points": null,
-        "comments": null,
-        "name": "Ars Technica"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-22T12:59:32+00:00",
-    "published_at": "2026-10-23T03:32:58.089733+00:00",
-    "curated_at": "2026-10-23T03:32:58.089733+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 600308,
-    "story_id": "s_b6ee77d8635d56ae",
-    "title": "Speeding up code review with `small-change`",
-    "relevance": 7,
-    "score": 4.779,
-    "why": "If AI-assisted coding is raising your team's merge rate, human PR review becomes the bottleneck Larson describes: his p50 review time doubled from 33 to 77 minutes in two years, and this is a concrete recipe for routing low-risk PRs around human review without dropping quality.",
-    "notes": [
-      "Self-reported metrics from Imprint: average engineer merges 4x more PRs than two years ago, two teams at 10x, one engineer at 25x the old average; p50 review time rose from ~33 to ~77 min, correlated with merge volume.",
-      "Quality claim (no methodology given): incidents down 42% half-over-half, critical incidents down 78% half-over-half despite higher velocity, which Larson offers as evidence the velocity/quality tradeoff is a false construct.",
-      "small-change eligibility is a non-human-modifiable GitHub check, all criteria required: <1,000 LOC, zero p1/p2 findings from the ai-code-review bot, author has 10+ prior merged PRs in that service's directories, impacts fewer than N services (N=1 frontend monorepo, N=3 backend), excludes shared libs/utils; per-path .small_change file can exclude areas like money movement.",
-      "The review-small-change skill can only approve or ignore, never comment, deliberately avoiding 'meat proxy review': harness-generated comments that get answered by harnesses, turning review into theater. Sensitive topics (payments, security) still trip a flag to human review.",
-      "Social contract: any incident from an auto-approved small-change is treated as a system failure to be fixed at the CICD/verification/harness level, not blamed on a reviewer.",
-      "Early and explicitly inconclusive: only ~10% of changes currently qualify; success hinges on expanding verification coverage, which Larson notes is harder in low-scale-complexity, high-domain-complexity software than in high-scale products where incremental rollouts give more coverage. Separately mentions 'fleet', a centrally orchestrated harness akin to Stripe's Minions."
-    ],
-    "summary": "Will Larson describes Imprint's 'small-change' mechanism for cutting code-review load as AI-assisted development pushes merge volume up (self-reported: 4x average, up to 25x for one engineer) and drove p50 review time from ~33 to ~77 minutes. A CICD-managed GitHub check marks a PR as a small-change when it meets all criteria: under 1,000 LOC, no p1/p2 findings from their ai-code-review bot, author has 10+ prior merges in the affected service, fewer than N services touched (1 on frontend, 3 on backend), and no shared-library files; per-path .small_change files allow exclusions like money-movement code. Qualifying PRs can be auto-approved by a 'review-small-change' skill that only approves or ignores and never comments, a design choice meant to avoid 'meat proxy review' where harness-generated comments are answered by harnesses. Errors from auto-approved changes are treated as system failures to be fixed in verification tooling rather than reviewer mistakes. Larson calls results too early to judge: about 10% of changes currently qualify, and the approach's success depends on expanding verification coverage, which he argues is harder for high-domain-complexity software. He frames all four traditional reasons for review (knowledge sharing, error prevention, malicious-behavior prevention, compliance) as better served by other mechanisms, and reports incidents down 42% and critical incidents down 78% half-over-half, without stated methodology.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "practice"
-    ],
-    "state": "confident",
-    "novelty": "CICD-gated auto-approval tier for low-risk PRs, no human review",
-    "audience": "eng leaders and platform teams designing AI-era code review processes",
-    "source_url": "https://lethain.com/small-changes",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50150681",
-        "points": 35,
-        "comments": 22,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lethain.com/small-changes/",
-        "points": null,
-        "comments": null,
-        "name": "Irrational Exuberance (Will Larson / lethain)"
-      },
-      {
-        "url": "https://lethain.com/small-changes/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-17T12:00:00+00:00",
-    "published_at": "2026-10-23T02:46:58.077112+00:00",
-    "curated_at": "2026-10-23T02:46:58.077112+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 623221,
-    "story_id": "s_8f6f212df865a4ff",
-    "title": "Show HN: Run full iOS 16.5 firmware on Android Devices",
-    "relevance": 7,
-    "score": 4.864,
-    "why": "An unmodified iOS 16.5 userland now reaches the SpringBoard home screen on a $300 Snapdragon Android phone with no Apple binaries modified, proving the whole stack can be driven by replacement drivers and an injected library rather than Apple silicon.",
-    "notes": [
-      "Boots Apple's open-source XNU (xnu-8796.121.2, the iOS 16.5 kernel) under a custom EFI loader and a Mu-Silicium UEFI port, then runs the stock launchd to backboardd to SpringBoard chain unchanged; the iOS frameworks and dyld shared cache are not altered by a byte, with missing pieces supplied by driver replacements or a library injected via DYLD_INSERT_LIBRARIES.",
-      "Runs two ways: on a POCO X5 Pro 5G (redwood, Snapdragon 778G) entirely in RAM via fastboot boot with nothing flashed, so a reboot returns to Android; or in QEMU virt aarch64 with no phone. Reaches the lock screen in about 20 seconds on hardware (2 to 3 minutes in QEMU).",
-      "Working on-device: Goodix GT9916 multitouch, Wi-Fi over ath11k/WCN6750 at a self-reported 55 to 90 Mbit/s, Adreno 642L GPU through Mesa/freedreno (OpenGL ES for CoreAnimation), speaker/mic audio, camera with HEIC capture, up to 8 cores at 2.4 GHz, and Sileo plus Procursus (dpkg/apt) with SSH.",
-      "Not working: cellular, Bluetooth, charging under the custom kernel (the phone only discharges), and App Store/Apple ID because there is no Secure Enclave and the FairPlay daemon exits. Metal for apps is partial, with 293 of 456 system shaders running on the Adreno.",
-      "No Apple files ship in the repos: ios165/fetch.sh pulls a 7.4 GB iOS 16.5 IPSW from Apple's CDN on the user's machine, and the phone's own GPU/Wi-Fi/audio/haptic firmware is pulled from the device's Android partitions rather than redistributed. The XNU fork is distributed under APSL 2.0.",
-      "The authors call it a research bench, not a ROM: sessions are time-limited (for example 900 seconds) and then the kernel hands control and its log back to the resident loader. Project credited to OOSEX GANG; not affiliated with or endorsed by Apple."
-    ],
-    "summary": "HackiOS boots Apple's open-source XNU kernel (xnu-8796.121.2, from iOS 16.5) on non-Apple hardware and runs the unmodified iOS 16.5 user space, from launchd through SpringBoard, on top of it. It uses a custom EFI loader, a Mu-Silicium UEFI port, replacements for Apple's closed drivers (IOSurface, IOMobileFramebuffer, AppleKeyStore, network stack), minicrypto in place of corecrypto, and AMFI/Sandbox stand-ins; iOS binaries are untouched, with gaps filled by driver replacements or a library injected via DYLD_INSERT_LIBRARIES. It runs on a POCO X5 Pro 5G (Snapdragon 778G) entirely in RAM via fastboot boot, leaving Android intact after reboot, or in QEMU aarch64. Touchscreen, Wi-Fi (ath11k/WCN6750, a claimed 55 to 90 Mbit/s), Adreno 642L GPU via Mesa/freedreno, audio, camera, and Sileo/Procursus jailbreak tooling work; cellular, Bluetooth, charging, full Metal (293 of 456 shaders), and App Store/Apple ID (no Secure Enclave, FairPlay daemon exits) do not. No Apple files are redistributed: the IPSW is fetched from Apple's CDN and vendor firmware is pulled from the phone's own Android partitions. The authors describe it as a time-limited research bench that returns control to the loader, not a usable ROM.",
-    "channels": [
-      "devtools",
-      "security",
-      "hardware"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "unmodified iOS 16.5 userland booted on Android hardware via custom EFI/UEFI loader and drivers",
-    "audience": "low-level systems/kernel and mobile security researchers",
-    "source_url": "https://github.com/oosexgang/hackios-xnu-kernel",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50196718",
-        "points": 364,
-        "comments": 136,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/oosexgang/hackios-xnu-kernel",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-22T15:26:22+00:00",
-    "published_at": "2026-10-23T01:41:42.818281+00:00",
-    "curated_at": "2026-10-23T01:41:42.818281+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 623218,
-    "story_id": "s_e24af946c92f8b59",
-    "title": "Quad9 (DNS Resolver) to Exit France",
-    "relevance": 7,
-    "score": 5.244,
-    "why": "If you run 9.9.9.9 for threat filtering, DNS from your French networks stops resolving on November 24, 2026, and the ruling establishes that a single national court can order a passive resolver to lie about DNS answers.",
-    "notes": [
-      "A French court ruled for beIN, a Qatari-owned company with French offices, ordering Quad9 to stop recursive DNS resolution for domains beIN says infringe its sports-broadcast rights; the per-day penalty was cut from EUR 580,000 to EUR 1,000.",
-      "Quad9 is a Swiss nonprofit foundation that is free, requires no sign-up or identity, and keeps no user-to-jurisdiction mapping, so it argues it cannot reliably identify French users to apply geo-scoped blocking without abandoning its no-logging privacy stance.",
-      "It rejected the technically viable workaround: adding the names to the global malicious-domain list used by 9.9.9.9 (but not the non-filtering 9.9.9.10). Quad9 says that would impose a French ruling on every user worldwide for one private company's benefit.",
-      "Precedent cited: in a 2021-2023 German case, Quad9 tried geoIP blocking as a stopgap, Sony Music used a VPN to reach the blocked content from Germany, and the court fined Quad9 for noncompliance. Quad9 says it eventually won but spent years and six figures.",
-      "Quad9 says roughly 20 other similar suits are pending against it (and other resolver operators) in France and that accumulating penalties would threaten its survival; its departure is framed as principle, not just finances. An appeal is pending.",
-      "The post lists French networks that will lose service, including DINUM, RENATER, Institut Pasteur, EDF, SNCF, France Televisions, Thales, Dassault Systemes, and IDEMIA; Quad9 notes AS numbers are not reliable jurisdictional identifiers."
-    ],
-    "summary": "Quad9, a Swiss nonprofit recursive DNS resolver, says a French court ruled against it in a suit by beIN, ordering it to block DNS resolution for domains beIN claims infringe its sports-broadcast copyrights, with the penalty reduced from EUR 580,000 to EUR 1,000 per day. Rather than comply, Quad9 will withdraw all service from France on November 24, 2026, after nearly nine years of operation. It argues compliance is impossible or unacceptable on three grounds: it keeps no user database or jurisdiction mapping, so per-country blocking would require logging it refuses to do; geoIP blocking is defeatable by VPN and already produced a contempt fine in a 2021-2023 German case brought by Sony Music; and global blocking (on the filtering 9.9.9.9 resolvers) would extend a French ruling to all users worldwide. Quad9 says it faces about 20 other pending French cases and cannot absorb cumulative penalties, that DNS blocking does not remove infringing content, and that an appeal is pending. The post lists French government, research, utility, transport, health, and industry networks that will lose service, and urges French users to lobby legislators and the regulator ARCOM.",
-    "channels": [
-      "security",
-      "devtools"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "Quad9 withdraws from France rather than block DNS for copyright case",
-    "audience": "security engineers, privacy advocates, DNS/infra operators, internet policy watchers",
-    "source_url": "https://quad9.net/news/blog/au-revoir-france",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50195959",
-        "points": 1080,
-        "comments": 384,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://quad9.net/news/blog/au-revoir-france/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-22T14:32:38+00:00",
-    "published_at": "2026-10-23T00:20:27.206766+00:00",
-    "curated_at": "2026-10-23T00:20:27.206766+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 623219,
-    "story_id": "s_bc60526cdd98b807",
-    "title": "OpenShell – A safe, private runtime for fleets of autonomous AI agents",
-    "relevance": 7,
-    "score": 6.384,
-    "why": "If you run coding agents that need real credentials and shell access, this is a per-sandbox way to inject secrets only for approved endpoints and to gate policy expansions behind a verifier before an agent reaches a new host or API.",
-    "notes": [
-      "NVIDIA open-source project (Apache 2.0); the 0.1.x line adds a stated stable release cadence, new isolation primitives, an expanded extension surface, and new APIs.",
-      "Enforcement is kernel-level: each agent runs in an isolated sandbox where kernel controls confine file access and syscalls, and every outbound network connection passes a policy check before leaving the sandbox.",
-      "Credential handling: agents never see real credentials; OpenShell injects them only into requests bound for approved endpoints, including inference providers.",
-      "Policy changes go through formal verification that flags newly granted risky access (reaching a new host with credentials, calling a new API method) and holds those changes for human review before approval.",
-      "Runs on Linux, macOS on Apple Silicon, and Windows via WSL 2 (experimental), with Docker, Podman, or host virtualization; Kubernetes deploy via Helm requires a CNI that enforces NetworkPolicy. SDKs ship for Python, TypeScript, Go, and Rust.",
-      "No independent benchmarks or third-party security evaluation in the text; the formal-verification and isolation claims are the project's own. Anonymous operational telemetry is on by default and can be disabled or compiled out."
-    ],
-    "summary": "OpenShell is an NVIDIA open-source runtime (Apache 2.0) for running fleets of autonomous AI agents under declared policies. It governs agents two ways: kernel-level instrumentation enforces policy on every file access, syscall, and network connection within a per-agent sandbox, and formal verification checks what a proposed policy change would allow before it is applied, flagging risky new access such as a new host reached with credentials or a new API method for human review. Agents never handle real credentials; the gateway injects them only for approved endpoints, including inference. The architecture splits into a gateway control plane, a supervisor, and sandboxes; it supports Linux, macOS on Apple Silicon, and experimental Windows WSL 2, and deploys via Docker, Podman, or Kubernetes with Helm (requiring a NetworkPolicy-enforcing CNI). SDKs exist for Python, TypeScript, Go, and Rust, plus installable CLI skills for coding agents. The isolation and verification claims are the project's own; the README includes no independent benchmarks or security audits, and anonymous operational telemetry is enabled by default.",
-    "channels": [
-      "ai",
-      "devtools",
-      "security"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents"
-    ],
-    "state": "confident",
-    "novelty": "kernel-enforced sandboxing plus formal verification of agent policy changes",
-    "audience": "engineers deploying autonomous coding/agent fleets who need credential and access isolation",
-    "source_url": "https://github.com/NVIDIA/OpenShell",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50198675",
-        "points": 343,
-        "comments": 182,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/NVIDIA/OpenShell",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-22T17:44:06+00:00",
-    "published_at": "2026-10-22T22:44:22.387927+00:00",
-    "curated_at": "2026-10-22T22:44:22.387927+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 610524,
-    "story_id": "s_114cfd610acdeafb",
-    "title": "Benchmarking Bot Detection Systems Against Modern AI Agents in 2026",
-    "relevance": 7,
-    "score": 5.322,
-    "why": "If you rely on hCaptcha, Turnstile, or Cloudflare Bot Management to keep LLM browsing agents off your endpoints, this benchmark reports they catch 9-44% of agent sessions: vision-capable agents driving genuine browsers defeat the device-fingerprint and puzzle defenses that still reliably stop scripted bots.",
-    "notes": [
-      "Vendor-run benchmark: the authors work at Proof of Human, PBC, and Proof of Human was the top scorer (99% aggregate detection), so treat the headline ranking as a self-reported claim, not an independent evaluation.",
-      "Aggregate detection rates across all adversaries: Proof of Human 99%, Google reCAPTCHA v3 69.4%, hCaptcha 44.3%, Cloudflare Turnstile 42.1%, Cloudflare Bot Management 9.1%.",
-      "The split is scripted-vs-agent, not strong-vs-weak: hCaptcha and Turnstile caught nearly all scripted Chromium and CloakBrowser (stealth) sessions but few AI-agent sessions; reCAPTCHA v3 was the inverse, catching most agent sessions but none from CloakBrowser.",
-      "Five adversaries: plain Playwright/CDP Chromium (baseline with navigator.webdriver artifacts), CloakBrowser (stealth fork spoofing GPU/canvas/WebGL/audio/fonts/UA/TLS, run over residential proxy with input humanization), and three LLM agents: Browser Use (Claude Opus), Perplexity Comet, and xAI's Grok.",
-      "Method: each adversary ran a five-question survey (multiple-choice plus open-ended) 20 times, up to 100 sessions per detector, 89-100 evaluable after crashes; detection systems are black-box so signal attribution is inferred, not measured.",
-      "Stated limitations: no human participants, so no false-positive rate; low volume; and the prior-year benchmark of the same five classic detectors ranged 33-87%, with behavioral+device systems beating device-only ones."
-    ],
-    "summary": "Proof of Human, a company selling an invisible authentication system, re-ran its bot-detection benchmark against modern AI browsing agents and reports detection rates spanning 9% to 99%. It tested five detectors (Proof of Human, Google reCAPTCHA v3, hCaptcha, Cloudflare Turnstile, Cloudflare Bot Management) against five adversaries: a plain automated Chromium, the CloakBrowser stealth fork run over a residential proxy, and three vision-LLM agents (Browser Use on Claude Opus, Perplexity Comet, xAI Grok), each running a five-question survey 20 times for up to 100 sessions per detector. Aggregate detection was Proof of Human 99%, reCAPTCHA v3 69.4%, hCaptcha 44.3%, Turnstile 42.1%, and Cloudflare Bot Management 9.1%. The key finding is a scripted-versus-agent split: hCaptcha and Turnstile caught nearly all scripted and stealth-browser sessions but few AI-agent sessions, while reCAPTCHA v3 showed the opposite, catching most agent sessions and none from CloakBrowser. The authors argue browser-level fingerprint signals and interactive challenges are weakening against vision-capable agents in genuine browsers, raising the value of in-session behavioral signals. Caveats: the detectors are black-box so signal attribution is inferred, there were no human participants to measure false positives, volume was low, and the authors' own product posted the top score.",
-    "channels": [
-      "ai",
-      "security"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents",
-      "evals"
-    ],
-    "state": "confident",
-    "novelty": "quantifies CAPTCHA/bot-detection collapse against vision LLM browsing agents",
-    "audience": "security engineers and anti-fraud/bot-defense teams evaluating detection vendors",
-    "source_url": "https://research.poh.org/bot-benchmarking-2026",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50169506",
-        "points": 36,
-        "comments": 2,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://research.poh.org/bot-benchmarking-2026/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-20T17:10:31+00:00",
-    "published_at": "2026-10-22T03:56:33.570831+00:00",
-    "curated_at": "2026-10-22T03:56:33.570831+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 614751,
-    "story_id": "s_da86cc62489f12c4",
-    "title": "Using Claude to reduce the attack surface of code",
-    "relevance": 7,
-    "score": 5.288,
-    "why": "If unnecessary pre-auth reachability survives in OpenSSH, it is almost certainly in your stack: this method cuts the blast radius of unknown bugs by gating dead code, without ever finding a single CVE.",
-    "notes": [
-      "Claude ran over 25 open-source projects (5M+ lines of C, C++, Java, PHP, Python), cataloged 17,000+ config options (3,842 security-relevant), and reported 493 issues via three methods: default-config exposure, risky config-option interactions, and early reachability before auth or protocol state transitions.",
-      "All 11 'gated' (authenticated) projects had unintentionally pre-auth-reachable code: 93 unnecessary pre-auth surfaces in default config, 37 spots where code ran or state was recorded before auth, and 61 config combos that silently weakened an admin-set pre-auth control. Projects were binned Public/Gated/Private to set expected baseline reachability.",
-      "162 config combinations were accepted with no error, warning, or documentation; 94 silently disabled a security control. One recurring pattern across four unrelated projects: a hostname/wildcard deny rule compared against a client IP (reverse DNS off by default) never matches, so the deny list fails open; one certificate-check conflict had been present 21 years.",
-      "OpenSSH case study (the biggest reduction by percentage): the 10.4 sshd let an unauthenticated client reach ~4,500 lines of experimental ML-DSA-44 post-quantum code (about 16% of default pre-auth code) even when the algorithm was excluded, because key type was parsed before the allow-list check. Fixes landed across 10.5 and 10.6 after Anthropic reported it with patches and a proof of concept.",
-      "The 10.5 patch had two gaps Claude flagged: the check read the client-advertised algorithm name while the parser keyed off a type string inside the key blob (advertise ssh-ed25519, send ML-DSA), and attacker certificates triggered full CA-signature verification before any config check. The 10.6 fix moved checks inside the parser, comparing encoded key type and CA signature algorithm against allow lists before deserialization.",
-      "The three passes are packaged as a reusable Claude skill (being integrated into OSS-Scanner); each pass starts with an empty context plus brief carryover, confirms findings with a dynamic trace, and for default-config gates requires modified builds to pass the project's own test suite plus a black-box regression suite with identical results. These are Anthropic's self-reported results; the post names no methodology for false-positive rates and does not disclose the specific projects beyond OpenSSH."
-    ],
-    "summary": "Anthropic (author Chris Rohlf) describes using Claude for automated attack surface analysis and reduction: mapping which code is reachable in a given deployment and gating or removing anything that need not be exposed, which lowers the severity of unknown and actively exploited vulnerabilities without finding or fixing individual bugs. Across 25 open-source projects (5M+ lines in C, C++, Java, PHP, Python), Claude cataloged over 17,000 config options (3,842 security-relevant) and reported 493 issues using three methods: default-config exposure, risky configuration interactions, and early reachability before authentication or protocol state transitions. All 11 authenticated ('gated') projects had unintentionally pre-auth-reachable code; 162 config combinations were silently accepted, 94 of which disabled a security control, including a fail-open deny-list pattern recurring in four unrelated projects and one certificate-check conflict present for 21 years. The headline case is OpenSSH 10.4, where ~4,500 lines of experimental ML-DSA-44 code (about 16% of default pre-auth code) were reachable by unauthenticated clients even when the algorithm was excluded; Anthropic reported it with patches and a proof of concept, and fixes moving the checks before parsing shipped in 10.5 and 10.6. The three passes are packaged as a reusable Claude skill being integrated into OSS-Scanner, with findings confirmed by dynamic traces and default-config gates validated against the project's own test suite plus a black-box regression suite. All figures are Anthropic's self-reported results; the post does not disclose false-positive rates or the identities of the non-OpenSSH projects.",
-    "channels": [
-      "security",
-      "ai"
-    ],
-    "category": "security",
-    "subcategories": [
-      "research"
-    ],
-    "state": "confident",
-    "novelty": "AI used to systematically shrink reachable attack surface, not just find bugs",
-    "audience": "security engineers and AppSec teams evaluating LLM-assisted code auditing",
-    "source_url": "https://anthropic.com/research/attack-surface-reduction",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50175779",
-        "points": 22,
-        "comments": 5,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.anthropic.com/research/attack-surface-reduction",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-21T03:36:43+00:00",
-    "published_at": "2026-10-22T03:09:00.517134+00:00",
-    "curated_at": "2026-10-22T03:09:00.517134+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -3202,6 +2709,515 @@
     "first_seen": "2026-10-16T04:00:00+00:00",
     "published_at": "2026-10-25T16:28:46.900909+00:00",
     "curated_at": "2026-10-25T16:28:46.900909+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 485211,
+    "story_id": "s_470ec40c3fd6247e",
+    "title": "The Economics of Open-Weight Inference",
+    "relevance": 6,
+    "score": 5.461,
+    "why": "If your workload tolerates latency, this paper's math says a five-year-old A100 serves gpt-oss-120b at $0.29 per million output tokens versus the H100's $0.64, so the default assumption that each NVIDIA generation retires the last one does not hold for inference you control.",
+    "notes": [
+      "On gpt-oss-120b (a sparse MoE with 5.1B active parameters, MXFP4 expert weights, served on a single 80GB A100), the computed A100 cost is $0.12/M output tokens at full use and $0.29 base case, below the H100's $0.27 and $0.64. The authors flag that the A100 and H100 sparse numbers come from different third-party serving setups, not matched MLPerf runs.",
+      "The ranking reverses by workload: for dense Llama-2-70B, newer hardware (B200 at $0.16 full use) wins, and the dense A100 row is explicitly estimated from a vendor throughput ratio, where different precision assumptions can flip the result.",
+      "Self-hosted compute-only cost ran $0.12-$0.35/M output tokens at full utilization; the cheapest qualifying open-weight model, standardized on the Artificial Analysis Intelligence Index, cost roughly one fifth of a comparable closed model, but only at some score thresholds (closed models win at others, and lead at the top of the range).",
+      "Ornn's five-year A100 term mark retains 80.2% of its one-month price versus 43.7-59.8% for Hopper and 53.8% for Blackwell, for a contract ending when Ampere is 11.3 years old; these are analyst-produced forward marks, not executable quotes.",
+      "A100 occupancy rose from 74% (1 Mar 2026) to 90% (1 Sep 2026) while listed capacity grew 13% and the spot index rose 20%; the paper explicitly does not establish that open-weight demand caused this, naming device retirements, dense inference, and scarcity as alternatives.",
+      "Conflict disclosed: Ornn Data publishes the paper and the rental index, occupancy series, and term marks it uses, licenses the data commercially, and runs GPU rentals via Ornn Compute. The abstract also cites NVIDIA's acquisition of Hugging Face dated 3 September 2026."
+    ],
+    "summary": "Ornn Data argues that open-weight inference demand gives older NVIDIA GPU families a multi-year earning life, countering the assumption that each new generation makes its predecessor obsolete. Using the Artificial Analysis Intelligence Index across eleven open and eight closed models plus its own rental data, the paper reports that self-hosted compute-only costs run $0.12-$0.35 per million output tokens at full utilization, and that for the sparse gpt-oss-120b model the A100 serves output more cheaply than the H100 at spot and at three- and five-year terms ($0.29 vs $0.64 base case), while dense Llama-2-70B favors newer hardware. Its five-year A100 term mark retains 80.2% of the one-month price versus 43.7-59.8% for Hopper and 53.8% for Blackwell. A100 occupancy rose from 74% to 90% between March and September 2026 even as listed capacity grew 13%. The paper repeatedly cautions that forward marks are analyst indicators not executable quotes, that sparse A100/H100 figures combine different third-party setups and the dense A100 row is estimated, and that it does not establish open-weight demand as the cause of the rental behavior. Ornn discloses a commercial interest: it sells the underlying data and offers GPU rentals.",
+    "channels": [
+      "ai",
+      "hardware",
+      "startups"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "models",
+      "apps"
+    ],
+    "state": "confident",
+    "novelty": "older GPUs retain value via open-weight inference demand, with rental market data",
+    "audience": "infra/ML economics people deciding GPU depreciation, buy-vs-rent, and open vs closed model deployment",
+    "source_url": "https://data.ornn.com/publications/the-economics-of-open-weight-inference",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49801218",
+        "points": 27,
+        "comments": 16,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://data.ornn.com/publications/the-economics-of-open-weight-inference",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-09-22T13:45:32+00:00",
+    "published_at": "2026-10-25T16:13:50.790985+00:00",
+    "curated_at": "2026-10-25T16:13:50.790985+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 630790,
+    "story_id": "s_ad5cc2e5840d2d7f",
+    "title": "Forced to pick, Grok’s AI model chooses Republicans. OpenAI’s picks Democrats.",
+    "relevance": 6,
+    "score": 4.802,
+    "why": "The same frontier models that refuse political questions in their consumer apps will name a partisan pick through the API that developers embed in products, and this study shows the two leading models disagree on who to vote for in over 90% of races.",
+    "notes": [
+      "Forced-choice prompt via API across ~500 2026 midterm races: Grok 4.7 picked the Republican in 92% of answers, GPT-6.1 Sol picked the Democrat in 97%, and the two agreed less than 10% of the time. In deep-red districts GPT still picked the Democrat in 57 of 67; in deep-blue districts Grok picked the Republican in 47 of 72.",
+      "The mechanisms differ: with internet search disabled on a 30-race sample, GPT's Democratic lean held (24/30 Democrat, 1 Republican, 5 declined), so Parikh says it is 'in the weights'; Grok's lean vanished (refused 27/30, picked Democrat the other 3), so its bias is driven by search terms and sources, not weights.",
+      "Sourcing split by party: Grok surfaced a Christian conservative voter guide in 39% of answers, Turning Point Action in 23%, and X in 41%, alongside nonpartisan Ballotpedia/OpenSecrets/VoteSmart; GPT leaned on Wikipedia, AP, Axios, and Reddit, with AP/Axios/Reddit all being OpenAI content-deal partners.",
+      "Every Grok API request carried ~1,240 tokens of input the researchers did not write and could not see or remove; Parikh calls these possible 'hidden instructions' and believes they do not come from the weights, but their contents are unverified.",
+      "Study by Convovo, led by Cornell professor Tapan Parikh, released under two weeks before the November 3 midterms. Consumer apps refused the direct prompt but Parikh says he jailbroke them with simple prompts; OpenAI's spokesperson says the API with a prompt demanding a pick does not reflect normal ChatGPT use. xAI (labeled SpaceXAI in the article) did not comment in time.",
+      "Context offered as claims, not proven cause: Pew says only 8% of Americans use chatbots for election info; Musk has donated upwards of $445M to GOP midterm candidates; Altman says he isn't funding the 2026 races. Parikh suspects both models hunt for justifications of pre-existing leans, and Grok flipped to the Democrat when the Republican faced controversy."
+    ],
+    "summary": "A Convovo study led by Cornell's Tapan Parikh prompted Grok 4.7 and GPT-6.1 Sol via API to name one candidate without hedging across roughly 500 2026 midterm races; Grok picked the Republican 92% of the time and GPT picked the Democrat 97%, agreeing in under 10% of races, with the leans holding even in districts dominated by the opposite party. Consumer apps refused the question, which OpenAI stressed reflects normal use, though Parikh says simple jailbreaks reproduced the leans. Disabling internet search on a 30-race sample isolated the cause: GPT's Democratic lean persisted (bias in the weights) while Grok's Republican lean disappeared and it mostly refused (bias driven by its search terms and sources). Sourcing diverged by party, with Grok surfacing a Christian conservative voter guide (39%), Turning Point Action (23%), and X (41%), and GPT leaning on Wikipedia, AP, Axios, and Reddit, the latter three OpenAI content partners. The researchers also found every Grok API request carried ~1,240 tokens of unseen, unremovable input Parikh suspects are undisclosed instructions, though their contents remain unverified. OpenAI disputed the framing; xAI did not comment.",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "API-level forced-choice study exposes divergent partisan leans and hidden tokens",
+    "audience": "AI policy watchers, engineers building on LLM APIs, political tech researchers",
+    "source_url": "https://techcrunch.com/2026/10/24/forced-to-pick-groks-ai-model-chooses-republicans-openais-picks-democrats",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://techcrunch.com/2026/10/24/forced-to-pick-groks-ai-model-chooses-republicans-openais-picks-democrats/",
+        "points": null,
+        "comments": null,
+        "name": "TechCrunch"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMirAFBVV95cUxOaEZiX0YxaWdzSkFoZjVyMDFnZk9XVDlPZzNRSXpFZFM1LThYekZ3YW5EOHExSGdGZm1YbUdfdHNFRFJjbXJaVmo2MFJtclp0WVdQTkNfYTR3X3hrQzdZcEZkU3hBUUJXZXVrZkJkbEFjeFo2eTlsa2dPckR5cWNaLUdGUklMOTcyTk5UY2ZFSVBYY2k1N2hUODNkZlkwaHppOEF3UVprOHZ0aGtY?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News Business"
+      },
+      {
+        "url": "https://lemmy.world/post/53578390",
+        "points": null,
+        "comments": null,
+        "name": "Lemmy: technology (lemmy.world)"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-24T15:00:00+00:00",
+    "published_at": "2026-10-25T15:41:24.962811+00:00",
+    "curated_at": "2026-10-25T15:41:24.962811+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 629693,
+    "story_id": "s_56da65729356951f",
+    "title": "Hacker reverses Samsung TV, finds on-board AI listening OpenAI account suspended",
+    "relevance": 6,
+    "score": 6.264,
+    "why": "If the claim holds, a shipped Samsung TV was making enough OpenAI API traffic on an embedded account to trip OpenAI's abuse/suspension systems, which is a concrete signal about what smart-TV firmware is doing without disclosure.",
+    "notes": [
+      "Claim (unverified): a hacker reverse-engineered their Samsung TV's firmware and found an on-device AI feature issuing calls to OpenAI's API.",
+      "Claim: the embedded OpenAI account tied to that feature was suspended, implying the device's traffic pattern or key usage triggered OpenAI's enforcement.",
+      "Surfaced on Hacker News at 449 points and 175 comments; the source link is a Reddit r/antiai crosspost.",
+      "No article text was available to the editor; the mechanism, the API key handling, what data was sent, and whether the suspension was abuse-related or key-leak-related are all unconfirmed.",
+      "Treat specifics as a headline-level report only until the original reverse-engineering writeup is located and the firmware/network evidence is reviewed."
+    ],
+    "summary": "A Hacker News and Reddit (r/antiai) item reports that a hacker reverse-engineered the firmware of their Samsung TV and found an on-board AI feature making calls to OpenAI's API, and that the associated OpenAI account was suspended. The post reached 449 points and 175 comments on Hacker News. No article text was available for review, so the underlying mechanism, what data the TV transmitted, how the API key was embedded or exposed, and the reason for the suspension are all unconfirmed. The story, if accurate, points to undisclosed cloud-AI traffic baked into consumer TV firmware, but at present it rests only on a title and aggregator metadata rather than a verified technical writeup.",
+    "channels": [
+      "security",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Reverse-engineered Samsung TV reveals embedded OpenAI API calls",
+    "audience": "security researchers and privacy-conscious engineers",
+    "source_url": "https://reddit.com/r/antiai/comments/1xdv3e5/hacker_reverse_engineers_his_samsung_tv_and_finds",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50218633",
+        "points": 784,
+        "comments": 604,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.reddit.com/r/antiai/comments/1xdv3e5/hacker_reverse_engineers_his_samsung_tv_and_finds/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-24T05:49:57+00:00",
+    "published_at": "2026-10-25T15:40:56.737827+00:00",
+    "curated_at": "2026-10-25T15:40:56.737827+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 630527,
+    "story_id": "s_90e0321c3fda2410",
+    "title": "Elon Musk Just Gave Europe a Reason to Replace American Technology",
+    "relevance": 6,
+    "score": 5.275,
+    "why": "If you sell software into European defense or government, \"who holds the kill switch\" is now a procurement question you answer before the first meeting, and sovereignty just became a sellable feature for your European competitors.",
+    "notes": [
+      "The trigger, per a Wall Street Journal account cited by the author: Elon Musk personally ordered restrictions on US intelligence sharing and on Starshield, the military version of Starlink, to Ukraine, with the effect of tilting the war toward Russia. The author presents this as reported, not confirmed firsthand.",
+      "The author's framing: this was a unilateral act by an American CEO, not an articulated or announced US government policy, which is why European officials read it as proof that any US vendor can degrade an ally mid-war without warning.",
+      "European policymakers the author spoke with in London are reportedly now asking what happens if Microsoft, OpenAI, Anthropic, Oracle, Palantir, or Google similarly restrict or deny access, and what capabilities Europe loses if enterprise software and AI go dark.",
+      "Central argument: AI collapses the cost of cloning the features, functions, and compatibility of Microsoft Office, Oracle, Salesforce, Palantir, and Anduril, arriving just as geopolitical risk raises customers' willingness to switch. Low-cost access to space is named as a capability still out of reach.",
+      "The author estimates lost revenue to US companies at tens to hundreds of billions over time; this is his own projection, with no methodology or model given.",
+      "This is a first-person opinion essay by Steve Blank based on a month of conversations with UK and European policymakers; the war-outcome and Musk-decision claims rest on the cited WSJ reporting rather than the author's direct evidence."
+    ],
+    "summary": "Steve Blank argues that a reported decision by Elon Musk to personally restrict US intelligence sharing and Starshield (the military Starlink) access to Ukraine, which he says tilted the war toward Russia, has convinced European policymakers that the US is an unreliable technology and security partner. Citing a Wall Street Journal account and a month of conversations in London, he frames the move as a unilateral CEO action rather than official US policy, which makes it more alarming to Europe: if one executive can degrade an ally mid-war, so could Microsoft, OpenAI, Anthropic, Oracle, Palantir, or Google. Blank contends this turns the long-running \"digital sovereignty\" debate from theoretical to urgent, and that AI now collapses the cost of building sovereign alternatives to US enterprise and defense software just as customers grow willing to switch. He projects tens to hundreds of billions in lost revenue for US vendors over time. The claims about Musk's decision and its battlefield effect rest on cited reporting; the revenue estimate is the author's own projection without stated methodology.",
+    "channels": [
+      "ai",
+      "startups",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "unilateral CEO kill-switch risk now shaping European sovereign-tech strategy",
+    "audience": "founders and policymakers assessing geopolitical dependency on US tech vendors",
+    "source_url": "https://steveblank.com/2026/10/24/europe-gets-a-wake-up-call",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50220913",
+        "points": 137,
+        "comments": 84,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://steveblank.com/2026/10/24/europe-gets-a-wake-up-call/",
+        "points": null,
+        "comments": null,
+        "name": "Steve Blank"
+      },
+      {
+        "url": "https://steveblank.com/2026/10/24/europe-gets-a-wake-up-call/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-24T13:09:28+00:00",
+    "published_at": "2026-10-25T14:55:02.936072+00:00",
+    "curated_at": "2026-10-25T14:55:02.936072+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 631222,
+    "story_id": "s_a10534a83e49c07a",
+    "title": "No Signs of AI Payoff Outside the Tech Sector",
+    "relevance": 6,
+    "score": 7.293,
+    "why": "If the headline's claim holds, the AI spending boom is paying off only inside the tech sector, which undercuts the macro productivity story used to justify datacenter capex elsewhere.",
+    "notes": [
+      "Headline claim: no measurable AI productivity payoff has shown up outside the technology sector, with gains concentrated among tech firms themselves.",
+      "Drew heavy discussion: 489 points and 491 comments on Hacker News, plus pickup via a Google News 'artificial intelligence' query and Lemmy's technology community.",
+      "The underlying data, time period, methodology, and which productivity metric is used are not available here and cannot be verified from the material provided.",
+      "Treat this as a reported assertion, not an established finding: the full article text was not accessible, so the mechanism behind the claim is unconfirmed.",
+      "A tech-only payoff pattern, if real, would fit an early-adoption stage where vendors and model builders capture value before downstream industries do; the piece does not establish causation either way."
+    ],
+    "summary": "An article titled \"No Signs of AI Payoff Outside the Tech Sector\" argues that measurable AI productivity gains so far appear confined to the technology industry rather than spreading across the broader economy. It circulated widely, drawing 489 points and 491 comments on Hacker News and also surfacing on Google News and Lemmy. The headline implies the conclusion rests on macroeconomic or productivity data, but the full text, dataset, time window, and methodology were not available for review, so the specific evidence and its strength cannot be confirmed here. The core claim should be read as an attributed assertion pending access to the source. If accurate, it complicates the case that economy-wide productivity gains justify current AI investment levels, though the piece does not establish causation from the material provided.",
+    "channels": [
+      "ai",
+      "startups"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "no measurable AI productivity gains outside tech industry",
+    "audience": "engineers and investors assessing AI's real economic impact",
+    "source_url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNOHZjSE5HWVFmaFJNNVJMV09Sc1BWRGZVb0FhazlOQlFCY2hRV1VzSEtyNzh6WnhqWUhVSHV2NWpJanBrZm9rdGkwaW9MbS1FUnhTUkc4MDJ6SkI4T3YwWEdsY19HbW9LWG9ZNXRxOENPX2hrZWhCb2tVUEd0c29yNWxTdzRwMURoTVZaOXR1M0ptUEJEc1JpVFpJT0ZSZ29FYlA1LWRLTnNBNkVmVnNr?oc=5",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50224463",
+        "points": 489,
+        "comments": 491,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMirwFBVV95cUxNOHZjSE5HWVFmaFJNNVJMV09Sc1BWRGZVb0FhazlOQlFCY2hRV1VzSEtyNzh6WnhqWUhVSHV2NWpJanBrZm9rdGkwaW9MbS1FUnhTUkc4MDJ6SkI4T3YwWEdsY19HbW9LWG9ZNXRxOENPX2hrZWhCb2tVUEd0c29yNWxTdzRwMURoTVZaOXR1M0ptUEJEc1JpVFpJT0ZSZ29FYlA1LWRLTnNBNkVmVnNr?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News query: \"artificial intelligence\""
+      },
+      {
+        "url": "https://www.apollo.com/wealth/insights-news/insights/daily-spark/no-signs-of-ai-payoff-outside-the-tech-sector",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lemmy.world/post/53549302",
+        "points": null,
+        "comments": null,
+        "name": "Lemmy: technology (lemmy.world)"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-10-24T10:44:59+00:00",
+    "published_at": "2026-10-25T14:37:30.886783+00:00",
+    "curated_at": "2026-10-25T14:37:30.886783+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 460987,
+    "story_id": "s_b7a0af60900bfc04",
+    "title": "Persistent Databases in the Browser with DuckDB-Wasm and OPFS",
+    "relevance": 6,
+    "score": 5.387,
+    "why": "A local-first browser app can now keep analytical data across sessions by opening a real .duckdb file in OPFS, dropping the IndexedDB-plus-Parquet-serialization layer that persistence used to require.",
+    "notes": [
+      "Opening `db.open({path: 'opfs://analytics.duckdb', accessMode: READ_WRITE})` yields a standard .duckdb file with a WAL and checkpoints that survives reloads and browser restarts; the file opens unchanged in the CLI or Python client. Relies on OPFS, in major browsers since March 2023.",
+      "Version caveat: the npm `latest` tag (1.33.1-dev57.0) creates OPFS files but never writes to them because it canonicalizes the path to single-slash `opfs:/analytics.duckdb`, which stops matching the OPFS handle. Pin 1.32.0 or use `next` (1.33.1-dev64.0+).",
+      "A browser tab rarely closes cleanly, so run `CHECKPOINT` after each batch of writes, not per statement: committed transactions sit in the WAL until a checkpoint flushes them to the main file, and a large WAL slows the next open because replay runs before the first query. Default checkpoint_threshold is 16 MB; `SET checkpoint_threshold = '0KB'` forces a checkpoint per statement at a write-throughput cost.",
+      "`CREATE TABLE IF NOT EXISTS ... AS SELECT FROM 'https://...parquet'` fetches the remote file via HTTP range requests only on first load; later loads serve from OPFS with no network request, verifiable via the Network tab or the ConsoleLogger's HTTP-read log lines.",
+      "`opfs: {fileHandling: 'auto'}` scans each statement for single-quoted `opfs://` literals and registers them (creating missing directories) before execution; it only works when the database itself was opened from an opfs:// path. Manual mode avoids re-acquiring an access handle per statement. One handle per file at a time, so dropFile() before another connection opens it.",
+      "OPFS is not durable: the browser can evict it under disk pressure or after long disuse, and users can clear it. The post recommends keeping the source of truth elsewhere (DuckLake catalog or s3:// object storage) and treating OPFS as a fast local cache; DuckDB-Wasm cannot yet move files into or out of OPFS, so export goes through the navigator.storage file API or COPY TO Parquet."
+    ],
+    "summary": "DuckDB-Wasm can now open a persistent database directly from the browser's Origin Private File System (OPFS) by passing an `opfs://` path to `db.open`, producing a standard .duckdb file with write-ahead log and checkpoints that survives reloads and browser restarts and opens in the CLI or Python client. This removes the previous requirement to serialize tables to Parquet and stash bytes in IndexedDB at the application layer. The post warns that the current npm `latest` build (1.33.1-dev57.0) silently fails to persist due to a path-canonicalization bug and that users should pin 1.32.0 or use the `next` tag. Because browser tabs seldom close cleanly, it advises calling CHECKPOINT after each batch of writes to guarantee data reaches the main file and to keep reopen fast, with an option to force per-statement checkpoints. Remote Parquet loaded via CREATE TABLE IF NOT EXISTS is cached in OPFS so subsequent loads skip HTTP range requests, and an `opfs: {fileHandling: 'auto'}` option auto-registers opfs:// literals in SQL. The author stresses OPFS is evictable browser storage, not a durability guarantee, and recommends syncing a source of truth to DuckLake or s3:// object storage.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [
+      "languages",
+      "data",
+      "web"
+    ],
+    "state": "confident",
+    "novelty": "DuckDB-Wasm now persists via browser OPFS, no manual sync layer",
+    "audience": "web/devtools engineers building in-browser analytics or offline-first data apps",
+    "source_url": "https://duckdb.org/2026/09/18/opfs-wasm",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/k5shc5/persistent_databases_browser_with",
+        "points": 4,
+        "comments": 1,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://duckdb.org/2026/09/18/opfs-wasm.html",
+        "points": null,
+        "comments": null,
+        "name": "DuckDB Engineering Blog"
+      },
+      {
+        "url": "https://duckdb.org/2026/09/18/opfs-wasm",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-09-19T13:46:39.713-05:00",
+    "published_at": "2026-10-25T14:22:00.250862+00:00",
+    "curated_at": "2026-10-25T14:22:00.250862+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 557260,
+    "story_id": "s_ed30378013cdb745",
+    "title": "Two-Stack Sliding-Window Aggregation",
+    "relevance": 6,
+    "score": 5.398,
+    "why": "If you maintain a running min, quantile, HyperLogLog cardinality, or even a float sum over a sliding window, this gives you amortized O(1) per push/pop without the error-accumulation bug where a stale NaN or a lost-precision subtraction poisons every future result.",
+    "notes": [
+      "Handles any associative aggregate with no inverse (min/max, quantile, approximate unique count via HyperLogLog, float sum) by abstracting over empty(), unit(x), combine(x,y), finalize(x); Value, Agg, and Out can be three distinct types, e.g. (String, HyperLogLogSketch, u64).",
+      "State is two stacks plus one running aggregate: values holds raw elements with values_agg as their aggregate; cum_aggs holds cumulative aggregates of the rest of the window in reverse order. eval combines cum_aggs[-1] with values_agg in constant time.",
+      "Amortized O(1) comes from draining values every w-th pop, rebuilding partial cumulative aggregates in O(w); memory is O(w). Window size can grow and shrink dynamically, not just fixed w.",
+      "Contrast: the invertible-operator deque trick (add on push, subtract on pop) is simpler but breaks permanently on NaN or infinity and accumulates float error because float addition is not invertible (1e20 + 1 - 1e20 - 1 == -1.0).",
+      "Because each aggregate only combines elements currently in the window, outliers poison only the windows containing them and long-term error accumulation is eliminated; Kahan/compensated summation can further reduce per-window float error.",
+      "Provenance: author found it in Tangwongsan et al.'s worst-case-constant-time paper, which attributes the two-stack variant to a 2011 Stack Overflow post by 'adamax', itself crediting Sleator's 2001 lecture notes on the two-stack FIFO queue (which does not actually describe windowed aggregation)."
+    ],
+    "summary": "The post explains a two-stack algorithm for maintaining an aggregate over a sliding window when the aggregation operator has no inverse, covering cases like minimum, quantile, approximate unique count, and floating-point sum. It abstracts aggregation into empty(), unit(x), combine(x,y), and finalize(x), requiring only that combine be associative, and keeps two stacks (raw values and reversed cumulative aggregates) plus a running aggregate of the values stack. Each eval combines the top cumulative aggregate with the running aggregate in constant time; every w-th pop drains the values stack in O(w) work, giving amortized O(1) per operation and O(w) memory, with support for dynamically varying window size. The author contrasts this with the simple invertible-operator deque approach, which permanently breaks on NaN and accumulates floating-point error because float addition is not truly invertible or associative. A benefit of the two-stack method is that each aggregate depends only on in-window elements, so outliers poison only the windows containing them and long-term error is eliminated, with Kahan summation able to reduce residual per-window error. The author credits the idea to Tangwongsan et al.'s constant-time paper, which traces it to a 2011 Stack Overflow post inspired by Sleator's 2001 two-stack FIFO queue notes.",
+    "channels": [
+      "devtools",
+      "ml-research"
+    ],
+    "category": "research",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "simple amortized O(1) two-stack algo for non-invertible sliding-window aggregates",
+    "audience": "engineers building streaming/stream-processing systems and data pipelines",
+    "source_url": "https://orlp.net/blog/two-stack-sliding-window-aggregation",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50072485",
+        "points": 83,
+        "comments": 17,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lobste.rs/s/49glor/two_stack_sliding_window_aggregation",
+        "points": 30,
+        "comments": 6,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://orlp.net/blog/two-stack-sliding-window-aggregation/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://orlp.net/blog/two-stack-sliding-window-aggregation/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-10-03T12:39:14+00:00",
+    "published_at": "2026-10-25T14:21:35.453210+00:00",
+    "curated_at": "2026-10-25T14:21:35.453210+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 474952,
+    "story_id": "s_b358dd4f780b817a",
+    "title": "Lambda MicroEgg",
+    "relevance": 6,
+    "score": 5.416,
+    "why": "If you build e-graph rewriting over languages with binders, this shows how to get alpha-equivalent terms to hash-cons identically and capture-avoiding substitution in rewrite RHSes while claiming roughly 3x egg's speed on microbenchmarks.",
+    "notes": [
+      "Built on Max Willsey's microegg; adds built-in unary binders (@sum, @lam), higher-order Miller patterns, and capture-avoiding substitution usable on rewrite right-hand sides. Miller patterns restrict a metavariable to be applied only to distinct bound variables, which the author describes as the decidable core of higher-order matching/unification.",
+      "Binder liftings/thinnings are packed into one byte stolen from the u32 Id (a sentinel-1 encoding, credited to AI), so the 'Fat Id' stays 32 bits and first-order terms pay near-zero overhead. The byte caps context at 7 variables; the author floats widening to a 64-bit id or an 'ephemeral enode' side arena for larger thinnings.",
+      "Alpha-equivalent terms hash-cons to the same memory, and thinning-related terms share storage: (@lam ... x) and (@lam ... y) nested deeply intern the inner forms identically, which a naive de Bruijn encoding would not. Free variables have an implicit order, so $0+$1 and $1+$0 do not share, but $0+$2 and $0+$1 do.",
+      "Self-reported performance: on an AC-10 saturation run (first-order, 262k unions, ~57k e-nodes) match 350ms / apply 1.00s / rebuild 152ms; the higher-order [] variant rises to match 685ms / apply 1.29s / rebuild 151ms. Author compares to egg at ~0.6s for a similar task and estimates roughly 3x egg on microbenchmarks, treating anything under 10x as acceptable; all numbers are self-reported on one machine without methodology.",
+      "A separate first-order curried-application form [f x] (HOApp, auto-currying) is offered alongside the usual FOApp; the author notes it costs performance and relates the lambda-free higher-order fragment to superposition provers E-prover and Zipperposition.",
+      "Caveats stated by the author: only 'ordered' Miller patterns are supported (metavariable arguments must appear in binder order), which loses power on nonlinear patterns like (foo (lam x (lam y (?a x y))) (lam x (lam y (?a y x)))); the author also says the heavily AI-written Rust code feels 'loose' and that the index-manipulation math was not hand-verified, only tested."
+    ],
+    "summary": "Lambda MicroEgg is a small e-graph tool by Philip Zucker, built on Max Willsey's microegg, that adds well-scoped, alpha-aware binders via a lifting/thinning technique, higher-order Miller patterns, and capture-avoiding substitution in rewrite right-hand sides, driven by an s-expression frontend with a WASM demo. Thinning annotations are stored in a byte stolen from the u32 Id, so alpha-equivalent terms hash-cons to identical memory and thinning-related terms share storage, at the cost of a 7-variable context limit. Miller patterns ({?a x y} notation) constrain metavariables to apply only to distinct bound variables, which the author presents as the decidable fragment of higher-order matching; the implementation further restricts to 'ordered' patterns, trading some expressiveness on nonlinear cases for simpler code. The piece demonstrates sum constant-factoring, map/comp fusion, and object-level beta reduction, and reports AC saturation timings on the order of 1-2 seconds, which the author frames as roughly 3x egg on microbenchmarks (self-reported, single machine, no formal methodology). The author argues the deeper lesson is that contexts, not binders, are the essential concept for giving variable-bearing terms meaning, and discloses heavy AI assistance plus unverified index math, with proofs, wider thinnings, and term-creation in patterns listed as future work.",
+    "channels": [
+      "devtools",
+      "ml-research"
+    ],
+    "category": "research",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "e-graphs with scoped alpha-aware binders and Miller patterns",
+    "audience": "PL researchers and engineers building rewrite systems/compilers using e-graphs",
+    "source_url": "https://philipzucker.com/lambda_miller_egg",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49777158",
+        "points": 53,
+        "comments": 5,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lobste.rs/s/o6vyfj/lambda_microegg",
+        "points": 19,
+        "comments": 3,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://www.philipzucker.com/lambda_miller_egg/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.philipzucker.com/lambda_miller_egg/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://www.philipzucker.com/lambda_miller_egg/",
+        "points": null,
+        "comments": null,
+        "name": "Philip Zucker (Hey There Buddo!)"
+      }
+    ],
+    "sources_count": 5,
+    "first_seen": "2026-09-20T00:00:00+00:00",
+    "published_at": "2026-10-25T14:05:04.024762+00:00",
+    "curated_at": "2026-10-25T14:05:04.024762+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 630209,
+    "story_id": "s_0fe5a6fc8231a344",
+    "title": "AI-Assisted Paper on Z-Library Cites a TorrentFreak Article That Doesn't Exist",
+    "relevance": 6,
+    "score": 5.378,
+    "why": "A peer-reviewed paper from a commercial publisher shipped with fabricated citations that survived editorial review, a concrete example of hallucinated references reaching print with AI named in the acknowledgements.",
+    "notes": [
+      "The paper, 'Z-Library and Full-Text Access: Democratizing Knowledge or Undermining Copyright Ethics?', appeared in New Review of Academic Librarianship (Taylor & Francis) and was written by two librarians at Nigerian universities.",
+      "TorrentFreak says at least 10 of the paper's 44 references could not be located, including a nonexistent 2021 TorrentFreak article 'Publishers continue crackdown on shadow libraries' that merely links to the TorrentFreak homepage.",
+      "Several citations are misattributed to real scholars: a claimed 2019 Harvard Journal of Law & Technology piece by Daniel Gervais is absent from that issue's table of contents, and a cited Carol Tenopir article does not appear in the named issue; other missing works are credited to Björn Brembs, Smith, Piper, Okike, and Aronson, plus a Kaspersky report.",
+      "The acknowledgements state Consensus AI was used to sift literature and ChatGPT was used to improve the language; the authors did not answer follow-up questions about the references.",
+      "AI-detection tool Pangram flagged the abstract and conclusion as '100% likely AI-generated'; the article notes such tools produce false positives and that nothing proves AI wrote the fabricated citations.",
+      "Taylor & Francis says it referred the matter to its Editorial and Publishing Ethics & Integrity teams; no correction or retraction decision yet."
+    ],
+    "summary": "TorrentFreak reports that a peer-reviewed paper on Z-Library, published this month in Taylor & Francis's New Review of Academic Librarianship, contains fabricated and misattributed citations. The outlet found a reference to a 2021 TorrentFreak article it never published, and could not locate at least 10 of the paper's 44 references, including works falsely credited to IP scholar Daniel Gervais, Carol Tenopir, and Björn Brembs, plus a Kaspersky report. The paper's acknowledgements disclose that Consensus AI was used to sift literature and ChatGPT to improve language, and the AI-detection tool Pangram flagged the abstract and conclusion as likely fully AI-generated, though TorrentFreak notes these tools err and the evidence does not prove AI authored the bad citations. The authors did not answer follow-up questions, and the named scholars did not respond. Taylor & Francis confirmed it referred the case to its editorial ethics and integrity teams and would not comment further during the investigation; whether the paper is corrected or retracted is undecided.",
+    "channels": [
+      "ai",
+      "science"
+    ],
+    "category": "research",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "peer-reviewed journal paper found citing fabricated AI-hallucinated references",
+    "audience": "researchers, academics, and engineers tracking AI reliability and academic integrity",
+    "source_url": "https://torrentfreak.com/ai-assisted-paper-on-z-library-cites-a-torrentfreak-article-that-doesnt-exist",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50220204",
+        "points": 80,
+        "comments": 37,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://torrentfreak.com/ai-assisted-paper-on-z-library-cites-a-torrentfreak-article-that-doesnt-exist/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-24T11:18:54+00:00",
+    "published_at": "2026-10-25T13:49:18.782887+00:00",
+    "curated_at": "2026-10-25T13:49:18.782887+00:00",
     "model": "claude-opus-4-8"
   }
 ]
