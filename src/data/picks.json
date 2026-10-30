@@ -1186,54 +1186,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 623236,
-    "story_id": "s_4048b8c88f3b82c9",
-    "title": "Faster than earcut: triangulating 3.7M map polygons in 489 ms",
-    "relevance": 7,
-    "score": 4.577,
-    "why": "If you ship a web map, swapping earcut for this ISC-licensed drop-in cut triangulation of 3.74M polygons from 557 ms to 489 ms natively and 1.4-2.1x in the browser, with the same API and triangle output.",
-    "notes": [
-      "earstrip is one C++ header plus a WebAssembly/npm build that takes earcut's arguments; self-reported 14% faster than earcut.hpp 3.2.4 natively and 1.4-2.1x faster than earcut.js 3.2.4 in-browser, depending on call path (direct calls, all polygons in one call, hit the 2.1x figure in JavaScriptCore).",
-      "The engine replaced a constrained Delaunay triangulator (2.93s on 3.74M Masovian zoom-13 polygons, one M4 Pro core) with ear clipping, reaching 489ms; each optimization is a separate commit timed on the same data.",
-      "Load-bearing optimizations, in order of savings: test only reflex vertices (dents) not all points; skip convex polygons entirely; emit triangle strips (35.8M indices vs 64.5M); bucket dents along the bounding box for large polygons; a branchless counting pass (min of three determinants >= 0 means inside) before the exact dent loop.",
-      "Holes are bridged via David Eberly's method (ray from the rightmost hole vertex, bridge to the triangle's safe endpoint); polygons with >=128 rings fall back to Delaunay because bridge-finding scans the whole boundary each time (a world-map polygon with 11,675 holes takes earstrip 606ms vs Delaunay 17ms).",
-      "Grid rounding can destroy the simple-polygon precondition of Meisters' 1975 theorem; when no ear is found, earstrip drops zero-area corners and retries, then falls back to Delaunay (76 polygons in the older Masovian build); the map generator now uses GEOS snap rounding so a fresh build cuts every polygon.",
-      "Accuracy claim: on polygons ears can't cut exactly, earcut's triangles diverge from an even-odd fill on 31% of pixels on average versus earstrip's 0.15%; WASM builds match native triangle output on all 4.4M zoom-13/9 polygons."
-    ],
-    "summary": "earstrip is an ISC-licensed polygon triangulator extracted from a map engine, shipped as a single C++ header and a WebAssembly/npm build with an earcut-compatible API. The author replaced a constrained Delaunay triangulator (2.93s on 3.74M Masovian Voivodeship zoom-13 polygons on one M4 Pro core) with ear clipping and rebuilt it one commit at a time, reaching 489ms native, reportedly 14% faster than earcut.hpp and 1.4-2.1x faster than earcut.js in the browser. Key wins come from testing only reflex vertices (dents), skipping convex polygons, emitting triangle strips, bucketing dents for large rings, and a branchless counting pass before the exact inside-triangle check. Holes are opened with Eberly-style bridges, and polygons with >=128 rings or that defeat ear clipping (grid rounding can break the simple-polygon assumption behind Meisters' 1975 two-ears theorem) fall back to the retained Delaunay code. The author reports earstrip's triangles diverge from an even-odd fill on 0.15% of pixels versus earcut's 31% on hard cases, and notes earcut.hpp loses most of its speed in its ear-search loop when compiled to WASM. All benchmark numbers are self-reported, with repository, polygons, and timing code published.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "ear-clipping triangulator beats earcut via incremental optimization, open-sourced",
-    "audience": "graphics/mapping engineers and computational geometry practitioners",
-    "source_url": "https://globus.software/blog/2026/10/16/cutting-map-polygons",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50193170",
-        "points": 210,
-        "comments": 39,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://globus.software/blog/2026/10/16/cutting-map-polygons/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-22T09:31:18+00:00",
-    "published_at": "2026-10-23T04:52:17.675834+00:00",
-    "curated_at": "2026-10-23T04:52:17.675834+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 576176,
     "story_id": "s_933dc45c71b1713c",
     "title": "OpenCode 2.0",
@@ -3218,6 +3170,55 @@
     "first_seen": "2026-10-24T11:18:54+00:00",
     "published_at": "2026-10-25T13:49:18.782887+00:00",
     "curated_at": "2026-10-25T13:49:18.782887+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 632568,
+    "story_id": "s_19d3d227cf9f286c",
+    "title": "Samsung running a TensorFlow lite model on 960x540 image to track you",
+    "relevance": 6,
+    "score": 4.762,
+    "why": "If the claim holds, a Samsung device is burning CPU every few seconds to screenshot and classify what you're doing with an on-device neural net, and logging the results before the consent screen ever appears.",
+    "notes": [
+      "The author reports a bundled TFLite model named alex.tflite that matches AlexNet, specifically the torchvision.models.alexnet architecture, running INT8-quantized inference.",
+      "Inference allegedly runs on 960x540 screen captures every couple of seconds, with the stated purpose of identifying which game or app is on screen.",
+      "Classification is described as nearest-neighbor feature comparison against a database, which the author says fails more than 99% of the time while still consuming CPU.",
+      "The core privacy claim: capture, inference, and result logging happen before the user consent gate, so results are collected ahead of any opt-in.",
+      "All findings come from the author's reverse-engineering of the model graph and dumped captures, posted on Twitter; there is no Samsung documentation or confirmation, and the specific device/software build is not named in the excerpt."
+    ],
+    "summary": "A reverse-engineer (posting as mike64_t) claims a Samsung device bundles a TensorFlow Lite model, alex.tflite, that is AlexNet following torchvision.models.alexnet, and runs INT8-quantized inference on 960x540 screen captures every few seconds to detect which game or app is running. The author describes the detection as nearest-neighbor feature matching against a database that reportedly works less than 1% of the time while wasting CPU. The most pointed claim is that capture and result logging occur before any user consent screen is shown. Evidence offered is the dumped TF model graph and sample captures rather than Samsung documentation, so the architecture identification, the consent-ordering claim, and the failure rate are all the author's own findings. The specific device model and software version are not stated in the excerpt. The item surfaced on Hacker News (94 points, 43 comments).",
+    "channels": [
+      "security",
+      "ai",
+      "hardware"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Samsung runs on-device AlexNet before user consent gate",
+    "audience": "privacy researchers and mobile/embedded engineers",
+    "source_url": "https://twitter.com/mike64_t/status/2114150399406202896",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50230181",
+        "points": 233,
+        "comments": 147,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://twitter.com/mike64_t/status/2114150399406202896",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-25T10:42:01+00:00",
+    "published_at": "2026-10-25T13:33:31.470414+00:00",
+    "curated_at": "2026-10-25T13:33:31.470414+00:00",
     "model": "claude-opus-4-8"
   }
 ]
