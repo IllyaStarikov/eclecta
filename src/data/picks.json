@@ -807,385 +807,6 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 626564,
-    "story_id": "s_eb0f842fedd300d8",
-    "title": "‘Black October’: cybersecurity experts sound the alarm over new era of AI-enabled hacking",
-    "relevance": 7,
-    "score": 4.902,
-    "why": "If you run anything on PHP, the window to patch is already closed: Cloudflare says exploit attempts went from thousands to millions within hours of the October 21 disclosure.",
-    "notes": [
-      "A critical PHP vulnerability was announced on October 21; the article says the underlying flaws had been present for decades, and some experts (unnamed) estimated 70% of all internet sites were at risk.",
-      "Wiz researchers called it 'among the most severe vulnerabilities discovered in PHP, and arguably in software history,' saying the exploit chain was 'at the edge of what human researchers could practically achieve' and was demonstrated with AI help.",
-      "Cloudflare CEO Matthew Prince (via X) reported exploit attempts rising from thousands in the 10 hours before disclosure to tens of thousands within 45 minutes, hundreds of thousands within 2 hours, and millions by the time of writing.",
-      "The NSA issued an alert urging immediate patching, warning that unauthorized server access could enable data theft, service disruption, and lateral movement; US and UK government and private sites temporarily went offline to patch.",
-      "Executive warnings are the framing, not independent evidence: Sam Altman said he no longer believes all bugs can be patched; Anthropic's Jason Clinton predicted a 'vulnerability tsunami'; Benioff called it 'code red'; Prince warned of AI tools with 'infinite patience.'",
-      "The article gives no CVE identifier, no technical description of the flaw or affected PHP versions, and attributes the 70% figure and executive claims without methodology."
-    ],
-    "summary": "The Guardian reports on a critical PHP vulnerability disclosed October 21, 2026, that researchers used AI to help identify, with the underlying flaws said to have existed for decades. Wiz called it among the most severe vulnerabilities in PHP and arguably in software history, noting the exploit chain sat at the edge of human capability. Cloudflare's Matthew Prince reported, via X, exploit attempts climbing from thousands before disclosure to millions within hours, and the NSA issued an alert urging immediate patching over risks of unauthorized access, data theft, and lateral movement; some US and UK sites went offline to patch. The piece frames the event as 'Black October' and the start of an AI-driven 'vulnerability tsunami,' citing executives including Sam Altman, Anthropic's Jason Clinton, and Marc Benioff. The article provides no CVE, no affected-version list, and no methodology behind the '70% of sites at risk' estimate, leaving the technical specifics and the vendor-executive claims unverified.",
-    "channels": [
-      "security",
-      "ai"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "AI-discovered PHP flaw triggers mass internet-wide exploit race",
-    "audience": "security engineers and infra teams running PHP stacks",
-    "source_url": "https://theguardian.com/technology/2026/oct/23/cybersecurity-ai-hacking-php-vulnerability",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/23/cybersecurity-ai-hacking-php-vulnerability",
-        "points": null,
-        "comments": null,
-        "name": "The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/23/cybersecurity-ai-hacking-php-vulnerability",
-        "points": null,
-        "comments": null,
-        "name": "Guardian Technology"
-      },
-      {
-        "url": "https://news.google.com/rss/articles/CBMimAFBVV95cUxPTG5XNmRIZVQwZ0hvdmQydjE2elRuNlBscUNJRnhyTWpuUHh1SmlVeGxqRE1HQjJVT3RPTFpaUGZoWUQyOEhYS2JPdUdoeWt2d0pkeUVtbkpSRHpvOVJhMFdkQWdHTi12elp2aldCQTlYMUV4NHpNU0VtM3RoaG4xVkRPdW1YQjhNX2pXYXh0RzhzOWFZSkZPNA?oc=5",
-        "points": null,
-        "comments": null,
-        "name": "Google News Business"
-      },
-      {
-        "url": "https://lemmy.world/post/53513757",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/23/cybersecurity-ai-hacking-php-vulnerability",
-        "points": null,
-        "comments": null,
-        "name": "World news | The Guardian"
-      },
-      {
-        "url": "https://www.theguardian.com/technology/2026/oct/23/cybersecurity-ai-hacking-php-vulnerability",
-        "points": null,
-        "comments": null,
-        "name": "The Guardian"
-      }
-    ],
-    "sources_count": 6,
-    "first_seen": "2026-10-23T18:48:48+00:00",
-    "published_at": "2026-10-24T08:44:31.316078+00:00",
-    "curated_at": "2026-10-24T08:44:31.316078+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 629155,
-    "story_id": "s_65d416cce8116a68",
-    "title": "UUIDv7 doesn't have the properties you think it does",
-    "relevance": 7,
-    "score": 4.624,
-    "why": "If you picked UUIDv7 for sortable keys or a free creation-time column, RFC 9562 lets a compliant generator lie about the timestamp and emit out-of-order IDs, so uniqueness is the only guarantee you can actually rely on.",
-    "notes": [
-      "RFC 9562 §6.1/§6.2 explicitly permit implementations to alter the timestamp field and to increment it ahead of the system clock; the spec makes no guarantee about how close the clock value is to actual time.",
-      "Python's uuid.uuid7() refuses to let the embedded timestamp go backwards, so a one-hour backward clock jump plus load above 1 ID/ms makes the timestamp race arbitrarily far into the future (author's example: delta climbing ~100s per iteration from 3695s and rising) instead of converging.",
-      "RFC recommends a counter of at least 12 bits (SHOULD); overflow requires >4,096 IDs/ms/node, which is why the author treats timestamp acceleration as rare except when the timestamp is frozen after a backward clock jump.",
-      "Strict global monotonic ordering by timestamp across nodes is impossible given imperfect clock sync, a result known since the 1970s that motivated vector clocks; even on a single node an implementation using a millisecond timestamp with no counter produces out-of-order IDs in a small loop.",
-      "Postgres's uuid_extract_timestamp docs warn the extracted timestamp is not necessarily equal to generation time; the author found no surveyed implementation that persists the last-used timestamp, so a process restart after a backward clock jump yields out-of-order IDs.",
-      "Sharing a UUIDv7 (e.g. in a URL) leaks a high-precision creation timestamp even when the UI hides it; the author rates this a low security priority but real in specific contexts."
-    ],
-    "summary": "The post argues that UUIDv7's commonly cited benefits — monotonic ordering, a usable creation timestamp, and unguessability — are not strictly guaranteed by RFC 9562, which permits compliant implementations to alter or increment the embedded timestamp away from the system clock. The author demonstrates that Python's standard-library uuid.uuid7(), which blocks backward timestamp movement, can enter a runaway state where the embedded timestamp races arbitrarily far ahead of real time after a backward clock jump under load above one ID per millisecond. Strict monotonic ordering is called theoretically impossible across distributed nodes because clocks cannot be synchronized precisely enough (known since the 1970s, motivating vector clocks), and even single-node implementations without a counter emit out-of-order IDs. The author notes no surveyed implementation persists the last-used timestamp, so process restarts after clock jumps also produce out-of-order IDs, and that embedding a timestamp leaks creation-time metadata whenever the ID is shared. The practical conclusion: UUIDv7 is a loose mash-up of properties left to each implementation, the only reliable guarantee is uniqueness/collision resistance, and users should interrogate a given implementation's specific guarantees, limits, and assumptions.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "RFC9562 lets implementations fudge UUIDv7 timestamps, breaking assumed guarantees",
-    "audience": "backend engineers choosing primary key / ID schemes",
-    "source_url": "https://alexsci.com/blog/uuidv7-is-weird",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50211746",
-        "points": 150,
-        "comments": 120,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://alexsci.com/blog/uuidv7-is-weird/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-23T16:39:45+00:00",
-    "published_at": "2026-10-24T07:39:32.266811+00:00",
-    "curated_at": "2026-10-24T07:39:32.266811+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 629596,
-    "story_id": "s_0ed94c3bb82b8625",
-    "title": "How close can pure functional programming get to C?",
-    "relevance": 7,
-    "score": 5.792,
-    "why": "A memory-safe functional language with no unsafe escape hatch landed within a single-digit median of hand-tuned SIMD C on real DEFLATE compression, which reframes the usual safety-versus-speed tradeoff for anyone picking a language for hot-path library code.",
-    "notes": [
-      "roc-deflate ran 144 benchmarks on the Silesia corpus against libdeflate: median 8.9% slower on an AMD Ryzen 9 3900X, 2.6% slower on a 2021 M1 MacBook Pro, verified to produce identical output.",
-      "Spread was wide: ~18% slower on worst-case inputs, slightly over 18% faster on best-case inputs; the author attributes faster cases to differing implementations, not a C-inaccessible optimization, and says C's performance ceiling is strictly higher.",
-      "Caveats are stated plainly: Roc is pre-1.0 (0.1.0 not yet released, eight years in the making), its package ecosystem is unoptimized, roc-deflate has no streaming API, and this is the most optimization effort put into any Roc package so far, so generalization is unknown.",
-      "Safety claims rest on type-system enforcement with no opt-out: full memory safety (no Rust-style unsafe), inferred purity via thin arrow (Bool -> Bool) vs thick arrow (Bool => Bool), no arbitrary FFI, and no build scripts (the vector that compromised the Rust arrayref package).",
-      "Roc-specific speedups cited: opportunistic in-place mutation (Koka's 'Functional but In-Place'), manually hoisting a redundant length check so the optimizer can delete loop bounds checks, compile-time lookup tables, and plus_wrap to skip overflow checks when safe.",
-      "Framing reference: lean-zip (Lean 4) reportedly beat Rust's miniz_oxide by 15% in speed with 8.8% smaller output but still lost to libdeflate's architecture-specific SIMD; the benchmark setup script was generated by Claude Opus 5.5 and the author notes he did not vet it for security."
-    ],
-    "summary": "Richard Feldman reports optimizing roc-deflate, a pure-Roc DEFLATE compression package, to within single-digit median slowdowns of libdeflate, the hand-tuned SIMD C reference implementation. Across 144 Silesia-corpus benchmarks with verified identical output, roc-deflate ran a median 8.9% slower on a Ryzen 9 3900X and 2.6% slower on an M1 MacBook Pro, ranging from ~18% slower on worst-case inputs to ~18% faster on best-case inputs. The piece situates this against an earlier result where Lean 4's lean-zip beat Rust's miniz_oxide but still lost to libdeflate. Feldman argues the remaining gap buys guarantees that C cannot offer: compiler-enforced memory safety with no unsafe opt-out, type-inferred purity (thin vs thick function arrows), no arbitrary FFI, and no build scripts, limiting supply-chain blast radius. He is explicit that this is a single data point from the most-optimized Roc package to date, that Roc remains pre-1.0 with an unoptimized ecosystem and no streaming support, and that C's performance ceiling stays higher. Roc-specific tactics include opportunistic in-place mutation, hoisting redundant checks to eliminate loop bounds checks, compile-time lookup tables, and wrapping arithmetic.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "pure functional Roc gets within ~9% of hand-tuned C DEFLATE",
-    "audience": "systems/language engineers interested in performance vs. safety tradeoffs",
-    "source_url": "https://rtfeldman.com/fp-vs-c",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50218195",
-        "points": 268,
-        "comments": 92,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://rtfeldman.com/fp-vs-c",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-24T03:43:54+00:00",
-    "published_at": "2026-10-24T07:07:56.167377+00:00",
-    "curated_at": "2026-10-24T07:07:56.167377+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 629337,
-    "story_id": "s_0c920decd4263bbc",
-    "title": "Is this the new cyber normal?",
-    "relevance": 7,
-    "score": 4.715,
-    "why": "The author's central claim: the window between \"there's a bad RCE in this project\" and live, automated exploitation has collapsed from weeks to hours because LLMs turn vague vulnerability descriptions and patch diffs into working exploits, so announcing a patch should now be treated as the last moment before the exploit is already circulating.",
-    "notes": [
-      "PHP2Shell (CVE-2026-109618/109619): two PHP RCE bugs the author says were found by security firms Calif (via OpenAI's \"Patch the Planet\") and Wiz (Google Cloud) using GPT-5.6 Sol and Gemini 4 Argon to build exploits; one bug had been flagged in a 2024 PHP Foundation audit funded by the Sovereign Tech Agency but dismissed as non-exploitable. Claimed to affect ~70% of the internet (Wikimedia, DeviantArt, UK government, Japanese banking); affected-site and 70% figures are Wiz/vendor claims, not independently verified in the piece.",
-      "Disclosure went sideways: an HN post by \"petecooper\" leaked the CVEs (unaware of an embargo), the patch was pulled forward Thu 22nd to Wed 21st but not available until the next day, leaked CVSS was listed as 10.0 but actual scores were 9.2; PHP Foundation blamed Calif (leaked exploit video) and Chainguard (fixes published 6 hours early). AWS claims it saw exploitation attempts from Oct 17, before any leak.",
-      "eMudhra: Mozilla blocked 8 intermediate certs from the Indian CA after researcher \"Wayne\" reported private keys as weak as \"115\", \"56\", \"4\"; Scott Helme says Claude recovered the private keys from a single prompt; eMudhra announced it is exiting the SSL/TLS CA business. No evidence AI was used for the original finding.",
-      "GitLab: three separate CVSS 10.0 RCEs (CVE-2026-97229, CVE-2026-110264, plus last month's path-traversal CVE-2026-85706), two of them regex integer-overflow bugs found by Johan Carlsson via HackerOne; author notes no evidence LLMs were involved and that the bug-bounty program vindicated itself. A coincidental musl libc regex integer-overflow (CVE-2026-107891, reported by Julien Voisin) caused DoS and possibly code execution.",
-      "Supply-chain and breach incidents: a malicious LiteLLM v1.107.0 on PyPI/Docker used .pth and sitecustomize.py autoload (second LiteLLM compromise of 2026); Wiz reports \"strong indications of LLM-aided development.\" Railway disclosed attackers decrypted environment variables, allegedly targeting AI inference providers. Extortion group FulcrumSec claims 10.6 TB exfiltrated from PingCAP (TiDB) with a 200 GB torrent, including AWS and OpenAI/Anthropic/Gemini/xAI keys in Jira tickets; PingCAP says no TiDB data was impacted. ZDI mistakenly posted 9.0+ CVEs to the Linux kernel public mailing list instead of the private one.",
-      "The author is explicit that only some of these disclosures involved LLMs, warns much online attention over-indexes on the AI angle, and rejects both the \"close-source everything\" (NHS/Madagascar) response and the claim that AI-written code will be vulnerability-free. The piece is self-described as written in a hurry and developing; the author is not a security expert and links out for technical detail."
-    ],
-    "summary": "A developer blog post surveys an unusually dense week of October 2026 security disclosures and asks whether LLM-accelerated exploitation is the new baseline. Its headline case is PHP2Shell (CVE-2026-109618/109619), two PHP RCEs the author says were found by Calif and Wiz using frontier models to build full exploits, including from a bug a 2024 PHP Foundation audit had dismissed as non-exploitable; a botched embargo, an HN leak, and early fix publication meant exploitation was underway before the patch shipped, and the bugs are claimed to affect ~70% of the internet. The post also covers weak eMudhra CA keys (Claude reportedly recovered them from one prompt), three GitLab CVSS-10.0 RCEs and a musl regex overflow, a second malicious LiteLLM PyPI package with \\\"strong indications of LLM-aided development,\\\" a Railway environment-variable breach aimed at AI inference providers, a FulcrumSec claim of 10.6 TB exfiltrated from PingCAP/TiDB, and ZDI accidentally posting kernel CVEs to a public list. The author's throughline is that LLMs compress the disclosure-to-working-exploit gap from weeks to hours while generating heavy \"exploit slop\" that still needs expert triage. The piece explicitly flags that only some incidents involved AI, treats vendor and self-reported figures as claims, and weighs (and dismisses) responses like closing source code versus racing to run better LLMs on one's own code.",
-    "channels": [
-      "security",
-      "ai"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "time from disclosure to working exploit now hours not weeks, via LLMs",
-    "audience": "security engineers and AI practitioners tracking AI-accelerated vuln research",
-    "source_url": "https://drew.silcock.dev/blog/is-this-the-new-cyber-normal",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50207115",
-        "points": 168,
-        "comments": 202,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://drew.silcock.dev/blog/is-this-the-new-cyber-normal/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-23T11:04:53+00:00",
-    "published_at": "2026-10-24T06:52:13.804226+00:00",
-    "curated_at": "2026-10-24T06:52:13.804226+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 622803,
-    "story_id": "s_5945067b18db5505",
-    "title": "AI Is Changing Everything About Hacking. No One Knows What Happens Next",
-    "relevance": 7,
-    "score": 4.87,
-    "why": "If you run PHP, Node.js, GitLab, Plex, or anything internet-facing, exploit traffic for AI-found bugs now scales from thousands to millions of attempts within hours of disclosure, so patch windows measured in days are gone.",
-    "notes": [
-      "PHP2Shell was found by researchers at Wiz, Calif, and OpenAI using AI; OpenAI frames its disclosure as a 'Defender's Window' for governments and critical infrastructure to prepare before public release.",
-      "Cloudflare CEO Matthew Prince reported thousands of exploit attempts in the 10 hours before public announcement, tens of thousands within 45 minutes after, hundreds of thousands within 2 hours, and millions since.",
-      "Chainguard drew criticism (including from the PHP Foundation) for posting fixes hours before the embargo lifted; CEO Dan Lorenc said his team independently found the same bugs by prompting a frontier model 'find bad vulnerabilities in PHP,' and Amazon reported exploit attempts before disclosure, raising questions about leaks, model memorization, or how trivially findable the bug was.",
-      "Named consequences during 'Black October': the NSA, Japan's Prime Minister, and other governments urged immediate patching or taking services offline; 4chan, several Wikimedia services, and Archive.org went temporarily dark. The Atlantic warns unpatchable historic sites may be pulled permanently, causing link rot.",
-      "Impact so far is mostly proactive patching, not mass exploitation; Elias Taylor's viral post argues there is no easy exploit and compares it unfavorably to log4j/heartbleed while insisting people still patch. Trail of Bits CEO Dan Guido says Will Tan built a working exploit in 1 day with Codex drawing on ~10 years of experience.",
-      "Concurrent AI-assisted vulnerabilities surfaced in eMudhra, Node.js, GitLab, Plex, Railway, and OpenCode; 'abliterated' and open-weight models without guardrails lower the barrier to building offensive tooling."
-    ],
-    "summary": "404 Media reports a surge of AI-assisted vulnerability discovery in October 2026, centered on PHP2Shell, a set of flaws in PHP found with AI by researchers from Wiz, Calif, and OpenAI, alongside concurrent bugs in Node.js, GitLab, Plex, Railway, OpenCode, and eMudhra. Cloudflare CEO Matthew Prince reported exploit attempts scaling from thousands before public announcement to millions within hours, and the NSA, Japan's Prime Minister, and others urged immediate patching, with 4chan, Wikimedia services, and Archive.org taken temporarily offline. The author's thesis is not that AI has gone rogue but that AI makes it cheap to brute-force the entire internet, turning every doorknob to see what is unlocked, while skilled researchers driving AI tools find bugs faster than humans alone. The episode exposed disclosure friction: Chainguard was criticized for publishing fixes before embargo and said it found the bugs by simply prompting a frontier model, and Amazon saw pre-disclosure exploit attempts, suggesting easy findability, model memorization, or a leak. Actual impact so far is mostly proactive patching rather than mass compromise; Elias Taylor argues there is no easy exploit and the bug is weaker than log4j or heartbleed, while Trail of Bits says a working exploit was built in a day with Codex. The piece treats the long-term outcome, including potential large-scale link rot from sites pulled offline, as unresolved.",
-    "channels": [
-      "security",
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "AI-driven vulnerability discovery now causing real-time mass exploitation at internet scale",
-    "audience": "security engineers and AI safety/policy watchers",
-    "source_url": "https://404media.co/php2shell-black-october-ai-is-changing-everything-about-hacking-no-one-knows-what-happens-next",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://www.404media.co/php2shell-black-october-ai-is-changing-everything-about-hacking-no-one-knows-what-happens-next/",
-        "points": 11,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://www.404media.co/php2shell-black-october-ai-is-changing-everything-about-hacking-no-one-knows-what-happens-next/",
-        "points": null,
-        "comments": null,
-        "name": "404 Media"
-      },
-      {
-        "url": "https://news.google.com/rss/articles/CBMiuwFBVV95cUxPMGJCZlpMcERjVnVZaXl0MUZYazRFQXd3a0Z4dVJRT1k1RE1vRURlSnBsMVRMcDQxaTRQM3dWWTlHMEREMFVyMlN2bElCcDRicER1YTJWNnRxSS00aE5McHdTM1BsYWF0ek1vZS15WFJZbjV5LUVFNkFkdXllamJFLXpuSTVENXRQSl8zdldUdnFtMm83al9ibGhxR3M3bzdiQ3JlelJMRkFsZ0tjRFduTy1uMDFIalQ4QXA0?oc=5",
-        "points": null,
-        "comments": null,
-        "name": "Google News Business"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-22T14:23:36+00:00",
-    "published_at": "2026-10-24T06:03:32.069187+00:00",
-    "curated_at": "2026-10-24T06:03:32.069187+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 629302,
-    "story_id": "s_c995974ce9700481",
-    "title": "Twelve Years of Distributed SQLite",
-    "relevance": 7,
-    "score": 6.989,
-    "why": "If you need a fault-tolerant relational store you run yourself, this maps the three design corners (consensus, streaming, CRDT merge) so you pick by the question you are actually asking, not the vendor pitching you.",
-    "notes": [
-      "rqlite launched September 2014 as, per the author, the first open-source system to combine Raft and SQLite; it started on goraft (the library etcd and InfluxDB used) and switched to Hashicorp's Raft in early 2016.",
-      "rqlite is CP by design and has not changed: writes go through the leader, a majority must acknowledge, and a partitioned minority refuses writes; the HTTP API, read-consistency levels, and snapshotting all follow from that choice.",
-      "Canonical's dqlite (2017) is the closest in intent but differs in packaging: dqlite is a C library you embed (used by LXD and MicroK8s, rewritten from Go with its own Raft lib), while rqlite is a standalone server you run beside any product.",
-      "Litestream (Ben Johnson, 2021) uses no consensus: it streams the SQLite WAL to S3 for cheap single-node disaster recovery, answering 'what if the machine dies?' versus rqlite's 'what if I cannot wait to restore?'; Fly.io hired Johnson in 2022 and shipped LiteFS (filesystem-level replication with Consul leases). Litestream later inspired rqlite's v8.0 WAL handling.",
-      "The author frames three corners that appeared in order: consensus (rqlite, dqlite), streaming (Litestream), and merge/AP via CRDTs (cr-sqlite, 2022). libSQL forked SQLite itself because the upstream project accepts no outside contributions; it became Turso, raised VC, and was acquired by Supabase in 2026.",
-      "Money went to the platforms: the open-source tools (rqlite, dqlite, Litestream) are free, while the acquired/funded projects (Turso, plus managed products like Cloudflare D1 and SQLite-in-Durable-Objects, SQLite Cloud) turned replicated SQLite into a billed service. Predecessors Expensify's Bedrock (Paxos-style, released 2016) and ActorDB (Erlang, Raft) are noted as prior art."
-    ],
-    "summary": "rqlite creator Philip O'Toole recounts twelve years of distributed SQLite, starting with his September 2014 release that put a Raft log in front of SQLite to replicate writes across a cluster, which he says was the first open-source Raft+SQLite system. He traces the design space into three corners that emerged in order: consensus and strong consistency (rqlite's CP model, Canonical's embedded dqlite in 2017), cheap single-node recovery via WAL streaming to S3 (Ben Johnson's Litestream in 2021, then Fly.io's LiteFS), and leaderless multi-writer merging via CRDTs (cr-sqlite in 2022). He notes prior and parallel art in Expensify's Bedrock and ActorDB. He argues the SQLite-plus-replication core has been reinvented by at least eight teams, and that the capital and acquisitions went to companies that turned the idea into billed managed services, Turso (libSQL fork, acquired by Supabase in 2026), SQLite Cloud, and Cloudflare D1/Durable Objects, after the idea stayed open source and free for eight years. The piece is a first-person history, not a benchmark or technical comparison; claims about being first and about design tradeoffs are the author's own.",
-    "channels": [
-      "devtools",
-      "ai"
-    ],
-    "category": "software",
-    "subcategories": [
-      "data"
-    ],
-    "state": "confident",
-    "novelty": "first-person 12-year history of distributed SQLite category",
-    "audience": "backend/infra engineers evaluating distributed SQLite options",
-    "source_url": "https://philipotoole.com/twelve-years-of-distributed-sqlite",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50217500",
-        "points": 363,
-        "comments": 62,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://philipotoole.com/twelve-years-of-distributed-sqlite/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://programming.dev/post/58447282",
-        "points": null,
-        "comments": null,
-        "name": "programming.dev (Lemmy)"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-24T01:16:58+00:00",
-    "published_at": "2026-10-24T04:57:51.718185+00:00",
-    "curated_at": "2026-10-24T04:57:51.718185+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 629135,
-    "story_id": "s_178af70e5349114a",
-    "title": "Kimi K3.1 Pro and K3.1 Pro Highspeed",
-    "relevance": 7,
-    "score": 5.275,
-    "why": "A 3T-parameter open-weight model with full weights due Nov 4 claims Terminal-Bench 4.0 coding scores within a point of Claude Opus 5.5, meaning a frontier-adjacent coding agent will soon run on infrastructure you control.",
-    "notes": [
-      "All numbers are Moonshot's own, mostly on internal or self-harnessed benchmarks; proprietary competitors (GPT-6 Astra, Claude Opus 5.5) are scored from their own reports or leaderboards, and many Kimi runs use the Claude-Code harness at reasoning effort 'max', temperature 1.0, top-p 0.95.",
-      "Claimed scores: Terminal-Bench 4.0 65.7% (vs GPT-6 Astra 58.2%, Claude Opus 5.5 66.4%); BenchCAD 92.7% with tools (vs Opus 5.5 96.2%, GPT-6 Astra 95.9%); internal Kimi Code Bench 3.0 Long-horizon 61.2% up from K3's 55.95%.",
-      "K3.1 Pro is a post-trained version of K3 with larger RL compute; a 1M-token context window, and a Highspeed variant claimed at 2-3x the base model's speed. Access is off by default for Kimi Enterprise orgs at launch.",
-      "On the internal Hallu Bench Hard stress test, claim-level hallucination rate fell from 23.4% (K3) to 8.3%; Moonshot cautions these are deliberately adversarial prompts, not daily-use error rates.",
-      "Cybersecurity: Moonshot says it stripped cyber-related data from mid-training and the RL environment mix. On internal xdev-bench-hard, an unfiltered checkpoint solves 90.5% at pass@3 versus the released model's 81.0%; it says offensive cyber capability stays behind proprietary models public for 3+ months and that it intends to raise open-weight cyber capability over time.",
-      "Internal finance gains over K3 are reported as deltas, not absolutes: Financial Modeling +7.2, Financial Research +11.6, Business Operation ~4.2x; OfficeQA Pro v2 claimed at 64.4 (self-described state of the art)."
-    ],
-    "summary": "Moonshot introduced Kimi K3.1 Pro, a 3T-class open-weight model with a 1-million-token context window, plus a Highspeed variant it claims runs 2-3x faster; both are live across Kimi products with full weights promised by Nov 4, 2026. The company reports coding and agentic scores at or near frontier proprietary models: Terminal-Bench 4.0 65.7% (ahead of GPT-6 Astra's 58.2%, just behind Claude Opus 5.5's 66.4%) and BenchCAD 3D reconstruction 92.7% with tools. It also reports large self-measured finance gains over K3 and a drop in claim-level hallucination rate from 23.4% to 8.3% on an internal adversarial benchmark. A notable section details deliberately removing cyber-related training data: an unfiltered checkpoint solves 90.5% of internal xdev-bench-hard exploit tasks at pass@3 versus the released model's 81.0%, framed as keeping open-weight offensive capability below what the pipeline could produce while arguing gradual diffusion aids defenders. Nearly all figures are vendor self-reported, many on internal benchmarks and with Kimi runs using a different harness than competitors, so methodology comparability is limited.",
-    "channels": [
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "3T-class open-weight model nears frontier proprietary coding/CAD scores",
-    "audience": "AI engineers evaluating open-weight frontier models for coding/agentic tasks",
-    "source_url": "https://kimi.ai/blog/kimi-k3-1-pro",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50212065",
-        "points": 1042,
-        "comments": 634,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.kimi.ai/blog/kimi-k3-1-pro",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-23T16:59:08+00:00",
-    "published_at": "2026-10-24T04:11:03.636077+00:00",
-    "curated_at": "2026-10-24T04:11:03.636077+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 576176,
     "story_id": "s_933dc45c71b1713c",
     "title": "OpenCode 2.0",
@@ -3219,6 +2840,61 @@
     "first_seen": "2026-10-25T10:42:01+00:00",
     "published_at": "2026-10-25T13:33:31.470414+00:00",
     "curated_at": "2026-10-25T13:33:31.470414+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 482731,
+    "story_id": "s_17aac7b8a26bcd46",
+    "title": "SAML: A fractal of bad design",
+    "relevance": 6,
+    "score": 5.43,
+    "why": "If you ship SSO, the argument here is concrete: SAML's signature verification sits on libxmlsec and XML canonicalization, and 2025 saw a fresh wave of auth-bypass parser-differential attacks against it, so new integrations should default to OIDC instead.",
+    "notes": [
+      "SAML was created in 2002 by OASIS's Security Services Technical Committee, merging four competing XML security protocols: S2ML (Netegrity), AuthXML (Securant), X-TASS (VeriSign), and ITML (Jamcracker), which the author cites as the root of its kitchen-sink design.",
+      "XML signature wrapping (XSW), systematized in the 2012 paper 'On Breaking SAML: Be Whoever You Want to Be,' remains exploitable; the author lists several 2025 bypasses (GitHub Enterprise via libxml2 quirks, 'Sign in as anyone' parser differentials, 'SAML roulette,' 'The Fragile Lock').",
+      "The core fragility is XML canonicalization (C14N) plus enveloped signatures: the signature is embedded inside the signed Assertion, making byte-exact canonical representation hard and inviting round-trip and parser-differential bugs. Most implementations wrap libxmlsec, a C codebase the author (quoting Thomas Ptacek, 2023) calls 'deeply cursed.'",
+      "XML drags in its own bug classes before any SAML logic: XXE, billion-laughs entity expansion, SSRF via DTD retrieval, and XPath/XQuery/XInclude/XSLT/CDATA injection.",
+      "The author's five claimed fatal flaws: built on XML, canonicalization, enveloped signatures, kitchen-sink design (he estimates real-world SAML uses ~10% of the spec), and ossification (SAML is transport-independent and assumes disconnected topologies, missing the HTTPS, mobile, SPA, and IoT eras).",
+      "Migration pitch: OIDC's authorization-code flow uses a backchannel so the payload need not carry everything; the one SAML edge (no direct IdP/SP comms) is covered by OIDC implicit flow with form post. Fly.io and Tailscale are cited as OIDC-only holdouts. This is an opinion piece by a former Duo engineer who built its simpleSAMLphp-based Access Gateway; it ends with a Trail of Bits audit solicitation."
+    ],
+    "summary": "A Trail of Bits post argues that SAML, the XML-based SSO authentication protocol created in 2002 by OASIS by merging four competing specs, should be deprecated in favor of OpenID Connect. The author, a former Duo engineer who built its simpleSAMLphp-based Access Gateway, traces SAML's security problems to its XML foundation: canonicalization (C14N) and enveloped signatures make byte-exact signature validation fragile, and most deployments lean on the libxmlsec C library. XML signature wrapping attacks documented in 2012 remain exploitable, and the piece cites a cluster of 2025 auth-bypass findings based on parser differentials (GitHub Enterprise, 'Sign in as anyone,' 'SAML roulette,' 'The Fragile Lock'). It enumerates five claimed fatal flaws (XML dependency, canonicalization, enveloped signatures, kitchen-sink design, and ossification), noting most real-world SAML uses a small subset of the spec and that SAML never adapted to HTTPS, mobile, SPAs, or IoT. The author presents OIDC as simpler and recommends vendors support OIDC and phase out SAML, citing Fly.io and Tailscale as examples; the post is opinion and closes with a pitch for Trail of Bits protocol audits.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Trail of Bits traces SAML's XML roots to argue for deprecation",
+    "audience": "security engineers and IT architects dealing with SSO/identity infra",
+    "source_url": "https://blog.trailofbits.com/2026/09/21/saml-a-fractal-of-bad-design",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49806335",
+        "points": 208,
+        "comments": 125,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://blog.trailofbits.com/2026/09/21/saml-a-fractal-of-bad-design/",
+        "points": null,
+        "comments": null,
+        "name": "Trail of Bits Blog"
+      },
+      {
+        "url": "https://blog.trailofbits.com/2026/09/21/saml-a-fractal-of-bad-design/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-09-21T11:00:00+00:00",
+    "published_at": "2026-10-25T13:15:58.330144+00:00",
+    "curated_at": "2026-10-25T13:15:58.330144+00:00",
     "model": "claude-opus-4-8"
   }
 ]
