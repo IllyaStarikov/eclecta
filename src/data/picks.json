@@ -115,7 +115,7 @@
     "story_id": "s_d331e378ee31fd6e",
     "title": "sshole",
     "relevance": 8,
-    "score": 7.328,
+    "score": 7.22,
     "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
     "notes": [
       "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
@@ -142,8 +142,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50378228",
-        "points": 2787,
-        "comments": 675,
+        "points": 2829,
+        "comments": 688,
         "name": "Hacker News"
       },
       {
@@ -394,6 +394,58 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 658312,
+    "story_id": "s_eb9fae6f71266a47",
+    "title": "GitLab Security Incident: Attempted Exploitation of CVE-2026-97229",
+    "relevance": 7,
+    "score": 5.908,
+    "why": "If you run GitLab with your own Ruby build instead of GitLab's official packages, patching GitLab to 19.3.5+ does not close CVE-2026-97229 (CVSS 10.0); you also need Ruby 3.3.13, 3.4.12, or 4.0.9, and Alpine's own instance stayed exploitable even after two upgrades until they rebuilt it with patched Ruby.",
+    "notes": [
+      "CVE-2026-97229 is a CVSS 10.0 bug in how GitLab evaluates regex in CI configuration; the root cause is in Onigmo, the regex engine built into Ruby, not in GitLab's own code. GitLab shipped the fix Oct 12 as patches to the Ruby it bundles; upstream Ruby only shipped it Oct 23 in 3.3.13, 3.4.12, and 4.0.9.",
+      "The patching trap: Alpine first upgraded to 19.3.4 by mistake instead of the fixed 19.3.5 on Oct 13, then upgraded to 19.3.6 on Oct 22 and remained vulnerable because their container used stock Ruby that never received GitLab's Ruby patch. Fix requires either GitLab's official packages or a patched Ruby version.",
+      "Attack mechanics (Oct 20-21): a newly registered account sent crafted CI configs that crashed GitLab worker processes 8 times; in 4 crashes the attacker got partway through the exploit and failed at the next step. The attacker also pulled Alpine's GitLab container image, suggesting they were tuning the exploit to the exact build.",
+      "Alpine self-reports no evidence of code execution (timing probes showed no delays; no unexpected files, keys, hooks, or processes; no private data seen returned via web/API) but cannot rule it out: a successful exploit would leave no crash or web-log trace, some attack-day logs are gone, and there was no outbound-connection logging at Alpine or its hosting provider.",
+      "Integrity checks (run Oct 24, covering Oct 20-22 commits and packages built through Oct 24): aports, packages, and the Oct 21 releases (3.21.9, 3.22.7, 3.23.7, 3.24.3) were verified against records the attacker could not reach, a developer's clone and all 45 builders. Package/release signing keys were never stored on the GitLab server. Treated as compromised anyway; rebuilt from scratch, all passwords reset, secret keys replaced (rebuild complete Oct 28).",
+      "Alpine's own ruby package: Alpine 3.22/3.23/3.24/edge ship Ruby 3.4.12 and 3.21 ships 3.3.13, both fixed; any program compiling regexes from untrusted input is exposed, not just GitLab. Stated remediations: patch critical GitLab releases within a day and check for bundled-component patches, log outbound and DB connections, keep logs longer than 14 days, and sign release tags for GitLab-independent verification. Users of alpinelinux/gitlab must re-pull 19.3.6 (Ruby 3.3.13 image published Oct 27)."
+    ],
+    "summary": "Alpine Linux disclosed that on October 20-21, 2026, an attacker attempted to exploit CVE-2026-97229, a CVSS 10.0 vulnerability in how GitLab evaluates CI-configuration regular expressions whose root cause is the Onigmo regex engine bundled in Ruby. Because the fix lived in patches GitLab applies only to the Ruby in its official packages (upstream Ruby shipped it Oct 23 in 3.3.13/3.4.12/4.0.9), Alpine's instance, which used stock Ruby and had mistakenly been upgraded to 19.3.4 instead of the fixed 19.3.5, stayed vulnerable even after a later upgrade to 19.3.6. The attacker crashed GitLab workers 8 times with crafted CI configs, got partway through the exploit 4 times, and downloaded Alpine's container image to tune it. Alpine found no evidence of code execution but, lacking the logs needed to prove otherwise, treated the instance as compromised, rebuilt it from scratch, reset all passwords, and replaced secret keys. They verified aports commits, all-architecture package builds, and the October 21 stable releases against out-of-band records (a developer clone and 45 builders) and reported no tampering and no exposure of signing keys, which were never on the server. Stated remediations include faster patching, logging outbound and database connections with longer retention, and signed release tags.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns",
+      "research"
+    ],
+    "state": "confident",
+    "novelty": "detailed real-world incident response writeup, not just CVE disclosure",
+    "audience": "infra/security engineers running self-hosted GitLab",
+    "source_url": "https://alpinelinux.org/posts/GitLab-security-incident-CVE-2026-97229.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50282544",
+        "points": 106,
+        "comments": 40,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://alpinelinux.org/posts/GitLab-security-incident-CVE-2026-97229.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-28T23:45:46+00:00",
+    "published_at": "2026-11-06T14:47:44.312858+00:00",
+    "curated_at": "2026-11-06T14:47:44.312858+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 660164,
     "story_id": "s_3cca907667da34fa",
     "title": "Le Chonk: Built for Coders, Trusted by Defenders.",
@@ -456,7 +508,7 @@
     "story_id": "s_b69e6d64da940a0f",
     "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
     "relevance": 7,
-    "score": 6.749,
+    "score": 6.688,
     "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
     "notes": [
       "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
@@ -505,7 +557,7 @@
     "story_id": "s_06c6f6e402f3b3f2",
     "title": "Closed AI models dominate the price-performance frontier",
     "relevance": 7,
-    "score": 6.295,
+    "score": 6.217,
     "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
     "notes": [
       "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
@@ -619,7 +671,7 @@
     "story_id": "s_df04d6b94a5f2f01",
     "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
     "relevance": 7,
-    "score": 6.391,
+    "score": 6.304,
     "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
     "notes": [
       "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
@@ -677,6 +729,112 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 703851,
+    "story_id": "s_8f362f59357e11f7",
+    "title": "Bots are raiding library collections to feed AI — shutting out researchers and the public | CBC News",
+    "relevance": 6,
+    "score": 6.917,
+    "why": "If you run or depend on a public digital archive, automated AI scrapers are now a load problem that can lock out human researchers, the same failure mode already seen at Wikimedia and code forges.",
+    "notes": [
+      "CBC reports AI scraper bots are hammering university library digital collections, with the scraping load heavy enough to disrupt access for legitimate researchers and the general public.",
+      "The piece frames this as data harvesting to feed AI training, putting libraries in the same bucket as other open content hosts being overwhelmed by crawlers.",
+      "No article body was available to this editor, so the specific institutions, request volumes, bot identities, and mitigation steps are not confirmed here; treat the technical details as unverified.",
+      "Signal is modest and secondhand: a news report rather than a primary source, surfaced on Hacker News (17 points, 6 comments) and Mastodon trending (22 points)."
+    ],
+    "summary": "A CBC News report says AI scraper bots are raiding university library digital collections to harvest data for AI, and that the resulting traffic load is degrading or blocking access for legitimate researchers and the public. The framing places libraries alongside other open-content hosts contending with aggressive crawlers. The full article text was not available for this writeup, so concrete specifics, named institutions, request volumes, bot identification, and any countermeasures are not confirmed and should be verified against the original. The story carried modest engagement, appearing on Hacker News (17 points, 6 comments) and Mastodon trending links (22 points).",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "AI scraping bots overwhelming library digital collections",
+    "audience": "infra/security engineers and researchers concerned about AI crawler abuse",
+    "source_url": "https://cbc.ca/news/world/university-libraries-ai-data-scraping-bots-9.7408287",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.cbc.ca/news/world/university-libraries-ai-data-scraping-bots-9.7408287",
+        "points": 22,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://news.ycombinator.com/item?id=50392499",
+        "points": 17,
+        "comments": 6,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.cbc.ca/news/world/university-libraries-ai-data-scraping-bots-9.7408287",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-05T22:12:59.530040+00:00",
+    "published_at": "2026-11-06T15:19:30.287924+00:00",
+    "curated_at": "2026-11-06T15:19:30.287924+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 705516,
+    "story_id": "s_4c8b81753950fb88",
+    "title": "FrontierPhysics: Evaluating Agents for End-to-End Physics Research",
+    "relevance": 6,
+    "score": 5.833,
+    "why": "The best of 22 models cleared only 46 of 168 rollouts, and the authors trace the failures to weak reasoning and missing expert intuition rather than knowledge or execution, so scaling facts into these agents will not close the gap.",
+    "notes": [
+      "FrontierPhysics holds 56 tasks written by 42 physicists from their own work, spanning nine domains across theoretical, computational, and experimental physics.",
+      "Each task is end-to-end: the agent must review the literature, write a research plan, run the research or experiments, and produce structured outputs plus a scientific manuscript, rather than answer a fixed question.",
+      "Scoring pairs deterministic verifiers with expert-authored rubrics, judging both correctness and whether the output is publishable.",
+      "Across 22 models in 26 configurations, no configuration passed more than 46 of its 168 rollouts; the paper does not describe what counts as a pass per rollout.",
+      "Manual trajectory review attributes the dominant weaknesses to insufficiently rigorous reasoning and limited expert intuition, not gaps in physics knowledge or execution errors.",
+      "Abstract-only arXiv listing (surfaced via Hugging Face Daily Papers and arXiv cs.AI); full methodology and the model roster are not in the provided text."
+    ],
+    "summary": "FrontierPhysics is a benchmark of 56 physics research tasks authored by 42 physicists from their own research, covering nine domains across theoretical, computational, and experimental physics. Unlike prior physics benchmarks that test fixed questions, isolated sub-tasks, or paper reproduction with given solutions, each task requires an agent to review the literature, form a research plan, conduct research and experiments, and produce structured outputs and a scientific manuscript. Evaluation combines deterministic verifiers with expert-authored rubrics to judge both correctness and publishability. The authors report that across 22 models in 26 configurations, no configuration passed more than 46 of its 168 rollouts. Manual review of agent trajectories attributes the main weaknesses to insufficiently rigorous reasoning and limited expert intuition rather than gaps in physics knowledge or execution errors. The provided text is the abstract only, so the full task construction, pass criteria, and model list are not available.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "science"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents",
+      "evals"
+    ],
+    "state": "confident",
+    "novelty": "end-to-end physics research benchmark, not just QA tasks",
+    "audience": "AI researchers and physicists evaluating agentic science capability",
+    "source_url": "https://arxiv.org/abs/2611.06910",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2611.06910",
+        "points": 50,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.06910",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-03T19:00:00.000Z",
+    "published_at": "2026-11-06T15:03:39.245892+00:00",
+    "curated_at": "2026-11-06T15:03:39.245892+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 649053,
     "story_id": "s_9bfe692ab20770d6",
     "title": "Early progress on accelerating drug development with Claude",
@@ -730,7 +888,7 @@
     "story_id": "s_606a35730c31543c",
     "title": "Blender's UI and Runtime: Much Faster Than GPUI",
     "relevance": 6,
-    "score": 6.079,
+    "score": 6.051,
     "why": "If the benchmarks hold, you can ship a native desktop UI with Blender's drag-to-scrub number fields and fuzzy menu search from Python, Rust, JS/React, C, or Dear ImGui without bundling a browser or webview, in a ~7 MB executable that boots in ~70 ms.",
     "notes": [
       "The core is a small C runtime (the 'kit', one header BUI_kit.h) that ports Blender's own interface_widgets.cc drawing code and interaction rules; thin bindings sit on top for Python, Rust, JS/React (via napi-rs), C/C++, and Dear ImGui. No Blender install required.",
@@ -758,8 +916,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50389333",
-        "points": 353,
-        "comments": 148,
+        "points": 427,
+        "comments": 178,
         "name": "Hacker News"
       },
       {
@@ -780,7 +938,7 @@
     "story_id": "s_d188192e2fa9c5e1",
     "title": "Show HN: Stroq – a local audit of what your coding agent did and why",
     "relevance": 6,
-    "score": 6.505,
+    "score": 6.443,
     "why": "If you run Claude Code, Codex, or Cursor, this tool reads your existing session transcripts locally and tells you which of your credentials showed up in commands that left the machine, naming keys to rotate today.",
     "notes": [
       "`npx @stroq/cli` runs fully local: it reads the last 30 days of sessions, key files, and agent working folders, prints key names but never values, writes only a cache under ~/.stroq, and makes no outbound calls. No account, no telemetry; Apache-2.0, Node.js 22+.",
@@ -832,7 +990,7 @@
     "story_id": "s_f96c2b5a4d055875",
     "title": "Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3",
     "relevance": 6,
-    "score": 6.661,
+    "score": 6.617,
     "why": "If most of an agent's wall-clock time is idle waiting on inference, Rivet's model lets one node hold hundreds of thousands of agents at 72 KB each instead of paying for a 512 MiB VM per agent that mostly sits idle.",
     "notes": [
       "Core design: each Actor is a long-lived process with in-memory state, per-Actor SQLite, WebSockets, and scheduling; Actors share one Node.js or Bun process rather than each booting a sandbox, so the agent loop (the 'head') runs outside the sandbox and reaches code execution (the 'hands') only through tools.",
@@ -861,8 +1019,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50381687",
-        "points": 105,
-        "comments": 54,
+        "points": 109,
+        "comments": 58,
         "name": "Hacker News"
       },
       {
@@ -993,7 +1151,7 @@
     "story_id": "s_3c0ba1e344fab490",
     "title": "Schools that block Google’s A.I. will lose student access to its search engine",
     "relevance": 6,
-    "score": 6.013,
+    "score": 5.999,
     "why": "If the reported policy is real, a school's choice to disable Google's AI features would cost its students access to Google Search itself, turning an opt-out into a loss of core infrastructure.",
     "notes": [
       "Headline claim: schools that block Google's AI features reportedly lose student access to Google's search engine, coupling AI adoption to a product schools already depend on.",
@@ -1115,7 +1273,7 @@
     "story_id": "s_18955c783c1342c6",
     "title": "Discord is ditching Electron and its new app uses less RAM",
     "relevance": 6,
-    "score": 7.502,
+    "score": 7.436,
     "why": "If one of the largest Electron apps can shed the Chromium runtime, it reopens the question of whether every desktop app needs a bundled browser to ship cross-platform.",
     "notes": [
       "Headline claim: Discord is rebuilding its desktop client to drop Electron, the Chromium-plus-Node.js shell most cross-platform desktop apps use.",
@@ -1167,7 +1325,7 @@
     "story_id": "s_8b17a38219317e77",
     "title": "Nvidia Kubernetes Engine (NVKE)",
     "relevance": 6,
-    "score": 6.76,
+    "score": 6.711,
     "why": "If you run GPU hardware and want to hand customers isolated Kubernetes clusters the way a cloud provider does, Nvidia now ships the open-source (Apache 2.0) management plane to do it, though it is preview-only and ships with API auth off and plain HTTP by default.",
     "notes": [
       "Architecture: a throwaway seed cluster stands up a management cluster running the NVKE management plane; that plane then provisions and lifecycle-manages many isolated workload clusters, each with its own control plane, etcd, and node pools. Built on Cluster API plus a node agent, not a K8s distro or CAPI flavour.",
@@ -1197,8 +1355,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50387738",
-        "points": 100,
-        "comments": 22,
+        "points": 108,
+        "comments": 24,
         "name": "Hacker News"
       },
       {
@@ -1280,7 +1438,7 @@
     "story_id": "s_2712d86d09c6ba80",
     "title": "Show HN: OmniDiff – Opensource, super fast, content aware Git difftool, in Rust",
     "relevance": 6,
-    "score": 7.369,
+    "score": 7.308,
     "why": "A git difftool that renders PDFs page-by-page, fonts glyph-by-glyph, and images pixel-by-pixel inside the terminal, with a measured p50 of 4.2ms and p99 of 177ms over 2,302 fixtures, so binary and structured-file diffs stop being \"Binary file differs.\"",
     "notes": [
       "Content is detected by bytes, not filename: 25 languages get tree-sitter structural diffs; pictures (PNG/JPEG/GIF/WebP/etc.) diff pixel-by-pixel with frame-by-frame animation; archives (zip/tar/gzip/xz/bzip2, including Office docs and EPUB) diff member-by-member recursively; fonts (TTF/OTF/WOFF/WOFF2/EOT) glyph-by-glyph; plus PDFs, cursors, and gettext/Qt message catalogs.",
@@ -1560,7 +1718,7 @@
     "story_id": "s_52dabe367e278f51",
     "title": "I struggle to believe that AI R&D is ingenious",
     "relevance": 6,
-    "score": 6.715,
+    "score": 6.625,
     "why": "If you are betting on autonomous research agents, this practitioner's account pins down where they still fail: picking the right papers, designing experiments with enough signal, and knowing which result matters, all tasks a human still has to seed.",
     "notes": [
       "The author, working with an agent called Astra, lists concrete judgment failures: missing the obviously most relevant paper or blog post during literature review, running experiments with too little training data to distinguish the architectures being compared, and pursuing trivial directions on a philosophy wiki project.",
@@ -1721,7 +1879,7 @@
     "story_id": "s_31c4b145bbcd6915",
     "title": "Show HN: Firenook – Firebase emulators in Rust: 40× faster writes, 10× less RAM",
     "relevance": 6,
-    "score": 6.688,
+    "score": 6.648,
     "why": "If the 40× write and 10× RAM claims hold, your Firebase test suite and CI emulator startup get cheaper on every local run, with no code changes since it speaks the same SDK protocols.",
     "notes": [
       "Firenook reimplements Firebase's emulator suite in Rust and is pitched as a drop-in alternative, claiming 40x faster writes and 10x less RAM than the official emulators. Both figures are self-reported; no benchmark methodology, workload, or hardware is given in the text.",
@@ -1748,8 +1906,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50378643",
-        "points": 146,
-        "comments": 18,
+        "points": 155,
+        "comments": 20,
         "name": "Hacker News"
       },
       {
@@ -1826,7 +1984,7 @@
     "story_id": "s_d2c637bd65be0d63",
     "title": "MUON-RT Reusing the Teacher's Trajectory for Momentum-Free Muon for LLM Self-Distillation",
     "relevance": 6,
-    "score": 6.37,
+    "score": 6.308,
     "why": "If the results hold, a 7B self-distillation run drops its optimizer memory by roughly 40% versus AdamW while gaining accuracy, because the EMA teacher's state replaces the momentum buffer you were already paying for twice.",
     "notes": [
       "Core idea: EMA-teacher self-distillation already stores a running history of student updates, so Muon-RT reuses the teacher-student displacement as a momentum substitute and drops Muon's separate momentum buffer for hidden weight matrices.",
@@ -2055,7 +2213,7 @@
     "story_id": "s_067188733f961196",
     "title": "Claude Code sends your email address to websites",
     "relevance": 6,
-    "score": 7.094,
+    "score": 7.034,
     "why": "If you ran Claude Code before v2.1.317, your account email may already be sitting in the server logs of every site the agent fetched, and the only fix shipped is a default-on plugin you can still toggle off.",
     "notes": [
       "The reporter says Claude Code put the user's email address in the User-Agent header on agentic web searches, done without explicit consent, and attributes 'dozens of scam emails per day' to that exposure.",
@@ -2083,8 +2241,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50385272",
-        "points": 1290,
-        "comments": 408,
+        "points": 1375,
+        "comments": 433,
         "name": "Hacker News"
       },
       {
@@ -2105,7 +2263,7 @@
     "story_id": "s_9eca6ad74a759107",
     "title": "Cuban: Facebook knowingly runs AI deepfake scam ads; docs say $16B fraud revenue",
     "relevance": 6,
-    "score": 7.225,
+    "score": 7.158,
     "why": "The 95%-confidence ban threshold is the load-bearing detail: anyone building or auditing ad-fraud enforcement now has a concrete number for how much scam traffic a trillion-dollar platform will knowingly monetize, and the SEC is investigating.",
     "notes": [
       "Internal Meta documents reported by Reuters (Nov 6, 2025) project roughly $16B, about 10% of 2024 revenue, from ads pushing scams and prohibited products; one late-2024 doc valued the 'higher risk' category alone at about $7B/year.",
