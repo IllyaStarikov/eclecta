@@ -1,10 +1,121 @@
 [
   {
+    "id": 648997,
+    "story_id": "s_92d91f5bb9ca24f0",
+    "title": "Code-execution flaw in UEFI firmware affects most servers on planet Earth",
+    "relevance": 8,
+    "score": 5.942,
+    "why": "The patch code is already public, so advanced attackers can reverse-engineer a pre-Secure Boot, TPM-defeating exploit against EDK2-based firmware now, months before the January 2027 coordinated fix most vendors were counting on.",
+    "notes": [
+      "CVE-2026-97631 is a memory-corruption flaw (CVSS 9.5) in an ICMP component of TianoCore EDK II, the open-source reference code used to build UEFI firmware; the article cites a UEFI Forum representative last year calling EDK2 the preeminent UEFI implementation.",
+      "Affected downstream: effectively all independent BIOS vendors, with AMI, Insyde, and Phoenix named, plus Microsoft's hardened EDK2 fork Project Mu, which carried the vulnerable component.",
+      "Exploitation runs before the OS and firmware defenses like Secure Boot and the TPM trust chain load; the delivered payload is non-persistent (runs once) but can be used to drop follow-on payloads that execute early each boot.",
+      "Discovered by Alex Matrosov (Anthropic) and Dan Holmes (Google) with coordinated disclosure set for January; the article says AMI published a pull request last month detailing the bug and fix, prompting TianoCore to issue a public advisory last week ahead of schedule.",
+      "Remediation is slow because firmware fixes must propagate across millions of devices and thousands of hardware makers and cloud providers; the piece notes this follows a separate botched PHP critical RCE disclosure six days earlier."
+    ],
+    "summary": "Ars Technica reports CVE-2026-97631, a memory-corruption vulnerability rated 9.5/10 in an ICMP component of TianoCore EDK II, the open-source reference codebase used to build UEFI firmware across most server vendors and data centers. Because independent BIOS vendors including AMI, Insyde, and Phoenix, plus Microsoft's Project Mu fork, build on EDK2, the exposure is broad. Exploitation executes code before the OS and before Secure Boot and TPM establish a trust chain; the payload itself is not persistent but can install follow-on payloads that run early each boot. The flaw was found by Alex Matrosov of Anthropic and Dan Holmes of Google under a coordinated disclosure planned for January, but AMI's public pull request with the fix leaked details early, forcing TianoCore to publish an advisory ahead of schedule. With patch code public, the article argues working exploits will be easy to build, while firmware patching across millions of devices and thousands of vendors remains slow. It frames the incident as the second botched disclosure in a week, following a critical PHP RCE.",
+    "channels": [
+      "security",
+      "hardware"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "critical EDK II UEFI flaw leaked before coordinated disclosure",
+    "audience": "security engineers, infra/cloud ops, firmware developers",
+    "source_url": "https://arstechnica.com/security/2026/10/code-execution-flaw-in-uefi-firmware-threatens-most-servers-on-planet-earth",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50265393",
+        "points": 244,
+        "comments": 156,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/10/code-execution-flaw-in-uefi-firmware-threatens-most-servers-on-planet-earth/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://lemmy.world/post/53679283",
+        "points": null,
+        "comments": null,
+        "name": "Lemmy: technology (lemmy.world)"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/10/code-execution-flaw-in-uefi-firmware-threatens-most-servers-on-planet-earth/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-10-27T20:25:55+00:00",
+    "published_at": "2026-11-06T14:15:54.337124+00:00",
+    "curated_at": "2026-11-06T14:15:54.337124+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 658550,
+    "story_id": "s_b10b52c7bc7b9255",
+    "title": "Qwenputer: A functioning, deterministic RISC-V CPU inside Qwen3.5",
+    "relevance": 8,
+    "score": 6.001,
+    "why": "An exact, addressable RAM compiled into a linear-RNN attention layer means you can plant deterministic machinery, arithmetic today, tamper-proof monitors or hidden reasoning tomorrow, inside a production model's weights with no training and no external runtime.",
+    "notes": [
+      "Mechanism: on Qwen3.5 4B, 3 of every 4 attention layers use Gated DeltaNet (a linear RNN). Setting the forget gate to 1 (no decay), write strength beta to 1 (full overwrite), and one-hot keys turns each GDN head's fixed-size state matrix into exact addressable RAM, cheaper than KV-cache-as-RAM because state size is constant regardless of context length.",
+      "No training: a compiler sets weights directly to encode a 32-bit RV32IM RISC-V core (plus Zba extension and a bignum unit), occupying 11 of Qwen's 32 layers. Each instruction emits a few tokens (ADDR, VAL, STEP) that form the CPU's execution trace as the model decodes.",
+      "Self-reported correctness: passes official riscv-tests, matches QEMU, ran 18M instructions free-running with zero errors; replaying ~230,000 output positions against a reference machine found zero mismatches; normal text output stays within noise of base Qwen (KL 6e-4 vs 5e-4 floor).",
+      "Arithmetic benchmarks (author-reported): mul_big 97.5% vs 55% base Qwen and 100% with a Python tool; div_big 97.5% vs 72.5% base and 95% with Python tool; NUPA long-integer goes 48.6% to 100%, matching the Python-tool baseline. No external tool call or sandbox; instructions ride on the tool-call format via an RvChat driver.",
+      "An experimental in-weights filesystem hashes names into 1,024 directory slots in DeltaNet state, holds ~512 files (~53,000 tokens), and persists across conversations; changed-fact recall hit 90% vs 30% for pasting old chats. Code on the rv-store branch.",
+      "Caveats: checkpoint is 18.8 GB (roughly double base Qwen, mostly zero padding), runs on one 24 GB GPU, needs the RvChat driver (no plain generate() yet), and is slow, a few decoded tokens per instruction, ~3,200 CPU tokens/sec on an L4. Author flags safety follow-ups: hiding reasoning in RNN state to evade CoT monitoring, or using compiled weights as a monitor the model cannot disable."
+    ],
+    "summary": "Qwenputer is an experimental modification of stock Qwen3.5 4B that compiles a 32-bit RV32IM RISC-V CPU directly into the model's weights with no training. The author exploits the model's Gated DeltaNet (linear RNN) attention layers: by fixing the forget gate to 1, write strength beta to 1, and using one-hot keys, each head's fixed-size state matrix becomes exact, addressable RAM. A compiler lays out the CPU across 11 of Qwen's 32 layers, and each instruction executes as the model decodes tokens (ADDR/VAL/STEP trace), with no external tool, sandbox, or runtime. The author reports the CPU passes official riscv-tests, matches QEMU, ran 18M instructions free-running without error, and showed zero mismatches across ~230,000 replayed output positions, while leaving normal text generation within noise (KL 6e-4). On reported arithmetic benchmarks it beats base Qwen substantially and roughly matches a Python-tool-equipped Qwen (e.g., NUPA long-integer 48.6% to 100%), and an experimental in-weights filesystem persists files across conversations. Limitations include an 18.8 GB checkpoint, dependence on an RvChat driver rather than plain generate(), and slow execution (~3,200 CPU tokens/sec on an L4); the work builds on Schlag et al. 2021's delta-rule-as-fast-weights result and is pitched partly as an AI-safety testbed. All numbers and correctness claims are the author's own.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "hardware",
+    "subcategories": [
+      "silicon"
+    ],
+    "state": "confident",
+    "novelty": "compiled RISC-V CPU running inside LLM forward passes via GDN as RAM",
+    "audience": "ML researchers/engineers interested in interpretability, model internals, and mechanistic circuits",
+    "source_url": "https://divagr.com/blog/qwenputer",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50282838",
+        "points": 163,
+        "comments": 35,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://divagr.com/blog/qwenputer",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-29T00:25:45+00:00",
+    "published_at": "2026-11-06T13:43:54.771257+00:00",
+    "curated_at": "2026-11-06T13:43:54.771257+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 702222,
     "story_id": "s_d331e378ee31fd6e",
     "title": "sshole",
     "relevance": 8,
-    "score": 7.386,
+    "score": 7.328,
     "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
     "notes": [
       "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
@@ -31,8 +142,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50378228",
-        "points": 2749,
-        "comments": 665,
+        "points": 2787,
+        "comments": 675,
         "name": "Hacker News"
       },
       {
@@ -283,11 +394,69 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 660164,
+    "story_id": "s_3cca907667da34fa",
+    "title": "Le Chonk: Built for Coders, Trusted by Defenders.",
+    "relevance": 7,
+    "score": 5.955,
+    "why": "An open-weight 1T-parameter model with coding scores Mistral claims match GLM-5.3 at 47% fewer tokens per task is downloadable now from Hugging Face at $0.70/$2.10 per million input/output tokens, with weights you can self-host under a modified MIT license.",
+    "notes": [
+      "Mistral Large 4 ('Le Chonk') is a 1-trillion-parameter hybrid instruct-and-reasoning MoE with multimodal input, trained from scratch on European infrastructure, supporting 160+ languages and three reasoning modes (Low/Medium/High, High is default).",
+      "Self-reported coding results: 19.7% on Cognition's private FrontierCode 2.0, 41% on Terminal-Bench 4.0 (up 13pp from preview, output tokens down 30%), and 48% on the Artificial Analysis Coding Agent Index, which Mistral calls effectively tied with GLM-5.3 while using 47% fewer tokens per task. Surge Code blind pairwise evals ranked it behind only Claude Opus 5.5 among models tested.",
+      "Security claims: 51% on the Artificial Analysis Cyber Index (vuln discovery, reproduction, patching) and a 96.6% refusal rate on malicious cyber requests, which Mistral says is the highest it measures among open models; 97.1% resistance on the B3 Agent Security Benchmark (up from 93.3% in preview). Mistral notes it still sees 'potential for uplift to conduct real attacks' and is modifying guardrails.",
+      "A separate cybersecurity-optimized variant (pentesting, red-teaming) is in preview with partners like Orange Cyberdefense under vetted contracts restricted to authorized systems; benchmark numbers are vendor-reported with no methodology published, and a full technical report is described only as 'coming soon'.",
+      "License is the Mistral Ecosystem Open-Weight license (a modified MIT): free to use, modify, fine-tune, and commercialize, except Model-as-a-Service operators must obtain a separate commercial license. Priced at $0.70 input / $0.07 cached input / $2.10 output per million tokens; deployable via vLLM, SGLang, NVIDIA NIM/TensorRT-LLM, Microsoft Foundry, and OpenRouter.",
+      "Other claimed enterprise scores: 73.3% on Finch (finance/spreadsheet workflows, second to Kimi K3 among open models) and 84.5% on BrowseComp (up from a 75% SFT checkpoint)."
+    ],
+    "summary": "Mistral released the open weights of Mistral Large 4 ('Le Chonk'), a 1-trillion-parameter natively multimodal hybrid instruct-and-reasoning MoE trained from scratch in Europe, following three additional weeks of reinforcement learning after its public preview. Mistral claims it is the best open-weight model for coding, citing 19.7% on Cognition's private FrontierCode 2.0, 41% on Terminal-Bench 4.0, and 48% on the Artificial Analysis Coding Agent Index at a claimed 47% fewer tokens than GLM-5.3. On security, it reports 51% on the Artificial Analysis Cyber Index and a 96.6% refusal rate on malicious cyber requests, framing the model for defensive use while acknowledging potential uplift for real attacks and ongoing guardrail changes. The model ships with three reasoning modes, a modified-MIT 'Open-Weight' license that requires a separate commercial license only for Model-as-a-Service operators, and pricing of $0.70 input / $2.10 output per million tokens. It is available via Hugging Face, the Mistral API, OpenRouter, NVIDIA endpoints, and Microsoft Foundry; all benchmark figures are vendor-reported and the full technical report is not yet published.",
+    "channels": [
+      "ai",
+      "security",
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [
+      "languages"
+    ],
+    "state": "confident",
+    "novelty": "open-weight 1T model leads coding/cyber benchmarks with 47% fewer tokens",
+    "audience": "engineers evaluating open-weight LLMs for coding agents and defensive security tooling",
+    "source_url": "https://mistral.ai/news/mistral-large-4-oss",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50289418",
+        "points": 1274,
+        "comments": 357,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://mistral.ai/news/mistral-large-4-oss/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://mistral.ai/news/mistral-large-4-oss/",
+        "points": null,
+        "comments": null,
+        "name": "Mistral AI"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-29T12:00:07+00:00",
+    "published_at": "2026-11-06T13:59:34.563485+00:00",
+    "curated_at": "2026-11-06T13:59:34.563485+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 702223,
     "story_id": "s_b69e6d64da940a0f",
     "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
     "relevance": 7,
-    "score": 6.782,
+    "score": 6.749,
     "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
     "notes": [
       "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
@@ -336,7 +505,7 @@
     "story_id": "s_06c6f6e402f3b3f2",
     "title": "Closed AI models dominate the price-performance frontier",
     "relevance": 7,
-    "score": 6.336,
+    "score": 6.295,
     "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
     "notes": [
       "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
@@ -450,7 +619,7 @@
     "story_id": "s_df04d6b94a5f2f01",
     "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
     "relevance": 7,
-    "score": 6.438,
+    "score": 6.391,
     "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
     "notes": [
       "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
@@ -508,11 +677,110 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 649053,
+    "story_id": "s_9bfe692ab20770d6",
+    "title": "Early progress on accelerating drug development with Claude",
+    "relevance": 6,
+    "score": 6.008,
+    "why": "Anthropic is now co-owner of drug programs, not just a model vendor, and it is self-reporting wet-lab numbers (10x tighter binding, 70% shorter CAR-T sequences, 89% less review time) that let you gauge where LLM-driven design actually bites in a real pipeline.",
+    "notes": [
+      "Six partners named: BigHat Biosciences, Bristol Myers Squibb, Divergence Labs, Enveda, Generate Biomedicines, The Column Group (TCG). All results are self-reported by Anthropic and partners; most are preclinical, and no peer review or independent replication is cited.",
+      "Generate Biomedicines: six scientists used Claude Code to redesign part of a CAR T-cell therapy's genetic instructions; one design was ~70% shorter and in lab tests gave ~10x more receptors per immune cell, killed tumor cells more efficiently, and kept cells active longer. Aim is to extend CAR-T from blood cancers to solid tumors.",
+      "Divergence Labs (food allergy, IgE-detaching antibody): Claude generated ~35,000 antibody designs in about a month, largely autonomously; early tests found 3 designs that bind IgE and 20 that dislodge it, with 3 of those 20 beating the standard medication. A two-arm combined drug is the next step, not yet built.",
+      "BigHat Biosciences: Claude connected to lab-data system Reccy proposed changes; ~1,010 variants made and tested in ~10 weeks. Best versions bound >10x more tightly, one lead stayed in solution 18C higher, another clumped >100x more slowly. Mid-project, Claude plus a researcher flagged misleading heat-stability/clumping metrics and proposed a corrected protocol that held up.",
+      "Enveda (manufacturing/filings): over 1,061 pages, Claude caught all 11 issues human reviewers found plus 7 they missed, cutting review time 89% (from >25 hours to <3). One regulatory draft took Claude 4 hours vs ~3 months by hand; a second had one minor error on human review.",
+      "Anthropic acquired one-person company Mithril Medicine (founder Cody Tranbarger), working on two rare muscular dystrophies; took one candidate to promising mouse results in under 18 months, with human trials projected as soon as late 2028. TCG is spinning up a Claude-run company, Pleiades; BMS use expands in 2027."
+    ],
+    "summary": "Anthropic's life sciences team describes early results from deep research partnerships with six drug developers (BigHat, Bristol Myers Squibb, Divergence Labs, Enveda, Generate Biomedicines, The Column Group) plus its own programs, framing drug development as a chain of distributed bottlenecks rather than a single design problem. Reported wins span modalities: Generate shortened CAR-T genetic instructions ~70% for ~10x more receptors; Divergence used Claude to generate ~35,000 antibody designs in a month and found binding and IgE-dislodging hits; BigHat tested ~1,010 variants in ~10 weeks for >10x tighter binding and better stability, and Claude helped catch flawed assay metrics; Enveda cut manufacturing-document review time 89% and drafted regulatory filings in hours instead of months. On the business side, TCG is launching a Claude-run company (Pleiades) and Anthropic acquired Mithril Medicine, targeting human trials for a muscular dystrophy candidate as soon as late 2028. The work is almost entirely preclinical and all figures are vendor/partner self-reported; Anthropic also announced Claude Science, life-science credits, a Life Sciences Verification Program with relaxed safeguards for trusted orgs, and an open call for guest investigators.",
+    "channels": [
+      "ai",
+      "science"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "concrete AI-driven drug design results across 6 biotech partners",
+    "audience": "AI researchers and biotech/pharma technologists tracking applied AI in life sciences",
+    "source_url": "https://anthropic.com/research/early-progress-drug-development",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50265609",
+        "points": 312,
+        "comments": 318,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.anthropic.com/research/early-progress-drug-development",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-27T20:50:42+00:00",
+    "published_at": "2026-11-06T13:28:37.009861+00:00",
+    "curated_at": "2026-11-06T13:28:37.009861+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 709998,
+    "story_id": "s_606a35730c31543c",
+    "title": "Blender's UI and Runtime: Much Faster Than GPUI",
+    "relevance": 6,
+    "score": 6.079,
+    "why": "If the benchmarks hold, you can ship a native desktop UI with Blender's drag-to-scrub number fields and fuzzy menu search from Python, Rust, JS/React, C, or Dear ImGui without bundling a browser or webview, in a ~7 MB executable that boots in ~70 ms.",
+    "notes": [
+      "The core is a small C runtime (the 'kit', one header BUI_kit.h) that ports Blender's own interface_widgets.cc drawing code and interaction rules; thin bindings sit on top for Python, Rust, JS/React (via napi-rs), C/C++, and Dear ImGui. No Blender install required.",
+      "Self-reported benchmark against gpui-fast: 2-4x less CPU per frame, less RAM, ~5 ms first frame. Thumbnail scrolling of 1,000 photos cited at 2.9 ms p99 / 100 MB vs 96 ms / 2.5 GB when decoding on the UI thread. No benchmark methodology is given in the text.",
+      "Reproduces Blender UX: number fields you drag with a hidden continuous cursor (Shift precision, Ctrl snap), in-field math via Blender's expression evaluator (2*pi, min(4,3)), fuzzy menu search ('ad cu' finds 'Add Cube'), Ctrl+Z on every UI edit, pie menus. 45 native Blender widgets/editors, 10 also exposed from Rust and JavaScript.",
+      "The Rust and JS sides accept HTML/CSS/Tailwind v4 and JSX but run no browser engine, webview, or network; React 19.3 renders to BUI with hooks backed by signals. Rust also accepts gpui-compatible builder syntax (div().flex().gap_2()).",
+      "Compatibility claims: tkinter binding exposes all 7,846 public tkinter/ttk names with 9 programs claimed to behave identically; Qt-syntax binding covers ~24% of Qt method names (missing ones raise AttributeError) and is marked Partial. Dear ImGui runs the real 1.93, all 399 cimgui functions.",
+      "Status is uneven: Python tkinter and Blender components are 'Complete'; Rust, JS, and ImGui are 'Working'; Qt is 'Partial'; macOS Cocoa host is experimental and JS runs headless-only there; npm packages are prebuilt only for Windows x64 (Linux builds from source)."
+    ],
+    "summary": "BUI decouples Blender's user interface into a standalone cross-language UI library built on a small C runtime called the kit, which ports Blender's interface_widgets.cc drawing code and follows Blender's interaction rules. Layout, input, drawing, and presenting happen in native code on CPU or an opt-in GPU renderer (Direct3D 11 on Windows, OpenGL 3.3 on Linux), with thin bindings for Python (tkinter syntax, Qt syntax, 45 Blender components, Dear ImGui), Rust (rsx!/gpui builders, HTML/CSS/Tailwind), JavaScript/React (via napi-rs, no browser or webview), C, and Dear ImGui 1.93. It reproduces Blender UX details such as drag-to-scrub number fields with expression evaluation, fuzzy menu search, and undo on every edit, plus damage rendering so an idle UI costs 0% CPU. The project reports a JS build producing a ~7 MB executable with a ~70 ms first frame and 19 MB RAM, and claims 2-4x less CPU per frame than gpui-fast with lower RAM and a ~5 ms first frame; these are author-provided numbers without stated methodology. Status varies by binding: Python tkinter and components are complete, Rust/JS/ImGui are working, Qt is partial (about 24% of Qt method names), and macOS support is experimental with JS headless-only.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "hardware",
+    "subcategories": [
+      "silicon"
+    ],
+    "state": "confident",
+    "novelty": "decouples Blender's widget/interaction engine into standalone cross-language UI library",
+    "audience": "devtool builders wanting fast native GUIs without a browser engine",
+    "source_url": "https://github.com/ppmpreetham/BUI",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50389333",
+        "points": 353,
+        "comments": 148,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/ppmpreetham/BUI",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-06T07:40:35+00:00",
+    "published_at": "2026-11-06T13:28:06.246903+00:00",
+    "curated_at": "2026-11-06T13:28:06.246903+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 702244,
     "story_id": "s_d188192e2fa9c5e1",
     "title": "Show HN: Stroq – a local audit of what your coding agent did and why",
     "relevance": 6,
-    "score": 6.538,
+    "score": 6.505,
     "why": "If you run Claude Code, Codex, or Cursor, this tool reads your existing session transcripts locally and tells you which of your credentials showed up in commands that left the machine, naming keys to rotate today.",
     "notes": [
       "`npx @stroq/cli` runs fully local: it reads the last 30 days of sessions, key files, and agent working folders, prints key names but never values, writes only a cache under ~/.stroq, and makes no outbound calls. No account, no telemetry; Apache-2.0, Node.js 22+.",
@@ -564,7 +832,7 @@
     "story_id": "s_f96c2b5a4d055875",
     "title": "Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3",
     "relevance": 6,
-    "score": 6.687,
+    "score": 6.661,
     "why": "If most of an agent's wall-clock time is idle waiting on inference, Rivet's model lets one node hold hundreds of thousands of agents at 72 KB each instead of paying for a 512 MiB VM per agent that mostly sits idle.",
     "notes": [
       "Core design: each Actor is a long-lived process with in-memory state, per-Actor SQLite, WebSockets, and scheduling; Actors share one Node.js or Bun process rather than each booting a sandbox, so the agent loop (the 'head') runs outside the sandbox and reaches code execution (the 'hands') only through tools.",
@@ -593,8 +861,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50381687",
-        "points": 103,
-        "comments": 53,
+        "points": 105,
+        "comments": 54,
         "name": "Hacker News"
       },
       {
@@ -725,7 +993,7 @@
     "story_id": "s_3c0ba1e344fab490",
     "title": "Schools that block Google’s A.I. will lose student access to its search engine",
     "relevance": 6,
-    "score": 6.02,
+    "score": 6.013,
     "why": "If the reported policy is real, a school's choice to disable Google's AI features would cost its students access to Google Search itself, turning an opt-out into a loss of core infrastructure.",
     "notes": [
       "Headline claim: schools that block Google's AI features reportedly lose student access to Google's search engine, coupling AI adoption to a product schools already depend on.",
@@ -847,7 +1115,7 @@
     "story_id": "s_18955c783c1342c6",
     "title": "Discord is ditching Electron and its new app uses less RAM",
     "relevance": 6,
-    "score": 7.537,
+    "score": 7.502,
     "why": "If one of the largest Electron apps can shed the Chromium runtime, it reopens the question of whether every desktop app needs a bundled browser to ship cross-platform.",
     "notes": [
       "Headline claim: Discord is rebuilding its desktop client to drop Electron, the Chromium-plus-Node.js shell most cross-platform desktop apps use.",
@@ -899,7 +1167,7 @@
     "story_id": "s_8b17a38219317e77",
     "title": "Nvidia Kubernetes Engine (NVKE)",
     "relevance": 6,
-    "score": 6.767,
+    "score": 6.76,
     "why": "If you run GPU hardware and want to hand customers isolated Kubernetes clusters the way a cloud provider does, Nvidia now ships the open-source (Apache 2.0) management plane to do it, though it is preview-only and ships with API auth off and plain HTTP by default.",
     "notes": [
       "Architecture: a throwaway seed cluster stands up a management cluster running the NVKE management plane; that plane then provisions and lifecycle-manages many isolated workload clusters, each with its own control plane, etcd, and node pools. Built on Cluster API plus a node agent, not a K8s distro or CAPI flavour.",
@@ -929,7 +1197,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50387738",
-        "points": 87,
+        "points": 100,
         "comments": 22,
         "name": "Hacker News"
       },
@@ -1012,7 +1280,7 @@
     "story_id": "s_2712d86d09c6ba80",
     "title": "Show HN: OmniDiff – Opensource, super fast, content aware Git difftool, in Rust",
     "relevance": 6,
-    "score": 7.402,
+    "score": 7.369,
     "why": "A git difftool that renders PDFs page-by-page, fonts glyph-by-glyph, and images pixel-by-pixel inside the terminal, with a measured p50 of 4.2ms and p99 of 177ms over 2,302 fixtures, so binary and structured-file diffs stop being \"Binary file differs.\"",
     "notes": [
       "Content is detected by bytes, not filename: 25 languages get tree-sitter structural diffs; pictures (PNG/JPEG/GIF/WebP/etc.) diff pixel-by-pixel with frame-by-frame animation; archives (zip/tar/gzip/xz/bzip2, including Office docs and EPUB) diff member-by-member recursively; fonts (TTF/OTF/WOFF/WOFF2/EOT) glyph-by-glyph; plus PDFs, cursors, and gettext/Qt message catalogs.",
@@ -1292,7 +1560,7 @@
     "story_id": "s_52dabe367e278f51",
     "title": "I struggle to believe that AI R&D is ingenious",
     "relevance": 6,
-    "score": 6.764,
+    "score": 6.715,
     "why": "If you are betting on autonomous research agents, this practitioner's account pins down where they still fail: picking the right papers, designing experiments with enough signal, and knowing which result matters, all tasks a human still has to seed.",
     "notes": [
       "The author, working with an agent called Astra, lists concrete judgment failures: missing the obviously most relevant paper or blog post during literature review, running experiments with too little training data to distinguish the architectures being compared, and pursuing trivial directions on a philosophy wiki project.",
@@ -1453,7 +1721,7 @@
     "story_id": "s_31c4b145bbcd6915",
     "title": "Show HN: Firenook – Firebase emulators in Rust: 40× faster writes, 10× less RAM",
     "relevance": 6,
-    "score": 6.683,
+    "score": 6.688,
     "why": "If the 40× write and 10× RAM claims hold, your Firebase test suite and CI emulator startup get cheaper on every local run, with no code changes since it speaks the same SDK protocols.",
     "notes": [
       "Firenook reimplements Firebase's emulator suite in Rust and is pitched as a drop-in alternative, claiming 40x faster writes and 10x less RAM than the official emulators. Both figures are self-reported; no benchmark methodology, workload, or hardware is given in the text.",
@@ -1480,8 +1748,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50378643",
-        "points": 127,
-        "comments": 17,
+        "points": 146,
+        "comments": 18,
         "name": "Hacker News"
       },
       {
@@ -1558,7 +1826,7 @@
     "story_id": "s_d2c637bd65be0d63",
     "title": "MUON-RT Reusing the Teacher's Trajectory for Momentum-Free Muon for LLM Self-Distillation",
     "relevance": 6,
-    "score": 6.403,
+    "score": 6.37,
     "why": "If the results hold, a 7B self-distillation run drops its optimizer memory by roughly 40% versus AdamW while gaining accuracy, because the EMA teacher's state replaces the momentum buffer you were already paying for twice.",
     "notes": [
       "Core idea: EMA-teacher self-distillation already stores a running history of student updates, so Muon-RT reuses the teacher-student displacement as a momentum substitute and drops Muon's separate momentum buffer for hidden weight matrices.",
@@ -1787,7 +2055,7 @@
     "story_id": "s_067188733f961196",
     "title": "Claude Code sends your email address to websites",
     "relevance": 6,
-    "score": 7.124,
+    "score": 7.094,
     "why": "If you ran Claude Code before v2.1.317, your account email may already be sitting in the server logs of every site the agent fetched, and the only fix shipped is a default-on plugin you can still toggle off.",
     "notes": [
       "The reporter says Claude Code put the user's email address in the User-Agent header on agentic web searches, done without explicit consent, and attributes 'dozens of scam emails per day' to that exposure.",
@@ -1815,8 +2083,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50385272",
-        "points": 1222,
-        "comments": 387,
+        "points": 1290,
+        "comments": 408,
         "name": "Hacker News"
       },
       {
@@ -1837,7 +2105,7 @@
     "story_id": "s_9eca6ad74a759107",
     "title": "Cuban: Facebook knowingly runs AI deepfake scam ads; docs say $16B fraud revenue",
     "relevance": 6,
-    "score": 7.232,
+    "score": 7.225,
     "why": "The 95%-confidence ban threshold is the load-bearing detail: anyone building or auditing ad-fraud enforcement now has a concrete number for how much scam traffic a trillion-dollar platform will knowingly monetize, and the SEC is investigating.",
     "notes": [
       "Internal Meta documents reported by Reuters (Nov 6, 2025) project roughly $16B, about 10% of 2024 revenue, from ads pushing scams and prohibited products; one late-2024 doc valued the 'higher risk' category alone at about $7B/year.",
@@ -1866,8 +2134,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50385870",
-        "points": 371,
-        "comments": 180,
+        "points": 411,
+        "comments": 186,
         "name": "Hacker News"
       },
       {
