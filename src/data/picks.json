@@ -1,1 +1,501 @@
-[]
+[
+  {
+    "id": 651444,
+    "story_id": "s_18d837e648767f29",
+    "title": "Ten days later, Git on macOS still trusts the compromised eMudhra certificates",
+    "relevance": 8,
+    "score": 6.755,
+    "why": "If you clone, pull, or push over HTTPS on macOS, anyone on your network path can inject attacker-chosen code or steal your GitHub tokens, and macOS 27.2 silently undid the manual fix you may have applied.",
+    "notes": [
+      "Apple was notified of the eMudhra compromise on 17 October; as of 28 October the git, curl, and python3 that ship with macOS still trust the compromised eMudhra intermediate certificates, per the site.",
+      "macOS 27.2, released 26 October, did not fix the issue and reverted the manual workaround users had applied, re-exposing them; Apple's own guidance warns updates may revert the fix, so checks and workaround must be repeated after each update.",
+      "Apple already protected Safari and apps built on its native networking framework, but not the bundled developer CLI tools.",
+      "Demonstrated attack: git -c http.curloptResolve=github.com:443:15.235.19.186 clone against a test server presenting a github.com cert issued by a compromised eMudhra intermediate; a patched git refuses with a cert error, a vulnerable one clones a README beginning with INTERCEPTED. Keep the fake-user@ prefix or git leaks GitHub credentials to the server.",
+      "Suggested fix is removing the affected roots from /etc/ssl/cert.pem; the site urges Apple to ship this. Dozens of other, often volunteer-run projects shipped fixes days earlier.",
+      "Caveat for infra teams: macOS CI/build runners carry the same supply-chain MITM risk. Site published by Dennis Jackson with community contributors, Apache 2.0, PRs welcome; vendor numbers and the disclosure timeline are self-reported."
+    ],
+    "summary": "A community site published by Dennis Jackson reports that ten days after Apple was notified (17 October) of the eMudhra certificate compromise, the developer tools Apple ships with macOS, including git, curl, and python3, still trust the compromised eMudhra intermediate certificates as of 28 October. macOS 27.2, released 26 October, did not fix the issue and reverted manual workarounds users had applied. Because these tools trust the bad roots, anyone on the network path between a user and a server can MITM HTTPS connections: git clones and pulls can deliver attacker-chosen code, pushes can be altered, and credentials such as GitHub tokens can be intercepted. The site provides copy-paste checks (git ls-remote and curl against test domains) and an end-to-end demo using http.curloptResolve to redirect github.com to a test server presenting a github.com certificate issued by a compromised eMudhra intermediate. Apple has already protected Safari and apps on its native networking framework but not the CLI dev tools; the site asks Apple to remove the affected roots from /etc/ssl/cert.pem. The suggested manual workaround must be reapplied after each macOS update, and teams are warned that macOS CI runners carry the same supply-chain risk.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "supplychain"
+    ],
+    "state": "confident",
+    "novelty": "Apple's shipped git/curl/python3 still trust compromised eMudhra CAs 10 days post-disclosure",
+    "audience": "macOS developers and security teams managing CI/build infrastructure",
+    "source_url": "https://emudhra.we-have-a-problem.com/apple.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50271640",
+        "points": 1063,
+        "comments": 380,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://emudhra.we-have-a-problem.com/apple.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-28T11:03:40+00:00",
+    "published_at": "2026-11-06T07:38:34.055598+00:00",
+    "curated_at": "2026-11-06T07:38:34.055598+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 708438,
+    "story_id": "s_df04d6b94a5f2f01",
+    "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
+    "relevance": 7,
+    "score": 6.699,
+    "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
+    "notes": [
+      "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
+      "Two account preconditions must both hold: at least one active user account whose password is hashed with SHA256 or SHA512, plus a target account marked passwordless with '*' in /etc/shadow (a configuration common for certificate-based auth).",
+      "Checkpoint says sshd borrows the hashed account's salt; without that salt the attack fails, and the salt-providing account must be active, not merely present as a hash.",
+      "Exploitation is a single connection with a password field longer than 256 characters: Alpine maintainers describe it as 'one connection, works every time, needs no retries.'",
+      "Root is protected by the default PermitRootLogin prohibit-password setting, but accounts reachable this way that hold doas or sudo rights can still escalate to root.",
+      "Described as a decade-old bug; the article does not provide a CVE identifier, patch status, or an estimate of how many devices are affected."
+    ],
+    "summary": "A roughly decade-old authentication bypass affects systems where OpenSSH is used with musl libc and without PAM, a combination common on Alpine Linux and possibly other distributions. An attacker who can reach the SSH port can log into a passwordless account (one marked '*' in /etc/shadow, as used for certificate-based auth) by supplying a password field longer than 256 characters, with no retries needed. Checkpoint researchers report that exploitation depends on the presence of an active account whose password is hashed with SHA256 or SHA512, because sshd reuses that account's salt; the attack fails without it. Alpine maintainers characterize it as reliable: 'one connection, works every time.' Root logins are protected under the default PermitRootLogin prohibit-password setting, but accounts with doas or sudo rights can still be used to escalate to root. The article does not state a CVE, patch availability, or affected-device counts.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "decade-old musl+OpenSSH passwordless-account auth bypass disclosed",
+    "audience": "Linux/security engineers managing Alpine or musl-based SSH deployments",
+    "source_url": "https://arstechnica.com/security/2026/11/vulnerability-allows-attackers-to-log-into-some-linux-devices-sans-password",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arstechnica.com/security/2026/11/vulnerability-allows-attackers-to-log-into-some-linux-devices-sans-password/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMiuAFBVV95cUxQYmRJaTFLMTV3OGd1QzlWOEhnNmE2alpWUkZfXzNBSEpNNjJCdWRfTm00VW93OWNZcjdULWZqMzVDZnFtdll0YjRMMkREdFhMVkN6TnMzLXVxU1hIZzhDTGNnUl9WWDFVWW5xZ1pRc3VDOGNlUmhwUzFDOGg1aHJFZUtiOE5rSm5GWWo4RmFqeXU3RUFxRnhaX1Y5YnQ0d2Fuc0JtMlBEaHJRX0stazBzWXBqZW13N3dR?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News Technology"
+      },
+      {
+        "url": "https://lemmy.world/post/54043693",
+        "points": null,
+        "comments": null,
+        "name": "Lemmy: technology (lemmy.world)"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/11/vulnerability-allows-attackers-to-log-into-some-linux-devices-sans-password/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-11-05T23:09:36+00:00",
+    "published_at": "2026-11-06T08:09:23.038166+00:00",
+    "curated_at": "2026-11-06T08:09:23.038166+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 652642,
+    "story_id": "s_345f56f85f80bb0b",
+    "title": "NVIDIA Nemotron 3.5 Transcribe and Granary v2: Intelligent Multilingual Transcription You Can Prompt and Adapt",
+    "relevance": 6,
+    "score": 6.527,
+    "why": "One ~4B-active-parameter open-weight checkpoint does ASR, diarization, translation, and audio Q&A under natural-language prompts, tops the Hugging Face Open ASR English board at 5.33% WER, and runs 100 hours of audio in under three minutes on a single Blackwell GPU.",
+    "notes": [
+      "Coverage: transcribes 40 languages, translates 31 to/from English, diarizes 13 languages, labels up to 8 speakers, handles recordings up to one hour; audio Q&A is trained in English only, and language support varies by task per the model card's matrix.",
+      "Architecture: a speech encoder paired with a hybrid Mamba-Transformer mixture-of-experts LM, ~4B of 30B parameters active per token; diarization uses Sortformer speaker cues fed alongside acoustic features so speaker tags are produced during generation rather than in a separate attach step.",
+      "Claimed leaderboard results (self-reported, methodology partly vendor-defined): 5.33% English WER (first among open-weight, API models excluded), 4.62% multilingual, 10.98% long-form; ties for first on Artificial Analysis AA-WER at 2.8% against a 24B-active competitor; lowest diarization error rate (18.26% across 21 languages) on David AI, just ahead of NVIDIA's own Nemotron 3 Diarization (18.38%); lowest cpWER (32.4%) of 14 systems on VoiceArena.",
+      "Medical fine-tuning case study (Eka Care benchmark, 3,619 clips, speaker-split into 855 tuning / 2,764 held-out): held-out WER dropped from 22.44% best-prompt baseline to 12.17%, a 45.8% relative cut, beating an open medical-specialist model (13.79%) and a general ASR model (14.92%); prompt tuning alone cut full-set WER from 30.8% to 23.8%. Adaptation took ~14 GPU-hours on one GB300 (encoder + projection trained, LoRA on the LM, two mixtures averaged); general LibriSpeech test-clean WER rose slightly (1.54% to 1.69%).",
+      "Granary v2 open data: public manifest of 463,062 hours across 48 languages and 16 corpora (up from 25 languages in v1), with three transcript forms (tn_raw, itn_raw, itn_clean), task labels, and quality flags; these figures describe the release, not Transcribe's training mixture or sampling weights, and source audio must be downloaded separately under each corpus's license.",
+      "Deployment: built for recorded audio, not live streaming; serve today via vLLM or SGLang-Omni, or hosted endpoints (Baseten, DeepInfra, Simplismart); NVFP4 quantized versions and local NeMo-Speech.cpp are forthcoming; throughput figure (100 hours in under three minutes on one RTX PRO 6000 Blackwell) used the not-yet-released quantized build on 30-second clips at high concurrency."
+    ],
+    "summary": "NVIDIA released Nemotron 3.5 Transcribe, an open-weight promptable speech model that unifies transcription, speaker diarization, translation, and audio question answering in one checkpoint, available on Hugging Face and ModelScope. It covers 40 languages for transcription, 31 for translation to/from English, and 13 for diarization, handling up to eight speakers and one-hour recordings, with output steered by natural-language instructions. The model pairs a speech encoder with a hybrid Mamba-Transformer MoE LM so only ~4B of 30B parameters are active per token, and uses Sortformer cues to tag speakers during generation. NVIDIA reports first-among-open-weight results on the Hugging Face Open ASR English leaderboard (5.33% WER), a tie for first on Artificial Analysis AA-WER (2.8%) against a 24B-active competitor, and lowest diarization error rates on David AI and VoiceArena benchmarks; these are self-reported against partly vendor-defined metrics. Alongside it, NVIDIA published Granary v2, an open 463,062-hour multilingual manifest across 48 languages with a reusable NeMo Curator pipeline, plus NeMo Speech fine-tuning recipes. A medical case study on the Eka Care benchmark showed fine-tuning cut held-out WER from 22.44% to 12.17% (45.8% relative) in about 14 GPU-hours on one GB300, while slightly degrading general LibriSpeech accuracy. The model targets recorded, not streaming, audio and serves via vLLM or SGLang-Omni, with quantized local builds forthcoming.",
+    "channels": [
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "apps"
+    ],
+    "state": "confident",
+    "novelty": "open promptable model unifies ASR, diarization, translation, QA in one checkpoint",
+    "audience": "engineers building speech/transcription pipelines who need open-weight, adaptable ASR",
+    "source_url": "https://huggingface.co/blog/nvidia/nemotron-transcribe-granary",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50275128",
+        "points": 108,
+        "comments": 17,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://huggingface.co/blog/nvidia/nemotron-transcribe-granary",
+        "points": null,
+        "comments": null,
+        "name": "Hugging Face Blog"
+      },
+      {
+        "url": "https://huggingface.co/blog/nvidia/nemotron-transcribe-granary",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-28T14:58:17+00:00",
+    "published_at": "2026-11-06T08:10:08.901143+00:00",
+    "curated_at": "2026-11-06T08:10:08.901143+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 681282,
+    "story_id": "s_d2c637bd65be0d63",
+    "title": "MUON-RT Reusing the Teacher's Trajectory for Momentum-Free Muon for LLM Self-Distillation",
+    "relevance": 6,
+    "score": 6.574,
+    "why": "If the results hold, a 7B self-distillation run drops its optimizer memory by roughly 40% versus AdamW while gaining accuracy, because the EMA teacher's state replaces the momentum buffer you were already paying for twice.",
+    "notes": [
+      "Core idea: EMA-teacher self-distillation already stores a running history of student updates, so Muon-RT reuses the teacher-student displacement as a momentum substitute and drops Muon's separate momentum buffer for hidden weight matrices.",
+      "Mechanism: it removes the displacement's radial component, normalizes it spectrally, and mixes it with the current gradient after Newton-Schulz orthogonalization; the paper argues the displacement encodes an exponentially weighted update history that smooths temporally uncorrelated noise under a local model.",
+      "Reported SDFT on Qwen2.5-7B-Instruct: +2.6 average accuracy points over AdamW with 42% less persistent memory, and +5.4 points over momentum Muon with 27% less persistent memory (authors' numbers).",
+      "Reported SDPO on Olmo-3-7B-Instruct: +2.0 average accuracy points over AdamW.",
+      "Theory: a linear contraction bound on an expected objective-gap toward a residual error level, established only under explicit regularity and alignment assumptions.",
+      "Caveats: results are self-reported on two 7B instruction models and are scoped to self-distillation setups with an EMA teacher; no methodology for the accuracy averages or benchmark list appears in the abstract, and the memory savings depend on the teacher state already existing."
+    ],
+    "summary": "Muon-RT is a variant of the Muon optimizer for large language model self-distillation that eliminates the separate momentum buffer for hidden weight matrices by reusing the displacement between an EMA teacher and the student, which the authors argue already encodes an exponentially weighted history of applied updates. The method strips the displacement's radial component, normalizes it spectrally, and combines it with the current gradient after Newton-Schulz orthogonalization. The paper provides a convergence argument: linear contraction of an expected objective-gap bound toward a residual error level, under stated regularity and alignment assumptions. Reported results include Self-Distillation Fine-Tuning on Qwen2.5-7B-Instruct beating AdamW by 2.6 average accuracy points with 42% less persistent memory and momentum Muon by 5.4 points with 27% less memory, and Self-Distillation Policy Optimization on Olmo-3-7B-Instruct beating AdamW by 2.0 points. All numbers are authors' self-reported results; the abstract does not specify the benchmark suite or averaging methodology.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "reuses teacher-student displacement to drop Muon's momentum buffer",
+    "audience": "LLM training/infra engineers optimizing fine-tuning memory and optimizer design",
+    "source_url": "https://arxiv.org/abs/2610.41104",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.41104",
+        "points": 19,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.41104",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CL"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.41104",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.LG"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.41104",
+        "points": null,
+        "comments": null,
+        "name": "arXiv stat.ML"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-11-02T05:00:00+00:00",
+    "published_at": "2026-11-06T08:09:41.420827+00:00",
+    "curated_at": "2026-11-06T08:09:41.420827+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 659282,
+    "story_id": "s_b631daec11025894",
+    "title": "Understanding email encryption",
+    "relevance": 6,
+    "score": 6.578,
+    "why": "If you run mail infrastructure, this lays out why Fastmail, Google, and Yahoo deliberately ship MTA-STS instead of DANE and reject zero-access encryption by default, with the availability and functionality costs that drive those defaults.",
+    "notes": [
+      "Server-to-server transit relies on opportunistic TLS, which falls back to plaintext and skips certificate verification by default; an active attacker can strip the STARTTLS command to force an unencrypted connection. Fastmail enabled inbound opportunistic TLS in April 2009, outbound in January 2010.",
+      "MTA-STS (DNS record plus HTTPS-hosted policy file) lets a domain mandate STARTTLS with a valid cert; worst-case failure is delayed or bounced mail. DANE instead publishes cert info in DNSSEC-signed DNS records, removing CA dependence but adding outage risk: cited failures include Cloudflare's 1.1.1.1 (October 2023, expired cached root-zone DNSSEC signatures) and NZ's .nz TLD (May 2023, key rollover). Fastmail, Google, and Yahoo all favor MTA-STS over DANE.",
+      "Zero-access encryption (Proton Mail, Tuta) derives keys from the user password client-side, but the article argues its protection is narrower than marketed: incoming plaintext is seen before encryption, metadata (addresses, timestamps, and Proton subject lines) stays unencrypted, browser-delivered decryption code can be modified by a compromised or court-compelled server, and senders retain readable copies. Trade-offs: password loss means permanent data loss, no server-side search, no standard IMAP/JMAP (vendor lock-in), limited support.",
+      "True end-to-end email (S/MIME, OpenPGP) has existed since the 1990s with near-zero consumer adoption. The article calls the PGP Web of Trust 'practically dead,' cites 'Why Johnny Can't Encrypt' (1999: 4 of 12 users succeeded within 90 minutes) and 2006/2019 follow-ups, and notes PGP's metadata leakage, lack of forward secrecy, and no practical key rotation. To/From/Date headers cannot be encrypted without breaking email.",
+      "Fastmail self-reports: full TLS 1.3 support, HSTS, implicit TLS over STARTTLS with unencrypted IMAP/POP/SMTP ports closed (per IETF recommendation), and encryption at rest on all volumes and backups with provider-held keys; valid court orders can compel decryption. Certificate Transparency logs are now required before browsers trust certs.",
+      "Framing argument: content-reading is what makes spam filtering, phishing detection, and malware scanning work, so provider-readable mail is treated as a security feature, not just a privacy cost. The piece concludes that journalists and those facing nation-state adversaries should use Signal rather than email."
+    ],
+    "summary": "Fastmail's engineering blog breaks email encryption into layers by threat model: TLS for the client-server connection (Fastmail runs TLS 1.3, HSTS, and implicit TLS with plaintext ports closed), opportunistic TLS between servers, encryption at rest, zero-access encryption, and end-to-end encryption. It argues each layer protects against a different, specific threat and carries trade-offs. Server-to-server opportunistic TLS falls back to plaintext and is vulnerable to STARTTLS-stripping MITM; MTA-STS and DANE try to close the gap, but Fastmail (like Google and Yahoo) picks MTA-STS because DNSSEC-based DANE raises availability risk, citing Cloudflare and .nz outages. The post is skeptical of zero-access encryption, listing limits (plaintext interception of incoming mail, unencrypted metadata, compromisable browser-delivered decryption code, sender-held copies) and functionality costs (permanent data loss on password loss, no server-side search, no standard IMAP/JMAP). It treats true end-to-end email as a decades-long usability failure (S/MIME, dead PGP Web of Trust, unencryptable headers) and frames content-reading as necessary for spam, phishing, and malware defense. The recommendation: transport plus at-rest encryption for everyday mail, and Signal rather than email for journalists or nation-state threat models. Vendor self-reported claims and framing should be read as Fastmail's position, which it says it re-evaluates over time.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "privacy"
+    ],
+    "state": "confident",
+    "novelty": "clear threat-model breakdown of email encryption layers, not a new technology",
+    "audience": "engineers/admins evaluating email provider security and MTA-STS/DANE deployment",
+    "source_url": "https://fastmail.com/blog/email-encryption",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50310038",
+        "points": 115,
+        "comments": 23,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.fastmail.com/blog/email-encryption/",
+        "points": null,
+        "comments": null,
+        "name": "Fastmail Engineering Blog"
+      },
+      {
+        "url": "https://www.fastmail.com/blog/email-encryption/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2025-12-17T00:00:01+00:00",
+    "published_at": "2026-11-06T07:54:34.054636+00:00",
+    "curated_at": "2026-11-06T07:54:34.054636+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 660007,
+    "story_id": "s_dda366b5444928d3",
+    "title": "Bliki: LLM Voice",
+    "relevance": 6,
+    "score": 6.697,
+    "why": "If you ship prose for other humans, Fowler's argument lands on your drafting process: let an LLM write the first draft and the \"uncanny valley\" voice is very hard to edit out, so the reader's trust erodes before any detector runs.",
+    "notes": [
+      "Fowler dismisses AI-detection tools on two grounds: doubt about their accuracy, and the deeper point that the LLM-voice reaction is a human uncanny-valley response, so by the time you reach for a tool it is already too late even if it clears the text.",
+      "The core recommendation: do not let an LLM write a draft, since the voice survives human editing; even accepting rephrasing suggestions is called dangerous, while using an LLM only for outline/structure is deemed possibly acceptable.",
+      "The tells are stylistic, not mechanical: Fowler says it is 'not the em-dashes, it's the load-bearing tapestries,' and he flags his own unreliability (some suspect phrasing is generational drift, not carbon-vs-silicon).",
+      "Stated exceptions: Jim Highsmith uses LLM help to write through Parkinson's; non-native English speakers use LLM translation; and low-stakes output (form letters, reports no one reads) where you are, per Michael Nygard, 'communicating with a process rather than a human.'",
+      "Site policy: contributors must disclose how they used AI, usually in acknowledgments; Fowler says he uses AI only as a search tool and verifies at the source, and the post itself declares no AI use. One counterexample is noted: an LLM first draft cleaned up by a professional editor at a major periodical showed no detectable LLM-voice.",
+      "The thinking-tool argument: Fowler treats writing as how he reaches coherence ('Say Your Writing'), and warns that delegating writing to LLMs also delegates comprehension and thought; writing well is a skill that only compounds with practice."
+    ],
+    "summary": "Martin Fowler's bliki entry describes \"LLM-Voice,\" the recognizable and off-putting quality he perceives in LLM-generated prose, and argues the reaction to it is a human uncanny-valley response rather than something to outsource to detection tools, which he distrusts for both accuracy and relevance. His main advice to authors: do not let an LLM produce a first draft, because the voice is very hard to expel through editing, and even accepting rephrasing suggestions is risky; using an LLM for an outline may be acceptable. He frames writing as essential to thinking and warns that delegating writing to LLMs delegates comprehension too. He allows exceptions: Jim Highsmith, who writes with LLM help because of Parkinson's disease; non-native speakers using LLM translation; and low-stakes documents meant for processes rather than people. His site requires contributors to disclose AI use in acknowledgments, and he states he used no AI in this post, using LLMs himself only as a verified search tool. He concedes some ambivalence, noting one case where an LLM first draft, cleaned up by a professional editor, carried no detectable LLM-voice, and that LLMs eventually becoming indistinguishable would be more worrying, not less.",
+    "channels": [
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Fowler's essay on detecting/avoiding \"LLM voice\" in writing",
+    "audience": "writers and tech bloggers wary of AI-assisted prose",
+    "source_url": "https://martinfowler.com/bliki/LLM-Voice.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50290177",
+        "points": 385,
+        "comments": 206,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://martinfowler.com/bliki/LLM-Voice.html",
+        "points": null,
+        "comments": null,
+        "name": "Martin Fowler's Blog"
+      },
+      {
+        "url": "https://martinfowler.com/bliki/LLM-Voice.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-29T14:28:00+00:00",
+    "published_at": "2026-11-06T07:39:16.766633+00:00",
+    "curated_at": "2026-11-06T07:39:16.766633+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 655863,
+    "story_id": "s_c79e81344456ab6b",
+    "title": "The Agent SDK",
+    "relevance": 6,
+    "score": 6.746,
+    "why": "Cursor is opening the exact framework behind its own Bugbot and Security Reviewer, so you can ship a PR-reviewing or incident agent defined as code and push it live with one `agent-sdk deploy`.",
+    "notes": [
+      "Agents are structured as a small software project: prompts in Markdown, tools as TypeScript functions, all version-controlled and reviewed like normal code; `defineAgent` takes a model (example uses `composer-2.5` with effort/fast params) and a local working directory.",
+      "`agent-sdk deploy` builds the agent, assigns it a URL, and runs it on Cursor infrastructure; alternatively each agent runs as a single Node process packable in a container on your own infra, with secrets and integrations managed from a dashboard.",
+      "Ships with subagent delegation (handing tasks to specialized agents with their own tools/sessions), parallel task splitting, and built-in evals plus event replay for testing critical workflows.",
+      "It is the same framework Cursor uses for its managed agents Bugbot, Security Reviewer, and Rollouts; code-review agents can respond to PR events from GitHub, GitLab, or Bitbucket and auto-approve changes meeting a policy.",
+      "Cited customer uses are self-reported: an internal Cursor team built `kb-reviewer` in about a day to check every PR against a knowledge base and cite the note behind each flag; the PGA Tour says it powers its software development factory. No benchmarks, pricing, or methodology are given.",
+      "Generally available as of the post; no numbers on quotas, latency, or cost are provided."
+    ],
+    "summary": "Cursor released the Agent SDK, a framework for defining software agents as code and deploying them to Cursor infrastructure or self-hosting them. Agents are organized like a project: Markdown prompts, TypeScript tool functions, external connections, and evals, all version-controlled; `defineAgent` configures the model (e.g., composer-2.5) and runtime. One `agent-sdk deploy` command builds the agent, gives it a URL, and runs it on Cursor's infra, or it can run as a single containerizable Node process. It supports subagent delegation, parallel task splitting, built-in evals, and event replay, and it is the same framework behind Cursor's Bugbot, Security Reviewer, and Rollouts. Stated use cases include PR-review agents wired to GitHub/GitLab/Bitbucket events, an internal kb-reviewer built in about a day, and the PGA Tour's internal software factory, though these are self-reported with no benchmarks or methodology. The SDK is generally available.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "code-defined deployable agent framework, not just a product",
+    "audience": "dev teams building custom internal agents for PR review/compliance/incident response",
+    "source_url": "https://cursor.com/blog/agent-sdk",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50273731",
+        "points": 104,
+        "comments": 115,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://cursor.com/blog/agent-sdk?ref=console.dev",
+        "points": null,
+        "comments": null,
+        "name": "Console.dev"
+      },
+      {
+        "url": "https://cursor.com/blog/agent-sdk",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-28T14:02:20+00:00",
+    "published_at": "2026-11-06T07:38:52.946789+00:00",
+    "curated_at": "2026-11-06T07:38:52.946789+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 708292,
+    "story_id": "s_067188733f961196",
+    "title": "Claude Code sends your email address to websites",
+    "relevance": 6,
+    "score": 7.274,
+    "why": "If you ran Claude Code before v2.1.317, your account email may already be sitting in the server logs of every site the agent fetched, and the only fix shipped is a default-on plugin you can still toggle off.",
+    "notes": [
+      "The reporter says Claude Code put the user's email address in the User-Agent header on agentic web searches, done without explicit consent, and attributes 'dozens of scam emails per day' to that exposure.",
+      "Anthropic's reply says a built-in mod named cc-plugin-privacy, introduced in v2.1.317 and later, deterministically blocks the behavior and is enabled by default; it can be disabled via the /plugins command.",
+      "Anthropic said it would try to publish the mod's source, as it does for other built-in mods, meaning the block's exact coverage was not yet publicly verifiable at the time of the thread.",
+      "Environment reported: Platform darwin, terminal tmux, Claude Code version 2.1.318; the reporter says they are migrating their company to Pi with OpenRouter.",
+      "The leak-to-scam causation and the volume of scam mail are the reporter's claims, not independently confirmed in the thread; Anthropic invited reports of any remaining gaps in the mod's checks.",
+      "The issue drew 812 points and 273 comments on Hacker News and 80-plus reactions on the GitHub issue."
+    ],
+    "summary": "A GitHub issue against Claude Code reports that the agent included the user's account email in the User-Agent header during web searches, exposing it to arbitrary third-party sites without explicit consent; the reporter blames this for dozens of scam emails per day and says they are moving their company to Pi with OpenRouter. The reporter argues the behavior should be removed from the harness entirely rather than offered as an opt-in or opt-out setting. Anthropic responded in the thread that it added a built-in mod, cc-plugin-privacy, in version 2.1.317 and later that deterministically blocks the behavior and is enabled by default, with an option to disable it via /plugins. Anthropic said it would try to publish the mod's source code and asked users to report any gaps in its checks. The reported environment was macOS (darwin), tmux, Claude Code 2.1.318. The item surfaced on Hacker News with 812 points and 273 comments.",
+    "channels": [
+      "ai",
+      "devtools",
+      "security"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Claude Code leaked user emails via User-Agent header in web searches",
+    "audience": "Developers using Claude Code or other AI coding agents with web-search tools",
+    "source_url": "https://github.com/anthropics/claude-code/issues/107757",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50385272",
+        "points": 918,
+        "comments": 306,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/anthropics/claude-code/issues/107757",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-05T22:17:15+00:00",
+    "published_at": "2026-11-06T07:22:33.922989+00:00",
+    "curated_at": "2026-11-06T07:22:33.922989+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 708489,
+    "story_id": "s_9eca6ad74a759107",
+    "title": "Cuban: Facebook knowingly runs AI deepfake scam ads; docs say $16B fraud revenue",
+    "relevance": 6,
+    "score": 7.302,
+    "why": "The 95%-confidence ban threshold is the load-bearing detail: anyone building or auditing ad-fraud enforcement now has a concrete number for how much scam traffic a trillion-dollar platform will knowingly monetize, and the SEC is investigating.",
+    "notes": [
+      "Internal Meta documents reported by Reuters (Nov 6, 2025) project roughly $16B, about 10% of 2024 revenue, from ads pushing scams and prohibited products; one late-2024 doc valued the 'higher risk' category alone at about $7B/year.",
+      "By Meta's own classification, users across its apps see about 15 billion 'higher risk' ads per day, defined as carrying obvious markers of fraud.",
+      "Automated systems must rate an advertiser account at least 95% likely to be running a scam before Meta bans it; below that threshold suspected scammers pay more per ad and stay live.",
+      "A May 2025 presentation by Meta's own safety staff estimated its platforms play a part in a third of successful scams in the US.",
+      "Meta spokesman Andy Stone called the 10% figure 'rough and overly-inclusive' and said the docs 'present a selective view'; he cited a 58% drop in scam-ad complaints over 18 months and 134M+ scam ads removed in 2025.",
+      "Mark Cuban's claim (on the Pivot podcast) is anecdotal: AI deepfakes of his face and voice sell a fake $294 diabetes cure, some ads carrying an 'AI-generated/entertainment' disclaimer; the same docs note an SEC investigation into Meta over ads tied to financial fraud."
+    ],
+    "summary": "Mark Cuban, speaking on the Pivot podcast, said Meta knowingly runs AI deepfake ads that clone his face and voice to sell a fake $294 diabetes cure, with some ads carrying disclaimers that the person is AI-generated. The article pairs that anecdote with Reuters' Nov 6, 2025 report on internal Meta documents estimating roughly $16 billion (about 10% of 2024 revenue) from scam and prohibited-product ads, with users seeing about 15 billion 'higher risk' ads per day. The documents describe an enforcement threshold under which Meta's automated systems ban an advertiser only at 95%+ scam confidence, letting lower-confidence suspected scammers remain live by paying more; a May 2025 internal presentation estimated Meta platforms figure in a third of successful US scams. Meta spokesman Andy Stone disputed the framing, calling the 10% figure 'rough and overly-inclusive,' and cited a 58% drop in scam-ad complaints over 18 months and more than 134 million scam ads removed in 2025. The documents also note an SEC investigation into Meta over advertising tied to financial fraud. Cuban, who co-founded generics pharmacy Cost Plus Drugs, called the platform 'the worst of the worst.'",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "category": "industry",
+    "subcategories": [
+      "business"
+    ],
+    "state": "confident",
+    "novelty": "internal docs quantify Meta's scam-ad tolerance thresholds",
+    "audience": "AI policy watchers, security researchers, ad-tech skeptics",
+    "source_url": "https://finance.yahoo.com/technology/ai/articles/mark-cuban-says-facebook-knowingly-213000020.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50385870",
+        "points": 268,
+        "comments": 122,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://finance.yahoo.com/technology/ai/articles/mark-cuban-says-facebook-knowingly-213000020.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-05T23:09:57+00:00",
+    "published_at": "2026-11-06T07:22:14.285094+00:00",
+    "curated_at": "2026-11-06T07:22:14.285094+00:00",
+    "model": "claude-opus-4-8"
+  }
+]
