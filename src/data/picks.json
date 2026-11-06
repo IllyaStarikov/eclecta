@@ -1,5 +1,60 @@
 [
   {
+    "id": 702222,
+    "story_id": "s_d331e378ee31fd6e",
+    "title": "sshole",
+    "relevance": 8,
+    "score": 7.386,
+    "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
+    "notes": [
+      "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
+      "Since musl commit b3c4cc12 (Aug 2012), crypt() returns the single character '*' on failure instead of NULL, so programs that never checked for NULL stop crashing but now see a failed hash that is byte-identical to a locked-account field.",
+      "Twenty days later, commit 88bf5a8a capped sha512crypt input at 256 bytes (sha512crypt slows with password length, a DoS vector); anything longer makes crypt() fail and return '*'. So a wrong password over 256 bytes compared against a stored '*' matches.",
+      "The bypass only triggers on musl WITHOUT PAM: PAM never calls crypt() for a '*' field, and most distros go through PAM. A fresh box with no password set is not affected; a locked '*' account needs one wrong attempt first.",
+      "Prior incidents in the same code path: CVE-2016-6210 (sshd username timing oracle, fixed by hashing against a borrowed salt for nonexistent users, which also catches real '*' users) and CVE-2019-5021 (Alpine Docker images shipped with no root password; Alpine later switched root-lock from '!' to '*' in 3.16/2022 so ssh keys still work, re-exposing this path).",
+      "Author claims the bug was found by fuzzing ~17,600 logins across glibc/musl/pam/no-pam/shadow/no-shadow sshd builds (with 'agent swarms'); every build agreed except musl-without-PAM, which accepted logins it should have rejected. Found four days after an Oct 2026 OpenSSH security review patched pick_salt() but missed this bug four lines below. Severity, CVE assignment, and real-world exploitation are self-reported and unverified in the text."
+    ],
+    "summary": "The post traces an sshd authentication bypass on musl-based systems (such as Alpine) without PAM back to a single reused sentinel character. Since 1980, Unix has used '*' in the password field to mark accounts that can never log in. In Aug 2012 musl changed crypt() to return '*' on failure rather than NULL (to avoid crashing callers that never null-checked), and three weeks later capped sha512crypt input at 256 bytes, making overlong passwords also fail and return '*'. As a result, a failed crypt() and a deliberately locked '*' account become indistinguishable, so comparing a wrong-but-crypt-failing password against a stored '*' field can succeed. The flaw hid for about a decade because PAM (used by most distros) never calls crypt() for '*' fields, musl doesn't test sshd, and a box needs both a '*'-locked account and a triggering wrong attempt. The author says it surfaced while fuzzing ~17,600 logins across build matrices (glibc/musl, PAM/no-PAM, shadow/no-shadow), with only musl-without-PAM diverging, discovered four days after an Oct 2026 OpenSSH review patched an adjacent function but missed this one. Claims about discovery method and scope are self-reported.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "musl+sshd auth bypass traced to shared \"*\" sentinel for both locked accounts and crypt() failures",
+    "audience": "systems/security engineers running Alpine/musl-based containers with sshd",
+    "source_url": "https://sshhole.com/",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50378228",
+        "points": 2749,
+        "comments": 665,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://sshhole.com",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://sshhole.com/",
+        "points": null,
+        "comments": null,
+        "name": "Tildes"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-05T12:19:02+00:00",
+    "published_at": "2026-11-06T11:54:33.907476+00:00",
+    "curated_at": "2026-11-06T11:54:33.907476+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 656049,
     "story_id": "s_cfdd9e4bb60d8b85",
     "title": "The AI cost of JavaScript frameworks",
@@ -228,11 +283,60 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 702223,
+    "story_id": "s_b69e6d64da940a0f",
+    "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
+    "relevance": 7,
+    "score": 6.782,
+    "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
+    "notes": [
+      "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
+      "Exploit is deterministic: one connection, a single 257-to-1024-byte password, no retries. Preconditions are the name of an account whose password field is '*' (normal for key-only accounts) plus at least one local account with a $5$ or $6$ hash to supply the salt.",
+      "Affected: openssh-server (no PAM, Alpine default) or openssh-server-pam with UsePAM no, when PasswordAuthentication is yes (the OpenSSH default). root ships as root:* since ~3.16 but is shielded by PermitRootLogin prohibit-password unless an account can doas to root. Every checked release is affected: 3.16 through 3.24 and edge.",
+      "tiny-cloud images (qcow2/VHD/AMI) from 3.18.11 to 3.24.3 ship an 'alpine' user with field '*' and passwordless doas; safe at first boot but exploitable the moment any $6$ hash appears (admin console password, user-data hashed_passwd), yielding an alpine shell that doas-es to root.",
+      "Not affected: containers without sshd, PasswordAuthentication no, openssh-server-pam with UsePAM yes, accounts locked with '!' in /etc/shadow, machines with no $-style hash, and cloud-init images (which write PasswordAuthentication no). Fixed in OpenSSH 10.6p2 and backported packages (3.24: 10.3_p1-r2; 3.21: 9.9_p2-r1; down to 3.16: 9.0_p1-r6).",
+      "apk upgrade does not restart the running daemon: you must rc-service sshd restart afterward. No CVE assigned at time of writing; reported by Özgün Kültekin of Wakefield, fixed by OpenSSH's Damien Miller and Darren Tucker."
+    ],
+    "summary": "Alpine Linux disclosed an unauthenticated password-authentication bypass in openssh-server built without PAM (the Alpine default), with no CVE assigned at publication. When PasswordAuthentication is yes, an attacker who knows the name of an account whose shadow field is '*' (normal for key-only accounts, including root and the cloud 'alpine' user) can log in by sending one overlong password of 257 to 1024 bytes; the attack is deterministic and needs no retries, provided at least one other local account carries a $5$ or $6$ hash. The root cause is that musl's crypt() returns the string '*' for keys over 256 bytes while sshd, lacking a salt for the passwordless account, borrows another account's salt and compares against the stored '*', producing a match. Every Alpine release checked (3.16 through 3.24 and edge) is affected, as are official tiny-cloud images, which become exploitable once any $6$ hash exists and then allow escalation to root via passwordless doas. Fixes ship in OpenSSH 10.6p2 and backported Alpine packages per branch, but apk upgrade does not restart the daemon, so sshd must be restarted manually; setting PasswordAuthentication no or using openssh-server-pam with UsePAM yes closes the hole otherwise. Not affected are containers without sshd, systems with password auth disabled, cloud-init images, and accounts locked with '!' in /etc/shadow.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "unauthenticated auth bypass via crypt() quirk on passwordless accounts",
+    "audience": "sysadmins and devops running Alpine Linux SSH servers, especially cloud/tiny-cloud images",
+    "source_url": "https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50379704",
+        "points": 595,
+        "comments": 126,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-05T14:44:20+00:00",
+    "published_at": "2026-11-06T12:57:28.917867+00:00",
+    "curated_at": "2026-11-06T12:57:28.917867+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 709094,
     "story_id": "s_06c6f6e402f3b3f2",
     "title": "Closed AI models dominate the price-performance frontier",
     "relevance": 7,
-    "score": 6.423,
+    "score": 6.336,
     "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
     "notes": [
       "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
@@ -346,7 +450,7 @@
     "story_id": "s_df04d6b94a5f2f01",
     "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
     "relevance": 7,
-    "score": 6.536,
+    "score": 6.438,
     "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
     "notes": [
       "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
@@ -404,11 +508,398 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 702244,
+    "story_id": "s_d188192e2fa9c5e1",
+    "title": "Show HN: Stroq – a local audit of what your coding agent did and why",
+    "relevance": 6,
+    "score": 6.538,
+    "why": "If you run Claude Code, Codex, or Cursor, this tool reads your existing session transcripts locally and tells you which of your credentials showed up in commands that left the machine, naming keys to rotate today.",
+    "notes": [
+      "`npx @stroq/cli` runs fully local: it reads the last 30 days of sessions, key files, and agent working folders, prints key names but never values, writes only a cache under ~/.stroq, and makes no outbound calls. No account, no telemetry; Apache-2.0, Node.js 22+.",
+      "`stroq sent` compares session transcripts against local credential files (e.g. ~/.aws/credentials, ~/.npmrc, project .env) and buckets each key into sent to another company, maybe sent, seen by the AI, used with its own service, or blocked. Caveat stated in the text: it names a send only when it sees the key in the command that sent it, so a key carried out via a script, file, or variable is missed, and a transcript match does not prove delivery to a model provider.",
+      "`stroq attack` runs 36 attacks (public reports plus synthetic cases) against the policy in a throwaway home dir; on v0.30.0 the self-reported result is 15 denied, 21 asked about, 0 passed through.",
+      "Hooks judge each tool call before it runs: they deny `curl | sh` and outbound calls carrying a known secret, and ask before a command reuses text the agent read (provenance ties an action back to the tool output it repeats). Matching is text-level, so a command the model writes from scratch does not trace back; the author calls it a filter, not a sandbox.",
+      "`stroq replay` re-scores historical Claude Code/Codex/Cursor transcripts including sessions from before Stroq was installed, but verdicts reflect today's policy, not what the agent was allowed at the time.",
+      "Native hooks listed for Claude Code, Cursor, Codex, Copilot CLI, Windsurf, and Antigravity, plus a stdio MCP proxy; adding hooks from the console needs macOS or Linux (Windows uses `stroq init`). The 36-attack numbers are the author's own, with no external methodology provided."
+    ],
+    "summary": "Stroq is an Apache-2.0, Node.js 22+ CLI and local console for auditing and guarding AI coding agents (Claude Code, Codex CLI, Cursor, and others). It runs entirely on the machine with no account, telemetry, or outbound hook traffic, writing only a cache under ~/.stroq. After-the-fact commands read local session transcripts: `stroq replay` re-scores sessions (including pre-install ones) against current policy, and `stroq sent` compares transcripts with local credential files to classify where each key went (sent to another company, maybe sent, seen by the AI, used with its own service, or blocked). Before-the-fact, native hooks and an MCP proxy judge each tool call, denying `curl | sh` and outbound calls carrying a known secret, and prompting when a command reuses text the agent read, with provenance linking the action to that source. The author reports that `stroq attack` runs 36 attacks against the policy in a sandbox and, on v0.30.0, 15 are denied, 21 prompted, and 0 pass. Stated limits: detection is text-level, so keys exfiltrated via scripts, files, or variables are missed, a transcript match does not prove delivery to a model provider, and it is a filter rather than a sandbox. Posted as a Show HN (78 points, 27 comments).",
+    "channels": [
+      "devtools",
+      "security",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "local-only audit tool tracing agent prompt-injection to key exfiltration",
+    "audience": "engineers running Claude Code/Codex/Cursor agents who worry about secret leakage",
+    "source_url": "https://github.com/AGGIB/Stroq",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50380704",
+        "points": 78,
+        "comments": 27,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/AGGIB/Stroq",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-05T15:54:41+00:00",
+    "published_at": "2026-11-06T13:13:25.026089+00:00",
+    "curated_at": "2026-11-06T13:13:25.026089+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 702242,
+    "story_id": "s_f96c2b5a4d055875",
+    "title": "Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3",
+    "relevance": 6,
+    "score": 6.687,
+    "why": "If most of an agent's wall-clock time is idle waiting on inference, Rivet's model lets one node hold hundreds of thousands of agents at 72 KB each instead of paying for a 512 MiB VM per agent that mostly sits idle.",
+    "notes": [
+      "Core design: each Actor is a long-lived process with in-memory state, per-Actor SQLite, WebSockets, and scheduling; Actors share one Node.js or Bun process rather than each booting a sandbox, so the agent loop (the 'head') runs outside the sandbox and reaches code execution (the 'hands') only through tools.",
+      "Self-reported benchmarks (Rivet 3.0.3): 72.4 KB RAM and 4.99 ms p99 cold start per Actor versus E2B's 512 MiB default and a 1.70 s p99 cold start; SQLite-on-S3 claims 1.07 ms durable writes and 1.36 ms reads at p99, with storage ~10.4x cheaper than three replicated EBS gp3 copies. Cold-start comparison is actually against Cloudflare Durable Objects; sandbox memory/latency figures come from E2B docs and a ComputeSDK benchmark, not Rivet's own runs.",
+      "S3 (or any S3-compatible store: GCS, Azure Blob, R2, MinIO, Hetzner) is the only dependency. No Postgres, FoundationDB, or NATS; control-plane instances discover each other through the bucket. Apache 2.0 licensed, self-hostable on Docker/K8s/VM, with managed Cloud and in-VPC BYOC options.",
+      "Positioned as an open-source Durable Objects alternative that drops the 128 MB memory cap and 10 GB SQLite limit, avoids random eviction, and runs on vanilla Node/Bun instead of a custom V8 runtime. Implements the virtual-actor pattern, closest to Microsoft Orleans.",
+      "Sandboxing is optional and tiered: no sandbox for tool/MCP/API agents; agentOS gives Linux-compatible V8/WebAssembly sandboxing for JS and Python with POSIX filesystem, networking, and process trees; or keep an existing full sandbox exposed to the agent as tools, with the Actor reattaching across sleeps.",
+      "From Rivet (YC W23). Benchmark figures are vendor-published with scripts to reproduce; third-party verification of the latency and cost claims is not provided in the text."
+    ],
+    "summary": "Rivet is an Apache 2.0-licensed virtual-actor runtime (from YC W23) for scaling and orchestrating AI agents, where each Actor is a long-lived process with in-memory state, a per-Actor SQLite database backed by S3, WebSockets, scheduling, and hibernation when idle. Its central argument is architectural: because agents spend most of their time waiting on inference, running the agent loop inside a per-agent VM/sandbox wastes memory, so Rivet runs the loop outside the sandbox (separating the 'head' from the 'hands') and reaches code execution through tools only when needed. Self-reported benchmarks on Rivet 3.0.3 claim 72.4 KB RAM and 4.99 ms p99 cold starts per Actor, and SQLite-on-S3 at 1.07 ms writes / 1.36 ms reads p99 and ~10.4x cheaper storage than replicated SSDs; comparison numbers for sandboxes come from E2B docs and a ComputeSDK benchmark, and the cold-start comparison is against Cloudflare Durable Objects. S3 is the only external dependency (no Postgres, NATS, or FoundationDB), and it runs on native Node.js or Bun with self-host, managed-cloud, and in-VPC BYOC deployment options. Optional layers include agentOS for V8/WebAssembly sandboxing of untrusted JS/Python and an agent library built on Pi Durable. All performance and cost figures are vendor-published; reproduction scripts are offered but independent verification is not included.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "actor runtime separates agent loop from sandbox, backs SQLite with S3",
+    "audience": "backend engineers building stateful/multiplayer AI agents at scale",
+    "source_url": "https://github.com/rivet-dev/rivet",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50381687",
+        "points": 103,
+        "comments": 53,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/rivet-dev/rivet",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-05T17:17:42+00:00",
+    "published_at": "2026-11-06T13:13:00.961739+00:00",
+    "curated_at": "2026-11-06T13:13:00.961739+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 670787,
+    "story_id": "s_a18f022a859d3cf6",
+    "title": "AI agent swarms unleashed in Minecraft to ‘build a thriving civilization’",
+    "relevance": 6,
+    "score": 7.11,
+    "why": "The same swarm failure modes you hit with coding agents, decision paralysis and giving up on a tool bug, show up legibly in a Minecraft sandbox you can clone and rerun yourself.",
+    "notes": [
+      "Civ50 test: 50 GPT-6.1 Sol agents got three hours to 'build a thriving civilization' and instead stalled into bureaucracy; the cited example is four agents spending 11 minutes appointing a 'sole fertilizer operator' for one piece of bone meal on one wheat block. Researchers say it resembled patterns seen with coding agents.",
+      "Bed Wars, 10 GPT-6.1 Sol vs 10 Claude Opus 5.5: GPT agents played more aggressively; when a tool bug blocked block-breaking, GPT agents diagnosed it and shared workarounds while several Claude agents concluded breaking was impossible.",
+      "Mindustry (RTS/tower-defense mode): GPT agents reportedly won 6-1 across 7 games; researchers characterize GPTs as acting like a hive and Claudes as a single leader with a democratic decision process.",
+      "Built on the open-source Mindcraft and Mineflayer frameworks; the swarm setups are open-sourced for replication, and the source post lists open questions such as varying model mixes and swarm sizes.",
+      "Framed as a proxy for real incidents the authors cite but do not detail here: a 'thousand-agent' math-solving swarm and an 'extremely dangerous' OpenAI-Hugging Face incident. Results are self-reported with no stated sample sizes, scoring methodology, or controls; the Civ50 run tested only GPT agents, not Claude."
+    ],
+    "summary": "Researchers associated with Y Combinator and Olam Labs ran hundreds of LLM agents inside Minecraft game modes to study multi-agent swarm dynamics, as reported by Tom's Hardware. In a 'Civ50' collaborative test, 50 GPT-6.1 Sol agents given three hours to build a civilization never thrived: early zombie losses led to abandoned goals and bureaucratic stalling, including four agents spending 11 minutes assigning a single fertilizer role. In competitive modes, 10 GPT-6.1 Sol agents faced 10 Claude Opus 5.5 agents in Bed Wars, where GPT played aggressively and worked around a block-breaking bug while some Claude agents gave up; in Mindustry, GPT agents reportedly won 6-1 over 7 games, with GPTs described as hive-like and Claudes as single-leader/democratic. The work builds on the open-source Mindcraft and Mineflayer frameworks and the swarm setups are open-sourced for replication. The authors frame it as insight into real-world cases, citing a 'thousand-agent' math swarm and an 'extremely dangerous' OpenAI-Hugging Face incident, but the article gives no scoring methodology, sample details, or controls, and the Civ50 run included no Claude agents.",
+    "channels": [
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "Minecraft used as testbed for emergent multi-agent swarm dynamics",
+    "audience": "AI agent/multi-agent systems researchers and builders",
+    "source_url": "https://tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50325662",
+        "points": 112,
+        "comments": 50,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
+        "points": null,
+        "comments": null,
+        "name": "Tom's Hardware"
+      },
+      {
+        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
+        "points": null,
+        "comments": null,
+        "name": "Tom's Hardware"
+      },
+      {
+        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-11-01T12:33:52+00:00",
+    "published_at": "2026-11-06T12:41:24.206998+00:00",
+    "curated_at": "2026-11-06T12:41:24.206998+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 651445,
+    "story_id": "s_2a30e83c8bd9ae3b",
+    "title": "Git for the US Code",
+    "relevance": 6,
+    "score": 6.021,
+    "why": "If first-pass legal research runs through an LLM, the model needs the statute text as it stood on a specific date with a checkable amendment trail, and this project builds and verifies that version history for nine titles of the US Code.",
+    "notes": [
+      "The authors reconstructed amendment history by applying each intervening public law's amending instructions to the older release-point text in date order, then diffing against the next release point: 361 of 365 changes across nine titles reproduced exactly, with the other four labeled by how far they could be confirmed.",
+      "Each change carries its effective date, sourced three ways: 261 took effect on enactment by default, 72 via a separate effective-date note, 29 via a date in the amendment text itself; one case depends on an agency determination that may never come and is omitted rather than guessed.",
+      "A cited TUM study (Prior et al., arXiv:2605.23497) reports one model answering 24% of post-cutoff German statute questions correctly unaided versus 87% with the relevant statutory text retrieved, and argues temporal validity should be a hard constraint.",
+      "A related TUM paper (NLLP 2025) found that asking a model to reconstruct older statute versions produced output 93-99% textually similar but exact matches on only ~50% of single amendments and ~20% of amendment chains, with legally meaningful errors in the near misses, hence the insistence on a checkable record.",
+      "Stated limits: the system does not yet model later laws reaching back onto earlier dates, so for a bankruptcy case filed in the 2022 debt-limit gap it shows the lower limit without flagging the June 2022 Act; effective-date notes are parsed by pattern and unusual wording falls back to the enactment date.",
+      "Legal grounding and caveats: outside titles enacted as positive law the Code is only prima facie evidence and the Statutes at Large govern conflicts; the 11 USC 1182(1) debt-limit example traces the CARES Act rise to $7.5M, the 2022 lapse and retroactive restoration, and the April 2025 triennial adjustment to $3,424,000."
+    ],
+    "summary": "The post describes a project to build version-control-style history for the US Code: for each pair of release points from 2017 onward, the authors applied the intervening public laws' amending instructions to the older text in date order and compared the result to the next release point. Across nine titles, 361 of 365 reconstructed changes matched exactly, and each change is annotated with the enacting law and its effective date (261 by default enactment, 72 by effective-date note, 29 by a date in the amendment). The resulting tool lets a reader pick a date and see the text then in force, color-coded by the Act that wrote each phrase, with tracking of defined-term usage. The motivation is that LLM legal research mishandles temporal validity: cited TUM studies report a model scoring 24% unaided versus 87% with retrieved statutory text on post-cutoff questions, and that model-generated old statute versions match exactly only ~50% (single amendments) and ~20% (chains) of the time despite 93-99% surface similarity. Stated limits include no modeling of retroactive reach-back (the 2022 bankruptcy debt-limit gap case), pattern-based parsing of effective-date notes, and an unresolved question of the right form factor.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "verified diff/version-control system for US Code amendment history",
+    "audience": "legal tech builders, devtools engineers, AI/legal researchers working on statutory QA",
+    "source_url": "https://lexifina.com/blog/git-for-the-us-code",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50268380",
+        "points": 415,
+        "comments": 226,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lexifina.com/blog/git-for-the-us-code",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-28T01:47:50+00:00",
+    "published_at": "2026-11-06T12:25:18.288908+00:00",
+    "curated_at": "2026-11-06T12:25:18.288908+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 688461,
+    "story_id": "s_3c0ba1e344fab490",
+    "title": "Schools that block Google’s A.I. will lose student access to its search engine",
+    "relevance": 6,
+    "score": 6.02,
+    "why": "If the reported policy is real, a school's choice to disable Google's AI features would cost its students access to Google Search itself, turning an opt-out into a loss of core infrastructure.",
+    "notes": [
+      "Headline claim: schools that block Google's AI features reportedly lose student access to Google's search engine, coupling AI adoption to a product schools already depend on.",
+      "The mechanism, scope (which editions, grade levels, or admin consoles), and whether this is default behavior or a configuration side effect are not verifiable from the available text.",
+      "Drew 224 points and 180 comments on Hacker News, plus placement in NYT Technology; engagement is high but is not evidence for the underlying claim.",
+      "Primary source is paywalled at NYT and no article body was available; every specific here rests on the headline alone and should be treated as unconfirmed.",
+      "No Google statement, affected district, or policy document is cited in the provided material."
+    ],
+    "summary": "An NYT report, headlined and surfaced on 2026-11-03, claims Google ties school access to its search engine to acceptance of its AI features: schools that block the AI reportedly lose Search for their students. The full article is paywalled and no body text was available, so the mechanism, scope, and Google's own account of the policy cannot be verified from the material at hand. The story drew notable engagement, 224 points and 180 comments on Hacker News, and ran in NYT Technology. The central claim, if accurate, bundles AI opt-out with loss of a widely relied-on service, but the supporting detail is limited to the headline and should be read as an unconfirmed claim pending the primary source.",
+    "channels": [
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Google ties school search access to accepting AI features",
+    "audience": "AI policy watchers, educators, ed-tech administrators",
+    "source_url": "https://nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
+    "read_kind": "canonical-fallback",
+    "free_link": null,
+    "paywalled": true,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50353192",
+        "points": 224,
+        "comments": 180,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
+        "points": 9,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://www.nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
+        "points": null,
+        "comments": null,
+        "name": "New York Times"
+      },
+      {
+        "url": "https://www.nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
+        "points": null,
+        "comments": null,
+        "name": "NYT Technology"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-11-03T15:25:47+00:00",
+    "published_at": "2026-11-06T12:24:49.607742+00:00",
+    "curated_at": "2026-11-06T12:24:49.607742+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 675770,
+    "story_id": "s_5b517a0668e79e1d",
+    "title": "Mathematics has changed. Let's act like it",
+    "relevance": 6,
+    "score": 7.38,
+    "why": "If AI can already produce proofs on demand, the career currency that pays mathematicians — publishing the first proof of a hard theorem — is about to stop being worth much, and this piece argues hiring committees and journals should start discounting it now.",
+    "notes": [
+      "Guest post by Frank Calegari on Terence Tao's blog, responding to OpenAI's October 6 release of over 700 research papers; Tao notes the post itself was format-converted using AI.",
+      "Calegari grants the papers contain real ideas but calls them 'atrociously written,' in violation of attribution norms, and says some are wrong; he quotes Hugo Duminil-Copin that nearly every major open problem Duminil-Copin had publicly discussed was claimed solved at once.",
+      "Historical analogy: the 1983 classification of finite simple groups (announced by Gorenstein, with the quasithin case not finished until decades later by Aschbacher and Smith) succeeded but 'cooled' interest in the field once the famous problem was gone.",
+      "Concrete proposals: evaluate every paper as if AI-assisted and give no credit for a result a machine could produce; interview postdocs and grad students in person, not just read paper files; demand more from journals or abandon them, favoring Lean-verified work and compelling exposition; broaden grad training; reframe seminars around open questions rather than incremental new results.",
+      "Core thesis: 'Choosing worthwhile problems may end up mattering more than producing proofs'; he credits someone who selects a problem, gets an AI proof, understands it fully, and opens new directions, even with no original proof ingredient.",
+      "Cites Christian Szegedy that the 'heroism' of climbing hard proofs matters less than choosing terrain and explaining results; invokes the Leiden declaration as being honored in name not spirit amid a rush to avoid being 'scooped.'"
+    ],
+    "summary": "In a guest post on Terence Tao's blog, number theorist Frank Calegari responds to OpenAI's October 6 release of over 700 math research papers, which claimed proofs across many open problems. He acknowledges the papers are badly written, flout attribution norms, and are sometimes wrong, and he recognizes mathematicians' grief, but argues the discipline should adapt rather than defend its current culture. Drawing an analogy to the 1983 classification of finite simple groups, which cooled interest in group theory despite remaining deep questions, he contends solving a field's famous conjectures is a beginning, not an end, and that AI lowers the barrier to ambitious, cross-area exploration. His central claim is that choosing worthwhile problems and demonstrating understanding will matter more than being first to a proof, since proofs are becoming machine-producible. He proposes concrete economic levers: evaluate all work as if AI-assisted and stop rewarding machine-obtainable results, make hiring (including for postdocs and grad students) rest on in-person conversation about mathematical vision, reform or abandon journals in favor of fewer, better, Lean-verified papers, broaden graduate training, and restructure seminars around open questions.",
+    "channels": [
+      "ai",
+      "science"
+    ],
+    "category": "research",
+    "subcategories": [
+      "math"
+    ],
+    "state": "confident",
+    "novelty": "mathematician's reflective response to OpenAI's math paper dump",
+    "audience": "researchers and technologists tracking AI's impact on pure mathematics",
+    "source_url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50328251",
+        "points": 181,
+        "comments": 196,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it/",
+        "points": null,
+        "comments": null,
+        "name": "What's New (Terence Tao)"
+      },
+      {
+        "url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it/",
+        "points": null,
+        "comments": null,
+        "name": "Mathblogging.org"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-11-01T18:28:42+00:00",
+    "published_at": "2026-11-06T12:09:50.103869+00:00",
+    "curated_at": "2026-11-06T12:09:50.103869+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 700753,
+    "story_id": "s_18955c783c1342c6",
+    "title": "Discord is ditching Electron and its new app uses less RAM",
+    "relevance": 6,
+    "score": 7.537,
+    "why": "If one of the largest Electron apps can shed the Chromium runtime, it reopens the question of whether every desktop app needs a bundled browser to ship cross-platform.",
+    "notes": [
+      "Headline claim: Discord is rebuilding its desktop client to drop Electron, the Chromium-plus-Node.js shell most cross-platform desktop apps use.",
+      "Reported payoff is lower RAM use versus the Electron build; no specific memory numbers, methodology, or replacement stack are given in the available material.",
+      "The engagement is the story here: 367 points and 319 comments on Hacker News, plus 55 points on Mastodon, signal that working engineers treat Discord's framework choice as a bellwether.",
+      "Caveat: no article text was available. The 'uses less RAM' and 'ditching Electron' claims come from the headline alone and are unverified against a primary source or Discord statement."
+    ],
+    "summary": "A news headline reports that Discord is rebuilding its desktop application to no longer rely on Electron, the Chromium-based framework it has used, and that the new app consumes less RAM than the Electron version. No article text, memory figures, replacement technology, or Discord engineering statement were available for this entry, so the specifics of the migration and the magnitude of the RAM savings are unconfirmed. The item drew notable engineer attention, surfacing on Hacker News with 367 points and 319 comments and on Mastodon trending links with 55 points. The interest reflects a long-running debate over Electron's memory and performance overhead for widely deployed desktop apps. Treat the core claims as reported rather than verified pending a primary source.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Discord moving off Electron for lower memory use",
+    "audience": "desktop app engineers and Electron users evaluating alternatives",
+    "source_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9kVFh4UTRSR0s0c3d2N255OUtVRXFvaU9QN2VCUXRtTElTMFFGZ3g3T0NPMVo4cWNhcXF2N05Bbm1SV0hweWlERkFQX2tzMm5vTjNWSE9sYTNURHVDdEpidmNaSjBxTkxuc290dHczMy1IRzlZNjAzdGFUQQ?oc=5",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50378625",
+        "points": 367,
+        "comments": 319,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.theverge.com/news/1027379/discord-ditching-electron-web-app",
+        "points": 55,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9kVFh4UTRSR0s0c3d2N255OUtVRXFvaU9QN2VCUXRtTElTMFFGZ3g3T0NPMVo4cWNhcXF2N05Bbm1SV0hweWlERkFQX2tzMm5vTjNWSE9sYTNURHVDdEpidmNaSjBxTkxuc290dHczMy1IRzlZNjAzdGFUQQ?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News Technology"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-05T11:39:42+00:00",
+    "published_at": "2026-11-06T12:09:25.512518+00:00",
+    "curated_at": "2026-11-06T12:09:25.512518+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 709093,
     "story_id": "s_8b17a38219317e77",
     "title": "Nvidia Kubernetes Engine (NVKE)",
     "relevance": 6,
-    "score": 6.827,
+    "score": 6.767,
     "why": "If you run GPU hardware and want to hand customers isolated Kubernetes clusters the way a cloud provider does, Nvidia now ships the open-source (Apache 2.0) management plane to do it, though it is preview-only and ships with API auth off and plain HTTP by default.",
     "notes": [
       "Architecture: a throwaway seed cluster stands up a management cluster running the NVKE management plane; that plane then provisions and lifecycle-manages many isolated workload clusters, each with its own control plane, etcd, and node pools. Built on Cluster API plus a node agent, not a K8s distro or CAPI flavour.",
@@ -438,8 +929,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50387738",
-        "points": 80,
-        "comments": 21,
+        "points": 87,
+        "comments": 22,
         "name": "Hacker News"
       },
       {
@@ -521,7 +1012,7 @@
     "story_id": "s_2712d86d09c6ba80",
     "title": "Show HN: OmniDiff – Opensource, super fast, content aware Git difftool, in Rust",
     "relevance": 6,
-    "score": 7.47,
+    "score": 7.402,
     "why": "A git difftool that renders PDFs page-by-page, fonts glyph-by-glyph, and images pixel-by-pixel inside the terminal, with a measured p50 of 4.2ms and p99 of 177ms over 2,302 fixtures, so binary and structured-file diffs stop being \"Binary file differs.\"",
     "notes": [
       "Content is detected by bytes, not filename: 25 languages get tree-sitter structural diffs; pictures (PNG/JPEG/GIF/WebP/etc.) diff pixel-by-pixel with frame-by-frame animation; archives (zip/tar/gzip/xz/bzip2, including Office docs and EPUB) diff member-by-member recursively; fonts (TTF/OTF/WOFF/WOFF2/EOT) glyph-by-glyph; plus PDFs, cursors, and gettext/Qt message catalogs.",
@@ -801,7 +1292,7 @@
     "story_id": "s_52dabe367e278f51",
     "title": "I struggle to believe that AI R&D is ingenious",
     "relevance": 6,
-    "score": 6.747,
+    "score": 6.764,
     "why": "If you are betting on autonomous research agents, this practitioner's account pins down where they still fail: picking the right papers, designing experiments with enough signal, and knowing which result matters, all tasks a human still has to seed.",
     "notes": [
       "The author, working with an agent called Astra, lists concrete judgment failures: missing the obviously most relevant paper or blog post during literature review, running experiments with too little training data to distinguish the architectures being compared, and pursuing trivial directions on a philosophy wiki project.",
@@ -828,8 +1319,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50388513",
-        "points": 92,
-        "comments": 76,
+        "points": 125,
+        "comments": 106,
         "name": "Hacker News"
       },
       {
@@ -962,7 +1453,7 @@
     "story_id": "s_31c4b145bbcd6915",
     "title": "Show HN: Firenook – Firebase emulators in Rust: 40× faster writes, 10× less RAM",
     "relevance": 6,
-    "score": 6.739,
+    "score": 6.683,
     "why": "If the 40× write and 10× RAM claims hold, your Firebase test suite and CI emulator startup get cheaper on every local run, with no code changes since it speaks the same SDK protocols.",
     "notes": [
       "Firenook reimplements Firebase's emulator suite in Rust and is pitched as a drop-in alternative, claiming 40x faster writes and 10x less RAM than the official emulators. Both figures are self-reported; no benchmark methodology, workload, or hardware is given in the text.",
@@ -989,7 +1480,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50378643",
-        "points": 118,
+        "points": 127,
         "comments": 17,
         "name": "Hacker News"
       },
@@ -1067,7 +1558,7 @@
     "story_id": "s_d2c637bd65be0d63",
     "title": "MUON-RT Reusing the Teacher's Trajectory for Momentum-Free Muon for LLM Self-Distillation",
     "relevance": 6,
-    "score": 6.459,
+    "score": 6.403,
     "why": "If the results hold, a 7B self-distillation run drops its optimizer memory by roughly 40% versus AdamW while gaining accuracy, because the EMA teacher's state replaces the momentum buffer you were already paying for twice.",
     "notes": [
       "Core idea: EMA-teacher self-distillation already stores a running history of student updates, so Muon-RT reuses the teacher-student displacement as a momentum substitute and drops Muon's separate momentum buffer for hidden weight matrices.",
@@ -1094,7 +1585,7 @@
     "surfaces": [
       {
         "url": "https://huggingface.co/papers/2610.41104",
-        "points": 19,
+        "points": 20,
         "comments": null,
         "name": "Hugging Face Daily Papers"
       },
@@ -1296,7 +1787,7 @@
     "story_id": "s_067188733f961196",
     "title": "Claude Code sends your email address to websites",
     "relevance": 6,
-    "score": 7.189,
+    "score": 7.124,
     "why": "If you ran Claude Code before v2.1.317, your account email may already be sitting in the server logs of every site the agent fetched, and the only fix shipped is a default-on plugin you can still toggle off.",
     "notes": [
       "The reporter says Claude Code put the user's email address in the User-Agent header on agentic web searches, done without explicit consent, and attributes 'dozens of scam emails per day' to that exposure.",
@@ -1324,8 +1815,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50385272",
-        "points": 1166,
-        "comments": 359,
+        "points": 1222,
+        "comments": 387,
         "name": "Hacker News"
       },
       {
@@ -1346,7 +1837,7 @@
     "story_id": "s_9eca6ad74a759107",
     "title": "Cuban: Facebook knowingly runs AI deepfake scam ads; docs say $16B fraud revenue",
     "relevance": 6,
-    "score": 7.271,
+    "score": 7.232,
     "why": "The 95%-confidence ban threshold is the load-bearing detail: anyone building or auditing ad-fraud enforcement now has a concrete number for how much scam traffic a trillion-dollar platform will knowingly monetize, and the SEC is investigating.",
     "notes": [
       "Internal Meta documents reported by Reuters (Nov 6, 2025) project roughly $16B, about 10% of 2024 revenue, from ads pushing scams and prohibited products; one late-2024 doc valued the 'higher risk' category alone at about $7B/year.",
@@ -1375,8 +1866,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50385870",
-        "points": 341,
-        "comments": 161,
+        "points": 371,
+        "comments": 180,
         "name": "Hacker News"
       },
       {
