@@ -175,7 +175,7 @@
     "story_id": "s_d331e378ee31fd6e",
     "title": "sshole",
     "relevance": 8,
-    "score": 6.724,
+    "score": 6.692,
     "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
     "notes": [
       "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
@@ -666,7 +666,7 @@
     "story_id": "s_b69e6d64da940a0f",
     "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
     "relevance": 7,
-    "score": 6.405,
+    "score": 6.387,
     "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
     "notes": [
       "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
@@ -715,7 +715,7 @@
     "story_id": "s_06c6f6e402f3b3f2",
     "title": "Closed AI models dominate the price-performance frontier",
     "relevance": 7,
-    "score": 5.859,
+    "score": 5.836,
     "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
     "notes": [
       "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
@@ -829,7 +829,7 @@
     "story_id": "s_df04d6b94a5f2f01",
     "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
     "relevance": 7,
-    "score": 5.902,
+    "score": 5.876,
     "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
     "notes": [
       "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
@@ -887,11 +887,392 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 688477,
+    "story_id": "s_f6e1e1a39f4fe9d1",
+    "title": "Qwen 3.8 27B on my laptop can interpret model weights, too",
+    "relevance": 6,
+    "score": 5.374,
+    "why": "A 17GB model running on a laptop can read raw floating-point weight dumps and name the game a policy network was trained to play, so the \"only frontier models can do this\" framing around the weight-space paper is already wrong.",
+    "notes": [
+      "The underlying paper, 'Sparks of Weight-Space Programming' by Rikiya Takehi, Jayden Teoh, Alex Zhang, and Omar Khattab, claims GPT-6 Astra can both interpret raw network weights (as text floats) and edit them to improve a model without training loops.",
+      "Willison replicates only the no-tools interpretation task: Qwen 3.8 27B (local, LM Studio) correctly identified Pac-Man (72% self-stated confidence), Pong (75%), and Breakout (88%) from raw weights of networks trained on 10x10 grid game variants; it failed on the more obscure Freeway, misreading it as Pac-Man.",
+      "Runs were slow and token-heavy: 46m with 43,506 reasoning tokens for Pac-Man, over an hour for Pong, 52m for Breakout; the default 8192 context failed and a longer window plus a raised timeout were required. Kimi K3.1 Pro via OpenRouter got Breakout in 9m41s / 19,493 tokens.",
+      "The paper's separate editing claim, that Astra edited 0.016% of Qwen3.5-0.8B weights to raise MATH-500 from 7.9% to 48.1% and triple IFEval, is reported as a vendor/author claim, not independently verified here.",
+      "spaCy author Matthew Honnibal called the paper misleading for conflating no-tool weight reading with tool-assisted editing; Sean Goedecke argued the editing example just repeats steps a human ML researcher would take.",
+      "Willison's own caveat: the reasoning traces are near-incomprehensible, and he suspects a human with pencil and paper could reach the same answer, so he rejects the framing that machines editing their own weights ends the age of source code."
+    ],
+    "summary": "Simon Willison reproduces the central no-tools result from the 'Sparks of Weight-Space Programming' paper (Takehi, Teoh, Zhang, Khattab), which claims GPT-6 Astra can read and edit raw neural-network weights supplied as text. Using Qwen 3.8 27B locally in LM Studio, he feeds the paper's prompts containing floating-point weights for small grid-game policy networks and gets correct identifications of Pac-Man, Pong, and Breakout (self-reported confidence 72-88%), with a failure on the obscurer Freeway. The task is expensive: tens of thousands of reasoning tokens and 46 minutes to over an hour per guess, plus an enlarged context window and raised timeout. Willison deliberately does not test the paper's more contested claim, that Astra edited 0.016% of Qwen3.5-0.8B's weights to raise MATH-500 from 7.9% to 48.1%, which Matthew Honnibal and Sean Goedecke criticize as conflating weight-reading with ordinary tool-assisted ML work. His takeaway: the capability is real and interesting but the traces are barely interpretable, and the grander claims about machines rewriting themselves and ending source code are not justified.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "local 27B model replicates weight-reading capability from frontier-model paper",
+    "audience": "ML practitioners interested in interpretability and local LLM capabilities",
+    "source_url": "https://simonwillison.net/2026/Nov/3/qwen-can-interpret-model-weights",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50355251",
+        "points": 18,
+        "comments": 1,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://simonwillison.net/2026/Nov/3/qwen-can-interpret-model-weights/",
+        "points": null,
+        "comments": null,
+        "name": "Simon Willison"
+      },
+      {
+        "url": "https://simonwillison.net/2026/Nov/3/qwen-can-interpret-model-weights/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://simonwillison.net/2026/Nov/3/qwen-can-interpret-model-weights/",
+        "points": null,
+        "comments": null,
+        "name": "Tildes"
+      },
+      {
+        "url": "https://simonw.substack.com/p/qwen-38-27b-on-my-laptop-can-interpret",
+        "points": null,
+        "comments": null,
+        "name": "Simon Willison's Newsletter"
+      }
+    ],
+    "sources_count": 5,
+    "first_seen": "2026-11-03T17:40:00+00:00",
+    "published_at": "2026-11-07T05:49:25.784280+00:00",
+    "curated_at": "2026-11-07T05:49:25.784280+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 653430,
+    "story_id": "s_7254b08f0f79b19e",
+    "title": "Look Only When Needed: Certificate-Guided Visual Routing for Efficient Diffusion VLMs",
+    "relevance": 6,
+    "score": 5.38,
+    "why": "If the method holds up, a diffusion VLM can hit near-parity accuracy at roughly a third of decoding FLOPs with no training and no threshold tuning, just by skipping the image on most denoising steps.",
+    "notes": [
+      "Visual tokens are 89-97% of DVLM input on the studied benchmarks, so re-processing the image at every denoising step dominates decode cost; pruning methods drop information and still reprocess what remains every step.",
+      "Diagnostic: comparing LLaDA-V predictions with and without the image, dropping the image changes a token's unmasking at only 22.8% of steps on average and as few as 7.9%, so the image is usually not decision-relevant.",
+      "LOWN predicts masked tokens without the image, then runs the image only when that prediction disagrees with the last image-conditioned one; agreement 'certifies' the earlier prediction for reuse, and the count of certified tokens sets how many unmask that step.",
+      "Reported result: 99.6% of LLaDA-V's score retained across ten benchmarks at 35.3% of decoding FLOPs on average, with no training and no tuned threshold.",
+      "Authors claim it generalizes to other LLaDA-based DVLMs, composes orthogonally with visual token pruning, and runs under KV caching; a fixed schedule is argued insufficient because image need varies by benchmark.",
+      "Caveats: results are self-reported and confined to LLaDA-based diffusion VLMs; the arXiv ID (2610.36671) and datestamp are anomalous, so treat provenance with care."
+    ],
+    "summary": "LOWN is a training-free decoding method for diffusion vision-language models (DVLMs) that decides, at each denoising step, whether to process the image at all. The authors observe that visual tokens make up 89-97% of DVLM input yet, for LLaDA-V, removing the image changes which token gets unmasked at only 22.8% of steps on average (as low as 7.9%), meaning most decode compute reprocesses an image that does not affect the output. LOWN predicts masked tokens without the image and only invokes the image-conditioned forward pass when the two predictions disagree; agreement certifies the prior prediction for reuse and determines how many tokens unmask that step. The authors report retaining 99.6% of LLaDA-V's score over ten benchmarks at 35.3% of decoding FLOPs on average, with no threshold tuning, arguing an adaptive decision beats a fixed schedule because image need varies by benchmark. They further claim the approach generalizes across LLaDA-based DVLMs and composes with visual token pruning and key-value caching. All figures are self-reported and limited to LLaDA-family models.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "research",
+    "subcategories": [
+      "ml",
+      "science"
+    ],
+    "state": "confident",
+    "novelty": "certificate-based adaptive image-reuse cuts diffusion VLM decoding compute",
+    "audience": "ML researchers/engineers optimizing diffusion-based multimodal model inference",
+    "source_url": "https://arxiv.org/abs/2610.36671",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.36671",
+        "points": 108,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.36671",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CV"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-28T04:00:00+00:00",
+    "published_at": "2026-11-07T05:49:00.852884+00:00",
+    "curated_at": "2026-11-07T05:49:00.852884+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 663478,
+    "story_id": "s_b746d6bc79c9fc80",
+    "title": "CVE-2026-98432: Linux TCP Use-After-Free Risk and Patch Validation",
+    "relevance": 6,
+    "score": 5.396,
+    "why": "Any internet-facing Linux host running an unpatched kernel is remotely reachable through this bug, and Anthropic's lab chain turned it into unauthenticated root in roughly 53 minutes against an MPTCP listener, including Go services that enable MPTCP by default.",
+    "notes": [
+      "The defect is a use-after-free in the IPv4 TCP handshake path: tcp_v4_syn_recv_sock() transfers the request socket's ireq_opt pointer to the child socket's inet_opt without copying, while a retransmitted SYN on another CPU keeps reading that options object inside an RCU read-side critical section.",
+      "Root cause is a lifetime mismatch, readers use RCU but destructors called plain kfree(), which returns memory to the allocator before readers finish. The upstream fix, commit e3f33b0a1d89 ('ipv4: free inet_opt and ireq_opt after an RCU grace period'), switches inet_sock_destruct() and tcp_v4_reqsk_destructor() to kfree_rcu().",
+      "A related request-migration variant triggers when net.ipv4.tcp_migrate_req=1 or a BPF_SK_REUSEPORT_SELECT_OR_MIGRATE program clones a request socket, leaving two objects sharing one options allocation.",
+      "The Linux CNA assigned CVSS 3.1 9.8 (AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H); Ubuntu also publishes a CVSS 4.0 score of 8.3 with attack requirements present and labels it high priority. The scores characterize the upstream component, not any specific vendor build.",
+      "Anthropic's October 27 post claims a zero-click PoC against an MPTCP listener that leaked a kernel pointer to defeat KASLR in ~48 minutes, then reached root command execution in another ~5 minutes; failed attempts leave the handshake incomplete without crashing, allowing retries. The article stresses this is one lab configuration, not measured prevalence or a universal success rate.",
+      "Go services can expose MPTCP listeners unintentionally: the Go 1.24 GODEBUG default is multipathtcp=2 (enabled). The Go Security Team recommends a patched kernel over disabling MPTCP per-program; the IPv4 lifetime bug persists even with MPTCP off, so only the kernel fix is durable. The ordinary IPv6 child path is unaffected because it duplicates options, though a separate IPv6 CALIPSO request-migration concern is handled elsewhere."
+    ],
+    "summary": "CVE-2026-98432 is a use-after-free in the Linux kernel's IPv4 TCP handshake path, where tcp_v4_syn_recv_sock() hands the request socket's ireq_opt pointer to the child socket without duplicating it while a retransmitted SYN on another CPU still reads the same IP options object under RCU; destructors freed it with plain kfree() instead of kfree_rcu(), so memory could be reused mid-read. The upstream fix (commit e3f33b0a1d89) aligns reclamation with the readers' synchronization model by deferring frees to an RCU grace period, and also covers a request-migration variant that appears with net.ipv4.tcp_migrate_req=1 or reuseport BPF migration. The Linux CNA scores it CVSS 3.1 9.8 while Ubuntu publishes a CVSS 4.0 8.3; the article argues these, plus a research exploit, answer different questions and none measures real-world prevalence. Anthropic reported a zero-click PoC that achieved unauthenticated root execution against an MPTCP listener in a controlled lab, leaking a kernel pointer in about 48 minutes and reaching command execution in about 5 more, with cheap retries after failed attempts. The piece flags that Go 1.24 enables MPTCP by default (GODEBUG multipathtcp=2), so Go servers may be exposed unintentionally, and that disabling MPTCP does not remove the underlying IPv4 bug. It stresses that upstream version strings cannot label vendor kernels because of backports, and recommends confirming the fix via vendor advisories, changelogs, or VEX statements, patching MPTCP-exposed and internet-facing hosts first, and rebooting Kubernetes nodes since containers share the host kernel.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "RCU vs kfree lifetime mismatch in TCP request socket IP options",
+    "audience": "kernel/security engineers managing Linux TCP-exposed infrastructure",
+    "source_url": "https://penligent.ai/hackinglabs/cve-2026-98432",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50299182",
+        "points": 21,
+        "comments": 15,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.penligent.ai/hackinglabs/cve-2026-98432/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-30T02:33:04+00:00",
+    "published_at": "2026-11-07T05:16:42.589928+00:00",
+    "curated_at": "2026-11-07T05:16:42.589928+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 647426,
+    "story_id": "s_a71dba9958cdb31c",
+    "title": "Memory Tax: Dissecting the Net Value of Agent Memory",
+    "relevance": 6,
+    "score": 5.409,
+    "why": "If you are bolting a dedicated memory layer onto a long-horizon agent, this paper argues your baseline should be plain RAG over raw history, because across its benchmarks the memory system often scored worse.",
+    "notes": [
+      "The claim: in a self-described large-scale evaluation across multiple benchmarks and model backbones, many dedicated memory systems underperformed naive RAG in many cases, which the authors read as negative net value. No specific numbers, system names, or benchmark names appear in the abstract text provided.",
+      "The framework uses RAG as the reference point and splits a memory system's net value into 'memory benefit' (gains over direct retrieval) and 'memory tax' (losses). Both come from the same cause: memory processing reorganizes and distills raw history.",
+      "Mechanism of the tax: operations meant to help, such as reorganizing facts or distilling preferences, can also remove or obscure evidence that was present in the raw history, degrading retrieval.",
+      "The paper's stated contribution is conceptual framing plus measurement, arguing evaluations should shift from standalone memory performance to net value relative to retrieval; it generalizes 'memory tax' to further memory application scenarios.",
+      "Authors say they will open-source code and results via a project page. The arXiv identifier (2610.34073) and the abstract alone do not disclose methodology details, so the comparison setup and statistical basis cannot be verified from this text."
+    ],
+    "summary": "The paper argues that the net value of building agent memory, versus directly retrieving from raw interaction history, is unclear and sometimes negative. Across what the authors describe as a large-scale evaluation spanning multiple benchmarks and model backbones, many dedicated memory systems underperformed naive RAG. Using RAG as a reference baseline, the authors decompose a memory system's effect into 'memory benefit' (gains from reorganizing facts or distilling preferences) and 'memory tax' (losses when that same processing removes or obscures evidence that existed in raw history). They treat these as two sides of the deviation memory introduces away from the raw record and focus attention on the under-studied tax, examining how it arises from both system design and evaluation choices and extending the concept to more scenarios. The stated goal is to move evaluation from standalone memory performance toward net value relative to retrieval. Code and results are promised as open source; the provided abstract gives no specific numbers, system names, or methodology.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "quantifies when agent memory systems underperform plain RAG",
+    "audience": "engineers building long-horizon LLM agents with memory modules",
+    "source_url": "https://arxiv.org/abs/2610.34073",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.34073",
+        "points": 123,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.34073",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CL"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-27T04:00:00+00:00",
+    "published_at": "2026-11-07T05:16:12.556768+00:00",
+    "curated_at": "2026-11-07T05:16:12.556768+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 693726,
+    "story_id": "s_748d95baaafc044d",
+    "title": "Near-Zero Token Embeddings Silently Stall Training in Gated Sequence Models",
+    "relevance": 6,
+    "score": 5.41,
+    "why": "If you continually pretrain or fine-tune an untied gated/hybrid checkpoint (Mamba, Gated DeltaNet, xLSTM), a single near-zero embedding row can silently zero out ~20% of your gradient updates while standard FP32 clipping in PyTorch, HF Trainer, and FSDP2 overflows to infinity.",
+    "notes": [
+      "Census of 291 open-weight repos (280 distinct embedding tables): 52.6% of untied gated/hybrid checkpoints (20/38) have reachable input embeddings with norm below 1e-6, versus 0% of weight-tied models. The authors attribute near-zero rows to unseen rare/template tokens getting zero input gradients while AdamW weight decay shrinks untied embeddings.",
+      "Mechanism: at zero input, SiLU gates or linear queries vanish, suppressing historical-state readout; residual RMS can drop below the RMSNorm floor so Pre-RMSNorm amplifies backward gradients by up to 1e3 per layer. Reported input-embedding gradient amplification reaches up to 35 orders of magnitude in gated models.",
+      "Failure trigger: when a gradient entry exceeds 1.84e19, FP32 global-norm clipping overflows to infinity and zeros the whole batch's gradients. Transformers avoid this when a BOS token or non-initial position is present, per the tested configs.",
+      "Case study (self-reported): Telugu continual pretraining of Nemotron-3-Nano-4B discarded updates on roughly 20% of steps and left triggered embedding rows frozen.",
+      "Two fixes: GroupClip decouples input-embedding clipping using a 64-bit or rescaled norm, claimed to eliminate update loss and heal triggered rows in one step with negligible measured overhead; GateFloor (SiLU(z)+delta, delta in [0.01,0.1]) keeps the gate positive at zero input, cutting near-zero gradients by 28 orders of magnitude with perplexity comparable to baseline.",
+      "Scope caveat: GateFloor and scaling experiments run up to 370M parameters; the 4B result is a single continual-pretraining case, and all numbers are from the authors' own runs with released code (embscan/, mitigations/, verify_reproducibility.py)."
+    ],
+    "summary": "The paper documents a silent training-stall bug in untied gated and hybrid sequence models. A survey of 291 open-weight repositories (280 distinct embedding tables) finds that 52.6% of untied gated/hybrid checkpoints (20 of 38) contain reachable input embeddings with norms below 1e-6, compared with 0% of weight-tied models; the authors attribute these to rare or template tokens receiving zero input gradients while AdamW weight decay shrinks untied embeddings. In Mamba, Gated DeltaNet, and xLSTM, a near-zero token makes SiLU gates or linear queries vanish, and Pre-RMSNorm then amplifies backward gradients by up to 1e3 per layer, yielding gradient amplification up to 35 orders of magnitude. When an entry exceeds 1.84e19, FP32 global-norm clipping in PyTorch, Hugging Face Trainer, and FSDP2 overflows to infinity and zeros the batch; in Telugu continual pretraining of Nemotron-3-Nano-4B this discarded about 20% of steps and froze affected rows. The authors propose GroupClip (64-bit or rescaled embedding-norm clipping) to heal released checkpoints and GateFloor (SiLU(z)+delta) during pretraining, reporting a 28-order-of-magnitude reduction in near-zero gradients with comparable perplexity in experiments up to 370M parameters. Results are self-reported with released reproduction code.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "research",
+    "subcategories": [
+      "ml"
+    ],
+    "state": "confident",
+    "novelty": "silent training-stalling bug found in 52.6% of surveyed gated/hybrid LM checkpoints",
+    "audience": "researchers/engineers pretraining or fine-tuning Mamba/xLSTM/hybrid gated sequence models",
+    "source_url": "https://arxiv.org/abs/2611.04449",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2611.04449",
+        "points": 6,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.04449",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CL"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.04449",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.LG"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-02T19:00:00.000Z",
+    "published_at": "2026-11-07T05:15:53.581762+00:00",
+    "curated_at": "2026-11-07T05:15:53.581762+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 715560,
+    "story_id": "s_3b8969d3509c73d6",
+    "title": "I Toured Unitree's Factory. I'm More Bullish on the West",
+    "relevance": 6,
+    "score": 5.549,
+    "why": "The economics here say the money in humanoids is in building the motor lines, not the robots: at Unitree labor is 8% of cost, so the Western play is machines that make actuators, not hand-assembly plants in Ohio.",
+    "notes": [
+      "Unitree's books: ~$1.7M total machinery against ~32,000 robots made in 2025, roughly $50 of machinery per robot; labor was 8% of production cost, so halving it saves ~4%. The new motor line is expected to cut per-motor labor by more than half and one robot model's cost by under 2% (about 9% at American wages).",
+      "A viral Unitree video (28M views) shows a humanoid doing assembly and calls it 'an actual deployment,' but the IPO prospectus calls it a pilot and says assembly is 'currently mainly manual.' The author saw humans on old winding machines, not robot lines.",
+      "Unitree's own slide puts robots' 'ChatGPT moment' (80% success on 80% of unseen tasks) two to three years out. Three quarters of humanoid revenue in the first nine months of 2025 came from research/education, under 5% from industrial work, and the author claims half or more of filed 'industry' revenue is robots giving guided tours.",
+      "Policy drivers: in July the FCC stopped approving new humanoids/robot dogs unless made in America with >65% US parts by cost (75% from 2029); Pentagon drone programs require stators wound outside China from August 2027. On Oct 28 the White House found the US 'relies on foreign imports for most types of robotics, industrial machinery.'",
+      "Western volume claims (all self-reported): Figure says BotQ went from one humanoid a day to one an hour in under four months; Tesla says most of a million-Optimus-a-year line is at Fremont; Agility listed on Nasdaq Nov 5 with Foxconn leading ~$201M despite selling just $1.8M of robots last year; 1X says it builds actuators from copper spool to finished part on self-designed lines in Hayward.",
+      "Caveat the author concedes: China passed Germany as top machine-tool exporter last year, all top-ten solar-equipment makers were Chinese by 2022, and Chinese hairpin-winding-line builders have undercut German/Italian rivals by up to half and export whole lines to Europe. The author discloses investments in several Western manufacturing/humanoid startups (Standard Manufacturing, Dirac, Isembard, RMFG, Minerva)."
+    ],
+    "summary": "Josef Chen, founder of KAIKAKU, reports from a tour of Unitree's Hangzhou factory that the plant is mostly manual: humans run winding machines, total machinery is worth about $1.7M against ~32,000 robots made in 2025, and labor is only 8% of production cost. He argues this is rational because Unitree ships a new robot design every year, so custom automation for a fast-changing product becomes scrap, and because humanoids are still mostly research tools (three quarters of humanoid revenue is research/education, under 5% industrial). Unitree is automating joint/motor modules first because the motor is the most standardized, least-changing part. Chen's thesis is that automation only pays once a product freezes, and that the real opportunity is building the machines and motor lines rather than robots, especially in the West where labor costs roughly six times more (making labor ~40% of cost) and US policy (FCC content rules, Pentagon stator requirements) shuts out Chinese hands. He cites historical analogues (Ford's Highland Park, GM's 1927 flexibility edge over a frozen Model T, Foxconn's unmet million-robot pledge) and self-reported Western progress from Figure, Tesla, Agility, and 1X, while conceding China now leads in machine tools and motor-line equipment. A promised part 2 covers his BYD visit, where he says everything he saw was automated with off-the-shelf Fanuc and KUKA arms.",
+    "channels": [
+      "hardware",
+      "startups"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "firsthand data showing Unitree's factory is mostly manual, not robot-run",
+    "audience": "readers tracking robotics/humanoid manufacturing and China-vs-West automation race",
+    "source_url": "https://josef.cn/blog/unitree",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50400597",
+        "points": 74,
+        "comments": 45,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://josef.cn/blog/unitree",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-07T01:05:16+00:00",
+    "published_at": "2026-11-07T04:59:07.806673+00:00",
+    "curated_at": "2026-11-07T04:59:07.806673+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 651456,
+    "story_id": "s_d3d106c9397f0875",
+    "title": "AlpineBSD",
+    "relevance": 6,
+    "score": 5.449,
+    "why": "If you want a Unix base you can audit without wondering which lines came from an LLM, here is a distribution that bans AI-generated code from its kernel, libc, and main package repo as a design constraint.",
+    "notes": [
+      "Stack: NetBSD kernel, libc, and platform tools like mount, paired with an Alpine Linux-inspired userspace using apk-tools and busybox, with a GNU lean (GNU make over BSD make).",
+      "Stated AI policy: no LLM output in the base system or main package repository; the project frames minimizing AI-generated software as its central objective.",
+      "Init: uses s6 now, not Alpine's OpenRC; adding OpenRC as an alternative is a stated plan, not shipped.",
+      "Not a fork of Alpine Linux; the package collection is described as original though many packages are ultimately based on aports.",
+      "Maturity caveat: no installer yet, only a high-level manual install guide; the site calls it a work in progress.",
+      "Hardware caveat inherited from NetBSD: the kernel has spotty hardware support, much weaker than Linux, especially for laptops; consult the NetBSD supported hardware list."
+    ],
+    "summary": "AlpineBSD is an early-stage operating system built on the NetBSD kernel and libc with a userspace inspired by Alpine Linux, using apk-tools and busybox and a slightly more GNU-oriented toolchain. Its stated objective is to use as little AI-generated software as possible; the project claims no LLM output is included in the base system or main package repository. It currently uses the s6 init system rather than Alpine's OpenRC, with plans to add OpenRC as an alternative. The package collection is described as original rather than a fork of Alpine's aports, though many packages are ultimately based on them. The project is a work in progress with no installer yet, only a high-level manual installation guide. It inherits NetBSD's limited hardware support, which the site warns is much weaker than Linux, particularly for laptops.",
+    "channels": [
+      "devtools",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "NetBSD-based OS explicitly banning AI-generated code",
+    "audience": "systems/OS engineers and devs skeptical of AI-generated code quality",
+    "source_url": "https://wiki.alpinebsd.org/",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50274251",
+        "points": 184,
+        "comments": 173,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://wiki.alpinebsd.org",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://programming.dev/post/58639203",
+        "points": null,
+        "comments": null,
+        "name": "programming.dev (Lemmy)"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-28T14:30:26+00:00",
+    "published_at": "2026-11-07T04:43:05.253423+00:00",
+    "curated_at": "2026-11-07T04:43:05.253423+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 713723,
     "story_id": "s_5bbde7a93f9ec571",
     "title": "Devvm.dev: One VM for every project",
     "relevance": 6,
-    "score": 5.464,
+    "score": 5.445,
     "why": "Running a coding agent against your real checkout means one prompt injection can touch your working tree and .git hooks; this gives each project a per-folder VM where the agent sees placeholders instead of your Claude or Codex tokens and reaches only an allowlisted set of hosts by default.",
     "notes": [
       "Four network tiers per VM: allowlist (default), internet, open, none. The allowlist routes through a proxy on the host that swaps placeholder values in the VM for real secrets (Claude Code token, Codex login) only on outbound requests, so the VM never holds them.",
@@ -919,8 +1300,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50395450",
-        "points": 126,
-        "comments": 53,
+        "points": 136,
+        "comments": 54,
         "name": "Hacker News"
       },
       {
@@ -941,7 +1322,7 @@
     "story_id": "s_20458b64b731b6f3",
     "title": "Tools Need Not Speak in Text: Latent Context Compression for Agents",
     "relevance": 6,
-    "score": 5.442,
+    "score": 5.39,
     "why": "If the self-reported numbers hold, agents can drop 70-89% of tool-output tokens and 24-56% of runtime by feeding observations as latent embeddings instead of text, cutting the per-step cost that dominates multi-step web-search loops.",
     "notes": [
       "Coca-Cola compresses raw tool outputs into continuous latent tokens and injects them directly into the agent's input embedding space, bypassing discrete text; the authors argue token pruning and summarization are capped by their reliance on text representations.",
@@ -992,7 +1373,7 @@
     "story_id": "s_c6bd61f9a6ca6fe6",
     "title": "ChatGPT silently passes data between connectors and the bounty wants an ID card",
     "relevance": 6,
-    "score": 5.526,
+    "score": 5.477,
     "why": "If you ship an MCP server or ChatGPT connector, the trust boundary is the OAuth client, not the server URL: ChatGPT can route a confirmed follow-up call to a different connector and carry a one-time code across apps without telling the user.",
     "notes": [
       "Repro setup: one ChatGPT account, two connectors pointing to the same MCP server. Connector A is a custom developer-mode connector; connector B is the published app-directory version. Each has its own OAuth client, so the server sees two separate clients for the same user.",
@@ -1106,7 +1487,7 @@
     "story_id": "s_3ff119bb07bd7549",
     "title": "OpenFrontiers: A Collection of Open Research Problems and a Benchmark for Scientific Rediscovery",
     "relevance": 6,
-    "score": 5.498,
+    "score": 5.455,
     "why": "The headline result: across seven LLM agents, closed-book \"rediscovery\" of math solved at most 7 of 40 resolved problems, and live-web gains mostly came from retrieving the published answer, so the benchmark gives a way to separate real reasoning from search.",
     "notes": [
       "Two linked artifacts: a corpus of 12,151 open research problems across disciplines (recording statement, context, and progress), and a retrospective math benchmark of 200 problems, 110 resolved in 2026 and 90 still open.",
@@ -1207,7 +1588,7 @@
     "story_id": "s_dedffd069605ffb6",
     "title": "We know 15k websites are infected. how do we tell them?",
     "relevance": 6,
-    "score": 5.547,
+    "score": 5.506,
     "why": "Report URI can detect compromised sites faster than anyone can notify them, so 15,579 sites serving skimmers and malware to a claimed 135M monthly visits stay live for want of a working disclosure channel, not want of evidence.",
     "notes": [
       "Report URI's threat-intel crawling has 15,579 unique sites confirmed infected with malicious JavaScript, plus thousands more at under-100% confidence; sites are dropped from the count once they self-clean, so the true total was higher.",
@@ -1255,7 +1636,7 @@
     "story_id": "s_4f8c1ed6c6c14941",
     "title": "SwarmEvolve: Latent Agent Swarms for Evolutionary Discovery and Optimization",
     "relevance": 6,
-    "score": 5.571,
+    "score": 5.528,
     "why": "An 8B open-weight model (Qwen3 8B) reportedly matches or beats AlphaEvolve's frontier-LLM results on some math-discovery problems while reaching other frameworks' best scores in 3-8 minutes instead of 60.",
     "notes": [
       "The bottleneck it targets: LLM-guided evolutionary search is slow because each agent decodes a long textual chain of thought every round, repeated many times to keep population diversity.",
@@ -1305,7 +1686,7 @@
     "story_id": "s_b60ed19cc1de0bdc",
     "title": "Several Democrats renew calls for datacenter pauses after blue wave",
     "relevance": 6,
-    "score": 5.758,
+    "score": 5.707,
     "why": "If moratoriums move from campaign rhetoric to law in Texas and Georgia, the multi-trillion-dollar compute buildout that frontier AI depends on loses its two biggest siting hotspots, and the permitting timeline for new capacity gets longer and less predictable.",
     "notes": [
       "Bernie Sanders called on X Wednesday for an immediate national datacenter moratorium, framing it as blocking 'Big Tech oligarchs'; Rep. Yassamin Ansari (D-AZ) went further, calling for a day-one pause on advanced AI development and a ban on artificial superintelligence, then sparred publicly with Elon Musk.",
@@ -1362,7 +1743,7 @@
     "story_id": "s_4c02713df3183cb0",
     "title": "Libghostty 1.0",
     "relevance": 6,
-    "score": 6.66,
+    "score": 6.721,
     "why": "Ghostty's terminal engine is now a standalone 1.0 library, so you can embed a maintained terminal emulator in your own app or tool instead of writing one or forking the full editor.",
     "notes": [
       "Announced by Mitchell Hashimoto, creator of Ghostty and co-founder of HashiCorp; the post marks libghostty reaching a 1.0 version.",
@@ -1387,8 +1768,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50399933",
-        "points": 290,
-        "comments": 45,
+        "points": 387,
+        "comments": 63,
         "name": "Hacker News"
       },
       {
@@ -1415,7 +1796,7 @@
     "story_id": "s_9c4df5b58b952a23",
     "title": "Memorilla: Latent Semantic Memory for LLMs",
     "relevance": 6,
-    "score": 5.885,
+    "score": 5.844,
     "why": "Represents a document collection to a frozen LLM in 16 learned memory tokens, 108x fewer tokens than full context on FactKG, so long-history agent and personalization workloads could skip stuffing retrieved text into the window.",
     "notes": [
       "Mechanism: documents (chats, book chapters, agent turns) are encoded once into reusable embeddings; a learned module then retrieves and places query-specific information directly into the LLM's input embedding space as a fixed set of memory tokens, rather than inserting retrieved text.",
@@ -1470,7 +1851,7 @@
     "story_id": "s_286f6f2b478f39e8",
     "title": "Inside GitHub’s new Git storage architecture",
     "relevance": 6,
-    "score": 7.693,
+    "score": 7.721,
     "why": "GitHub hosts a large share of the world's Git repositories, so a change to how it stores them on the backend shapes clone, fetch, and push latency for millions of developers; the specifics are not in the available text.",
     "notes": [
       "The piece is a GitHub Engineering blog post describing a redesigned backend storage architecture for Git repositories; the mechanism, data layout, and migration approach are not in the provided text.",
@@ -1497,8 +1878,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50397099",
-        "points": 80,
-        "comments": 13,
+        "points": 95,
+        "comments": 18,
         "name": "Hacker News"
       },
       {
@@ -1525,7 +1906,7 @@
     "story_id": "s_8d3b09affb509447",
     "title": "CATL Sodium Battery Hits LFP Cost Parity in 2026: 15,000 Cycles, 30-Year Life",
     "relevance": 6,
-    "score": 6.782,
+    "score": 6.762,
     "why": "If the pricing claim holds, sodium-ion stops being a cold-weather niche and becomes a direct substitute for LFP in grid and stationary storage, where cobalt-free, lithium-free chemistry would cut exposure to lithium supply and price swings.",
     "notes": [
       "Headline claims: cost parity with lithium iron phosphate (LFP) in 2026, 15,000 charge cycles, and a roughly 30-year service life, all attributed to CATL and reported secondhand.",
@@ -1551,8 +1932,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50399657",
-        "points": 142,
-        "comments": 64,
+        "points": 152,
+        "comments": 71,
         "name": "Hacker News"
       },
       {
@@ -1573,7 +1954,7 @@
     "story_id": "s_cf73b8456d2cf681",
     "title": "Nvidia CEO Jensen Huang summoned by Congress over Chinese espionage concerns",
     "relevance": 6,
-    "score": 5.936,
+    "score": 5.893,
     "why": "The export-control fight over Nvidia's China sales now implicates Jensen Huang personally: three House committees want him in a closed-door briefing on November 18 over alleged Chinese targeting, raising the odds of tighter scrutiny on how Nvidia chips reach buyers routed through Singapore.",
     "notes": [
       "The chairs of the House committees on China (John Moolenaar), Foreign Affairs (Brian Mast), and Intelligence (Rick Crawford) wrote to Huang this week requesting he appear at a joint closed-door briefing on November 18.",
@@ -1631,7 +2012,7 @@
     "story_id": "s_922b69a56ff302d1",
     "title": "Obscure audio codec is a perfect fit for the N64",
     "relevance": 6,
-    "score": 6.341,
+    "score": 6.297,
     "why": "Libdragon now ships a codec that gives N64 homebrew near-Opus audio quality for ~4% CPU, so recorded music and speech fit alongside gameplay instead of eating most of the cartridge: the Half-Life N64 port used it to pack 2,500 sounds and 27 music tracks into one 64MB image.",
     "notes": [
       "ULC (Ultra Low Complexity Codec) by Aikku93, worked on since 2019, originated as a Game Boy Advance demo playing recorded music at 70kbps on a 16MHz ARM CPU with no vector instructions; permissively licensed.",
@@ -1686,7 +2067,7 @@
     "story_id": "s_7a8d42d10aa81485",
     "title": "AI is dramatically accelerating AI research",
     "relevance": 6,
-    "score": 7.679,
+    "score": 7.668,
     "why": "If AI tools are already compressing the AI research loop, the pace of capability gains you plan around is set by a feedback loop, not a fixed roadmap, and this post argues that loop is live now.",
     "notes": [
       "Written by Ajeya Cotra on Planned Obsolescence, a blog focused on AI forecasting and timelines; the headline claim is that AI is 'dramatically accelerating' AI research itself.",
@@ -1712,8 +2093,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50397994",
-        "points": 222,
-        "comments": 166,
+        "points": 242,
+        "comments": 187,
         "name": "Hacker News"
       },
       {
@@ -1740,7 +2121,7 @@
     "story_id": "s_88439bbc8633db1a",
     "title": "The Ubuntu 26.04 Rust sudo is not compatible with standard sudo",
     "relevance": 6,
-    "score": 7.943,
+    "score": 7.895,
     "why": "If you administer Ubuntu, the 26.04 default sudo is a separate Rust implementation whose behavior and config may not match the C sudo your scripts and muscle memory expect, so test before upgrading.",
     "notes": [
       "Ubuntu 26.04 ships a Rust-based sudo (the sudo-rs project) as a replacement for the traditional C sudo maintained by Todd Miller.",
@@ -1796,7 +2177,7 @@
     "story_id": "s_23772a8cc81320f2",
     "title": "Microsoft is winding down Oracle deal to rent AI cloud capacity",
     "relevance": 6,
-    "score": 6.87,
+    "score": 6.826,
     "why": "If confirmed, the walkback signals Microsoft can now cover its AI compute from its own buildout rather than renting Oracle GPU capacity, reshaping who depends on whom in the cloud-capacity scramble.",
     "notes": [
       "Microsoft is reportedly winding down an arrangement to rent AI cloud capacity from Oracle, per Bloomberg News as relayed by Reuters.",
@@ -1850,7 +2231,7 @@
     "story_id": "s_fbb566dd4d6c874a",
     "title": "Anthropic IPO buyers see valuation as low as $1.1T",
     "relevance": 6,
-    "score": 7.406,
+    "score": 7.365,
     "why": "If an Anthropic IPO prices near $1.1T, it would mark public-market buyers discounting a frontier-lab against its prior private round, a repricing that ripples into employee equity, follow-on fundraising, and how every other AI lab gets valued.",
     "notes": [
       "Prospective IPO buyers are reportedly floating a valuation as low as $1.1T for Anthropic, per Bloomberg's headline; the figure is attributed to buyers, not to Anthropic or its bankers.",
@@ -1899,7 +2280,7 @@
     "story_id": "s_34df7b189202ae85",
     "title": "Show HN: Agentic Identity Broker, OAuth Delegation for AI Agents",
     "relevance": 6,
-    "score": 6.02,
+    "score": 5.982,
     "why": "If you run a fleet of MCP servers, this moves OAuth2 ceremonies, token storage, and consent out of each server and into one broker, so agents carry a single user token instead of talking to dozens of authorization servers.",
     "notes": [
       "Built by Zalando-incubator and sits in the call path behind a gateway (e.g. Agentgateway); it handles OAuth2 ceremonies, token vaulting, and token translation centrally so MCP server authors only implement tools. Early-stage, active development.",
@@ -2009,7 +2390,7 @@
     "story_id": "s_bff7380e53326eb8",
     "title": "D3D: Decoupled Diffusion Drafting for Asynchronous Speculative Decoding",
     "relevance": 6,
-    "score": 5.388,
+    "score": 5.366,
     "why": "If the self-reported numbers hold, a drafter that no longer waits on target-model hidden states pushes speculative decoding past 5x and up to 7.48x on a 32B model, versus ~3.7-4x for the prior diffusion-draft baseline.",
     "notes": [
       "The bottleneck D3D targets: target-conditioned diffusion drafters generate each block in one pass but must wait for refreshed target hidden states before the next block, so drafting and verification run sequentially. D3D is a standalone drafter that drops this inter-round dependency and drafts successor blocks during verification in a single packed pass (asynchronous speculative decoding).",
@@ -2111,7 +2492,7 @@
     "story_id": "s_5c6ffe2fd473f554",
     "title": "What Does Multi-Turn Reinforcement Learning Really Improve in LLM Agents?",
     "relevance": 6,
-    "score": 5.462,
+    "score": 5.444,
     "why": "If you deploy RL-trained agents under tight turn limits, the paper's measurements say most of your training advantage disappears, because the gains live in multi-turn error recovery rather than better single-step decisions.",
     "notes": [
       "Evaluation uses a Pass@(K,T) metric that separates sampling breadth K (number of attempts) from interaction depth T (turn budget), letting the authors isolate where trajectory-level RL helps.",
@@ -2266,7 +2647,7 @@
     "story_id": "s_8f362f59357e11f7",
     "title": "Bots are raiding library collections to feed AI — shutting out researchers and the public | CBC News",
     "relevance": 6,
-    "score": 6.977,
+    "score": 6.942,
     "why": "If you run or depend on a public digital archive, automated AI scrapers are now a load problem that can lock out human researchers, the same failure mode already seen at Wikimedia and code forges.",
     "notes": [
       "CBC reports AI scraper bots are hammering university library digital collections, with the scraping load heavy enough to disrupt access for legitimate researchers and the general public.",
@@ -2319,7 +2700,7 @@
     "story_id": "s_4c8b81753950fb88",
     "title": "FrontierPhysics: Evaluating Agents for End-to-End Physics Research",
     "relevance": 6,
-    "score": 5.55,
+    "score": 5.532,
     "why": "The best of 22 models cleared only 46 of 168 rollouts, and the authors trace the failures to weak reasoning and missing expert intuition rather than knowledge or execution, so scaling facts into these agents will not close the gap.",
     "notes": [
       "FrontierPhysics holds 56 tasks written by 42 physicists from their own work, spanning nine domains across theoretical, computational, and experimental physics.",
@@ -2421,7 +2802,7 @@
     "story_id": "s_606a35730c31543c",
     "title": "Blender's UI and Runtime: Much Faster Than GPUI",
     "relevance": 6,
-    "score": 5.758,
+    "score": 5.729,
     "why": "If the benchmarks hold, you can ship a native desktop UI with Blender's drag-to-scrub number fields and fuzzy menu search from Python, Rust, JS/React, C, or Dear ImGui without bundling a browser or webview, in a ~7 MB executable that boots in ~70 ms.",
     "notes": [
       "The core is a small C runtime (the 'kit', one header BUI_kit.h) that ports Blender's own interface_widgets.cc drawing code and interaction rules; thin bindings sit on top for Python, Rust, JS/React (via napi-rs), C/C++, and Dear ImGui. No Blender install required.",
@@ -2471,7 +2852,7 @@
     "story_id": "s_d188192e2fa9c5e1",
     "title": "Show HN: Stroq – a local audit of what your coding agent did and why",
     "relevance": 6,
-    "score": 6.161,
+    "score": 6.143,
     "why": "If you run Claude Code, Codex, or Cursor, this tool reads your existing session transcripts locally and tells you which of your credentials showed up in commands that left the machine, naming keys to rotate today.",
     "notes": [
       "`npx @stroq/cli` runs fully local: it reads the last 30 days of sessions, key files, and agent working folders, prints key names but never values, writes only a cache under ~/.stroq, and makes no outbound calls. No account, no telemetry; Apache-2.0, Node.js 22+.",
@@ -2523,7 +2904,7 @@
     "story_id": "s_f96c2b5a4d055875",
     "title": "Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3",
     "relevance": 6,
-    "score": 6.335,
+    "score": 6.317,
     "why": "If most of an agent's wall-clock time is idle waiting on inference, Rivet's model lets one node hold hundreds of thousands of agents at 72 KB each instead of paying for a 512 MiB VM per agent that mostly sits idle.",
     "notes": [
       "Core design: each Actor is a long-lived process with in-memory state, per-Actor SQLite, WebSockets, and scheduling; Actors share one Node.js or Bun process rather than each booting a sandbox, so the agent loop (the 'head') runs outside the sandbox and reaches code execution (the 'hands') only through tools.",
@@ -2684,7 +3065,7 @@
     "story_id": "s_3c0ba1e344fab490",
     "title": "Schools that block Google’s A.I. will lose student access to its search engine",
     "relevance": 6,
-    "score": 5.936,
+    "score": 5.932,
     "why": "If the reported policy is real, a school's choice to disable Google's AI features would cost its students access to Google Search itself, turning an opt-out into a loss of core infrastructure.",
     "notes": [
       "Headline claim: schools that block Google's AI features reportedly lose student access to Google's search engine, coupling AI adoption to a product schools already depend on.",
@@ -2806,7 +3187,7 @@
     "story_id": "s_18955c783c1342c6",
     "title": "Discord is ditching Electron and its new app uses less RAM",
     "relevance": 6,
-    "score": 7.138,
+    "score": 7.119,
     "why": "If one of the largest Electron apps can shed the Chromium runtime, it reopens the question of whether every desktop app needs a bundled browser to ship cross-platform.",
     "notes": [
       "Headline claim: Discord is rebuilding its desktop client to drop Electron, the Chromium-plus-Node.js shell most cross-platform desktop apps use.",
@@ -2851,399 +3232,6 @@
     "first_seen": "2026-11-05T11:39:42+00:00",
     "published_at": "2026-11-06T12:09:25.512518+00:00",
     "curated_at": "2026-11-06T12:09:25.512518+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 709093,
-    "story_id": "s_8b17a38219317e77",
-    "title": "Nvidia Kubernetes Engine (NVKE)",
-    "relevance": 6,
-    "score": 6.367,
-    "why": "If you run GPU hardware and want to hand customers isolated Kubernetes clusters the way a cloud provider does, Nvidia now ships the open-source (Apache 2.0) management plane to do it, though it is preview-only and ships with API auth off and plain HTTP by default.",
-    "notes": [
-      "Architecture: a throwaway seed cluster stands up a management cluster running the NVKE management plane; that plane then provisions and lifecycle-manages many isolated workload clusters, each with its own control plane, etcd, and node pools. Built on Cluster API plus a node agent, not a K8s distro or CAPI flavour.",
-      "Infra provider lock-in at preview: NVKE provisions machines only through NVIDIA Infra Controller (NICo), described as the sole compatible provider. Companion project NVKR builds pinned node images and NVKE components; NVKE only deploys those artifacts.",
-      "Node identity: nodes attest via SPIFFE/SPIRE using their TPM before receiving cluster join credentials. Per-cluster etcd encryption is available. FDE node images are evaluation-only and provide no data-at-rest confidentiality (stated caveat).",
-      "Preview security posture is the operator's job: API authentication is off and the API runs plain HTTP after install; operators must configure auth and protected access before admitting callers. Self-reported, not independently verified.",
-      "Operational gaps stated: the management cluster cannot upgrade, scale, or replace itself, and there is no management-plane upgrade or backup/restore procedure. Not recommended for production.",
-      "Try it without GPUs: local quickstart runs on a Linux host/VM (amd64 or arm64) with 6 CPUs, 12 GiB RAM, 100 GiB disk, Docker, and vTPM support, using simulated machines and no NVIDIA account; macOS runs it inside Colima. Build from source needs Go 1.27.3 and GNU Make 4, producing nine binaries."
-    ],
-    "summary": "NVIDIA Kubernetes Engine (NVKE) is an Apache 2.0, open-source management plane that platform teams install on their own NVIDIA GPU infrastructure to create and operate many isolated Kubernetes clusters for their customers, each with its own control plane, etcd, and node pools. It is structured as a self-hosting factory: a temporary seed cluster bootstraps a management cluster, whose management plane then provisions and lifecycle-manages workload clusters via NVIDIA Infra Controller (NICo), Cluster API, and a node agent. Nodes establish identity through SPIFFE/SPIRE TPM attestation before receiving join credentials, and per-cluster etcd encryption is offered. The project ships in preview and is explicitly not recommended for production: API auth is off and the API uses plain HTTP after install until the operator configures it, the management cluster cannot self-upgrade/scale/replace and has no backup/restore procedure, and FDE node images provide no data-at-rest confidentiality. A companion project, NVKR, owns building pinned node images and components; NVKE only deploys them. A local quickstart (6 CPUs, 12 GiB RAM, 100 GiB disk, Docker, vTPM) lets engineers evaluate on simulated machines with no NVIDIA account or GPU hardware.",
-    "channels": [
-      "devtools",
-      "hardware",
-      "ai"
-    ],
-    "category": "hardware",
-    "subcategories": [
-      "silicon"
-    ],
-    "state": "confident",
-    "novelty": "Nvidia ships self-hosted multi-cluster K8s control plane for GPU fleets",
-    "audience": "Platform engineers managing on-prem/bare-metal GPU Kubernetes infrastructure",
-    "source_url": "https://github.com/dsx-ai-factory/nvke",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50387738",
-        "points": 114,
-        "comments": 24,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/dsx-ai-factory/nvke",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-06T03:16:26+00:00",
-    "published_at": "2026-11-06T11:22:57.736485+00:00",
-    "curated_at": "2026-11-06T11:22:57.736485+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 642930,
-    "story_id": "s_fdfa92e206eb8cbc",
-    "title": "[$] Python's experimental JIT to be removed",
-    "relevance": 6,
-    "score": 7.403,
-    "why": "If CPython drops its experimental JIT, the main-line interpreter's performance roadmap narrows back to the specializing bytecode interpreter, and anyone betting on in-tree JIT speedups for pure-Python workloads has to recalibrate.",
-    "notes": [
-      "The piece reports that CPython's experimental, opt-in JIT (a build-time feature, not enabled by default) is slated for removal.",
-      "No article text was available for this writeup; the rationale (performance gains vs. maintenance burden) and any removal timeline or target release are not confirmed from the material provided and should be read from the LWN article directly.",
-      "The item drew 240 points and 121 comments on Hacker News and appeared across LWN.net, indicating active practitioner interest rather than vendor promotion.",
-      "LWN is subscriber-gated ($); the headline frames this as a decision ('to be removed'), but the specific decision-maker, discussion thread, or vote behind it is not captured here.",
-      "Claim to verify against the source: whether removal is proposed/pending versus finalized, and whether the specializing interpreter work is positioned as the forward path."
-    ],
-    "summary": "An LWN article reports that CPython's experimental JIT compiler, which shipped as an opt-in build feature rather than a default, is set to be removed. The headline and surfacing indicate the in-tree JIT effort has reached a decision point, though the full rationale, timeline, and governance details are not available in the provided material and should be read from the source. The story was surfaced multiple times on LWN and on Hacker News, where it accumulated 240 points and 121 comments. No article body was supplied for this summary, so the specific performance-versus-maintenance tradeoff cited as the reason, and whether removal is proposed or final, remain unconfirmed here. Readers tracking CPython performance work should treat the removal as reported and verify specifics against the LWN piece.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "CPython's experimental per-function JIT slated for removal",
-    "audience": "Python core devs and performance-sensitive Python engineers",
-    "source_url": "https://lwn.net/Articles/1102102",
-    "read_kind": null,
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50257419",
-        "points": 240,
-        "comments": 121,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lwn.net/Articles/1102102/",
-        "points": null,
-        "comments": null,
-        "name": "LWN.net"
-      },
-      {
-        "url": "https://lwn.net/Articles/1102102/",
-        "points": null,
-        "comments": null,
-        "name": "LWN.net"
-      },
-      {
-        "url": "https://lwn.net/SubscriberLink/1102102/0c00e4d550f25f8c/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-26T15:45:58+00:00",
-    "published_at": "2026-11-06T11:07:40.252776+00:00",
-    "curated_at": "2026-11-06T11:07:40.252776+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 671195,
-    "story_id": "s_2712d86d09c6ba80",
-    "title": "Show HN: OmniDiff – Opensource, super fast, content aware Git difftool, in Rust",
-    "relevance": 6,
-    "score": 7.027,
-    "why": "A git difftool that renders PDFs page-by-page, fonts glyph-by-glyph, and images pixel-by-pixel inside the terminal, with a measured p50 of 4.2ms and p99 of 177ms over 2,302 fixtures, so binary and structured-file diffs stop being \"Binary file differs.\"",
-    "notes": [
-      "Content is detected by bytes, not filename: 25 languages get tree-sitter structural diffs; pictures (PNG/JPEG/GIF/WebP/etc.) diff pixel-by-pixel with frame-by-frame animation; archives (zip/tar/gzip/xz/bzip2, including Office docs and EPUB) diff member-by-member recursively; fonts (TTF/OTF/WOFF/WOFF2/EOT) glyph-by-glyph; plus PDFs, cursors, and gettext/Qt message catalogs.",
-      "Robustness (self-reported, 2026-10-31): over 442,530 code file pairs from the recent 50 commits of ~7,500 Gentoo-listed repos, 99.95% completed under a 120s budget and 6GB cap; across 2,018,010 total changes, 98.8% diffed as text or by content. The remainder is mostly legacy encodings, compiled objects, audio, and MicroType-Express EOT fonts.",
-      "Accuracy targets are NOT met yet: against 1,419 hand-painted ground-truth fixtures, the --minimal preset hits zero mismatched bytes on 69.6% of cases (goal 90%) and under-1% mismatch on 91.5% (goal 99%); the author attributes most of the gap to highlighting rules, not the matcher.",
-      "Speed numbers are laptop-measured (Intel i7-1370P, 32GB); a Xeon E3-1275 v5 runs ~2.5x slower. PDFs meet latency goals but only 57% finish under 100ms since every changed page is drawn, and the slowest archives (thousands of changed members) miss the p99 target at 1,938ms.",
-      "Integrates as a git difftool and via GIT_EXTERNAL_DIFF, plus jj (requires diff-invocation-mode = file-by-file); offers --mode json (with a committed JSON Schema) and headless/batch mode that auto-engages when stdout is not a TTY. Install via cargo (needs rustc 1.92+ and a C compiler), brew, signed apt repo, nix, or prebuilt binaries.",
-      "Licensed AGPLv3 with a paid commercial license sold via GitHub Sponsors to avoid source-disclosure. Author Marko Ivankovic states the project uses substantial Claude Code assistance disclosed via Co-Authored-By trailers; contributions are currently closed. VS Code extension exists but cannot yet replace the built-in diff view (upstream API unreleased)."
-    ],
-    "summary": "OmniDiff is an AGPLv3 git difftool written in Rust that diffs files by detected content type rather than treating everything as text. Text in 25 languages is parsed with tree-sitter and diffed structurally; non-text files are recognized by their bytes and diffed by what they hold: images pixel-by-pixel (with per-frame animation), archives member-by-member (recursively, including Office/EPUB), fonts glyph-by-glyph, plus PDFs by page, cursors, and gettext/Qt message catalogs. It integrates with git, jj, and GIT_EXTERNAL_DIFF, ships a TUI with terminal-graphics protocols (kitty/sixel/iTerm2) and 24-bit color, and offers JSON and headless/batch output for CI. Self-reported benchmarks on an Intel i7-1370P laptop show code diffs at p50 4.2ms / p99 177ms and 99.95% of 442,530 code-file pairs completing under a 120s/6GB budget. Accuracy goals are explicitly unmet: against 1,419 hand-painted ground-truth fixtures the best preset reaches zero-mismatch on 69.6% of cases versus a 90% target, with the author crediting highlighting rules for most of the gap. The project discloses heavy Claude Code assistance, currently refuses outside contributions, and sells a commercial license via GitHub Sponsors; it surfaced as a Show HN with 126 points.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "content-aware diffing per file type (PDFs, fonts, images, archives), not just text",
-    "audience": "developers wanting better git diff tooling for mixed binary/text repos",
-    "source_url": "https://github.com/ivankovic/omnidiff",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50325253",
-        "points": 126,
-        "comments": 36,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/ivankovic/omnidiff?ref=console.dev",
-        "points": null,
-        "comments": null,
-        "name": "Console.dev"
-      },
-      {
-        "url": "https://github.com/ivankovic/omnidiff",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-11-01T13:02:30+00:00",
-    "published_at": "2026-11-06T11:06:50.397610+00:00",
-    "curated_at": "2026-11-06T11:06:50.397610+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 641213,
-    "story_id": "s_d8cbed247bd3130e",
-    "title": "Announcing three new discoveries in mathematics, computer science, and physics",
-    "relevance": 6,
-    "score": 7.501,
-    "why": "If the claims hold, OpenAI is asserting its models contributed to genuinely new results in math, CS, and physics, not just reproduced known work, which is the line vendors have not credibly crossed before, but the announcement arrives with no verifiable technical detail attached here.",
-    "notes": [
-      "OpenAI announces three claimed discoveries spanning mathematics, computer science, and physics, framed as produced in collaboration with academic communities.",
-      "The post surfaced on Hacker News at 1,064 points and 607 comments across multiple appearances, indicating heavy attention and, given the format, likely heavy skepticism.",
-      "No article text was available to the editor: the specific results, which models were used, the human-versus-model contribution split, and any peer review or verification status are all unstated here.",
-      "The phrasing 'model-assisted' versus autonomous discovery is unresolved in the available material; whether these are published, preprinted, or independently checked cannot be confirmed from this source.",
-      "Treat all claims as vendor self-reported until the underlying papers or problem statements are available for inspection."
-    ],
-    "summary": "OpenAI published an announcement titled \"Announcing three new discoveries in mathematics, computer science, and physics,\" framing its models as contributing to novel results in collaboration with academic communities. The piece drew strong Hacker News engagement, over 1,000 points and 600 comments across multiple surfacings, consistent with both interest and scrutiny. The full article text was not available for this writeup, so the concrete claims cannot be assessed: the specific problems solved, the models involved, the degree of model versus human contribution, and whether the results have been verified or peer-reviewed are all unstated in the material provided. These should be read as vendor claims pending release of the underlying papers and independent confirmation. The significance, if substantiated, would be AI systems producing verifiable new scientific results rather than restating known work.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "science"
-    ],
-    "category": "research",
-    "subcategories": [
-      "science",
-      "math"
-    ],
-    "state": "confident",
-    "novelty": "OpenAI claims model-assisted novel discoveries across math, CS, physics",
-    "audience": "researchers evaluating LLMs as scientific discovery tools",
-    "source_url": "https://openai.com/index/building-scientific-understanding-with-academic-communities",
-    "read_kind": null,
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50251344",
-        "points": 1064,
-        "comments": 607,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://openai.com/index/building-scientific-understanding-with-academic-communities",
-        "points": null,
-        "comments": null,
-        "name": "OpenAI News"
-      },
-      {
-        "url": "https://openai.com/index/building-scientific-understanding-with-academic-communities/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-10-26T21:35:28+00:00",
-    "published_at": "2026-11-06T10:50:14.151080+00:00",
-    "curated_at": "2026-11-06T10:50:14.151080+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 653512,
-    "story_id": "s_31c67505f93e70e8",
-    "title": "Executable Archaeology of Programs That Model Programming: Reanimating the Heuristic Compiler (1961) and KBEmacs (1984)",
-    "relevance": 6,
-    "score": 6.157,
-    "why": "Two of the earliest \"programs that write programs\" ran again, and the authors' point lands directly on your toolchain: today's far more capable AI coding assistants carry none of the explicit, executable theory of programming that a 1961 and a 1984 system both encoded.",
-    "notes": [
-      "Reanimates Herbert Simon's Heuristic Compiler (1961), a model of programming as problem-solving that applied the General Problem Solver's means-ends analysis; the rerun reproduces the compiled code shown in Simon's 1963 paper.",
-      "Reanimates MIT Programmer's Apprentice project's KBEmacs (1984), which built programs by combining reusable patterns called 'cliches' through a stylized English command language; the rerun reproduces the SQRT sequence from its December 1984 self-test.",
-      "Coins 'Executable Archaeology' for studying historical systems by running their original code, a step the authors call 'reanimation,' as opposed to only reading about them.",
-      "Reflexively, the detailed reanimation was done largely with Anthropic's Claude Code (the paper states Opus 5.5), built on an existing software base.",
-      "Side-by-side reading argues the two theories converge: the Heuristic Compiler also works by adapting existing routines, and Simon later held that search alone needs a large body of programming knowledge.",
-      "Central claim, not benchmarked: the explicit, executable theories of programming in both old systems are largely absent from modern AI coding assistants."
-    ],
-    "summary": "This arXiv paper applies a methodology the authors name \"Executable Archaeology,\" running original historical code rather than only reading descriptions of it, to two early programs that both acted as theories of how people program. The first, Herbert Simon's Heuristic Compiler (1961), modeled programming as problem-solving using the General Problem Solver's means-ends analysis; the reanimation reproduces the compiled code from Simon's 1963 paper. The second, MIT's KBEmacs (1984) from the Programmer's Apprentice project, let a programmer assemble programs from reusable patterns called \"cliches\" via a stylized English command language; the reanimation reproduces its December 1984 SQRT self-test sequence. Compared side by side, the authors find the theories overlap: the Heuristic Compiler also adapts existing routines, and Simon later argued search requires substantial programming knowledge. The reanimation work was carried out largely with Anthropic's Claude Code (stated as Opus 5.5), a deliberately reflexive choice. The authors conclude that the explicit, executable theories of programming these systems embodied are largely missing from today's more capable AI coding assistants.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "revives and runs 1961/1984 AI programming-assistant code via Claude Code",
-    "audience": "engineers/researchers interested in AI history and program-synthesis theory",
-    "source_url": "https://arxiv.org/abs/2610.36341",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50268478",
-        "points": 17,
-        "comments": 0,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://arxiv.org/abs/2610.36341",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.AI"
-      },
-      {
-        "url": "https://arxiv.org/abs/2610.36341",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.PL"
-      },
-      {
-        "url": "https://arxiv.org/abs/2610.36341",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-28T04:00:00+00:00",
-    "published_at": "2026-11-06T10:34:56.656242+00:00",
-    "curated_at": "2026-11-06T10:34:56.656242+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 662652,
-    "story_id": "s_df88e957f629049a",
-    "title": "We ran AI agent swarms in Minecraft and Mindustry",
-    "relevance": 6,
-    "score": 6.162,
-    "why": "The same failure modes you fight in production coding agents, compounding caution and fixation on single roles, show up unprompted in a 50-agent Minecraft colony, and the harness and Mindustry environments are open-sourced so you can reproduce the behavior yourself.",
-    "notes": [
-      "Minecraft 'Civ50': 50 GPT-6.1 Sol agents, 3 hours, goal 'build a thriving civilization'; they sent ~5,900 messages and built a ration ledger, written rules, permits, and appointed operators. The first-name-on-the-roster agent (Ada) became leader with no vote and received 616 DMs; 46 of 49 others DMed her first.",
-      "22 of 34 total deaths hit in the first night, after which agents became persistently risk-averse: by night three the leader ordered agents to 'idle in lit closed shelters.' Death only cost dropped gear, yet caution still compounded. Authors draw an explicit parallel to coding agents fixating on roles and over-guarding production changes.",
-      "Self-organized division of labor around fishing (fishermen, cooks, couriers) coordinated via shared markdown files like food-queue.md; bureaucracy emerged, e.g. four agents spent 11 minutes appointing a 'sole fertilizer operator' for one bone-meal unit.",
-      "Bed Wars: 10 Claude Opus 5.5 vs 10 GPT-6.1 Sol, nine 45-min games, GPT won 6-3 by breaking beds late while Claude played for kills. GPT sent 5-30x more messages (top player 198-368 DMs/game vs Claude's 11-48) and used compressed speech; Claude wrote lessons to memory files and repeated mistakes, GPT left memory empty and broadcast warnings by DM.",
-      "Mindustry PvP (GPT-6.1 Sol in Codex vs Claude Opus 5.5 in Claude Code): GPT won 6-1 over 7 games, ~9.5 hours total, game 3 lasting 4h16m. GPTs fetched Mindustry's public source to analyze mechanics (never instructed to); Claudes used a '+1' voting process and never switched leaders despite losing.",
-      "Framing claims presented without external citation: a 'thousand-agent swarm' solving open math problems and an 'OpenAI-Hugging Face incident' where swarms took over compute and hacked Hugging Face. Open-sourced: Multi-Agent Mindustry plus Multi-Agent Harbor (a fork of Harbor, the framework behind Terminal-Bench); agents run in isolated Linux sandboxes with the game API, no harness-level customization or special memory work."
-    ],
-    "summary": "Y Combinator Labs, with Olam Labs, ran multi-agent LLM swarms in Minecraft and Mindustry to study emergent coordination and alignment-relevant dynamics. In 'Civ50,' 50 GPT-6.1 Sol agents in survival Minecraft self-organized a pseudo-government (ration ledger, permits, appointed roles, ~5,900 messages) and a fishing-based food supply chain coordinated via shared markdown files, but trended toward compounding risk-aversion after 22 of 34 deaths struck the first night; a single roster-ordered agent became leader with no election. In Bed Wars, GPT beat Claude 6-3 with aggressive, high-message-volume coordination while Claude played defensively for kills, and in Mindustry PvP GPT won 6-1, reading the game's public source to understand mechanics. Across runs the authors observed role hardening, stable hierarchies, GPT's compressed shorthand versus Claude's '+1' voting, and a parallel to coding agents that fixate on roles and over-prioritize caution. The team open-sourced a new long-running Minecraft harness (Pi loop plus Mineflayer tools) and the Mindustry environments plus a Harbor fork, with no harness customization, so results are reproducible. Framing references such as a thousand-agent math-solving swarm and an 'OpenAI-Hugging Face incident' are asserted without external citation.",
-    "channels": [
-      "ai",
-      "ml-research"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents"
-    ],
-    "state": "confident",
-    "novelty": "emergent risk-aversion and social hierarchy in 50-agent LLM swarm",
-    "audience": "AI researchers studying multi-agent coordination and alignment",
-    "source_url": "https://labs.ycombinator.com/projects/games/index.html",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50296486",
-        "points": 221,
-        "comments": 70,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://labs.ycombinator.com/projects/games/index.html",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-29T21:40:28+00:00",
-    "published_at": "2026-11-06T10:34:35.865995+00:00",
-    "curated_at": "2026-11-06T10:34:35.865995+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 651463,
-    "story_id": "s_7dbfce7d196cfd84",
-    "title": "Dayjob: Tax – evaluating AI agents on 50 professional tax assignments",
-    "relevance": 6,
-    "score": 6.241,
-    "why": "The best agent clears only 10.8% of these tax assignments at a 95% rubric bar, so anyone eyeing agents for end-to-end professional work has a hard number for how far \"exercise judgment on messy, underspecified cases\" still is from shipping.",
-    "notes": [
-      "Scores (vendor self-reported, pass@1 at a 95% rubric threshold): Claude Sonnet 5.5 leads at 10.8%, Claude Fable 5.1 at 9.6%, Claude Opus 5.5 at 9.2%; a pass requires satisfying at least 95% of a task's criteria covering calculations, supporting evidence, consequential issues, and the finished deliverable.",
-      "50 environments span eight practice areas (individual/family, small business, partnerships, property/investments, estates/gifts/trusts, international, corporate transactions, review/disputes), backed by 1,789 workspace files (median 30, up to 123 per task): 1,487 PDFs, 117 Excel workbooks, 38 Word docs, plus emails, images, CSVs, and JSON.",
-      "Failures are judgment gaps, not arithmetic: in the condo case the agent evaluated both sale dates correctly but missed that moving out in August 2024 ends the two-of-five-year residence test (worth up to $250,000 in excluded gains) around August 2027; Astra flagged it 0/5, Opus 5/5.",
-      "In a separation case Opus 5.5 asserted a couple 'aren't legally married' across all 5 attempts despite a Colorado ceremony and prior Texas residence (which recognizes informal marriage); Astra flagged the need to verify marital status in 4/5. Note the article uses unofficial model labels (Astra, Fable, Sonnet 5.5, Opus 5.5) without defining them.",
-      "Tasks were built and given three-layer expert review (correctness, completeness, solvability) by tax professionals citing PwC, Deloitte, EY, Baker Tilly, Moss Adams, Windes, and Exxon backgrounds; unconventional evidence includes a photographed handwritten resale receipt and a field dispatch log revealing multistate obligations the client assumed were single-state.",
-      "Positioned against TaxBench (114 defined Q&A items), TaxCalcBench (return accuracy), and TaxLab (gather-and-file); DAYJOB: Tax instead tests whether the agent identifies the real problem. It extends Surge AI's prior DAYJOB Healthcare and Finance benchmarks; full leaderboard and access are gated behind a contact request."
-    ],
-    "summary": "Surge AI's DAYJOB: Tax is a 50-environment benchmark testing AI agents on professional tax preparation, compliance, and advisory work drawn from real workflows and reviewed in three expert passes by professionals from firms including PwC, Deloitte, EY, and Baker Tilly. It supplies 1,789 workspace files (median 30 per task, max 123; 1,487 PDFs, 117 Excel workbooks, 38 Word docs, plus emails, images, CSVs, and JSON) spanning eight practice areas, and grades deliverables like returns, workpapers, reviews, and client advice. Scoring is pass@1 at a 95% rubric threshold; Surge reports Claude Sonnet 5.5 leading at 10.8%, Fable 5.1 at 9.6%, and Opus 5.5 at 9.2% (all vendor self-reported, with model labels left undefined in the post). The benchmark targets professional judgment rather than isolated calculation: cited failures include missing a two-of-five-year home-sale residence deadline worth up to $250,000 in exclusions, and assuming a couple was unmarried despite records suggesting a valid marriage. Surge frames it against TaxBench, TaxCalcBench, and TaxLab, arguing those assume a defined problem while DAYJOB tests whether the agent discovers the problem, reconciles conflicting evidence, and carries findings to a finished deliverable. The full leaderboard and benchmark access are gated behind a contact request.",
-    "channels": [
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents",
-      "evals"
-    ],
-    "state": "confident",
-    "novelty": "new 50-task tax benchmark exposing agent judgment gaps, not just calc errors",
-    "audience": "AI evaluators and engineers building/assessing professional-domain agents",
-    "source_url": "https://surgehq.ai/blog/dayjob-tax",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50275626",
-        "points": 213,
-        "comments": 136,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://surgehq.ai/blog/dayjob-tax",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-28T15:46:30+00:00",
-    "published_at": "2026-11-06T10:02:30.044953+00:00",
-    "curated_at": "2026-11-06T10:02:30.044953+00:00",
     "model": "claude-opus-4-8"
   }
 ]
