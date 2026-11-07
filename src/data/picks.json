@@ -175,7 +175,7 @@
     "story_id": "s_d331e378ee31fd6e",
     "title": "sshole",
     "relevance": 8,
-    "score": 6.692,
+    "score": 6.633,
     "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
     "notes": [
       "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
@@ -666,7 +666,7 @@
     "story_id": "s_b69e6d64da940a0f",
     "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
     "relevance": 7,
-    "score": 6.387,
+    "score": 6.353,
     "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
     "notes": [
       "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
@@ -715,7 +715,7 @@
     "story_id": "s_06c6f6e402f3b3f2",
     "title": "Closed AI models dominate the price-performance frontier",
     "relevance": 7,
-    "score": 5.836,
+    "score": 5.794,
     "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
     "notes": [
       "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
@@ -829,7 +829,7 @@
     "story_id": "s_df04d6b94a5f2f01",
     "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
     "relevance": 7,
-    "score": 5.876,
+    "score": 5.828,
     "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
     "notes": [
       "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
@@ -887,11 +887,221 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 702241,
+    "story_id": "s_e6e17c877a863000",
+    "title": "We can do better than line-buffered output",
+    "relevance": 6,
+    "score": 5.232,
+    "why": "Line buffering can dominate runtime in non-interactive terminal tools; this shows how to get full-buffered throughput while still delivering lines promptly, with no threads.",
+    "notes": [
+      "glibc takes line buffering literally, splitting a single string into per-line write() calls (e.g. puts(\"a\\nb\") yields separate writes for \"a\\n\" and \"b\\n\"); CPython flushes when its buffer holds a newline after appending, so one write(1,\"a\\nb\\n\",4) plus one write(1,\"c\\n\",2).",
+      "The fix borrows Nagle's algorithm: instead of flushing on every newline, flush when the buffer has been idle past a deadline chosen for human perception (the author suggests ~100ms).",
+      "A deadline_flush checks a monotonic clock between short stints of work; if multiple files are processed within the deadline, their names write out in one batch, no threads required.",
+      "The author's tugz unzip applies this to replace Info-ZIP unzip's per-filename printout, which the author says dominates extraction time for archives of many small files, without changing the CLI output format.",
+      "Claimed benefit: full-buffering speed with responsiveness indistinguishable to humans from flush-on-newline; the article offers code and strace examples but no benchmark numbers quantifying the speedup."
+    ],
+    "summary": "Chris Wellons argues that the standard choice between full buffering and line buffering is a false one, and that line buffering is a real bottleneck for non-interactive terminal programs such as Info-ZIP unzip, where printing many filenames dominates extraction time. He shows via strace that glibc splits a single multi-line string into one write() per line, while CPython flushes whenever its buffer contains a newline. His alternative drops newline-triggered flushing in favor of a Nagle-style deadline: flush when the buffer has been idle longer than a perception-scale threshold (he suggests ~100ms), checked against a monotonic clock between short stints of work rather than via a thread. His tugz unzip uses this to batch multiple filenames into single writes when they fall within the deadline, preserving the usual output format while running faster. The post provides C struct and function examples but no benchmark figures.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "deadline-based flushing replaces newline-triggered line buffering",
+    "audience": "systems/C programmers writing CLI tools with terminal output",
+    "source_url": "https://nullprogram.com/blog/2026/11/05",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50380268",
+        "points": 84,
+        "comments": 10,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://nullprogram.com/blog/2026/11/05/",
+        "points": null,
+        "comments": null,
+        "name": "Chris Wellons (nullprogram.com)"
+      },
+      {
+        "url": "https://nullprogram.com/blog/2026/11/05/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-05T15:25:22+00:00",
+    "published_at": "2026-11-07T07:08:52.482553+00:00",
+    "curated_at": "2026-11-07T07:08:52.482553+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 649051,
+    "story_id": "s_dce65f72816f5d0a",
+    "title": "Ghostty 1.4.0",
+    "relevance": 6,
+    "score": 5.284,
+    "why": "If you run Ghostty, 1.4.0 fixes ten security advisories, including a paste-protection bypass that can run a command without confirmation and tmux-control-mode output that crashes every window on 1.3.0/1.3.1, so upgrading closes real holes triggerable by displaying malicious output.",
+    "notes": [
+      "Security: ten advisories fixed; several (Kitty graphics crash/allocation/file access, screen-clear memory corruption, zsh/bash integration OSC 52 clipboard hijack via crafted directory names, tmux control-mode crashes on 1.3.0/1.3.1) require only displaying malicious output; others need user interaction (paste, cmd-click, drag-drop). CVEs requested but not yet assigned by GitHub.",
+      "Kitty graphics now at 100% of the published spec, including animation and relative placements, which the maintainers claim makes Ghostty/libghostty the first non-Kitty terminal to do so; SIMD bulk parsing claimed ~16x faster image-payload parsing (64 MiB, x86_64 Linux, their benchmark).",
+      "Scrollback idle-compressed on macOS and 64-bit Linux, cutting physical (resident, not virtual) memory 70-90% for text-heavy history; default scrollback-limit raised from 10 MB to 50 MB. scrollback-limit renamed to scrollback-limit-bytes; new scrollback-limit-lines added.",
+      "Performance (self-reported): macOS pty now drained on a separate thread from parsing for 25-55% higher I/O throughput (M4 Max); VT parser 128 MB/s to 725 MB/s on ASCII (5.7x); cat of a 150 MB file dropped from 1.5s to 566ms. GTK renderer rewritten to EGL + DMABUF, triple-buffered, fixing blurry text under fractional scaling.",
+      "Breaking changes: copy-on-select defaults to none on macOS (was true), now accepts none/primary/clipboard/both, and clipboard copies only to the system clipboard. GTK now requires GTK 4.18 and libadwaita 1.7, excluding Ubuntu 24.04 LTS. macOS 13 support retained (earlier plan to require macOS 14 dropped) but deprecated.",
+      "New ghostty +ssh CLI action wraps ssh, installs bundled terminfo on the remote (falls back to xterm-256color if tic is missing) and forwards COLORTERM/TERM_PROGRAM/TERM_PROGRAM_VERSION; unifies logic across bash, zsh, fish, elvish, Nushell. Release reflects 7 months, 172 contributors, 2,889 commits."
+    ],
+    "summary": "Ghostty 1.4.0 (released October 27, 2026) is a terminal-emulator update spanning 7 months, 172 contributors, and 2,889 commits. It patches ten security advisories, several exploitable merely by rendering malicious output (Kitty graphics crashes and out-of-sandbox file access, memory corruption on screen-clear, shell-integration OSC 52 clipboard hijacking via crafted directory names, and tmux-control-mode crashes affecting 1.3.0/1.3.1); CVEs were requested but not yet assigned. It completes 100% coverage of the Kitty graphics protocol, including animation and relative placements, which the maintainers say makes Ghostty the first non-Kitty terminal to do so, with SIMD bulk parsing claimed ~16x faster on a 64 MiB benchmark. Scrollback is now transparently compressed while idle on macOS and 64-bit Linux, cutting resident memory 70-90% for text-heavy history and allowing the default limit to rise from 10 MB to 50 MB. Self-reported performance gains include 25-55% higher macOS I/O throughput from concurrent pty reads, a VT parser up to ~6x faster, and a rewritten GTK renderer on EGL/DMABUF that fixes blurry text under fractional scaling. Notable breaking changes: copy-on-select now defaults to none on macOS, GTK requires 4.18/libadwaita 1.7 (dropping Ubuntu 24.04 LTS), and a new ghostty +ssh wrapper unifies remote terminfo setup.",
+    "channels": [
+      "devtools",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "first terminal to fully implement Kitty graphics spec outside Kitty itself",
+    "audience": "terminal/CLI power users and devtools engineers choosing a terminal emulator",
+    "source_url": "https://ghostty.org/docs/install/release-notes/1-4-0",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50261998",
+        "points": 1292,
+        "comments": 412,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://ghostty.org/docs/install/release-notes/1-4-0",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-27T16:51:22+00:00",
+    "published_at": "2026-11-07T06:37:15.133098+00:00",
+    "curated_at": "2026-11-07T06:37:15.133098+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 702186,
+    "story_id": "s_23c0c7676e34511f",
+    "title": "Hackers exploited iOS and Android flaws to infect phones",
+    "relevance": 6,
+    "score": 5.268,
+    "why": "A nation-state crew weaponized reverse-proxy clones of legitimate sites to serve mobile exploits against anyone who visited, so patched-but-unpatched iPhones and Androids remain the soft spot.",
+    "notes": [
+      "Sekoia attributes the campaign with 'moderate to high confidence' to Russia's Foreign Intelligence Service (SVR); the Kremlin link is their assessment, not confirmed.",
+      "Mechanism: attackers registered lookalike domains (america250[.]holiday, theowo[.]club) as reverse proxies that served the real sites' content with malicious JavaScript injected into the traffic.",
+      "The injected JavaScript profiled the visiting device, then delivered platform-tailored payloads exploiting already-patched iOS and Android flaws, so only unpatched phones were at risk.",
+      "Payloads attempted to steal browser cookies, and in some cases Wi-Fi passwords and full mobile device data.",
+      "Targets included america250.org (US 250th-anniversary group, cited as pretext for invitation-themed spear-phishing) and a London luxury hotel near the UK MoD and 10 Downing Street where Zelenskyy reportedly stayed October 14.",
+      "Sekoia says potentially hundreds of sites were impersonated, many tied to Russia's war against Ukraine."
+    ],
+    "summary": "Security firm Sekoia reported a watering-hole campaign it attributes with moderate-to-high confidence to Russia's Foreign Intelligence Service (SVR). The attackers registered lookalike domains, including america250[.]holiday and theowo[.]club, and ran them as reverse proxies to legitimate sites (the America250 anniversary group and a London luxury hotel), serving real content with injected JavaScript. That JavaScript fingerprinted each visitor's device and delivered platform-specific payloads exploiting previously patched iOS and Android vulnerabilities, meaning unpatched phones were the exposed population. The payloads attempted to steal browser cookies and, in some cases, Wi-Fi passwords and full mobile device data. Sekoia says potentially hundreds of sites were impersonated, many linked to the Russia-Ukraine war, and that the anniversary site was likely chosen to enable invitation-themed spear-phishing; the hotel sits near the UK Ministry of Defence and 10 Downing Street, where Zelenskyy reportedly stayed on October 14.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "research"
+    ],
+    "state": "confident",
+    "novelty": "watering-hole attack spoofs legit sites via proxy domains to drop mobile exploits",
+    "audience": "security researchers and mobile platform engineers tracking state-sponsored threats",
+    "source_url": "https://arstechnica.com/security/2026/11/hackers-exploited-ios-and-android-flaws-to-infect-phones",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arstechnica.com/security/2026/11/hackers-exploited-ios-and-android-flaws-to-infect-phones/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMinwFBVV95cUxPXzZsblRBRUFaSkwzb0hHVUtkd3cxMk9HNjlQa0ZSUmZQcnlhTHFrUU9vRWtVSW5yTkpVSU9CdTlDams4bzdRNEgxTFFteVRBdEs0OE1FX0RteE5QVWZmczhnUXdUTURUNkNRRXRubW9iQjhCTG9IdE91N1BZTm02N2hLeUlpUGU1OHNpMkxIUHBCSVhRaVBvcTRNWEgwd1U?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News Technology"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/11/hackers-exploited-ios-and-android-flaws-to-infect-phones/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-04T22:26:49+00:00",
+    "published_at": "2026-11-07T06:21:54.601500+00:00",
+    "curated_at": "2026-11-07T06:21:54.601500+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 696041,
+    "story_id": "s_62b1cd170ff87b24",
+    "title": "PyRUA-DataFarm: LLM Agent as a Cost-Efficient Teleoperator for Real-Ready Robot Data",
+    "relevance": 6,
+    "score": 5.327,
+    "why": "If the self-reported numbers hold, robot demonstration data drops to roughly $0.80 per episode with no robot or operator in the loop, undercutting human teleoperation quotes of $117 (China) to $290 (North America) per hour of three-view data.",
+    "notes": [
+      "Pipeline: a coding agent takes one calibration episode of the real robot in the target scene and rebuilds the task in simulation, writing the scene, an expert controller, and a success judge; the simulator supplies exact actions and a video model conditioned on real images renders each rollout as multi-view photographic video, producing synchronized views labelled with the robot's actions.",
+      "Reported results on five real-robot tasks: policies trained only on farm data scored 93/100 successes vs 84/100 for policies trained on an equal count of teleoperated episodes.",
+      "Under distribution shift (unseen tablecloth, coloured light), farm-trained policies held 87/100 while teleoperation-trained policies fell to 46/100.",
+      "Cost claims: ~$21 of API usage plus $5 render contract once per task for adaptation, then $0.80 per additional episode for simulation, rendering, and review; one hour of three-view data averages $107 all-in.",
+      "Independent judges certify the expert controller and every rendered episode before admission to the dataset.",
+      "Numbers are self-reported from an arXiv preprint; no methodology for the judges, the video model, or the independent-judge setup is given in the abstract text."
+    ],
+    "summary": "PyRUA-DataFarm proposes replacing human teleoperators with an LLM coding agent to generate robot training data. Given a data request and one calibration episode of the robot in the target scene, the agent rebuilds the task in simulation by writing the scene, an expert controller, and a success judge; the simulator provides exact actions while a video model conditioned on real images renders each rollout as consistent multi-view photographic video, yielding action-labelled data a policy can train on and deploy directly. On five real-robot tasks, the authors report policies trained solely on farm data matching teleoperation-trained policies (93 vs 84 successes in 100 trials), and holding up better under an unseen tablecloth and coloured light (87 vs 46). They cite costs of about $21 API plus $5 render per task once, then $0.80 per episode, with one hour of three-view data at $107 versus teleoperation quotes of $117 in China and $290 in North American labour. Independent judges certify the expert and every rendered episode before admission. All figures are self-reported in the preprint and the abstract omits methodology details.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "hardware"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "LLM coding agent replaces teleoperator to synthesize sim+video robot training data",
+    "audience": "robotics/ML engineers working on data collection and sim-to-real transfer",
+    "source_url": "https://arxiv.org/abs/2611.05320",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2611.05320",
+        "points": 25,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.05320",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.RO"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-04T05:00:00+00:00",
+    "published_at": "2026-11-07T06:05:32.790396+00:00",
+    "curated_at": "2026-11-07T06:05:32.790396+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 688477,
     "story_id": "s_f6e1e1a39f4fe9d1",
     "title": "Qwen 3.8 27B on my laptop can interpret model weights, too",
     "relevance": 6,
-    "score": 5.374,
+    "score": 5.341,
     "why": "A 17GB model running on a laptop can read raw floating-point weight dumps and name the game a policy network was trained to play, so the \"only frontier models can do this\" framing around the weight-space paper is already wrong.",
     "notes": [
       "The underlying paper, 'Sparks of Weight-Space Programming' by Rikiya Takehi, Jayden Teoh, Alex Zhang, and Omar Khattab, claims GPT-6 Astra can both interpret raw network weights (as text floats) and edit them to improve a model without training loops.",
@@ -1111,7 +1321,7 @@
     "story_id": "s_748d95baaafc044d",
     "title": "Near-Zero Token Embeddings Silently Stall Training in Gated Sequence Models",
     "relevance": 6,
-    "score": 5.41,
+    "score": 5.401,
     "why": "If you continually pretrain or fine-tune an untied gated/hybrid checkpoint (Mamba, Gated DeltaNet, xLSTM), a single near-zero embedding row can silently zero out ~20% of your gradient updates while standard FP32 clipping in PyTorch, HF Trainer, and FSDP2 overflows to infinity.",
     "notes": [
       "Census of 291 open-weight repos (280 distinct embedding tables): 52.6% of untied gated/hybrid checkpoints (20/38) have reachable input embeddings with norm below 1e-6, versus 0% of weight-tied models. The authors attribute near-zero rows to unseen rare/template tokens getting zero input gradients while AdamW weight decay shrinks untied embeddings.",
@@ -1168,7 +1378,7 @@
     "story_id": "s_3b8969d3509c73d6",
     "title": "I Toured Unitree's Factory. I'm More Bullish on the West",
     "relevance": 6,
-    "score": 5.549,
+    "score": 5.532,
     "why": "The economics here say the money in humanoids is in building the motor lines, not the robots: at Unitree labor is 8% of cost, so the Western play is machines that make actuators, not hand-assembly plants in Ohio.",
     "notes": [
       "Unitree's books: ~$1.7M total machinery against ~32,000 robots made in 2025, roughly $50 of machinery per robot; labor was 8% of production cost, so halving it saves ~4%. The new motor line is expected to cut per-motor labor by more than half and one robot model's cost by under 2% (about 9% at American wages).",
@@ -1195,8 +1405,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50400597",
-        "points": 74,
-        "comments": 45,
+        "points": 91,
+        "comments": 58,
         "name": "Hacker News"
       },
       {
@@ -1272,7 +1482,7 @@
     "story_id": "s_5bbde7a93f9ec571",
     "title": "Devvm.dev: One VM for every project",
     "relevance": 6,
-    "score": 5.445,
+    "score": 5.388,
     "why": "Running a coding agent against your real checkout means one prompt injection can touch your working tree and .git hooks; this gives each project a per-folder VM where the agent sees placeholders instead of your Claude or Codex tokens and reaches only an allowlisted set of hosts by default.",
     "notes": [
       "Four network tiers per VM: allowlist (default), internet, open, none. The allowlist routes through a proxy on the host that swaps placeholder values in the VM for real secrets (Claude Code token, Codex login) only on outbound requests, so the VM never holds them.",
@@ -1300,8 +1510,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50395450",
-        "points": 136,
-        "comments": 54,
+        "points": 144,
+        "comments": 57,
         "name": "Hacker News"
       },
       {
@@ -1322,7 +1532,7 @@
     "story_id": "s_20458b64b731b6f3",
     "title": "Tools Need Not Speak in Text: Latent Context Compression for Agents",
     "relevance": 6,
-    "score": 5.39,
+    "score": 5.468,
     "why": "If the self-reported numbers hold, agents can drop 70-89% of tool-output tokens and 24-56% of runtime by feeding observations as latent embeddings instead of text, cutting the per-step cost that dominates multi-step web-search loops.",
     "notes": [
       "Coca-Cola compresses raw tool outputs into continuous latent tokens and injects them directly into the agent's input embedding space, bypassing discrete text; the authors argue token pruning and summarization are capped by their reliance on text representations.",
@@ -1351,7 +1561,7 @@
     "surfaces": [
       {
         "url": "https://huggingface.co/papers/2611.06500",
-        "points": 0,
+        "points": 1,
         "comments": null,
         "name": "Hugging Face Daily Papers"
       },
@@ -1373,7 +1583,7 @@
     "story_id": "s_c6bd61f9a6ca6fe6",
     "title": "ChatGPT silently passes data between connectors and the bounty wants an ID card",
     "relevance": 6,
-    "score": 5.477,
+    "score": 5.384,
     "why": "If you ship an MCP server or ChatGPT connector, the trust boundary is the OAuth client, not the server URL: ChatGPT can route a confirmed follow-up call to a different connector and carry a one-time code across apps without telling the user.",
     "notes": [
       "Repro setup: one ChatGPT account, two connectors pointing to the same MCP server. Connector A is a custom developer-mode connector; connector B is the published app-directory version. Each has its own OAuth client, so the server sees two separate clients for the same user.",
@@ -1487,7 +1697,7 @@
     "story_id": "s_3ff119bb07bd7549",
     "title": "OpenFrontiers: A Collection of Open Research Problems and a Benchmark for Scientific Rediscovery",
     "relevance": 6,
-    "score": 5.455,
+    "score": 5.373,
     "why": "The headline result: across seven LLM agents, closed-book \"rediscovery\" of math solved at most 7 of 40 resolved problems, and live-web gains mostly came from retrieving the published answer, so the benchmark gives a way to separate real reasoning from search.",
     "notes": [
       "Two linked artifacts: a corpus of 12,151 open research problems across disciplines (recording statement, context, and progress), and a retrospective math benchmark of 200 problems, 110 resolved in 2026 and 90 still open.",
@@ -1588,7 +1798,7 @@
     "story_id": "s_dedffd069605ffb6",
     "title": "We know 15k websites are infected. how do we tell them?",
     "relevance": 6,
-    "score": 5.506,
+    "score": 5.429,
     "why": "Report URI can detect compromised sites faster than anyone can notify them, so 15,579 sites serving skimmers and malware to a claimed 135M monthly visits stay live for want of a working disclosure channel, not want of evidence.",
     "notes": [
       "Report URI's threat-intel crawling has 15,579 unique sites confirmed infected with malicious JavaScript, plus thousands more at under-100% confidence; sites are dropped from the count once they self-clean, so the true total was higher.",
@@ -1636,7 +1846,7 @@
     "story_id": "s_4f8c1ed6c6c14941",
     "title": "SwarmEvolve: Latent Agent Swarms for Evolutionary Discovery and Optimization",
     "relevance": 6,
-    "score": 5.528,
+    "score": 5.446,
     "why": "An 8B open-weight model (Qwen3 8B) reportedly matches or beats AlphaEvolve's frontier-LLM results on some math-discovery problems while reaching other frameworks' best scores in 3-8 minutes instead of 60.",
     "notes": [
       "The bottleneck it targets: LLM-guided evolutionary search is slow because each agent decodes a long textual chain of thought every round, repeated many times to keep population diversity.",
@@ -1686,7 +1896,7 @@
     "story_id": "s_b60ed19cc1de0bdc",
     "title": "Several Democrats renew calls for datacenter pauses after blue wave",
     "relevance": 6,
-    "score": 5.707,
+    "score": 5.608,
     "why": "If moratoriums move from campaign rhetoric to law in Texas and Georgia, the multi-trillion-dollar compute buildout that frontier AI depends on loses its two biggest siting hotspots, and the permitting timeline for new capacity gets longer and less predictable.",
     "notes": [
       "Bernie Sanders called on X Wednesday for an immediate national datacenter moratorium, framing it as blocking 'Big Tech oligarchs'; Rep. Yassamin Ansari (D-AZ) went further, calling for a day-one pause on advanced AI development and a ban on artificial superintelligence, then sparred publicly with Elon Musk.",
@@ -1743,7 +1953,7 @@
     "story_id": "s_4c02713df3183cb0",
     "title": "Libghostty 1.0",
     "relevance": 6,
-    "score": 6.721,
+    "score": 6.682,
     "why": "Ghostty's terminal engine is now a standalone 1.0 library, so you can embed a maintained terminal emulator in your own app or tool instead of writing one or forking the full editor.",
     "notes": [
       "Announced by Mitchell Hashimoto, creator of Ghostty and co-founder of HashiCorp; the post marks libghostty reaching a 1.0 version.",
@@ -1768,8 +1978,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50399933",
-        "points": 387,
-        "comments": 63,
+        "points": 457,
+        "comments": 73,
         "name": "Hacker News"
       },
       {
@@ -1796,7 +2006,7 @@
     "story_id": "s_9c4df5b58b952a23",
     "title": "Memorilla: Latent Semantic Memory for LLMs",
     "relevance": 6,
-    "score": 5.844,
+    "score": 5.767,
     "why": "Represents a document collection to a frozen LLM in 16 learned memory tokens, 108x fewer tokens than full context on FactKG, so long-history agent and personalization workloads could skip stuffing retrieved text into the window.",
     "notes": [
       "Mechanism: documents (chats, book chapters, agent turns) are encoded once into reusable embeddings; a learned module then retrieves and places query-specific information directly into the LLM's input embedding space as a fixed set of memory tokens, rather than inserting retrieved text.",
@@ -1851,7 +2061,7 @@
     "story_id": "s_286f6f2b478f39e8",
     "title": "Inside GitHub’s new Git storage architecture",
     "relevance": 6,
-    "score": 7.721,
+    "score": 7.667,
     "why": "GitHub hosts a large share of the world's Git repositories, so a change to how it stores them on the backend shapes clone, fetch, and push latency for millions of developers; the specifics are not in the available text.",
     "notes": [
       "The piece is a GitHub Engineering blog post describing a redesigned backend storage architecture for Git repositories; the mechanism, data layout, and migration approach are not in the provided text.",
@@ -1878,8 +2088,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50397099",
-        "points": 95,
-        "comments": 18,
+        "points": 108,
+        "comments": 20,
         "name": "Hacker News"
       },
       {
@@ -1906,7 +2116,7 @@
     "story_id": "s_8d3b09affb509447",
     "title": "CATL Sodium Battery Hits LFP Cost Parity in 2026: 15,000 Cycles, 30-Year Life",
     "relevance": 6,
-    "score": 6.762,
+    "score": 6.698,
     "why": "If the pricing claim holds, sodium-ion stops being a cold-weather niche and becomes a direct substitute for LFP in grid and stationary storage, where cobalt-free, lithium-free chemistry would cut exposure to lithium supply and price swings.",
     "notes": [
       "Headline claims: cost parity with lithium iron phosphate (LFP) in 2026, 15,000 charge cycles, and a roughly 30-year service life, all attributed to CATL and reported secondhand.",
@@ -1932,8 +2142,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50399657",
-        "points": 152,
-        "comments": 71,
+        "points": 162,
+        "comments": 79,
         "name": "Hacker News"
       },
       {
@@ -1954,7 +2164,7 @@
     "story_id": "s_cf73b8456d2cf681",
     "title": "Nvidia CEO Jensen Huang summoned by Congress over Chinese espionage concerns",
     "relevance": 6,
-    "score": 5.893,
+    "score": 5.81,
     "why": "The export-control fight over Nvidia's China sales now implicates Jensen Huang personally: three House committees want him in a closed-door briefing on November 18 over alleged Chinese targeting, raising the odds of tighter scrutiny on how Nvidia chips reach buyers routed through Singapore.",
     "notes": [
       "The chairs of the House committees on China (John Moolenaar), Foreign Affairs (Brian Mast), and Intelligence (Rick Crawford) wrote to Huang this week requesting he appear at a joint closed-door briefing on November 18.",
@@ -2012,7 +2222,7 @@
     "story_id": "s_922b69a56ff302d1",
     "title": "Obscure audio codec is a perfect fit for the N64",
     "relevance": 6,
-    "score": 6.297,
+    "score": 6.215,
     "why": "Libdragon now ships a codec that gives N64 homebrew near-Opus audio quality for ~4% CPU, so recorded music and speech fit alongside gameplay instead of eating most of the cartridge: the Half-Life N64 port used it to pack 2,500 sounds and 27 music tracks into one 64MB image.",
     "notes": [
       "ULC (Ultra Low Complexity Codec) by Aikku93, worked on since 2019, originated as a Game Boy Advance demo playing recorded music at 70kbps on a 16MHz ARM CPU with no vector instructions; permissively licensed.",
@@ -2067,7 +2277,7 @@
     "story_id": "s_7a8d42d10aa81485",
     "title": "AI is dramatically accelerating AI research",
     "relevance": 6,
-    "score": 7.668,
+    "score": 7.607,
     "why": "If AI tools are already compressing the AI research loop, the pace of capability gains you plan around is set by a feedback loop, not a fixed roadmap, and this post argues that loop is live now.",
     "notes": [
       "Written by Ajeya Cotra on Planned Obsolescence, a blog focused on AI forecasting and timelines; the headline claim is that AI is 'dramatically accelerating' AI research itself.",
@@ -2093,8 +2303,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50397994",
-        "points": 242,
-        "comments": 187,
+        "points": 257,
+        "comments": 209,
         "name": "Hacker News"
       },
       {
@@ -2121,7 +2331,7 @@
     "story_id": "s_88439bbc8633db1a",
     "title": "The Ubuntu 26.04 Rust sudo is not compatible with standard sudo",
     "relevance": 6,
-    "score": 7.895,
+    "score": 7.806,
     "why": "If you administer Ubuntu, the 26.04 default sudo is a separate Rust implementation whose behavior and config may not match the C sudo your scripts and muscle memory expect, so test before upgrading.",
     "notes": [
       "Ubuntu 26.04 ships a Rust-based sudo (the sudo-rs project) as a replacement for the traditional C sudo maintained by Todd Miller.",
@@ -2177,7 +2387,7 @@
     "story_id": "s_23772a8cc81320f2",
     "title": "Microsoft is winding down Oracle deal to rent AI cloud capacity",
     "relevance": 6,
-    "score": 6.826,
+    "score": 6.741,
     "why": "If confirmed, the walkback signals Microsoft can now cover its AI compute from its own buildout rather than renting Oracle GPU capacity, reshaping who depends on whom in the cloud-capacity scramble.",
     "notes": [
       "Microsoft is reportedly winding down an arrangement to rent AI cloud capacity from Oracle, per Bloomberg News as relayed by Reuters.",
@@ -2231,7 +2441,7 @@
     "story_id": "s_fbb566dd4d6c874a",
     "title": "Anthropic IPO buyers see valuation as low as $1.1T",
     "relevance": 6,
-    "score": 7.365,
+    "score": 7.287,
     "why": "If an Anthropic IPO prices near $1.1T, it would mark public-market buyers discounting a frontier-lab against its prior private round, a repricing that ripples into employee equity, follow-on fundraising, and how every other AI lab gets valued.",
     "notes": [
       "Prospective IPO buyers are reportedly floating a valuation as low as $1.1T for Anthropic, per Bloomberg's headline; the figure is attributed to buyers, not to Anthropic or its bankers.",
@@ -2280,7 +2490,7 @@
     "story_id": "s_34df7b189202ae85",
     "title": "Show HN: Agentic Identity Broker, OAuth Delegation for AI Agents",
     "relevance": 6,
-    "score": 5.982,
+    "score": 5.911,
     "why": "If you run a fleet of MCP servers, this moves OAuth2 ceremonies, token storage, and consent out of each server and into one broker, so agents carry a single user token instead of talking to dozens of authorization servers.",
     "notes": [
       "Built by Zalando-incubator and sits in the call path behind a gateway (e.g. Agentgateway); it handles OAuth2 ceremonies, token vaulting, and token translation centrally so MCP server authors only implement tools. Early-stage, active development.",
@@ -2390,7 +2600,7 @@
     "story_id": "s_bff7380e53326eb8",
     "title": "D3D: Decoupled Diffusion Drafting for Asynchronous Speculative Decoding",
     "relevance": 6,
-    "score": 5.366,
+    "score": 5.326,
     "why": "If the self-reported numbers hold, a drafter that no longer waits on target-model hidden states pushes speculative decoding past 5x and up to 7.48x on a 32B model, versus ~3.7-4x for the prior diffusion-draft baseline.",
     "notes": [
       "The bottleneck D3D targets: target-conditioned diffusion drafters generate each block in one pass but must wait for refreshed target hidden states before the next block, so drafting and verification run sequentially. D3D is a standalone drafter that drops this inter-round dependency and drafts successor blocks during verification in a single packed pass (asynchronous speculative decoding).",
@@ -2492,7 +2702,7 @@
     "story_id": "s_5c6ffe2fd473f554",
     "title": "What Does Multi-Turn Reinforcement Learning Really Improve in LLM Agents?",
     "relevance": 6,
-    "score": 5.444,
+    "score": 5.41,
     "why": "If you deploy RL-trained agents under tight turn limits, the paper's measurements say most of your training advantage disappears, because the gains live in multi-turn error recovery rather than better single-step decisions.",
     "notes": [
       "Evaluation uses a Pass@(K,T) metric that separates sampling breadth K (number of attempts) from interaction depth T (turn budget), letting the authors isolate where trajectory-level RL helps.",
@@ -2647,7 +2857,7 @@
     "story_id": "s_8f362f59357e11f7",
     "title": "Bots are raiding library collections to feed AI — shutting out researchers and the public | CBC News",
     "relevance": 6,
-    "score": 6.942,
+    "score": 6.877,
     "why": "If you run or depend on a public digital archive, automated AI scrapers are now a load problem that can lock out human researchers, the same failure mode already seen at Wikimedia and code forges.",
     "notes": [
       "CBC reports AI scraper bots are hammering university library digital collections, with the scraping load heavy enough to disrupt access for legitimate researchers and the general public.",
@@ -2700,7 +2910,7 @@
     "story_id": "s_4c8b81753950fb88",
     "title": "FrontierPhysics: Evaluating Agents for End-to-End Physics Research",
     "relevance": 6,
-    "score": 5.532,
+    "score": 5.498,
     "why": "The best of 22 models cleared only 46 of 168 rollouts, and the authors trace the failures to weak reasoning and missing expert intuition rather than knowledge or execution, so scaling facts into these agents will not close the gap.",
     "notes": [
       "FrontierPhysics holds 56 tasks written by 42 physicists from their own work, spanning nine domains across theoretical, computational, and experimental physics.",
@@ -2802,7 +3012,7 @@
     "story_id": "s_606a35730c31543c",
     "title": "Blender's UI and Runtime: Much Faster Than GPUI",
     "relevance": 6,
-    "score": 5.729,
+    "score": 5.675,
     "why": "If the benchmarks hold, you can ship a native desktop UI with Blender's drag-to-scrub number fields and fuzzy menu search from Python, Rust, JS/React, C, or Dear ImGui without bundling a browser or webview, in a ~7 MB executable that boots in ~70 ms.",
     "notes": [
       "The core is a small C runtime (the 'kit', one header BUI_kit.h) that ports Blender's own interface_widgets.cc drawing code and interaction rules; thin bindings sit on top for Python, Rust, JS/React (via napi-rs), C/C++, and Dear ImGui. No Blender install required.",
@@ -2852,7 +3062,7 @@
     "story_id": "s_d188192e2fa9c5e1",
     "title": "Show HN: Stroq – a local audit of what your coding agent did and why",
     "relevance": 6,
-    "score": 6.143,
+    "score": 6.109,
     "why": "If you run Claude Code, Codex, or Cursor, this tool reads your existing session transcripts locally and tells you which of your credentials showed up in commands that left the machine, naming keys to rotate today.",
     "notes": [
       "`npx @stroq/cli` runs fully local: it reads the last 30 days of sessions, key files, and agent working folders, prints key names but never values, writes only a cache under ~/.stroq, and makes no outbound calls. No account, no telemetry; Apache-2.0, Node.js 22+.",
@@ -2904,7 +3114,7 @@
     "story_id": "s_f96c2b5a4d055875",
     "title": "Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3",
     "relevance": 6,
-    "score": 6.317,
+    "score": 6.283,
     "why": "If most of an agent's wall-clock time is idle waiting on inference, Rivet's model lets one node hold hundreds of thousands of agents at 72 KB each instead of paying for a 512 MiB VM per agent that mostly sits idle.",
     "notes": [
       "Core design: each Actor is a long-lived process with in-memory state, per-Actor SQLite, WebSockets, and scheduling; Actors share one Node.js or Bun process rather than each booting a sandbox, so the agent loop (the 'head') runs outside the sandbox and reaches code execution (the 'hands') only through tools.",
@@ -3009,229 +3219,6 @@
     "first_seen": "2026-11-01T12:33:52+00:00",
     "published_at": "2026-11-06T12:41:24.206998+00:00",
     "curated_at": "2026-11-06T12:41:24.206998+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 651445,
-    "story_id": "s_2a30e83c8bd9ae3b",
-    "title": "Git for the US Code",
-    "relevance": 6,
-    "score": 6.021,
-    "why": "If first-pass legal research runs through an LLM, the model needs the statute text as it stood on a specific date with a checkable amendment trail, and this project builds and verifies that version history for nine titles of the US Code.",
-    "notes": [
-      "The authors reconstructed amendment history by applying each intervening public law's amending instructions to the older release-point text in date order, then diffing against the next release point: 361 of 365 changes across nine titles reproduced exactly, with the other four labeled by how far they could be confirmed.",
-      "Each change carries its effective date, sourced three ways: 261 took effect on enactment by default, 72 via a separate effective-date note, 29 via a date in the amendment text itself; one case depends on an agency determination that may never come and is omitted rather than guessed.",
-      "A cited TUM study (Prior et al., arXiv:2605.23497) reports one model answering 24% of post-cutoff German statute questions correctly unaided versus 87% with the relevant statutory text retrieved, and argues temporal validity should be a hard constraint.",
-      "A related TUM paper (NLLP 2025) found that asking a model to reconstruct older statute versions produced output 93-99% textually similar but exact matches on only ~50% of single amendments and ~20% of amendment chains, with legally meaningful errors in the near misses, hence the insistence on a checkable record.",
-      "Stated limits: the system does not yet model later laws reaching back onto earlier dates, so for a bankruptcy case filed in the 2022 debt-limit gap it shows the lower limit without flagging the June 2022 Act; effective-date notes are parsed by pattern and unusual wording falls back to the enactment date.",
-      "Legal grounding and caveats: outside titles enacted as positive law the Code is only prima facie evidence and the Statutes at Large govern conflicts; the 11 USC 1182(1) debt-limit example traces the CARES Act rise to $7.5M, the 2022 lapse and retroactive restoration, and the April 2025 triennial adjustment to $3,424,000."
-    ],
-    "summary": "The post describes a project to build version-control-style history for the US Code: for each pair of release points from 2017 onward, the authors applied the intervening public laws' amending instructions to the older text in date order and compared the result to the next release point. Across nine titles, 361 of 365 reconstructed changes matched exactly, and each change is annotated with the enacting law and its effective date (261 by default enactment, 72 by effective-date note, 29 by a date in the amendment). The resulting tool lets a reader pick a date and see the text then in force, color-coded by the Act that wrote each phrase, with tracking of defined-term usage. The motivation is that LLM legal research mishandles temporal validity: cited TUM studies report a model scoring 24% unaided versus 87% with retrieved statutory text on post-cutoff questions, and that model-generated old statute versions match exactly only ~50% (single amendments) and ~20% (chains) of the time despite 93-99% surface similarity. Stated limits include no modeling of retroactive reach-back (the 2022 bankruptcy debt-limit gap case), pattern-based parsing of effective-date notes, and an unresolved question of the right form factor.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "verified diff/version-control system for US Code amendment history",
-    "audience": "legal tech builders, devtools engineers, AI/legal researchers working on statutory QA",
-    "source_url": "https://lexifina.com/blog/git-for-the-us-code",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50268380",
-        "points": 415,
-        "comments": 226,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lexifina.com/blog/git-for-the-us-code",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-28T01:47:50+00:00",
-    "published_at": "2026-11-06T12:25:18.288908+00:00",
-    "curated_at": "2026-11-06T12:25:18.288908+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 688461,
-    "story_id": "s_3c0ba1e344fab490",
-    "title": "Schools that block Google’s A.I. will lose student access to its search engine",
-    "relevance": 6,
-    "score": 5.932,
-    "why": "If the reported policy is real, a school's choice to disable Google's AI features would cost its students access to Google Search itself, turning an opt-out into a loss of core infrastructure.",
-    "notes": [
-      "Headline claim: schools that block Google's AI features reportedly lose student access to Google's search engine, coupling AI adoption to a product schools already depend on.",
-      "The mechanism, scope (which editions, grade levels, or admin consoles), and whether this is default behavior or a configuration side effect are not verifiable from the available text.",
-      "Drew 224 points and 180 comments on Hacker News, plus placement in NYT Technology; engagement is high but is not evidence for the underlying claim.",
-      "Primary source is paywalled at NYT and no article body was available; every specific here rests on the headline alone and should be treated as unconfirmed.",
-      "No Google statement, affected district, or policy document is cited in the provided material."
-    ],
-    "summary": "An NYT report, headlined and surfaced on 2026-11-03, claims Google ties school access to its search engine to acceptance of its AI features: schools that block the AI reportedly lose Search for their students. The full article is paywalled and no body text was available, so the mechanism, scope, and Google's own account of the policy cannot be verified from the material at hand. The story drew notable engagement, 224 points and 180 comments on Hacker News, and ran in NYT Technology. The central claim, if accurate, bundles AI opt-out with loss of a widely relied-on service, but the supporting detail is limited to the headline and should be read as an unconfirmed claim pending the primary source.",
-    "channels": [
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "Google ties school search access to accepting AI features",
-    "audience": "AI policy watchers, educators, ed-tech administrators",
-    "source_url": "https://nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
-    "read_kind": "canonical-fallback",
-    "free_link": null,
-    "paywalled": true,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50353192",
-        "points": 224,
-        "comments": 180,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
-        "points": 9,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://www.nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
-        "points": null,
-        "comments": null,
-        "name": "New York Times"
-      },
-      {
-        "url": "https://www.nytimes.com/2026/11/03/us/google-search-schools-restrict-ai.html",
-        "points": null,
-        "comments": null,
-        "name": "NYT Technology"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-11-03T15:25:47+00:00",
-    "published_at": "2026-11-06T12:24:49.607742+00:00",
-    "curated_at": "2026-11-06T12:24:49.607742+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 675770,
-    "story_id": "s_5b517a0668e79e1d",
-    "title": "Mathematics has changed. Let's act like it",
-    "relevance": 6,
-    "score": 7.38,
-    "why": "If AI can already produce proofs on demand, the career currency that pays mathematicians — publishing the first proof of a hard theorem — is about to stop being worth much, and this piece argues hiring committees and journals should start discounting it now.",
-    "notes": [
-      "Guest post by Frank Calegari on Terence Tao's blog, responding to OpenAI's October 6 release of over 700 research papers; Tao notes the post itself was format-converted using AI.",
-      "Calegari grants the papers contain real ideas but calls them 'atrociously written,' in violation of attribution norms, and says some are wrong; he quotes Hugo Duminil-Copin that nearly every major open problem Duminil-Copin had publicly discussed was claimed solved at once.",
-      "Historical analogy: the 1983 classification of finite simple groups (announced by Gorenstein, with the quasithin case not finished until decades later by Aschbacher and Smith) succeeded but 'cooled' interest in the field once the famous problem was gone.",
-      "Concrete proposals: evaluate every paper as if AI-assisted and give no credit for a result a machine could produce; interview postdocs and grad students in person, not just read paper files; demand more from journals or abandon them, favoring Lean-verified work and compelling exposition; broaden grad training; reframe seminars around open questions rather than incremental new results.",
-      "Core thesis: 'Choosing worthwhile problems may end up mattering more than producing proofs'; he credits someone who selects a problem, gets an AI proof, understands it fully, and opens new directions, even with no original proof ingredient.",
-      "Cites Christian Szegedy that the 'heroism' of climbing hard proofs matters less than choosing terrain and explaining results; invokes the Leiden declaration as being honored in name not spirit amid a rush to avoid being 'scooped.'"
-    ],
-    "summary": "In a guest post on Terence Tao's blog, number theorist Frank Calegari responds to OpenAI's October 6 release of over 700 math research papers, which claimed proofs across many open problems. He acknowledges the papers are badly written, flout attribution norms, and are sometimes wrong, and he recognizes mathematicians' grief, but argues the discipline should adapt rather than defend its current culture. Drawing an analogy to the 1983 classification of finite simple groups, which cooled interest in group theory despite remaining deep questions, he contends solving a field's famous conjectures is a beginning, not an end, and that AI lowers the barrier to ambitious, cross-area exploration. His central claim is that choosing worthwhile problems and demonstrating understanding will matter more than being first to a proof, since proofs are becoming machine-producible. He proposes concrete economic levers: evaluate all work as if AI-assisted and stop rewarding machine-obtainable results, make hiring (including for postdocs and grad students) rest on in-person conversation about mathematical vision, reform or abandon journals in favor of fewer, better, Lean-verified papers, broaden graduate training, and restructure seminars around open questions.",
-    "channels": [
-      "ai",
-      "science"
-    ],
-    "category": "research",
-    "subcategories": [
-      "math"
-    ],
-    "state": "confident",
-    "novelty": "mathematician's reflective response to OpenAI's math paper dump",
-    "audience": "researchers and technologists tracking AI's impact on pure mathematics",
-    "source_url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50328251",
-        "points": 181,
-        "comments": 196,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it/",
-        "points": null,
-        "comments": null,
-        "name": "What's New (Terence Tao)"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://terrytao.wordpress.com/2026/11/01/mathematics-has-changed-lets-act-like-it/",
-        "points": null,
-        "comments": null,
-        "name": "Mathblogging.org"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-11-01T18:28:42+00:00",
-    "published_at": "2026-11-06T12:09:50.103869+00:00",
-    "curated_at": "2026-11-06T12:09:50.103869+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 700753,
-    "story_id": "s_18955c783c1342c6",
-    "title": "Discord is ditching Electron and its new app uses less RAM",
-    "relevance": 6,
-    "score": 7.119,
-    "why": "If one of the largest Electron apps can shed the Chromium runtime, it reopens the question of whether every desktop app needs a bundled browser to ship cross-platform.",
-    "notes": [
-      "Headline claim: Discord is rebuilding its desktop client to drop Electron, the Chromium-plus-Node.js shell most cross-platform desktop apps use.",
-      "Reported payoff is lower RAM use versus the Electron build; no specific memory numbers, methodology, or replacement stack are given in the available material.",
-      "The engagement is the story here: 367 points and 319 comments on Hacker News, plus 55 points on Mastodon, signal that working engineers treat Discord's framework choice as a bellwether.",
-      "Caveat: no article text was available. The 'uses less RAM' and 'ditching Electron' claims come from the headline alone and are unverified against a primary source or Discord statement."
-    ],
-    "summary": "A news headline reports that Discord is rebuilding its desktop application to no longer rely on Electron, the Chromium-based framework it has used, and that the new app consumes less RAM than the Electron version. No article text, memory figures, replacement technology, or Discord engineering statement were available for this entry, so the specifics of the migration and the magnitude of the RAM savings are unconfirmed. The item drew notable engineer attention, surfacing on Hacker News with 367 points and 319 comments and on Mastodon trending links with 55 points. The interest reflects a long-running debate over Electron's memory and performance overhead for widely deployed desktop apps. Treat the core claims as reported rather than verified pending a primary source.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "Discord moving off Electron for lower memory use",
-    "audience": "desktop app engineers and Electron users evaluating alternatives",
-    "source_url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9kVFh4UTRSR0s0c3d2N255OUtVRXFvaU9QN2VCUXRtTElTMFFGZ3g3T0NPMVo4cWNhcXF2N05Bbm1SV0hweWlERkFQX2tzMm5vTjNWSE9sYTNURHVDdEpidmNaSjBxTkxuc290dHczMy1IRzlZNjAzdGFUQQ?oc=5",
-    "read_kind": null,
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50378625",
-        "points": 367,
-        "comments": 319,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.theverge.com/news/1027379/discord-ditching-electron-web-app",
-        "points": 55,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://news.google.com/rss/articles/CBMie0FVX3lxTE9kVFh4UTRSR0s0c3d2N255OUtVRXFvaU9QN2VCUXRtTElTMFFGZ3g3T0NPMVo4cWNhcXF2N05Bbm1SV0hweWlERkFQX2tzMm5vTjNWSE9sYTNURHVDdEpidmNaSjBxTkxuc290dHczMy1IRzlZNjAzdGFUQQ?oc=5",
-        "points": null,
-        "comments": null,
-        "name": "Google News Technology"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-11-05T11:39:42+00:00",
-    "published_at": "2026-11-06T12:09:25.512518+00:00",
-    "curated_at": "2026-11-06T12:09:25.512518+00:00",
     "model": "claude-opus-4-8"
   }
 ]
