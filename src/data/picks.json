@@ -175,7 +175,7 @@
     "story_id": "s_d331e378ee31fd6e",
     "title": "sshole",
     "relevance": 8,
-    "score": 6.633,
+    "score": 6.605,
     "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
     "notes": [
       "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
@@ -666,7 +666,7 @@
     "story_id": "s_b69e6d64da940a0f",
     "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
     "relevance": 7,
-    "score": 6.353,
+    "score": 6.337,
     "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
     "notes": [
       "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
@@ -715,7 +715,7 @@
     "story_id": "s_06c6f6e402f3b3f2",
     "title": "Closed AI models dominate the price-performance frontier",
     "relevance": 7,
-    "score": 5.794,
+    "score": 5.773,
     "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
     "notes": [
       "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
@@ -829,7 +829,7 @@
     "story_id": "s_df04d6b94a5f2f01",
     "title": "Meet *sshole, the vulnerability that lets hackers SSH into Linux devices",
     "relevance": 7,
-    "score": 5.828,
+    "score": 5.805,
     "why": "If you run Alpine or any musl-based system with OpenSSH built without PAM, a reachable SSH port plus a '*'-marked passwordless account means anyone can log in on the first try by pasting a 256+ character password, no credentials required.",
     "notes": [
       "The flaw lives in the interaction between OpenSSH and musl libc (the lightweight libc alternative used by Alpine instead of glibc), and only triggers when OpenSSH is built without PAM for authentication.",
@@ -887,11 +887,115 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 715354,
+    "story_id": "s_67ed5d1b149b8911",
+    "title": "Can GROUP BY still be optimized after all these years?",
+    "relevance": 6,
+    "score": 5.227,
+    "why": "If your analytical queries end in GROUP BY ... ORDER BY agg DESC LIMIT K, most of the partition merges your engine does are wasted work; Pivot's slot trick skips them, and 63% of ClickBench queries fit that pattern.",
+    "notes": [
+      "Standard high-cardinality GROUP BY: each thread hash-partitions its slice (ClickHouse uses 256 partitions per thread), then workers merge every partition. For a LIMIT 10 query over 4,096 partitions, the top 10 groups live in at most 10 partitions, so 4,086+ partitions get merged for nothing.",
+      "Naive pruning keeps a per-partition running total and skips merging if that total is below the current Kth-largest value; it only works under extreme skew. A partition of 100 items at 15 orders each sums to 1,500 and can't be pruned against a top-10 range of 1,000-1,300, even though no single group qualifies.",
+      "Slot method: give each partition a fixed number of slots, hash each group to a slot, track combined count per slot; prune the whole partition only if every slot total is below the current Kth value. Slots reuse existing partition-hash bits (first 3 bits pick 1 of 8 partitions, next 3 bits pick 1 of 8 slots) and slot count is independent of partition count.",
+      "The 100-items-at-15 case spread across 8 slots lands at ~180-195 per slot, below the 1,000 threshold, so it becomes prunable; flat distributions (all groups equal) gain nothing, and the engine should disable the optimization when it detects that.",
+      "Self-reported result on ClickBench Q16 (GROUP BY UserID, SearchPhrase ORDER BY COUNT(*) DESC LIMIT 10): 1.6x, from 35.6 ms to 22.2 ms, pruning over 70% of partitions. Vendor numbers, in-memory only; no methodology or hardware detail given.",
+      "Author frames this as probabilistic, Bloom-filter-style pruning from Pivot; they claim larger gains once MPP and spill-to-disk ship because skipped partitions also avoid shuffle and disk I/O. Not yet implemented."
+    ],
+    "summary": "Pivot, an analytical database, describes an optimization for top-K GROUP BY queries (GROUP BY ... ORDER BY aggregate DESC LIMIT K) that prunes partitions before the expensive merge phase. In the standard algorithm, each thread hash-partitions and aggregates its data (ClickHouse, cited for comparison, uses 256 partitions per thread), then all partitions are merged even though only up to K partitions can contain the final answer. A naive fix tracks a per-partition total and skips merging partitions whose total falls below the current Kth-largest value, but it only triggers under extreme skew because many small groups can sum past the threshold. The improved method hashes each group into a fixed number of per-partition slots and prunes a partition only when every slot total is below the Kth value, giving finer granularity at low cost since slot count is independent of partition count and reuses existing hash bits. The authors report that 63% of ClickBench queries match this pattern and that Q16 improved 1.6x (35.6 ms to 22.2 ms) while pruning over 70% of partitions. The numbers are self-reported and in-memory; flat value distributions see no benefit and should disable the optimization, and the claimed larger wins from MPP and spill-to-disk are prospective.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "slot-based partition pruning for top-K GROUP BY aggregation",
+    "audience": "database/query engine engineers and analytics infra builders",
+    "source_url": "https://pivotlake.io/blog/know-your-limit-faster-top-k-aggregation",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50354097",
+        "points": 76,
+        "comments": 9,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://pivotlake.io/blog/know-your-limit-faster-top-k-aggregation/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-03T16:30:23+00:00",
+    "published_at": "2026-11-07T08:11:26.914961+00:00",
+    "curated_at": "2026-11-07T08:11:26.914961+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 669203,
+    "story_id": "s_ea828edab75fbfc9",
+    "title": "New Android SMS of Death exploit can remotely crash unpatched phones",
+    "relevance": 6,
+    "score": 5.218,
+    "why": "A working PoC now exists for an 8-byte text that silently crashes the cellular stack on Android 12 and 13, which never got the fix, and a 20-message burst can brick a phone into a 90-second reboot loop that only a factory reset clears.",
+    "notes": [
+      "CVE-2026-58882 lives in Android's WapPushOverSms.decodeWapPdu: a header-length field is read as a signed 32-bit integer with no bounds check, becoming -2147483648 and throwing a NegativeArraySizeException that kills com.android.phone, the process managing cellular functions.",
+      "The attack is zero-click with no visible notification: the payload (01 06 88 80 80 80 00 BE) is sent as a data SMS to port 2948 and processed before reaching the inbox; crashing com.android.phone drops ongoing calls, including emergency calls.",
+      "Researcher Mark Blah reports Google patched it in the October 2026 updates for Android 14 through 17, but the article notes the flaw is not listed in Google's October bulletin; Android 12 and 13 did not receive the fix and stay vulnerable.",
+      "In testing, 20 malicious messages pushed phones into reboot loops; one Android 12 device rebooted into recovery roughly every 90 seconds and needed a factory reset. Carrier redelivery or re-processing stored messages causes repeated crashes.",
+      "Google's fix, 'Fix remote DoS in decodeWapPdu,' catches the exception and deletes the malicious messages from the SMS database to stop repeat crashes. A GitHub contributor, Sakis, found an ADB-based removal method, but it requires a computer and more technical skill.",
+      "A PoC that sends the malicious messages from another Android device has been published; it is a denial-of-service flaw, not code execution."
+    ],
+    "summary": "A security researcher, Mark Blah, published a PoC for CVE-2026-58882, a zero-click denial-of-service flaw in Android's WapPushOverSms.decodeWapPdu. An 8-byte WAP Push message sent as a data SMS to port 2948 is processed before reaching the inbox and with no notification; an unbounded header-length value becomes the signed 32-bit integer -2147483648, triggering a NegativeArraySizeException that crashes com.android.phone and drops cellular connectivity, including active calls to emergency services. The article reports Google patched the flaw in the October 2026 updates for Android 14 through 17, though it is not listed in Google's October bulletin, and Android 12 and 13 did not receive the fix. In testing, 20 messages induced reboot loops, with one Android 12 device rebooting roughly every 90 seconds and requiring a factory reset; carrier redelivery or stored messages can cause repeated crashes. Google's fix catches the exception and deletes the offending messages from the SMS database, and a GitHub contributor named Sakis documented an ADB-based removal method that requires a computer. With a working PoC now public, users are advised to install the latest updates, availability of which depends on manufacturer and carrier.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "research"
+    ],
+    "state": "confident",
+    "novelty": "zero-click PoC crashes phone process via 8-byte WAP push SMS",
+    "audience": "security engineers and Android device maintainers",
+    "source_url": "https://bleepingcomputer.com/news/security/new-android-sms-of-death-exploit-can-remotely-crash-unpatched-phones",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.bleepingcomputer.com/news/security/new-android-sms-of-death-exploit-can-remotely-crash-unpatched-phones/",
+        "points": 7,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://www.bleepingcomputer.com/news/security/new-android-sms-of-death-exploit-can-remotely-crash-unpatched-phones/",
+        "points": null,
+        "comments": null,
+        "name": "BleepingComputer"
+      },
+      {
+        "url": "https://news.google.com/rss/articles/CBMitwFBVV95cUxOcEJHR1JnVFhNRWc5bzlQTVRDU3pKUDNubGl2QTZUNmZ0VlJNRWdzT0ZBN1RvaDhGZWNiYUg4X0RWV3BRNUQ2d2ZubzlXNDdYRDRBTWh6cWFZcmdxWVE0OWxfc2ZQZ19WSjhLUlpvd04xNFpEdjIyOVMtUnppOWpJVmtXOGhhM1JMMThRdDdlaU5JRzVxR0xvbWVka3kzNktWQzJTQmxQTldrRHBXVEgzdW9vNnZHVEU?oc=5",
+        "points": null,
+        "comments": null,
+        "name": "Google News Technology"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-31T15:35:11+00:00",
+    "published_at": "2026-11-07T07:55:23.032958+00:00",
+    "curated_at": "2026-11-07T07:55:23.032958+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 702241,
     "story_id": "s_e6e17c877a863000",
     "title": "We can do better than line-buffered output",
     "relevance": 6,
-    "score": 5.232,
+    "score": 5.216,
     "why": "Line buffering can dominate runtime in non-interactive terminal tools; this shows how to get full-buffered throughput while still delivering lines promptly, with no threads.",
     "notes": [
       "glibc takes line buffering literally, splitting a single string into per-line write() calls (e.g. puts(\"a\\nb\") yields separate writes for \"a\\n\" and \"b\\n\"); CPython flushes when its buffer holds a newline after appending, so one write(1,\"a\\nb\\n\",4) plus one write(1,\"c\\n\",2).",
@@ -993,7 +1097,7 @@
     "story_id": "s_23c0c7676e34511f",
     "title": "Hackers exploited iOS and Android flaws to infect phones",
     "relevance": 6,
-    "score": 5.268,
+    "score": 5.25,
     "why": "A nation-state crew weaponized reverse-proxy clones of legitimate sites to serve mobile exploits against anyone who visited, so patched-but-unpatched iPhones and Androids remain the soft spot.",
     "notes": [
       "Sekoia attributes the campaign with 'moderate to high confidence' to Russia's Foreign Intelligence Service (SVR); the Kremlin link is their assessment, not confirmed.",
@@ -1049,7 +1153,7 @@
     "story_id": "s_62b1cd170ff87b24",
     "title": "PyRUA-DataFarm: LLM Agent as a Cost-Efficient Teleoperator for Real-Ready Robot Data",
     "relevance": 6,
-    "score": 5.327,
+    "score": 5.311,
     "why": "If the self-reported numbers hold, robot demonstration data drops to roughly $0.80 per episode with no robot or operator in the loop, undercutting human teleoperation quotes of $117 (China) to $290 (North America) per hour of three-view data.",
     "notes": [
       "Pipeline: a coding agent takes one calibration episode of the real robot in the target scene and rebuilds the task in simulation, writing the scene, an expert controller, and a success judge; the simulator supplies exact actions and a video model conditioned on real images renders each rollout as multi-view photographic video, producing synchronized views labelled with the robot's actions.",
@@ -1101,7 +1205,7 @@
     "story_id": "s_f6e1e1a39f4fe9d1",
     "title": "Qwen 3.8 27B on my laptop can interpret model weights, too",
     "relevance": 6,
-    "score": 5.341,
+    "score": 5.325,
     "why": "A 17GB model running on a laptop can read raw floating-point weight dumps and name the game a policy network was trained to play, so the \"only frontier models can do this\" framing around the weight-space paper is already wrong.",
     "notes": [
       "The underlying paper, 'Sparks of Weight-Space Programming' by Rikiya Takehi, Jayden Teoh, Alex Zhang, and Omar Khattab, claims GPT-6 Astra can both interpret raw network weights (as text floats) and edit them to improve a model without training loops.",
@@ -1321,7 +1425,7 @@
     "story_id": "s_748d95baaafc044d",
     "title": "Near-Zero Token Embeddings Silently Stall Training in Gated Sequence Models",
     "relevance": 6,
-    "score": 5.401,
+    "score": 5.397,
     "why": "If you continually pretrain or fine-tune an untied gated/hybrid checkpoint (Mamba, Gated DeltaNet, xLSTM), a single near-zero embedding row can silently zero out ~20% of your gradient updates while standard FP32 clipping in PyTorch, HF Trainer, and FSDP2 overflows to infinity.",
     "notes": [
       "Census of 291 open-weight repos (280 distinct embedding tables): 52.6% of untied gated/hybrid checkpoints (20/38) have reachable input embeddings with norm below 1e-6, versus 0% of weight-tied models. The authors attribute near-zero rows to unseen rare/template tokens getting zero input gradients while AdamW weight decay shrinks untied embeddings.",
@@ -1378,7 +1482,7 @@
     "story_id": "s_3b8969d3509c73d6",
     "title": "I Toured Unitree's Factory. I'm More Bullish on the West",
     "relevance": 6,
-    "score": 5.532,
+    "score": 5.537,
     "why": "The economics here say the money in humanoids is in building the motor lines, not the robots: at Unitree labor is 8% of cost, so the Western play is machines that make actuators, not hand-assembly plants in Ohio.",
     "notes": [
       "Unitree's books: ~$1.7M total machinery against ~32,000 robots made in 2025, roughly $50 of machinery per robot; labor was 8% of production cost, so halving it saves ~4%. The new motor line is expected to cut per-motor labor by more than half and one robot model's cost by under 2% (about 9% at American wages).",
@@ -1405,8 +1509,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50400597",
-        "points": 91,
-        "comments": 58,
+        "points": 104,
+        "comments": 67,
         "name": "Hacker News"
       },
       {
@@ -1482,7 +1586,7 @@
     "story_id": "s_5bbde7a93f9ec571",
     "title": "Devvm.dev: One VM for every project",
     "relevance": 6,
-    "score": 5.388,
+    "score": 5.368,
     "why": "Running a coding agent against your real checkout means one prompt injection can touch your working tree and .git hooks; this gives each project a per-folder VM where the agent sees placeholders instead of your Claude or Codex tokens and reaches only an allowlisted set of hosts by default.",
     "notes": [
       "Four network tiers per VM: allowlist (default), internet, open, none. The allowlist routes through a proxy on the host that swaps placeholder values in the VM for real secrets (Claude Code token, Codex login) only on outbound requests, so the VM never holds them.",
@@ -1510,8 +1614,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50395450",
-        "points": 144,
-        "comments": 57,
+        "points": 150,
+        "comments": 60,
         "name": "Hacker News"
       },
       {
@@ -1532,7 +1636,7 @@
     "story_id": "s_20458b64b731b6f3",
     "title": "Tools Need Not Speak in Text: Latent Context Compression for Agents",
     "relevance": 6,
-    "score": 5.468,
+    "score": 5.422,
     "why": "If the self-reported numbers hold, agents can drop 70-89% of tool-output tokens and 24-56% of runtime by feeding observations as latent embeddings instead of text, cutting the per-step cost that dominates multi-step web-search loops.",
     "notes": [
       "Coca-Cola compresses raw tool outputs into continuous latent tokens and injects them directly into the agent's input embedding space, bypassing discrete text; the authors argue token pruning and summarization are capped by their reliance on text representations.",
@@ -1583,7 +1687,7 @@
     "story_id": "s_c6bd61f9a6ca6fe6",
     "title": "ChatGPT silently passes data between connectors and the bounty wants an ID card",
     "relevance": 6,
-    "score": 5.384,
+    "score": 5.34,
     "why": "If you ship an MCP server or ChatGPT connector, the trust boundary is the OAuth client, not the server URL: ChatGPT can route a confirmed follow-up call to a different connector and carry a one-time code across apps without telling the user.",
     "notes": [
       "Repro setup: one ChatGPT account, two connectors pointing to the same MCP server. Connector A is a custom developer-mode connector; connector B is the published app-directory version. Each has its own OAuth client, so the server sees two separate clients for the same user.",
@@ -1697,7 +1801,7 @@
     "story_id": "s_3ff119bb07bd7549",
     "title": "OpenFrontiers: A Collection of Open Research Problems and a Benchmark for Scientific Rediscovery",
     "relevance": 6,
-    "score": 5.373,
+    "score": 5.334,
     "why": "The headline result: across seven LLM agents, closed-book \"rediscovery\" of math solved at most 7 of 40 resolved problems, and live-web gains mostly came from retrieving the published answer, so the benchmark gives a way to separate real reasoning from search.",
     "notes": [
       "Two linked artifacts: a corpus of 12,151 open research problems across disciplines (recording statement, context, and progress), and a retrospective math benchmark of 200 problems, 110 resolved in 2026 and 90 still open.",
@@ -1798,7 +1902,7 @@
     "story_id": "s_dedffd069605ffb6",
     "title": "We know 15k websites are infected. how do we tell them?",
     "relevance": 6,
-    "score": 5.429,
+    "score": 5.392,
     "why": "Report URI can detect compromised sites faster than anyone can notify them, so 15,579 sites serving skimmers and malware to a claimed 135M monthly visits stay live for want of a working disclosure channel, not want of evidence.",
     "notes": [
       "Report URI's threat-intel crawling has 15,579 unique sites confirmed infected with malicious JavaScript, plus thousands more at under-100% confidence; sites are dropped from the count once they self-clean, so the true total was higher.",
@@ -1846,7 +1950,7 @@
     "story_id": "s_4f8c1ed6c6c14941",
     "title": "SwarmEvolve: Latent Agent Swarms for Evolutionary Discovery and Optimization",
     "relevance": 6,
-    "score": 5.446,
+    "score": 5.407,
     "why": "An 8B open-weight model (Qwen3 8B) reportedly matches or beats AlphaEvolve's frontier-LLM results on some math-discovery problems while reaching other frameworks' best scores in 3-8 minutes instead of 60.",
     "notes": [
       "The bottleneck it targets: LLM-guided evolutionary search is slow because each agent decodes a long textual chain of thought every round, repeated many times to keep population diversity.",
@@ -1896,7 +2000,7 @@
     "story_id": "s_b60ed19cc1de0bdc",
     "title": "Several Democrats renew calls for datacenter pauses after blue wave",
     "relevance": 6,
-    "score": 5.608,
+    "score": 5.562,
     "why": "If moratoriums move from campaign rhetoric to law in Texas and Georgia, the multi-trillion-dollar compute buildout that frontier AI depends on loses its two biggest siting hotspots, and the permitting timeline for new capacity gets longer and less predictable.",
     "notes": [
       "Bernie Sanders called on X Wednesday for an immediate national datacenter moratorium, framing it as blocking 'Big Tech oligarchs'; Rep. Yassamin Ansari (D-AZ) went further, calling for a day-one pause on advanced AI development and a ban on artificial superintelligence, then sparred publicly with Elon Musk.",
@@ -1953,7 +2057,7 @@
     "story_id": "s_4c02713df3183cb0",
     "title": "Libghostty 1.0",
     "relevance": 6,
-    "score": 6.682,
+    "score": 6.694,
     "why": "Ghostty's terminal engine is now a standalone 1.0 library, so you can embed a maintained terminal emulator in your own app or tool instead of writing one or forking the full editor.",
     "notes": [
       "Announced by Mitchell Hashimoto, creator of Ghostty and co-founder of HashiCorp; the post marks libghostty reaching a 1.0 version.",
@@ -1978,8 +2082,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50399933",
-        "points": 457,
-        "comments": 73,
+        "points": 532,
+        "comments": 86,
         "name": "Hacker News"
       },
       {
@@ -2006,7 +2110,7 @@
     "story_id": "s_9c4df5b58b952a23",
     "title": "Memorilla: Latent Semantic Memory for LLMs",
     "relevance": 6,
-    "score": 5.767,
+    "score": 5.731,
     "why": "Represents a document collection to a frozen LLM in 16 learned memory tokens, 108x fewer tokens than full context on FactKG, so long-history agent and personalization workloads could skip stuffing retrieved text into the window.",
     "notes": [
       "Mechanism: documents (chats, book chapters, agent turns) are encoded once into reusable embeddings; a learned module then retrieves and places query-specific information directly into the LLM's input embedding space as a fixed set of memory tokens, rather than inserting retrieved text.",
@@ -2061,7 +2165,7 @@
     "story_id": "s_286f6f2b478f39e8",
     "title": "Inside GitHub’s new Git storage architecture",
     "relevance": 6,
-    "score": 7.667,
+    "score": 7.659,
     "why": "GitHub hosts a large share of the world's Git repositories, so a change to how it stores them on the backend shapes clone, fetch, and push latency for millions of developers; the specifics are not in the available text.",
     "notes": [
       "The piece is a GitHub Engineering blog post describing a redesigned backend storage architecture for Git repositories; the mechanism, data layout, and migration approach are not in the provided text.",
@@ -2088,7 +2192,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50397099",
-        "points": 108,
+        "points": 126,
         "comments": 20,
         "name": "Hacker News"
       },
@@ -2116,7 +2220,7 @@
     "story_id": "s_8d3b09affb509447",
     "title": "CATL Sodium Battery Hits LFP Cost Parity in 2026: 15,000 Cycles, 30-Year Life",
     "relevance": 6,
-    "score": 6.698,
+    "score": 6.672,
     "why": "If the pricing claim holds, sodium-ion stops being a cold-weather niche and becomes a direct substitute for LFP in grid and stationary storage, where cobalt-free, lithium-free chemistry would cut exposure to lithium supply and price swings.",
     "notes": [
       "Headline claims: cost parity with lithium iron phosphate (LFP) in 2026, 15,000 charge cycles, and a roughly 30-year service life, all attributed to CATL and reported secondhand.",
@@ -2142,8 +2246,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50399657",
-        "points": 162,
-        "comments": 79,
+        "points": 173,
+        "comments": 80,
         "name": "Hacker News"
       },
       {
@@ -2164,7 +2268,7 @@
     "story_id": "s_cf73b8456d2cf681",
     "title": "Nvidia CEO Jensen Huang summoned by Congress over Chinese espionage concerns",
     "relevance": 6,
-    "score": 5.81,
+    "score": 5.772,
     "why": "The export-control fight over Nvidia's China sales now implicates Jensen Huang personally: three House committees want him in a closed-door briefing on November 18 over alleged Chinese targeting, raising the odds of tighter scrutiny on how Nvidia chips reach buyers routed through Singapore.",
     "notes": [
       "The chairs of the House committees on China (John Moolenaar), Foreign Affairs (Brian Mast), and Intelligence (Rick Crawford) wrote to Huang this week requesting he appear at a joint closed-door briefing on November 18.",
@@ -2222,7 +2326,7 @@
     "story_id": "s_922b69a56ff302d1",
     "title": "Obscure audio codec is a perfect fit for the N64",
     "relevance": 6,
-    "score": 6.215,
+    "score": 6.177,
     "why": "Libdragon now ships a codec that gives N64 homebrew near-Opus audio quality for ~4% CPU, so recorded music and speech fit alongside gameplay instead of eating most of the cartridge: the Half-Life N64 port used it to pack 2,500 sounds and 27 music tracks into one 64MB image.",
     "notes": [
       "ULC (Ultra Low Complexity Codec) by Aikku93, worked on since 2019, originated as a Game Boy Advance demo playing recorded music at 70kbps on a 16MHz ARM CPU with no vector instructions; permissively licensed.",
@@ -2277,7 +2381,7 @@
     "story_id": "s_7a8d42d10aa81485",
     "title": "AI is dramatically accelerating AI research",
     "relevance": 6,
-    "score": 7.607,
+    "score": 7.592,
     "why": "If AI tools are already compressing the AI research loop, the pace of capability gains you plan around is set by a feedback loop, not a fixed roadmap, and this post argues that loop is live now.",
     "notes": [
       "Written by Ajeya Cotra on Planned Obsolescence, a blog focused on AI forecasting and timelines; the headline claim is that AI is 'dramatically accelerating' AI research itself.",
@@ -2303,8 +2407,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50397994",
-        "points": 257,
-        "comments": 209,
+        "points": 282,
+        "comments": 216,
         "name": "Hacker News"
       },
       {
@@ -2331,7 +2435,7 @@
     "story_id": "s_88439bbc8633db1a",
     "title": "The Ubuntu 26.04 Rust sudo is not compatible with standard sudo",
     "relevance": 6,
-    "score": 7.806,
+    "score": 7.763,
     "why": "If you administer Ubuntu, the 26.04 default sudo is a separate Rust implementation whose behavior and config may not match the C sudo your scripts and muscle memory expect, so test before upgrading.",
     "notes": [
       "Ubuntu 26.04 ships a Rust-based sudo (the sudo-rs project) as a replacement for the traditional C sudo maintained by Todd Miller.",
@@ -2387,7 +2491,7 @@
     "story_id": "s_23772a8cc81320f2",
     "title": "Microsoft is winding down Oracle deal to rent AI cloud capacity",
     "relevance": 6,
-    "score": 6.741,
+    "score": 6.701,
     "why": "If confirmed, the walkback signals Microsoft can now cover its AI compute from its own buildout rather than renting Oracle GPU capacity, reshaping who depends on whom in the cloud-capacity scramble.",
     "notes": [
       "Microsoft is reportedly winding down an arrangement to rent AI cloud capacity from Oracle, per Bloomberg News as relayed by Reuters.",
@@ -2441,7 +2545,7 @@
     "story_id": "s_fbb566dd4d6c874a",
     "title": "Anthropic IPO buyers see valuation as low as $1.1T",
     "relevance": 6,
-    "score": 7.287,
+    "score": 7.251,
     "why": "If an Anthropic IPO prices near $1.1T, it would mark public-market buyers discounting a frontier-lab against its prior private round, a repricing that ripples into employee equity, follow-on fundraising, and how every other AI lab gets valued.",
     "notes": [
       "Prospective IPO buyers are reportedly floating a valuation as low as $1.1T for Anthropic, per Bloomberg's headline; the figure is attributed to buyers, not to Anthropic or its bankers.",
@@ -2490,7 +2594,7 @@
     "story_id": "s_34df7b189202ae85",
     "title": "Show HN: Agentic Identity Broker, OAuth Delegation for AI Agents",
     "relevance": 6,
-    "score": 5.911,
+    "score": 5.878,
     "why": "If you run a fleet of MCP servers, this moves OAuth2 ceremonies, token storage, and consent out of each server and into one broker, so agents carry a single user token instead of talking to dozens of authorization servers.",
     "notes": [
       "Built by Zalando-incubator and sits in the call path behind a gateway (e.g. Agentgateway); it handles OAuth2 ceremonies, token vaulting, and token translation centrally so MCP server authors only implement tools. Early-stage, active development.",
@@ -2600,7 +2704,7 @@
     "story_id": "s_bff7380e53326eb8",
     "title": "D3D: Decoupled Diffusion Drafting for Asynchronous Speculative Decoding",
     "relevance": 6,
-    "score": 5.326,
+    "score": 5.307,
     "why": "If the self-reported numbers hold, a drafter that no longer waits on target-model hidden states pushes speculative decoding past 5x and up to 7.48x on a 32B model, versus ~3.7-4x for the prior diffusion-draft baseline.",
     "notes": [
       "The bottleneck D3D targets: target-conditioned diffusion drafters generate each block in one pass but must wait for refreshed target hidden states before the next block, so drafting and verification run sequentially. D3D is a standalone drafter that drops this inter-round dependency and drafts successor blocks during verification in a single packed pass (asynchronous speculative decoding).",
@@ -2702,7 +2806,7 @@
     "story_id": "s_5c6ffe2fd473f554",
     "title": "What Does Multi-Turn Reinforcement Learning Really Improve in LLM Agents?",
     "relevance": 6,
-    "score": 5.41,
+    "score": 5.394,
     "why": "If you deploy RL-trained agents under tight turn limits, the paper's measurements say most of your training advantage disappears, because the gains live in multi-turn error recovery rather than better single-step decisions.",
     "notes": [
       "Evaluation uses a Pass@(K,T) metric that separates sampling breadth K (number of attempts) from interaction depth T (turn budget), letting the authors isolate where trajectory-level RL helps.",
@@ -2857,7 +2961,7 @@
     "story_id": "s_8f362f59357e11f7",
     "title": "Bots are raiding library collections to feed AI — shutting out researchers and the public | CBC News",
     "relevance": 6,
-    "score": 6.877,
+    "score": 6.847,
     "why": "If you run or depend on a public digital archive, automated AI scrapers are now a load problem that can lock out human researchers, the same failure mode already seen at Wikimedia and code forges.",
     "notes": [
       "CBC reports AI scraper bots are hammering university library digital collections, with the scraping load heavy enough to disrupt access for legitimate researchers and the general public.",
@@ -2888,7 +2992,7 @@
       },
       {
         "url": "https://www.cbc.ca/news/world/university-libraries-ai-data-scraping-bots-9.7408287",
-        "points": 1,
+        "points": 2,
         "comments": null,
         "name": "Mastodon trending links"
       },
@@ -2910,7 +3014,7 @@
     "story_id": "s_4c8b81753950fb88",
     "title": "FrontierPhysics: Evaluating Agents for End-to-End Physics Research",
     "relevance": 6,
-    "score": 5.498,
+    "score": 5.482,
     "why": "The best of 22 models cleared only 46 of 168 rollouts, and the authors trace the failures to weak reasoning and missing expert intuition rather than knowledge or execution, so scaling facts into these agents will not close the gap.",
     "notes": [
       "FrontierPhysics holds 56 tasks written by 42 physicists from their own work, spanning nine domains across theoretical, computational, and experimental physics.",
@@ -3012,7 +3116,7 @@
     "story_id": "s_606a35730c31543c",
     "title": "Blender's UI and Runtime: Much Faster Than GPUI",
     "relevance": 6,
-    "score": 5.675,
+    "score": 5.649,
     "why": "If the benchmarks hold, you can ship a native desktop UI with Blender's drag-to-scrub number fields and fuzzy menu search from Python, Rust, JS/React, C, or Dear ImGui without bundling a browser or webview, in a ~7 MB executable that boots in ~70 ms.",
     "notes": [
       "The core is a small C runtime (the 'kit', one header BUI_kit.h) that ports Blender's own interface_widgets.cc drawing code and interaction rules; thin bindings sit on top for Python, Rust, JS/React (via napi-rs), C/C++, and Dear ImGui. No Blender install required.",
@@ -3062,7 +3166,7 @@
     "story_id": "s_d188192e2fa9c5e1",
     "title": "Show HN: Stroq – a local audit of what your coding agent did and why",
     "relevance": 6,
-    "score": 6.109,
+    "score": 6.093,
     "why": "If you run Claude Code, Codex, or Cursor, this tool reads your existing session transcripts locally and tells you which of your credentials showed up in commands that left the machine, naming keys to rotate today.",
     "notes": [
       "`npx @stroq/cli` runs fully local: it reads the last 30 days of sessions, key files, and agent working folders, prints key names but never values, writes only a cache under ~/.stroq, and makes no outbound calls. No account, no telemetry; Apache-2.0, Node.js 22+.",
@@ -3107,118 +3211,6 @@
     "first_seen": "2026-11-05T15:54:41+00:00",
     "published_at": "2026-11-06T13:13:25.026089+00:00",
     "curated_at": "2026-11-06T13:13:25.026089+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 702242,
-    "story_id": "s_f96c2b5a4d055875",
-    "title": "Launch HN: Rivet (YC W23) – Scale and Orchestrate Agents on S3",
-    "relevance": 6,
-    "score": 6.283,
-    "why": "If most of an agent's wall-clock time is idle waiting on inference, Rivet's model lets one node hold hundreds of thousands of agents at 72 KB each instead of paying for a 512 MiB VM per agent that mostly sits idle.",
-    "notes": [
-      "Core design: each Actor is a long-lived process with in-memory state, per-Actor SQLite, WebSockets, and scheduling; Actors share one Node.js or Bun process rather than each booting a sandbox, so the agent loop (the 'head') runs outside the sandbox and reaches code execution (the 'hands') only through tools.",
-      "Self-reported benchmarks (Rivet 3.0.3): 72.4 KB RAM and 4.99 ms p99 cold start per Actor versus E2B's 512 MiB default and a 1.70 s p99 cold start; SQLite-on-S3 claims 1.07 ms durable writes and 1.36 ms reads at p99, with storage ~10.4x cheaper than three replicated EBS gp3 copies. Cold-start comparison is actually against Cloudflare Durable Objects; sandbox memory/latency figures come from E2B docs and a ComputeSDK benchmark, not Rivet's own runs.",
-      "S3 (or any S3-compatible store: GCS, Azure Blob, R2, MinIO, Hetzner) is the only dependency. No Postgres, FoundationDB, or NATS; control-plane instances discover each other through the bucket. Apache 2.0 licensed, self-hostable on Docker/K8s/VM, with managed Cloud and in-VPC BYOC options.",
-      "Positioned as an open-source Durable Objects alternative that drops the 128 MB memory cap and 10 GB SQLite limit, avoids random eviction, and runs on vanilla Node/Bun instead of a custom V8 runtime. Implements the virtual-actor pattern, closest to Microsoft Orleans.",
-      "Sandboxing is optional and tiered: no sandbox for tool/MCP/API agents; agentOS gives Linux-compatible V8/WebAssembly sandboxing for JS and Python with POSIX filesystem, networking, and process trees; or keep an existing full sandbox exposed to the agent as tools, with the Actor reattaching across sleeps.",
-      "From Rivet (YC W23). Benchmark figures are vendor-published with scripts to reproduce; third-party verification of the latency and cost claims is not provided in the text."
-    ],
-    "summary": "Rivet is an Apache 2.0-licensed virtual-actor runtime (from YC W23) for scaling and orchestrating AI agents, where each Actor is a long-lived process with in-memory state, a per-Actor SQLite database backed by S3, WebSockets, scheduling, and hibernation when idle. Its central argument is architectural: because agents spend most of their time waiting on inference, running the agent loop inside a per-agent VM/sandbox wastes memory, so Rivet runs the loop outside the sandbox (separating the 'head' from the 'hands') and reaches code execution through tools only when needed. Self-reported benchmarks on Rivet 3.0.3 claim 72.4 KB RAM and 4.99 ms p99 cold starts per Actor, and SQLite-on-S3 at 1.07 ms writes / 1.36 ms reads p99 and ~10.4x cheaper storage than replicated SSDs; comparison numbers for sandboxes come from E2B docs and a ComputeSDK benchmark, and the cold-start comparison is against Cloudflare Durable Objects. S3 is the only external dependency (no Postgres, NATS, or FoundationDB), and it runs on native Node.js or Bun with self-host, managed-cloud, and in-VPC BYOC deployment options. Optional layers include agentOS for V8/WebAssembly sandboxing of untrusted JS/Python and an agent library built on Pi Durable. All performance and cost figures are vendor-published; reproduction scripts are offered but independent verification is not included.",
-    "channels": [
-      "devtools",
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents"
-    ],
-    "state": "confident",
-    "novelty": "actor runtime separates agent loop from sandbox, backs SQLite with S3",
-    "audience": "backend engineers building stateful/multiplayer AI agents at scale",
-    "source_url": "https://github.com/rivet-dev/rivet",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50381687",
-        "points": 109,
-        "comments": 58,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/rivet-dev/rivet",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-05T17:17:42+00:00",
-    "published_at": "2026-11-06T13:13:00.961739+00:00",
-    "curated_at": "2026-11-06T13:13:00.961739+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 670787,
-    "story_id": "s_a18f022a859d3cf6",
-    "title": "AI agent swarms unleashed in Minecraft to ‘build a thriving civilization’",
-    "relevance": 6,
-    "score": 7.11,
-    "why": "The same swarm failure modes you hit with coding agents, decision paralysis and giving up on a tool bug, show up legibly in a Minecraft sandbox you can clone and rerun yourself.",
-    "notes": [
-      "Civ50 test: 50 GPT-6.1 Sol agents got three hours to 'build a thriving civilization' and instead stalled into bureaucracy; the cited example is four agents spending 11 minutes appointing a 'sole fertilizer operator' for one piece of bone meal on one wheat block. Researchers say it resembled patterns seen with coding agents.",
-      "Bed Wars, 10 GPT-6.1 Sol vs 10 Claude Opus 5.5: GPT agents played more aggressively; when a tool bug blocked block-breaking, GPT agents diagnosed it and shared workarounds while several Claude agents concluded breaking was impossible.",
-      "Mindustry (RTS/tower-defense mode): GPT agents reportedly won 6-1 across 7 games; researchers characterize GPTs as acting like a hive and Claudes as a single leader with a democratic decision process.",
-      "Built on the open-source Mindcraft and Mineflayer frameworks; the swarm setups are open-sourced for replication, and the source post lists open questions such as varying model mixes and swarm sizes.",
-      "Framed as a proxy for real incidents the authors cite but do not detail here: a 'thousand-agent' math-solving swarm and an 'extremely dangerous' OpenAI-Hugging Face incident. Results are self-reported with no stated sample sizes, scoring methodology, or controls; the Civ50 run tested only GPT agents, not Claude."
-    ],
-    "summary": "Researchers associated with Y Combinator and Olam Labs ran hundreds of LLM agents inside Minecraft game modes to study multi-agent swarm dynamics, as reported by Tom's Hardware. In a 'Civ50' collaborative test, 50 GPT-6.1 Sol agents given three hours to build a civilization never thrived: early zombie losses led to abandoned goals and bureaucratic stalling, including four agents spending 11 minutes assigning a single fertilizer role. In competitive modes, 10 GPT-6.1 Sol agents faced 10 Claude Opus 5.5 agents in Bed Wars, where GPT played aggressively and worked around a block-breaking bug while some Claude agents gave up; in Mindustry, GPT agents reportedly won 6-1 over 7 games, with GPTs described as hive-like and Claudes as single-leader/democratic. The work builds on the open-source Mindcraft and Mineflayer frameworks and the swarm setups are open-sourced for replication. The authors frame it as insight into real-world cases, citing a 'thousand-agent' math swarm and an 'extremely dangerous' OpenAI-Hugging Face incident, but the article gives no scoring methodology, sample details, or controls, and the Civ50 run included no Claude agents.",
-    "channels": [
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents"
-    ],
-    "state": "confident",
-    "novelty": "Minecraft used as testbed for emergent multi-agent swarm dynamics",
-    "audience": "AI agent/multi-agent systems researchers and builders",
-    "source_url": "https://tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50325662",
-        "points": 112,
-        "comments": 50,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
-        "points": null,
-        "comments": null,
-        "name": "Tom's Hardware"
-      },
-      {
-        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
-        "points": null,
-        "comments": null,
-        "name": "Tom's Hardware"
-      },
-      {
-        "url": "https://www.tomshardware.com/tech-industry/artificial-intelligence/ai-agent-swarms-unleashed-in-minecraft-to-build-a-thriving-civilization-50-agent-teams-fail-after-falling-into-paralyzing-bureaucracy",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-11-01T12:33:52+00:00",
-    "published_at": "2026-11-06T12:41:24.206998+00:00",
-    "curated_at": "2026-11-06T12:41:24.206998+00:00",
     "model": "claude-opus-4-8"
   }
 ]
