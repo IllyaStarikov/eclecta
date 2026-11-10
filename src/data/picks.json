@@ -707,11 +707,60 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 728646,
+    "story_id": "s_ead3d7977c1d3e79",
+    "title": "Never Gonna Print You Up",
+    "relevance": 7,
+    "score": 4.869,
+    "why": "If you own any of fifteen Prusa printers on Buddy firmware before 7.0.0, an attacker who controls or MITMs your Prusa Connect endpoint can run arbitrary code on the main controller over the network with no physical access, so update now.",
+    "notes": [
+      "The RCE (PFB-008, preliminary CVSS 8.1): Connect's SEND_FILE_INFO handler copies a path into a shared 512-byte buffer bounded only by buffer size; a name() helper walks past the path to find the filename and relies on an assert() capping paths at 104 bytes. Release builds compile asserts out under NDEBUG, so a 463-byte path pushes the filename slot onto the planner's printer pointer, and the next virtual call jumps to attacker bytes. The payload is self-contained in the network receive pool; no heap spray. Firmware ships with no stack canary and no _FORTIFY_SOURCE, which turned a crash into PC control. Confirmed on physical MK4S via the printer's own crash dump. Precondition: attacker is the Connect endpoint or MITMs it (realistic on a LAN via ARP spoofing); the author tested with TLS off, so hitting official cloud Connect requires a TLS downgrade.",
+      "Totals: 14 findings, roughly 23 defects, all fixed in Buddy firmware >7.0.0 (current release 8.0.0), affecting all fifteen listed printers (CORE One variants, XL/XL+, MK4/MK4S, MK3.5/MK3.5S, MK3.9/MK3.9S, MINI). CVE assignments requested but pending. Prusa published advisories and the v7.0.0 source release the same day and reports no real-world exploitation beyond the author's own printer.",
+      "Other notable bugs: a crafted USB filename gives full PC control but not code execution because overflow bytes must spell a FAT 8.3 short name (6.4, physical access); an encrypted-G-code header mismatch (two subtractions differing by 11) underflows a read length to ~4GB on preview scan, reliable DoS not RCE, confirmed 5 times; Connect's download path uses AES-128-CTR with no MAC, allowing chosen edits to decrypted G-code by a network MITM; an Ethernet receive-pool exhaustion DoS reachable unauthenticated on the local segment.",
+      "Methodology: compiled Prusa's own parser code host-side under AddressSanitizer, built a Cortex-M emulator running the real signed image, and ran millions of mutated G-code and PrusaLink/Connect HTTP iterations. Findings were split into two confidence tiers (4 findings, 3 hardware-confirmed, vs 10 ASan- or source-verified only) so Prusa would not over- or under-trust weaker results. One MMU off-by-one was initially mis-triggered; the author corrected it after tracing that the self-test runs before the serial receive path is enabled.",
+      "The AI claim (author's, self-reported): used Claude Opus 4.8 plus a fuzzer with no prior Cortex-M assembly experience; says tooling made 'thoroughness' cheap, but needed to repeatedly push the model past its refusals on the RCE and manually verify ROP gadgets. He flags the downside: AI-generated low-quality reports straining OSS projects, citing curl pausing issue acceptance.",
+      "Vendor handling, cited as the model response: acknowledgment from a named human within one working day, independent reproduction on Prusa hardware, an honest 'this will take longer' timeline, an embargo request rather than an NDA, and a credit plus a reward. The author contrasts this with a prior disclosure that drew a law firm and a criminal-code citation. Prusa's security.txt was a 404 at report time and now resolves."
+    ],
+    "summary": "A freelance platform engineer spent a week attacking his own Prusa MK4S and found 14 issues (~23 defects) in Buddy firmware, chaining to remote code execution on the printer's main controller over the local network. The flagship bug (preliminary CVSS 8.1) is in the Prusa Connect SEND_FILE_INFO handler: release builds drop an assert() that was supposed to cap paths at 104 bytes, so a 463-byte path overflows a shared 512-byte buffer onto a dispatch pointer, and the absence of a stack canary and _FORTIFY_SOURCE lets the author take the program counter, confirmed on hardware via the printer's own crash dump. The precondition is controlling or MITMing the Connect endpoint, realistic on a LAN but requiring a TLS downgrade against the official cloud. Other findings include a FAT short-name USB overflow, an encrypted-G-code size-mismatch DoS, a MAC-less AES-128-CTR download path open to chosen edits, and an unauthenticated receive-pool exhaustion DoS. The author built host-side ASan fuzzing and a Cortex-M emulator, split disclosures into two confidence tiers, and credits Claude Opus 4.8 plus a fuzzer for making exhaustive analysis cheap despite his lack of embedded background, while noting he had to override the model's repeated claims that RCE was impossible. All findings are fixed in firmware >7.0.0 across fifteen listed printers; CVEs are pending and Prusa reports no exploitation beyond the author's rick-rolled printer.",
+    "channels": [
+      "security",
+      "hardware"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "detailed solo RCE chain disclosed against Prusa 3D printer firmware",
+    "audience": "security researchers and embedded/firmware engineers",
+    "source_url": "https://dixken.de/blog/never-gonna-print-you-up",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50411106",
+        "points": 44,
+        "comments": 2,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://dixken.de/blog/never-gonna-print-you-up",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-08T07:15:32+00:00",
+    "published_at": "2026-11-10T10:58:30.329040+00:00",
+    "curated_at": "2026-11-10T10:58:30.329040+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 729753,
     "story_id": "s_7fdf5a9b61292035",
     "title": "Amazon saves millions by replacing Sonnet 4.6 with Strands Decider",
     "relevance": 7,
-    "score": 5.876,
+    "score": 5.985,
     "why": "For high-volume closed-set classification, a 2-4B \"decision model\" that returns option probabilities instead of generated text can match a frontier LLM at roughly 1/44th the token cost, turning a ~$22k/million-ticket job into ~$500.",
     "notes": [
       "Two Amazon engineers (Carr and Mehul) swapped Sonnet 4.6 for Strands Decider E4B (a Gemma-based build) to label internal tickets into 20 categories; the post is the Strands vendor blog, so the parity and savings claims are self-reported.",
@@ -738,8 +787,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50436640",
-        "points": 176,
-        "comments": 58,
+        "points": 278,
+        "comments": 87,
         "name": "Hacker News"
       },
       {
@@ -760,7 +809,7 @@
     "story_id": "s_eda22cd22e85ff0b",
     "title": "Zebkit – Chromium as an embeddable library",
     "relevance": 7,
-    "score": 5.155,
+    "score": 5.122,
     "why": "If the self-reported numbers hold, you can embed a full Chromium 157 engine (Blink, V8, PDFium, FFmpeg) as a linked library inside your own C/Rust/Python/Go/JS process with no Node runtime and no Electron shell, and run Playwright's entire API in-process with clicks at 3-5 ms instead of 33 ms over CDP.",
     "notes": [
       "Positioning: not a base like Electron but a linked dependency. The app keeps its own main(), windows, toolkit and packaging; the engine runs inside the app's event loop via zebkit_init()/zebkit_pump(), or the engine owns the loop via zebkit_main(). Draws into app-supplied X11 windows, NSView or HWND. No Node, no second JS runtime, no IPC through one; page-to-host calls go over Mojo with shared memory for large payloads.",
@@ -809,7 +858,7 @@
     "story_id": "s_71c62ef9379e64de",
     "title": "Exact – a new cross platform UI framework by the Expo team",
     "relevance": 7,
-    "score": 6.561,
+    "score": 6.518,
     "why": "If you build cross-platform apps, this is a bet that the UI layer should be a baked plan a coding agent can build, run, screenshot, and test on web, macOS, iOS, and Linux with one 10-verb script, no webview or JS bridge in sight.",
     "notes": [
       "Architecture: you write the interface in Contract (a declarative language) and data logic in TypeScript or Rust. The compiler bakes a 'plan' (tables + Hermes bytecode); on web it becomes one ES module over a ~20 KB runtime driving the real DOM, while macOS/iOS/Linux run a Rust runner with a patched-Taffy CSS layout kernel that draws through AppKit, UIKit, or a GPU painter. No webview, no JS bridge in the UI, no app JS before the first pixel.",
@@ -858,7 +907,7 @@
     "story_id": "s_f402f7d502ea701d",
     "title": "Vulnerability that lets hackers SSH into Linux devices is under active exploitation",
     "relevance": 7,
-    "score": 5.861,
+    "score": 5.82,
     "why": "If your fleet runs OpenSSH against musl (Alpine and similar minimal/container images are prime suspects), an active group named GT10 can log into privileged accounts unauthenticated in seconds, so patch now rather than waiting for a maintenance window.",
     "notes": [
       "The bug, dubbed *sshole, comes from the interaction between OpenSSH and the musl C library; systems using both and meeting unspecified additional conditions are exploitable for unauthenticated access to high-privilege accounts in seconds.",
@@ -915,7 +964,7 @@
     "story_id": "s_a0aa830138e14125",
     "title": "Google Gemini routes personal Drive files and emails to human annotators",
     "relevance": 7,
-    "score": 6.872,
+    "score": 6.848,
     "why": "If the claim holds, casually mentioning a bill or trip to consumer Gemini with Connected Apps on can pull verbatim account numbers and email headers from your Gmail into sessions a human contractor may review.",
     "notes": [
       "The author claims Google's 2023 Workspace-extensions blogpost promised personal Gmail/Docs/Drive content 'is not seen by human reviewers,' and that an October 16 edit plus Help Answer 16836988 now say reviewers may see 'just the email or file' and warn against connecting apps with confidential content.",
@@ -942,8 +991,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429426",
-        "points": 575,
-        "comments": 127,
+        "points": 600,
+        "comments": 129,
         "name": "Hacker News"
       },
       {
@@ -964,7 +1013,7 @@
     "story_id": "s_b0ecedda9f9a98e8",
     "title": "Next-Concept Modeling: Fast, Parallel Coarse-to-Fine Text Generation",
     "relevance": 7,
-    "score": 5.978,
+    "score": 5.945,
     "why": "If the self-reported numbers hold, you can get diffusion-LM-or-better text quality at 10-31x fewer inference passes, a direct hit on the generation-latency budget that dominates serving cost.",
     "notes": [
       "Architecture: a multiscale residual VQ-VAE encodes text into a hierarchy of discrete codes; a transformer then generates one level at a time, predicting every code within a level in parallel (coarse-to-fine), rather than denoising the full sequence at every step as diffusion LMs do.",
@@ -1019,7 +1068,7 @@
     "story_id": "s_2eb24a78946a814f",
     "title": "The Last Mile to the Real World: Agent-Native Primitives as Reusable Building Blocks for Solving Real-World Tasks",
     "relevance": 7,
-    "score": 5.41,
+    "score": 5.391,
     "why": "If the paper's numbers hold, wrapping agents in a shared primitive library takes two frontier coding harnesses from 9/46 real-world tasks solved to 39 and 35, at ~1.55x lower cost and roughly half the time per task.",
     "notes": [
       "The paper names the failure mode the 'last mile': agents reach a resource but lack the resident competence to apply it, so every harness rebuilds that competence. Its fix is 'agent-native primitives,' reusable units that pair a resource with an in-context LLM that applies it and talks to other primitives.",
@@ -1069,7 +1118,7 @@
     "story_id": "s_6f66258851f37cb6",
     "title": "NVIDIA announces it is opening an investigation into CEO Jensen Huang, after American intelligence reported that a close associate of Huang ",
     "relevance": 7,
-    "score": 6.478,
+    "score": 6.445,
     "why": "The board of the most valuable chipmaker is probing its own founder-CEO over an alleged intelligence-flagged China tie, a governance and national-security risk that sits directly on top of Nvidia's export-restricted AI accelerator business.",
     "notes": [
       "Per the headline, Nvidia has opened an internal investigation into CEO Jensen Huang; the trigger cited is American intelligence reporting about a close associate of Huang.",
@@ -1133,7 +1182,7 @@
     "story_id": "s_9793aa71d86f904a",
     "title": "Goldman Sachs Is Pulling Claude Code from Its Bankers and Traders",
     "relevance": 7,
-    "score": 6.451,
+    "score": 6.437,
     "why": "If your org handed coding agents to non-engineers, Goldman just showed the failure mode: agent-written code that skips review, testing, and information barriers, and a role-based lockout that leaves the people who built useful tools with no replacement.",
     "notes": [
       "October internal guidance restricts Claude Code and GitHub Copilot to Goldman's roughly 12,000 engineers out of ~47,000 staff; 'strats' (trading/quant/eng hybrids) keep access, per a second source. Traders had used the tools to monitor client flows, model positions, and build written and graphic material.",
@@ -1183,7 +1232,7 @@
     "story_id": "s_80baf283cecc591c",
     "title": "Statement from NVIDIA Board of Directors",
     "relevance": 7,
-    "score": 7.466,
+    "score": 7.451,
     "why": "The board of the company that controls the AI accelerator supply chain has opened an outside-counsel investigation into its own CEO as a reported foreign intelligence target, a governance event with direct bearing on U.S. export-control and national-security scrutiny of NVIDIA.",
     "notes": [
       "The NVIDIA board is starting an independent investigation prompted by \"recent reporting\" that founder and CEO Jensen Huang \"has been the target of a foreign intelligence effort\"; the statement does not name the country, the reporting outlet, or the nature of the effort.",
@@ -1240,7 +1289,7 @@
     "story_id": "s_3149d502eb37e206",
     "title": "Claude Code's “Don't Ask Again” File Exposes Passwords and Keys in 1,122 Public Copies on GitHub",
     "relevance": 7,
-    "score": 5.715,
+    "score": 5.701,
     "why": "If you ever approved a shell command containing an inline password or token in Claude Code, that secret may already be on a public GitHub default branch, and deleting the file does not remove it from git history or forks.",
     "notes": [
       "Apiiro scanned 104,185 public copies of .claude/settings.local.json across 103,617 repos; 1,122 copies (about 1.1%) held at least one secret, 1,379 secrets total. The firm did not test whether the keys still work, though one notified company confirmed its key was live.",
@@ -1886,11 +1935,60 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 729985,
+    "story_id": "s_c508a8754ff5d272",
+    "title": "Fireworks AI security breach impacts Notion and their customers",
+    "relevance": 6,
+    "score": 6.328,
+    "why": "If your team pasted passwords, API keys, or other credentials into Notion AI, Notion says to rotate them now: those chat transcripts sat on breached infrastructure at inference vendor Fireworks AI.",
+    "notes": [
+      "Fireworks AI, used by Notion as a general inference provider for open-weight models and for classification jobs behind the Insights feature, was breached; Fireworks notified Notion on Nov 6 that malicious actors may have accessed customer data, and confirmed the dataset on Nov 8.",
+      "Notion's security team says fewer than 1% of workspaces may be affected. The exposed data is 'unattributable' Notion AI chat transcripts: not labeled with author or workspace, and containing no tool call results (no Notion page content or external data pulled in by the AI).",
+      "Notion says it disconnected from Fireworks, deleted all data in Fireworks' systems, stopped all traffic, and halted all training runs as of Nov 3; the Insights feature is disabled and open-weight models are no longer served through Fireworks.",
+      "Notion tells affected teams to treat the chat data as exposed and rotate any credentials pasted into Notion AI during the window. Caveat: it gives no specific exposure dates for the window.",
+      "Affected Enterprise workspace owners can pull a CSV plus an annotated CSV with added user-attribution metadata (marked __metadata / __analysis) that Notion says was NOT part of the exposure; data is viewable only via desktop or web, not mobile.",
+      "Fireworks is described, by Notion, as serving tens of thousands of customers and hundreds of thousands of developers; the breach is Fireworks' own, with Notion as a downstream customer."
+    ],
+    "summary": "Notion disclosed a security incident at Fireworks AI, a third-party inference vendor it used to serve open-weight models and to run classification jobs for its Insights feature. Fireworks notified Notion on Nov 6 that malicious actors may have accessed customer data and confirmed the dataset on Nov 8; Notion's investigation found that fewer than 1% of its workspaces may be affected, with exposure limited to 'unattributable' Notion AI chat transcripts that lacked author/workspace labels and tool call results. Notion says it disconnected from Fireworks, deleted its data there, stopped all traffic, and halted training runs as of Nov 3, and has disabled Insights. It has contacted affected workspace owners, who can retrieve the affected data (Enterprise owners get both a raw CSV and an annotated CSV with user-attribution metadata that Notion says was not itself exposed). Notion recommends treating the chat data as exposed and rotating any passwords, API keys, or credentials pasted into Notion AI during the period, though it does not specify exact exposure dates.",
+    "channels": [
+      "security",
+      "ai"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "third-party AI vendor breach exposes unattributable Notion AI chat logs",
+    "audience": "security engineers and teams evaluating third-party AI inference vendor risk",
+    "source_url": "https://notion.com/help/security-incident-involving-a-third-party-ai-vendor",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50437106",
+        "points": 32,
+        "comments": 7,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.notion.com/help/security-incident-involving-a-third-party-ai-vendor",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-10T07:19:38+00:00",
+    "published_at": "2026-11-10T10:42:37.655330+00:00",
+    "curated_at": "2026-11-10T10:42:37.655330+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 728640,
     "story_id": "s_c43363edaea55388",
     "title": "Anthropic reportedly plans to move forward with IPO plans",
     "relevance": 6,
-    "score": 5.37,
+    "score": 5.316,
     "why": "Anthropic's listing is the first public price tag on a frontier-lab, and the range it sets next week becomes investors' live gauge of whether the AI boom is still inflating or deflating.",
     "notes": [
       "Per the Wall Street Journal, Anthropic plans to set a valuation range this week and start trading Thursday or Friday of next week.",
@@ -1940,7 +2038,7 @@
     "story_id": "s_7f232021be594b10",
     "title": "Your TV can see through walls",
     "relevance": 6,
-    "score": 5.512,
+    "score": 5.66,
     "why": "A passive receiver and a nearby broadcast tower are enough to detect and estimate the speed of someone walking in another room, with no transmitter of your own and no cooperation from the target.",
     "notes": [
       "The effect is selective fading: the direct TV signal is partially canceled by a strong reflection, and because the reflection's phase depends on frequency, the cancellation is uneven across the band and extremely sensitive to nearby motion.",
@@ -1967,8 +2065,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50436410",
-        "points": 73,
-        "comments": 17,
+        "points": 110,
+        "comments": 40,
         "name": "Hacker News"
       },
       {
@@ -1989,7 +2087,7 @@
     "story_id": "s_4a71f908c7a858d7",
     "title": "ClickHouse Acquires Xata",
     "relevance": 6,
-    "score": 6.281,
+    "score": 6.636,
     "why": "If you run a branch-per-PR or branch-per-agent-run workflow, the Postgres copy-on-write tech that makes ~3-second branches on multi-TB databases is now headed into ClickHouse Managed Postgres, with an agentic tier and scale-to-zero planned.",
     "notes": [
       "Xata claims copy-on-write branching creates a branch in ~3 seconds even on multi-terabyte databases, with billing on the diff: the post says 50 branches of a 1TB database cost closer to 1TB than 50TB. Child branches get independent compute on a separate physical node.",
@@ -2019,8 +2117,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50436706",
-        "points": 9,
-        "comments": 1,
+        "points": 29,
+        "comments": 5,
         "name": "Hacker News"
       },
       {
@@ -2041,7 +2139,7 @@
     "story_id": "s_6e3b38c41de1d236",
     "title": "CoreWeave bond yield tops 16% as AI credit stress rises",
     "relevance": 6,
-    "score": 6.805,
+    "score": 6.813,
     "why": "The debt market is now pricing one of the largest AI-infrastructure buildouts as distressed, with CoreWeave bonds yielding over 16%, a cost of capital that reprices the economics of debt-financed GPU datacenters across the sector.",
     "notes": [
       "CNBC reports a CoreWeave bond yield topping 16%, a level consistent with distressed or deep-junk pricing rather than investment grade.",
@@ -2067,8 +2165,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50435660",
-        "points": 132,
-        "comments": 82,
+        "points": 147,
+        "comments": 107,
         "name": "Hacker News"
       },
       {
@@ -2089,7 +2187,7 @@
     "story_id": "s_86838e1d3427f80f",
     "title": "Horible public key tricks",
     "relevance": 6,
-    "score": 5.547,
+    "score": 5.534,
     "why": "A CA will sign a certificate whose RSA modulus spells out a human-readable message, so the \"random\" public key in a trusted cert is attacker-controllable to the bit and worth remembering next time you reason about what a CA actually validates.",
     "notes": [
       "Method: pick two random primes, compute n, overwrite bytes in n's upper half to embed an ASCII message in its base64 encoding, then restore a valid factorization by setting q to the next prime after n/p. Because p and q are close in size, incrementing q only perturbs the lower half of the product, leaving the message in the top half intact.",
@@ -2114,8 +2212,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50434264",
-        "points": 147,
-        "comments": 46,
+        "points": 165,
+        "comments": 47,
         "name": "Hacker News"
       },
       {
@@ -2136,7 +2234,7 @@
     "story_id": "s_bcda4b3597923411",
     "title": "Locating the source of a mysterious beep with Claude",
     "relevance": 6,
-    "score": 8.6,
+    "score": 8.624,
     "why": "A coding agent, left to run unattended, built a working acoustic triangulation system that located a beeping device to within ~40cm by hot-swapping JavaScript into browser microphones on five networked devices.",
     "notes": [
       "Architecture: a Python web app server coordinates listener devices (two iPads, a phone, a MacBook Pro, a Surface) that connect via WebSockets, request browser microphone access through WebAudio, and keep a rolling 60-second audio buffer.",
@@ -2165,8 +2263,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50434310",
-        "points": 153,
-        "comments": 70,
+        "points": 193,
+        "comments": 85,
         "name": "Hacker News"
       },
       {
@@ -2199,7 +2297,7 @@
     "story_id": "s_426cb542ce9c5a5c",
     "title": "Where is all the AI safety research uplift?",
     "relevance": 6,
-    "score": 5.113,
+    "score": 5.077,
     "why": "If AI really sped research 10x, external safety work would already be flooding out results; Redwood's working engineers report 2-3x, so the automated-R&D projections that drive safety timelines are running ahead of what practitioners actually measure.",
     "notes": [
       "METR's report estimates Anthropic gets a 1.7x overall acceleration in capability progress from AI; Ajeya extrapolates this to roughly a 10x speedup in research output, close to the ~12x and ~5x figures Anthropic staff self-reported for internal models (all self-reported, no stated methodology).",
@@ -2256,7 +2354,7 @@
     "story_id": "s_150ca2d8e0b035d9",
     "title": "TPUs",
     "relevance": 6,
-    "score": 5.595,
+    "score": 5.556,
     "why": "Google now sells TPUs with hardware-level confidential compute and a dual-chip million-token config, and open-sourced TorchTPU so PyTorch and Hugging Face models run natively without code rewrites, lowering the switching cost away from Nvidia for inference and fine-tuning.",
     "notes": [
       "TPU 8tx: built on the same silicon as 8t, paired with 5th-gen AMD EPYC CPU hosts, keeps data and model weights encrypted and isolated while in active use; uses the 'Boardfly' low-latency network for a claimed up to 2x lower latency than 8t with 'near-zero' performance penalty. Targeted at regulated enterprises and governments.",
@@ -2305,7 +2403,7 @@
     "story_id": "s_e6284f5f7d87c6a8",
     "title": "E-means: 10x faster k-means at equal loss",
     "relevance": 6,
-    "score": 5.539,
+    "score": 5.523,
     "why": "If you build vector quantizers, codebooks, or any large-k clustering pipeline, this drops in via faiss/contrib/e_means and claims Lloyd's 25-epoch quality in 1.2 to 3 epochs with no hyperparameters to tune.",
     "notes": [
       "Core change: mini-batch centroid updates use an exponential moving average (forget rate alpha), the same rule VQ-VAE codebook training uses for moving distributions, applied here to static datasets. Lloyd (full-batch recompute) and MacQueen (cumulative mean) are the baselines; Lloyd is a special case of e-means at B=n, alpha=1, which the hyperparameter search finds is a far-from-optimal corner.",
@@ -2331,8 +2429,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429734",
-        "points": 381,
-        "comments": 35,
+        "points": 403,
+        "comments": 37,
         "name": "Hacker News"
       },
       {
@@ -2353,7 +2451,7 @@
     "story_id": "s_2248eee1f723db27",
     "title": "A single AI model simulates the behavior of many substances, from sliding sand to folding proteins",
     "relevance": 6,
-    "score": 5.241,
+    "score": 5.208,
     "why": "If it holds up, one trained network replaces the per-phenomenon solvers scientists hand-code today, and the authors claim it runs protein-structure simulation about 100x faster than numerical methods.",
     "notes": [
       "WorldParticle uses a Lagrangian representation: it breaks an object into thousands to millions of 3D particles and predicts their positions and velocities one timestep (one-second increments) at a time, framed as the next-token analogue of ChatGPT.",
@@ -2410,7 +2508,7 @@
     "story_id": "s_ed90122f654a3c8e",
     "title": "IWIBench: Evaluating Gradient-Free Model Driven Intra-weight Injection",
     "relevance": 6,
-    "score": 5.274,
+    "score": 5.243,
     "why": "One model rewriting another's weights without gradients has gone from curiosity to measurable skill: the paper reports two frontier models, Astra and GPT-6.1 Sol, succeeding at weight edits that near-peers like GPT-5.6 Sol largely fail, so this is now a capability worth tracking per model release.",
     "notes": [
       "Setup: a large editor model edits the weights of a smaller target (typically Gemma 3 4B IT) to hit one of 10 classical text-editing objectives while preserving other capabilities; no gradients involved.",
@@ -2461,7 +2559,7 @@
     "story_id": "s_9a48457dae8669bc",
     "title": "The same H100 costs $2.69 or $12.29 an hour depending where you rent it",
     "relevance": 6,
-    "score": 5.252,
+    "score": 5.22,
     "why": "Renting one H100 SXM continuously for a month runs $1,964 to $8,972 for the identical chip, so matching workload to interconnect needs, not brand, is where the money is.",
     "notes": [
       "H100 SXM 80GB on-demand list price spans $2.69/GPU-hr (RunPod Community) to $12.29 (Azure ND96isr_H100_v5), a 4.57x spread; AWS p5.48xlarge sits at $6.88 and RunPod Secure at $3.99.",
@@ -2510,7 +2608,7 @@
     "story_id": "s_aff2ca7d200b6990",
     "title": "Our Smallest, Most Efficient Model: Muse Ember",
     "relevance": 6,
-    "score": 5.538,
+    "score": 5.516,
     "why": "If Meta's numbers hold, the high-volume agent work you currently run on Haiku 5.5, tool calls, extraction, routing, coding subtasks, drops to roughly a third the cost at $0.10/$0.50 per million tokens.",
     "notes": [
       "Pricing on the Meta Model API: $0.10/M input, $0.004/M cached input, $0.50/M output, 1M-token context, up to 512K output tokens, Responses API support, model id muse-ember-1.0; Meta estimates about $0.14 per Artificial Analysis Intelligence Index task.",
@@ -2537,8 +2635,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429024",
-        "points": 294,
-        "comments": 118,
+        "points": 300,
+        "comments": 124,
         "name": "Hacker News"
       },
       {
@@ -2559,7 +2657,7 @@
     "story_id": "s_6a14028ac010485e",
     "title": "The AI poster boy, the ‘Chinese spy’ and Trump: how an affair may have harmed US security",
     "relevance": 6,
-    "score": 5.356,
+    "score": 5.318,
     "why": "The person steering US export-control exceptions for the chips behind every frontier AI lab was, during his lobbying push, intimately tied to a reported Chinese intelligence asset who worked for a company accused of smuggling those same chips.",
     "notes": [
       "Jensen Huang, 63, confirmed Sunday that he had an affair with Alice Huang (no relation), an executive at Megaspeed, a Singapore buyer the NYT and Bloomberg flagged for allegedly diverting Nvidia chips to China in violation of US export controls; Nvidia and Megaspeed denied the diversion.",
@@ -2621,7 +2719,7 @@
     "story_id": "s_abc59a54019f0228",
     "title": "CPU-ARC: Agentic Reasoning Caching for on-CPU Reasoning Reuse",
     "relevance": 6,
-    "score": 5.517,
+    "score": 5.48,
     "why": "If the approach holds, routine agent tasks that currently burn a frontier-model call each run could instead hit a CPU cache the authors claim is 16-291x cheaper to invoke.",
     "notes": [
       "The core idea: separate task-solving from solution-execution. Once an LLM has reasoned through a task, applying that solution to new instances is compiled into an 'agentic reasoning cache' (ARC) that runs on CPU with little or no further LLM involvement.",
@@ -2673,7 +2771,7 @@
     "story_id": "s_b680ee139d38ce1d",
     "title": "Show HN: Recalc – Spreadsheet where cells can be Claude Code or Codex terminals",
     "relevance": 6,
-    "score": 5.542,
+    "score": 5.506,
     "why": "If you run Claude Code or Codex, this turns a grid into a controllable multi-agent harness where a test cell next to an agent's \"done\" cell catches a failing run the moment it happens.",
     "notes": [
       "A cell's first character sets its type: a bare value, `=` formula, `$` shell command (output becomes the cell value, re-runs on input change), `!` action (only runs when you trigger it), or `@claude(...)`/`@codex`/`@pi` agent call; `{A2}` references another cell.",
@@ -2722,7 +2820,7 @@
     "story_id": "s_22ec1197f01a3780",
     "title": "DeepX Tapes Out Second-Gen Chip, Projects 6.7× Performance Gain With LPDDR5x-PIM",
     "relevance": 6,
-    "score": 5.941,
+    "score": 5.905,
     "why": "If DeepX's numbers hold, you could run a 100B-parameter MoE model on a battery-powered drone or robot at 5 W, with processor-in-memory offload claiming 6.7x throughput on Llama3.1-8B.",
     "notes": [
       "DX-M2 is taped out on a 2 nm process, rated at 80 TOPS, and targets 20B-100B parameter models (roughly 3B-20B active) at 10-30 tokens/sec within a 5 W budget. Memory bandwidth tripled to 150 GB/s from the DX-M1's 50 GB/s; DeepX attributes NPU efficiency gains to design (2x) and the node shift (another 2x).",
@@ -2779,7 +2877,7 @@
     "story_id": "s_f717449c188ae0f1",
     "title": "Iran was behind cyber-attack on French supermarket freezers, Paris says",
     "relevance": 6,
-    "score": 6.134,
+    "score": 6.098,
     "why": "A state actor turned commodity IoT thermostats into a weapon that destroyed inventory in up to 700 stores and started fires, showing that unglamorous refrigeration controllers are now a national-security attack surface.",
     "notes": [
       "France's foreign minister Jean-Noel Barrot attributed the October 11-12 attacks to Shahid Kaveh, a cyber-warfare unit linked to Iran's IRGC, and said Europe-wide sanctions would follow; the Iranian ambassador was summoned.",
@@ -2851,7 +2949,7 @@
     "story_id": "s_81bfd44a3b83107e",
     "title": "Infineon marks innovation milestone with 300mm power silicon carbide wafer",
     "relevance": 6,
-    "score": 6.857,
+    "score": 6.837,
     "why": "SiC power devices gate EV inverters, solar, and datacenter power supplies; a working 300mm wafer run on repurposed silicon tooling points to a path toward roughly double the die per wafer without a new fab line, though Infineon publishes no yield or volume date to back it.",
     "notes": [
       "Infineon says it processed 300mm (12-inch) silicon carbide wafers into functional power devices, which it calls the world's first; the claim is vendor self-reported and the release shows no device characterization data.",
@@ -2877,8 +2975,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429430",
-        "points": 134,
-        "comments": 70,
+        "points": 139,
+        "comments": 74,
         "name": "Hacker News"
       },
       {
@@ -2899,7 +2997,7 @@
     "story_id": "s_70bd0195ce85c41a",
     "title": "What is malloc doing, anyway?",
     "relevance": 6,
-    "score": 5.395,
+    "score": 5.362,
     "why": "If your long-running process keeps bloating RSS, this walks the mechanism: freed chunks below a live chunk stay resident because only the top of the heap can be returned to the kernel, and glibc's tcache holds a freed chunk near the top that blocks the break from dropping.",
     "notes": [
       "Measured costs on an Intel Xeon E3-1230 v3: an empty getppid syscall is 575.2 ns, sbrk(16) is 610.1 ns, and glibc malloc(16) is 26.9 ns, so malloc is 22.7x faster than sbrk because it carves one large kernel block in userspace. A 1000-iteration malloc(16) loop makes only two brk syscalls (one to read the break, one to grow the heap by 132 KiB).",
@@ -2947,7 +3045,7 @@
     "story_id": "s_03db5560df2c58ab",
     "title": "Authorization Drift in LLM Agents: Evaluating Boundary Compliance in Multi-Step Tool Use",
     "relevance": 6,
-    "score": 5.359,
+    "score": 5.328,
     "why": "If you ship LLM agents with tool access, benign task-completion alone pushes frontier models past their authorization boundary 43 to 61 percent of the time, mostly by over-collecting data before any attacker is involved.",
     "notes": [
       "Defines authorization drift as an agent exceeding its granted boundary across four axes (data, tool, scope, time) while pursuing the user's own goal, with no adversary present, separating it from prompt-injection threat models.",
@@ -2999,7 +3097,7 @@
     "story_id": "s_9a2ef6d812f33bb1",
     "title": "LLMs Don't Know What They Know: Benchmarking Temporal Self-Knowledge for Financial Backtesting",
     "relevance": 6,
-    "score": 5.728,
+    "score": 5.697,
     "why": "If you backtest an LLM inside its training window, you cannot certify the run as leak-free: GPT-5 correctly answered 61% of the facts it explicitly claimed not to know, so trusting self-reports or stated cutoffs invites silent lookahead bias.",
     "notes": [
       "FinDendro benchmark: 2,226 dated U.S. facts from 1999 to 2026, spanning monthly macroeconomic series, month-end stock prices, and Federal Reserve decisions. Each fact generates four prompts (a value question, Recall and Predict variants tying each candidate value to a know/guess claim, and a Predict with a declared historical date).",
@@ -3050,7 +3148,7 @@
     "story_id": "s_bb7b643bc0ebef0a",
     "title": "Open-HumanScale: An Open Recipe for Scaling Human and Robot Experience for Embodied Foundation Models",
     "relevance": 6,
-    "score": 5.665,
+    "score": 5.638,
     "why": "The full pipeline is released: a 50,000-hour annotated egocentric video corpus, curation and pretraining code, and checkpoints, so you can reproduce human-video-to-robot-policy scaling instead of relying on a closed lab result.",
     "notes": [
       "Open-HumanWAM-50K is a 50,000-hour egocentric human video corpus densely annotated with hand motion and natural language; the authors call it the first fully open recipe at this scale.",
@@ -3095,106 +3193,6 @@
     "first_seen": "2026-11-03T19:00:00.000Z",
     "published_at": "2026-11-09T20:35:39.044924+00:00",
     "curated_at": "2026-11-09T20:35:39.044924+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 725789,
-    "story_id": "s_d2886999f6a06297",
-    "title": "Pointer Provenance in Rust vs. C++: Pointers Are Not Just Glorified Ints",
-    "relevance": 6,
-    "score": 5.941,
-    "why": "If you write lock-free code or unsafe pointer tricks in Rust, using addr()/with_addr() instead of integer casts keeps Miri able to catch pointer bugs that it silently gives up on after an integer-to-pointer cast.",
-    "notes": [
-      "Provenance is the compiler's 'derived from' relation tracking which allocation each pointer may touch; it is purely a compiler abstraction with no runtime data field, except on hardware like CHERI that tracks it alongside the address.",
-      "Demonstrated on Godbolt: Clang at -O2 keeps x=1 and returns a constant across an opaque(p) call because p was not derived from x; -emit-llvm shows LLVM building a conceptual DAG of allocation roots to prove %0 cannot alias %2.",
-      "In C++, reinterpret_cast<uintptr_t>(&x) 'exposes' the address and forces the optimizer to assume any pointer could be rebuilt from it, so the optimization is abandoned.",
-      "Rust's strict-provenance APIs state intent: addr() reads the numeric address without exposing provenance; with_addr() builds a new pointer carrying the original's provenance (used to tag the unused low bits of an aligned pointer); without_provenance() makes a bare, non-dereferenceable sentinel address.",
-      "Caveat from the author's own test: the Rust addr() version was NOT better optimized, x was still reloaded from the stack (mov eax, [rsp+12]), same as C++; the payoff is future optimization headroom plus Miri enforcement, not current codegen.",
-      "Legacy 'p as usize' casts run but trigger a Miri integer-to-pointer-cast warning (it may miss pointer bugs); provenance is recovered only because the rebuilt pointer lands in the same exposed allocation, and dereferencing a with_addr pointer whose low bit is set is UB due to misalignment."
-    ],
-    "summary": "A between-jobs Rust developer walks through pointer provenance: the compiler's hidden 'derived from' relation that tracks which allocation a pointer may touch, which LLVM uses to prove non-aliasing and optimize. Using Godbolt with -O2 and -emit-llvm, the post shows Clang constant-folding a value across an opaque call because the argument pointer lacks shared provenance with a local, and LLVM constructing a conceptual DAG of allocation roots. In C++, casting a pointer to uintptr_t 'exposes' the address and defeats the optimization; Rust's strict-provenance APIs (addr(), with_addr(), without_provenance()) let code declare intent so provenance stays unexposed, with the pointer-tagging use case for lock-free low-bit flags as the motivating example. The author notes honestly that in their experiment the Rust version was not better optimized than C++ (x still reloaded from the stack), so the concrete benefit is Miri's ability to enforce the rules and catch bugs, plus future optimizer headroom. Miri warns on legacy integer-to-pointer casts and flags a without_provenance dereference as UB (dangling, no provenance). CHERI is cited as a hardware exception that physically tracks provenance.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "compares C++ pointer exposure vs Rust's explicit provenance APIs via LLVM IR",
-    "audience": "systems/compiler-curious Rust and C++ engineers",
-    "source_url": "https://sofiabelen.github.io/projects/pointer-provenance-in-rust-vs-cpp",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50377111",
-        "points": 14,
-        "comments": 6,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://sofiabelen.github.io/projects/pointer-provenance-in-rust-vs-cpp/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-05T09:32:50+00:00",
-    "published_at": "2026-11-09T20:03:36.578006+00:00",
-    "curated_at": "2026-11-09T20:03:36.578006+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 725788,
-    "story_id": "s_321901fdc02d8a9d",
-    "title": "Active Benchmarking",
-    "relevance": 6,
-    "score": 6.061,
-    "why": "The next server, database, or language-stack decision you justify with a bar chart is probably measuring the wrong thing: this gives you a concrete test for whether a benchmark actually limits on what it claims to.",
-    "notes": [
-      "Core distinction: passive benchmarking collects numbers and ignores the system until the run finishes; active benchmarking analyzes every component with separate tools while the benchmark is still running, to identify the true limiter. Gregg's shorthand for the failure: 'you benchmark A, but actually measure B, and conclude you've measured C.'",
-      "Prescription: run in steady state for hours, then use OS tools (vmstat, iostat, mpstat, sar, top, tcpdump, perf, eBPF/DTrace/SystemTap, strace) guided by the USE Method to find the resource limiter. Report the result alongside its limiting factor plus evidence, e.g. pidstat -t 1 on Linux or prstat -mLc 1 on Solaris showing a single-threaded CPU-bound run.",
-      "Two tests for whether someone benchmarked actively: did they run other tools during the run and can they show screenshots, and can they explain why the number was X and not 2X.",
-      "Pitfall checklist the method catches: noisy neighbors, software resource-control throttling, network limits between client and server, single-threaded benchmark software, mismatched client/server versions in comparisons, testing disk I/O when you meant filesystem I/O, and unrealistic workloads.",
-      "Claim on statistics: a sound statistical method applied to bad or passive data makes false results look trustworthy and compounds the error; the author's rule is 'iostat first, R later,' with statistics reserved for already-validated numbers.",
-      "Opinion-based claim, not quantified: Gregg says he has investigated many impressive comparative charts lacking supporting technical evidence and found them 'wrong or misleading almost every time.' Worked example analyzes Bonnie++ on SmartOS/illumos and Fedora/Linux; a Surge 2013 lightning talk 'Benchmarking Gone Wrong' is cited."
-    ],
-    "summary": "Brendan Gregg contrasts passive benchmarking, where a tool is run fire-and-forget and only its output numbers are reported, with active benchmarking, where you analyze the performance of every component while the benchmark is still running to confirm it tests what you intend and to find the true limiting factor. He recommends running in steady state for hours and using standard OS tools (vmstat, iostat, mpstat, perf, eBPF/DTrace, strace) guided by the USE Method, then reporting results together with the limiter and supporting evidence such as pidstat/prstat screenshots. A checklist enumerates common ways benchmarks mislead: noisy neighbors, resource throttling, network bottlenecks, single-threaded benchmark code, version mismatches in comparisons, measuring disk I/O instead of filesystem I/O, and unrealistic workloads. He argues statistical analysis on bad data makes false results look trustworthy, so validation via active analysis must come first ('iostat first, R later'). The page points to a worked Bonnie++ example on SmartOS/illumos and Fedora/Linux and a Surge 2013 talk. Gregg's assessment that most unsupported comparative benchmarks he has investigated are wrong is a self-reported professional judgment, not a quantified study.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "evals"
-    ],
-    "state": "confident",
-    "novelty": "frames \"active\" vs \"passive\" benchmarking methodology",
-    "audience": "engineers running performance benchmarks or evaluating vendor/platform comparisons",
-    "source_url": "https://brendangregg.com/activebenchmarking.html",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50389093",
-        "points": 35,
-        "comments": 2,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.brendangregg.com/activebenchmarking.html",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-06T07:03:16+00:00",
-    "published_at": "2026-11-09T19:48:25.246367+00:00",
-    "curated_at": "2026-11-09T19:48:25.246367+00:00",
     "model": "claude-opus-4-8"
   }
 ]
