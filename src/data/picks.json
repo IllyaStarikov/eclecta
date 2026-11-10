@@ -707,11 +707,117 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 728417,
+    "story_id": "s_71c62ef9379e64de",
+    "title": "Exact – a new cross platform UI framework by the Expo team",
+    "relevance": 7,
+    "score": 6.311,
+    "why": "If you build cross-platform apps, this is a bet that the UI layer should be a baked plan a coding agent can build, run, screenshot, and test on web, macOS, iOS, and Linux with one 10-verb script, no webview or JS bridge in sight.",
+    "notes": [
+      "Architecture: you write the interface in Contract (a declarative language) and data logic in TypeScript or Rust. The compiler bakes a 'plan' (tables + Hermes bytecode); on web it becomes one ES module over a ~20 KB runtime driving the real DOM, while macOS/iOS/Linux run a Rust runner with a patched-Taffy CSS layout kernel that draws through AppKit, UIKit, or a GPU painter. No webview, no JS bridge in the UI, no app JS before the first pixel.",
+      "Agent interface is fixed at ten operations (tree, screenshot, tap, type, state, layout, logs, clock, prefer, perf) driving all four hosts through one script, scripts/agent.mjs. Tests are app.test.contract files of those operations that run unchanged on any host. The agent controls a seekable virtual clock (clock +60000 / clock settle) so tests have no sleeps or timing flakes.",
+      "Self-reported performance budgets in rules/RULES.md, tracked per commit, a regression filed as a named P0: 100 ms p50 cold start to interactive, 100 ms p50 dev restart, zero app JS before first pixel, 30 s single-crate rebuild, 65 s full blocking check suite. A fresh exact-new app rebuilt a saved edit in 99 ms.",
+      "Vendor benchmark claim, no third-party methodology: on RealWorld/Conduit, Exact's web runtime (26 KB) was interactive ~300 ms before React's SSR build (81 KB) hydrated. Source lives in apps/realworld.",
+      "Design stance: Contract uses CSS's own names and layout defaults (display: block, box-sizing: content-box, flex-direction: row); the compiler refuses aliases and names the web spelling. Unspecified presentation (color, type size, controls, Back button) falls to the platform; Chrome is the parity oracle for layout. No escape hatch, only 'access hatches' (hatch=\"word\") and native modules (hyphenated tags like exact-map).",
+      "Caveats: pre-1.0, changes daily, no API stability, backwards compatibility, or migration guide 'by design.' An end-to-end agent run from a clean clone took ~57 minutes, ~25 of it the first macOS and iOS builds (~13 min each); later builds take a minute or two. Requires Xcode, Rust, Bun 1.4.2, Chrome, and (for TS apps) a pinned Hermes bundle. Built by the Expo team."
+    ],
+    "summary": "Exact is a pre-1.0 cross-platform application runtime from the Expo team. Developers describe the interface in Contract, a small declarative language that borrows CSS's vocabulary and layout model, and write data logic in TypeScript (run on Hermes) or Rust; the compiler bakes a plan that becomes a single ES module over a ~20 KB runtime on the web and is executed by a Rust runner with a patched-Taffy CSS layout kernel natively on macOS (AppKit), iOS (UIKit), and Linux (GPU/CPU painter), with no webview or JS bridge and no app JavaScript before the first pixel. Its defining bet is that agents write much of the code: ten fixed operations drive all four hosts through one script, tests are host-agnostic app.test.contract files, and an agent-controlled seekable clock removes timing flakes. Exact enforces self-reported performance budgets per commit (100 ms p50 cold start and dev restart, 30 s single-crate rebuild, 65 s check suite) and claims its 26 KB web runtime was interactive ~300 ms before React's 81 KB SSR build hydrated on the RealWorld/Conduit benchmark. The project is explicit that it has no API stability, backwards compatibility, or migration guide, and changes daily. Benchmark and performance numbers are the project's own and lack independent methodology.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "agent-first cross-platform UI framework, no webview/JS bridge",
+    "audience": "devs building cross-platform apps with AI coding agents",
+    "source_url": "https://github.com/expo/exact",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50433541",
+        "points": 23,
+        "comments": 10,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/expo/exact",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-09T22:59:13+00:00",
+    "published_at": "2026-11-10T01:59:25.376842+00:00",
+    "curated_at": "2026-11-10T01:59:25.376842+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 727303,
+    "story_id": "s_f402f7d502ea701d",
+    "title": "Vulnerability that lets hackers SSH into Linux devices is under active exploitation",
+    "relevance": 7,
+    "score": 6.235,
+    "why": "If your fleet runs OpenSSH against musl (Alpine and similar minimal/container images are prime suspects), an active group named GT10 can log into privileged accounts unauthenticated in seconds, so patch now rather than waiting for a maintenance window.",
+    "notes": [
+      "The bug, dubbed *sshole, comes from the interaction between OpenSSH and the musl C library; systems using both and meeting unspecified additional conditions are exploitable for unauthenticated access to high-privilege accounts in seconds.",
+      "Timeline: public disclosure last Thursday, with Greynoise confirming active exploitation four days later (reported Monday).",
+      "Greynoise says its Southeast Asia honeypots were hit by a group it tracks as GT10 conducting \"mature intrusions\"; it also gained access to a GT10 server exposing other potential victims and tooling.",
+      "The backdoor, TAC Agent, contains Chinese-language comments and appears AI-generated per Greynoise; it supports shell commands, system reconnaissance, and persistence.",
+      "TAC Agent requires Python3, so GT10 installs the Python3 package on targets that lack it, a detectable side effect.",
+      "OpenSSH has shipped a fix that blocks the attack; the article gives no CVE, no list of the \"certain other requirements,\" and the vendor attribution of the group to any nation is not stated."
+    ],
+    "summary": "Researchers report active exploitation of a critical vulnerability nicknamed *sshole, which arises from the interaction between OpenSSH and the musl library and lets attackers gain unauthenticated access to high-privilege accounts on affected Linux systems within seconds. Disclosed publicly last Thursday, it was confirmed under attack four days later when Greynoise observed a group it tracks as GT10 conducting \\\"mature intrusions\\\" against honeypots in Southeast Asia. Greynoise says it obtained access to a GT10 server revealing other potential victims and the group's tooling. The attackers deploy a backdoor called TAC Agent that supports shell commands, reconnaissance, and persistence; it contains Chinese-language comments and appears, per Greynoise, to have been AI-generated. Because TAC Agent needs Python3, GT10 installs the Python3 package on machines that lack it. OpenSSH has released a fix that prevents the attack; the article does not provide a CVE identifier or the specific conditions beyond using both packages that make a system vulnerable.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns",
+      "research"
+    ],
+    "state": "confident",
+    "novelty": "active exploitation confirmed days after disclosure, with AI-generated backdoor",
+    "audience": "Linux sysadmins and security engineers running OpenSSH/musl systems",
+    "source_url": "https://arstechnica.com/security/2026/11/vulnerability-that-lets-hackers-ssh-into-linux-devices-is-under-active-exploitation",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arstechnica.com/security/2026/11/vulnerability-that-lets-hackers-ssh-into-linux-devices-is-under-active-exploitation/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://programming.dev/post/59178026",
+        "points": null,
+        "comments": null,
+        "name": "programming.dev (Lemmy)"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/11/vulnerability-that-lets-hackers-ssh-into-linux-devices-is-under-active-exploitation/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-09T19:41:34+00:00",
+    "published_at": "2026-11-10T00:54:42.573106+00:00",
+    "curated_at": "2026-11-10T00:54:42.573106+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 727319,
     "story_id": "s_a0aa830138e14125",
     "title": "Google Gemini routes personal Drive files and emails to human annotators",
     "relevance": 7,
-    "score": 6.98,
+    "score": 7.045,
     "why": "If the claim holds, casually mentioning a bill or trip to consumer Gemini with Connected Apps on can pull verbatim account numbers and email headers from your Gmail into sessions a human contractor may review.",
     "notes": [
       "The author claims Google's 2023 Workspace-extensions blogpost promised personal Gmail/Docs/Drive content 'is not seen by human reviewers,' and that an October 16 edit plus Help Answer 16836988 now say reviewers may see 'just the email or file' and warn against connecting apps with confidential content.",
@@ -738,8 +844,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429426",
-        "points": 250,
-        "comments": 48,
+        "points": 359,
+        "comments": 91,
         "name": "Hacker News"
       },
       {
@@ -760,7 +866,7 @@
     "story_id": "s_b0ecedda9f9a98e8",
     "title": "Next-Concept Modeling: Fast, Parallel Coarse-to-Fine Text Generation",
     "relevance": 7,
-    "score": 6.364,
+    "score": 6.273,
     "why": "If the self-reported numbers hold, you can get diffusion-LM-or-better text quality at 10-31x fewer inference passes, a direct hit on the generation-latency budget that dominates serving cost.",
     "notes": [
       "Architecture: a multiscale residual VQ-VAE encodes text into a hierarchy of discrete codes; a transformer then generates one level at a time, predicting every code within a level in parallel (coarse-to-fine), rather than denoising the full sequence at every step as diffusion LMs do.",
@@ -815,7 +921,7 @@
     "story_id": "s_2eb24a78946a814f",
     "title": "The Last Mile to the Real World: Agent-Native Primitives as Reusable Building Blocks for Solving Real-World Tasks",
     "relevance": 7,
-    "score": 5.633,
+    "score": 5.581,
     "why": "If the paper's numbers hold, wrapping agents in a shared primitive library takes two frontier coding harnesses from 9/46 real-world tasks solved to 39 and 35, at ~1.55x lower cost and roughly half the time per task.",
     "notes": [
       "The paper names the failure mode the 'last mile': agents reach a resource but lack the resident competence to apply it, so every harness rebuilds that competence. Its fix is 'agent-native primitives,' reusable units that pair a resource with an in-context LLM that applies it and talks to other primitives.",
@@ -865,7 +971,7 @@
     "story_id": "s_6f66258851f37cb6",
     "title": "NVIDIA announces it is opening an investigation into CEO Jensen Huang, after American intelligence reported that a close associate of Huang ",
     "relevance": 7,
-    "score": 6.864,
+    "score": 6.773,
     "why": "The board of the most valuable chipmaker is probing its own founder-CEO over an alleged intelligence-flagged China tie, a governance and national-security risk that sits directly on top of Nvidia's export-restricted AI accelerator business.",
     "notes": [
       "Per the headline, Nvidia has opened an internal investigation into CEO Jensen Huang; the trigger cited is American intelligence reporting about a close associate of Huang.",
@@ -929,7 +1035,7 @@
     "story_id": "s_9793aa71d86f904a",
     "title": "Goldman Sachs Is Pulling Claude Code from Its Bankers and Traders",
     "relevance": 7,
-    "score": 6.608,
+    "score": 6.571,
     "why": "If your org handed coding agents to non-engineers, Goldman just showed the failure mode: agent-written code that skips review, testing, and information barriers, and a role-based lockout that leaves the people who built useful tools with no replacement.",
     "notes": [
       "October internal guidance restricts Claude Code and GitHub Copilot to Goldman's roughly 12,000 engineers out of ~47,000 staff; 'strats' (trading/quant/eng hybrids) keep access, per a second source. Traders had used the tools to monitor client flows, model positions, and build written and graphic material.",
@@ -979,7 +1085,7 @@
     "story_id": "s_80baf283cecc591c",
     "title": "Statement from NVIDIA Board of Directors",
     "relevance": 7,
-    "score": 7.638,
+    "score": 7.597,
     "why": "The board of the company that controls the AI accelerator supply chain has opened an outside-counsel investigation into its own CEO as a reported foreign intelligence target, a governance event with direct bearing on U.S. export-control and national-security scrutiny of NVIDIA.",
     "notes": [
       "The NVIDIA board is starting an independent investigation prompted by \"recent reporting\" that founder and CEO Jensen Huang \"has been the target of a foreign intelligence effort\"; the statement does not name the country, the reporting outlet, or the nature of the effort.",
@@ -1036,7 +1142,7 @@
     "story_id": "s_3149d502eb37e206",
     "title": "Claude Code's “Don't Ask Again” File Exposes Passwords and Keys in 1,122 Public Copies on GitHub",
     "relevance": 7,
-    "score": 5.871,
+    "score": 5.834,
     "why": "If you ever approved a shell command containing an inline password or token in Claude Code, that secret may already be on a public GitHub default branch, and deleting the file does not remove it from git history or forks.",
     "notes": [
       "Apiiro scanned 104,185 public copies of .claude/settings.local.json across 103,617 repos; 1,122 copies (about 1.1%) held at least one secret, 1,379 secrets total. The firm did not test whether the keys still work, though one notified company confirmed its key was live.",
@@ -1202,7 +1308,7 @@
     "story_id": "s_d9b8f970b29308c5",
     "title": "The Components of Agent Memory",
     "relevance": 7,
-    "score": 6.089,
+    "score": 6.079,
     "why": "If you build agents, this is Anthropic's working recipe for persistent memory: let the model judge what to save in-session, then run \"dreaming\" (offline passes over transcripts) to correct wrong notes and build wiki indexes, with measured gains like 13%→48% accuracy as dreaming scaled to 128 sessions.",
     "notes": [
       "\"Dreaming\" is Anthropic's term for offline memory reorganization, borrowed from the Letta/UC Berkeley \"sleep-time compute\" idea: the agent reflects on logs during idle time to fix mistakes and build new representations. Agent memory is defined narrowly as knowledge saved as re-readable context between sessions, explicitly excluding weight updates, in-context learning, and compaction.",
@@ -1682,11 +1788,60 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 728215,
+    "story_id": "s_150ca2d8e0b035d9",
+    "title": "TPUs",
+    "relevance": 6,
+    "score": 5.775,
+    "why": "Google now sells TPUs with hardware-level confidential compute and a dual-chip million-token config, and open-sourced TorchTPU so PyTorch and Hugging Face models run natively without code rewrites, lowering the switching cost away from Nvidia for inference and fine-tuning.",
+    "notes": [
+      "TPU 8tx: built on the same silicon as 8t, paired with 5th-gen AMD EPYC CPU hosts, keeps data and model weights encrypted and isolated while in active use; uses the 'Boardfly' low-latency network for a claimed up to 2x lower latency than 8t with 'near-zero' performance penalty. Targeted at regulated enterprises and governments.",
+      "TPU 8i Max: two TPU 8i chips on one package, claimed double the compute, double the SRAM, and double the HBM bandwidth of a single 8i, fitting twice the silicon in the existing rack footprint. Aimed at million-token context and compute density per rack.",
+      "Baseline-generation claims (vendor-reported, no methodology given): 8t up to 2.7x better training performance, 8i 80% better inference price-performance vs the prior generation; 8i cuts inter-chip communication delays by up to half.",
+      "Software stack: TorchTPU open-sourced (PyTorch + Hugging Face native, plus vLLM/SGLang backends); open-sourced TPU Sync model-state layer claims to cut KV-transfer latency and Time to First Token by more than 90%; GKE dynamic slicing (GA) claims up to 5x faster job startup and 4.5x faster fault recovery via optical circuit switching. A TPU agent suite (preview) plugs into Claude Code, Cursor, and Antigravity.",
+      "'Industry-standard InferenceX and AgentX benchmarks' are cited for state-of-the-art price-performance but are not named third-party suites and are presented without external verification. Four systems in one generation-year (8t, 8i, 8tx, 8i Max) is a first for Google.",
+      "Business figure: Google reports nearly 100 TPU customers including frontier labs, trading firms, retailers, and universities, plus a new option to deploy TPUs into customers' own data centers; all adoption and performance numbers are self-reported."
+    ],
+    "summary": "Google expanded its eighth-generation TPU lineup to four systems, adding TPU 8tx and TPU 8i Max to the previously announced 8t (training) and 8i (reasoning). TPU 8tx reuses 8t silicon with 5th-gen AMD EPYC hosts to provide hardware-level confidential compute that keeps data and weights encrypted even during processing, and uses the Boardfly network for a claimed up-to-2x latency reduction versus 8t; it targets regulated enterprises running private fine-tuning, distillation, and RL on a single system. TPU 8i Max combines two 8i chips on one package for claimed double the compute, SRAM, and HBM bandwidth, aimed at million-token context and higher rack density. Alongside the hardware, Google open-sourced TorchTPU (native PyTorch/Hugging Face plus vLLM/SGLang backends), TPU Sync (a memory-tiering layer claiming >90% TTFT/KV-latency cuts), and shipped GKE dynamic slicing and Cloud Pathways to GA. Performance and adoption figures, including nearly 100 customers and leadership on 'InferenceX' and 'AgentX' benchmarks, are self-reported without disclosed methodology or third-party verification.",
+    "channels": [
+      "hardware",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "first time Google ships four TPU systems in one generation-year",
+    "audience": "datacenter/ML infra engineers evaluating accelerator options",
+    "source_url": "https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/tpu-8i-max-and-8tx",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50432831",
+        "points": 180,
+        "comments": 32,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://blog.google/innovation-and-ai/infrastructure-and-cloud/global-network/tpu-8i-max-and-8tx/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-09T21:56:57+00:00",
+    "published_at": "2026-11-10T00:55:08.099682+00:00",
+    "curated_at": "2026-11-10T00:55:08.099682+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 727047,
     "story_id": "s_e6284f5f7d87c6a8",
     "title": "E-means: 10x faster k-means at equal loss",
     "relevance": 6,
-    "score": 5.712,
+    "score": 5.677,
     "why": "If you build vector quantizers, codebooks, or any large-k clustering pipeline, this drops in via faiss/contrib/e_means and claims Lloyd's 25-epoch quality in 1.2 to 3 epochs with no hyperparameters to tune.",
     "notes": [
       "Core change: mini-batch centroid updates use an exponential moving average (forget rate alpha), the same rule VQ-VAE codebook training uses for moving distributions, applied here to static datasets. Lloyd (full-batch recompute) and MacQueen (cumulative mean) are the baselines; Lloyd is a special case of e-means at B=n, alpha=1, which the hyperparameter search finds is a far-from-optimal corner.",
@@ -1712,8 +1867,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429734",
-        "points": 223,
-        "comments": 13,
+        "points": 256,
+        "comments": 17,
         "name": "Hacker News"
       },
       {
@@ -1734,7 +1889,7 @@
     "story_id": "s_2248eee1f723db27",
     "title": "A single AI model simulates the behavior of many substances, from sliding sand to folding proteins",
     "relevance": 6,
-    "score": 5.629,
+    "score": 5.538,
     "why": "If it holds up, one trained network replaces the per-phenomenon solvers scientists hand-code today, and the authors claim it runs protein-structure simulation about 100x faster than numerical methods.",
     "notes": [
       "WorldParticle uses a Lagrangian representation: it breaks an object into thousands to millions of 3D particles and predicts their positions and velocities one timestep (one-second increments) at a time, framed as the next-token analogue of ChatGPT.",
@@ -1791,7 +1946,7 @@
     "story_id": "s_ed90122f654a3c8e",
     "title": "IWIBench: Evaluating Gradient-Free Model Driven Intra-weight Injection",
     "relevance": 6,
-    "score": 5.634,
+    "score": 5.549,
     "why": "One model rewriting another's weights without gradients has gone from curiosity to measurable skill: the paper reports two frontier models, Astra and GPT-6.1 Sol, succeeding at weight edits that near-peers like GPT-5.6 Sol largely fail, so this is now a capability worth tracking per model release.",
     "notes": [
       "Setup: a large editor model edits the weights of a smaller target (typically Gemma 3 4B IT) to hit one of 10 classical text-editing objectives while preserving other capabilities; no gradients involved.",
@@ -1842,7 +1997,7 @@
     "story_id": "s_9a48457dae8669bc",
     "title": "The same H100 costs $2.69 or $12.29 an hour depending where you rent it",
     "relevance": 6,
-    "score": 5.638,
+    "score": 5.547,
     "why": "Renting one H100 SXM continuously for a month runs $1,964 to $8,972 for the identical chip, so matching workload to interconnect needs, not brand, is where the money is.",
     "notes": [
       "H100 SXM 80GB on-demand list price spans $2.69/GPU-hr (RunPod Community) to $12.29 (Azure ND96isr_H100_v5), a 4.57x spread; AWS p5.48xlarge sits at $6.88 and RunPod Secure at $3.99.",
@@ -1891,7 +2046,7 @@
     "story_id": "s_aff2ca7d200b6990",
     "title": "Our Smallest, Most Efficient Model: Muse Ember",
     "relevance": 6,
-    "score": 5.807,
+    "score": 5.755,
     "why": "If Meta's numbers hold, the high-volume agent work you currently run on Haiku 5.5, tool calls, extraction, routing, coding subtasks, drops to roughly a third the cost at $0.10/$0.50 per million tokens.",
     "notes": [
       "Pricing on the Meta Model API: $0.10/M input, $0.004/M cached input, $0.50/M output, 1M-token context, up to 512K output tokens, Responses API support, model id muse-ember-1.0; Meta estimates about $0.14 per Artificial Analysis Intelligence Index task.",
@@ -1918,8 +2073,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429024",
-        "points": 214,
-        "comments": 87,
+        "points": 236,
+        "comments": 98,
         "name": "Hacker News"
       },
       {
@@ -1940,7 +2095,7 @@
     "story_id": "s_6a14028ac010485e",
     "title": "The AI poster boy, the ‘Chinese spy’ and Trump: how an affair may have harmed US security",
     "relevance": 6,
-    "score": 5.804,
+    "score": 5.698,
     "why": "The person steering US export-control exceptions for the chips behind every frontier AI lab was, during his lobbying push, intimately tied to a reported Chinese intelligence asset who worked for a company accused of smuggling those same chips.",
     "notes": [
       "Jensen Huang, 63, confirmed Sunday that he had an affair with Alice Huang (no relation), an executive at Megaspeed, a Singapore buyer the NYT and Bloomberg flagged for allegedly diverting Nvidia chips to China in violation of US export controls; Nvidia and Megaspeed denied the diversion.",
@@ -2002,7 +2157,7 @@
     "story_id": "s_abc59a54019f0228",
     "title": "CPU-ARC: Agentic Reasoning Caching for on-CPU Reasoning Reuse",
     "relevance": 6,
-    "score": 5.911,
+    "score": 5.809,
     "why": "If the approach holds, routine agent tasks that currently burn a frontier-model call each run could instead hit a CPU cache the authors claim is 16-291x cheaper to invoke.",
     "notes": [
       "The core idea: separate task-solving from solution-execution. Once an LLM has reasoned through a task, applying that solution to new instances is compiled into an 'agentic reasoning cache' (ARC) that runs on CPU with little or no further LLM involvement.",
@@ -2054,7 +2209,7 @@
     "story_id": "s_b680ee139d38ce1d",
     "title": "Show HN: Recalc – Spreadsheet where cells can be Claude Code or Codex terminals",
     "relevance": 6,
-    "score": 5.964,
+    "score": 5.864,
     "why": "If you run Claude Code or Codex, this turns a grid into a controllable multi-agent harness where a test cell next to an agent's \"done\" cell catches a failing run the moment it happens.",
     "notes": [
       "A cell's first character sets its type: a bare value, `=` formula, `$` shell command (output becomes the cell value, re-runs on input change), `!` action (only runs when you trigger it), or `@claude(...)`/`@codex`/`@pi` agent call; `{A2}` references another cell.",
@@ -2103,7 +2258,7 @@
     "story_id": "s_22ec1197f01a3780",
     "title": "DeepX Tapes Out Second-Gen Chip, Projects 6.7× Performance Gain With LPDDR5x-PIM",
     "relevance": 6,
-    "score": 6.333,
+    "score": 6.264,
     "why": "If DeepX's numbers hold, you could run a 100B-parameter MoE model on a battery-powered drone or robot at 5 W, with processor-in-memory offload claiming 6.7x throughput on Llama3.1-8B.",
     "notes": [
       "DX-M2 is taped out on a 2 nm process, rated at 80 TOPS, and targets 20B-100B parameter models (roughly 3B-20B active) at 10-30 tokens/sec within a 5 W budget. Memory bandwidth tripled to 150 GB/s from the DX-M1's 50 GB/s; DeepX attributes NPU efficiency gains to design (2x) and the node shift (another 2x).",
@@ -2132,8 +2287,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429545",
-        "points": 123,
-        "comments": 21,
+        "points": 136,
+        "comments": 22,
         "name": "Hacker News"
       },
       {
@@ -2160,7 +2315,7 @@
     "story_id": "s_f717449c188ae0f1",
     "title": "Iran was behind cyber-attack on French supermarket freezers, Paris says",
     "relevance": 6,
-    "score": 6.568,
+    "score": 6.466,
     "why": "A state actor turned commodity IoT thermostats into a weapon that destroyed inventory in up to 700 stores and started fires, showing that unglamorous refrigeration controllers are now a national-security attack surface.",
     "notes": [
       "France's foreign minister Jean-Noel Barrot attributed the October 11-12 attacks to Shahid Kaveh, a cyber-warfare unit linked to Iran's IRGC, and said Europe-wide sanctions would follow; the Iranian ambassador was summoned.",
@@ -2232,7 +2387,7 @@
     "story_id": "s_81bfd44a3b83107e",
     "title": "Infineon marks innovation milestone with 300mm power silicon carbide wafer",
     "relevance": 6,
-    "score": 7.11,
+    "score": 7.07,
     "why": "SiC power devices gate EV inverters, solar, and datacenter power supplies; a working 300mm wafer run on repurposed silicon tooling points to a path toward roughly double the die per wafer without a new fab line, though Infineon publishes no yield or volume date to back it.",
     "notes": [
       "Infineon says it processed 300mm (12-inch) silicon carbide wafers into functional power devices, which it calls the world's first; the claim is vendor self-reported and the release shows no device characterization data.",
@@ -2258,8 +2413,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429430",
-        "points": 84,
-        "comments": 45,
+        "points": 94,
+        "comments": 59,
         "name": "Hacker News"
       },
       {
@@ -2280,7 +2435,7 @@
     "story_id": "s_70bd0195ce85c41a",
     "title": "What is malloc doing, anyway?",
     "relevance": 6,
-    "score": 5.736,
+    "score": 5.679,
     "why": "If your long-running process keeps bloating RSS, this walks the mechanism: freed chunks below a live chunk stay resident because only the top of the heap can be returned to the kernel, and glibc's tcache holds a freed chunk near the top that blocks the break from dropping.",
     "notes": [
       "Measured costs on an Intel Xeon E3-1230 v3: an empty getppid syscall is 575.2 ns, sbrk(16) is 610.1 ns, and glibc malloc(16) is 26.9 ns, so malloc is 22.7x faster than sbrk because it carves one large kernel block in userspace. A 1000-iteration malloc(16) loop makes only two brk syscalls (one to read the break, one to grow the heap by 132 KiB).",
@@ -2306,8 +2461,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50424157",
-        "points": 202,
-        "comments": 54,
+        "points": 218,
+        "comments": 61,
         "name": "Hacker News"
       },
       {
@@ -2328,7 +2483,7 @@
     "story_id": "s_03db5560df2c58ab",
     "title": "Authorization Drift in LLM Agents: Evaluating Boundary Compliance in Multi-Step Tool Use",
     "relevance": 6,
-    "score": 5.681,
+    "score": 5.596,
     "why": "If you ship LLM agents with tool access, benign task-completion alone pushes frontier models past their authorization boundary 43 to 61 percent of the time, mostly by over-collecting data before any attacker is involved.",
     "notes": [
       "Defines authorization drift as an agent exceeding its granted boundary across four axes (data, tool, scope, time) while pursuing the user's own goal, with no adversary present, separating it from prompt-injection threat models.",
@@ -2380,7 +2535,7 @@
     "story_id": "s_9a2ef6d812f33bb1",
     "title": "LLMs Don't Know What They Know: Benchmarking Temporal Self-Knowledge for Financial Backtesting",
     "relevance": 6,
-    "score": 5.986,
+    "score": 5.901,
     "why": "If you backtest an LLM inside its training window, you cannot certify the run as leak-free: GPT-5 correctly answered 61% of the facts it explicitly claimed not to know, so trusting self-reports or stated cutoffs invites silent lookahead bias.",
     "notes": [
       "FinDendro benchmark: 2,226 dated U.S. facts from 1999 to 2026, spanning monthly macroeconomic series, month-end stock prices, and Federal Reserve decisions. Each fact generates four prompts (a value question, Recall and Predict variants tying each candidate value to a know/guess claim, and a Predict with a declared historical date).",
@@ -2431,7 +2586,7 @@
     "story_id": "s_bb7b643bc0ebef0a",
     "title": "Open-HumanScale: An Open Recipe for Scaling Human and Robot Experience for Embodied Foundation Models",
     "relevance": 6,
-    "score": 5.983,
+    "score": 5.908,
     "why": "The full pipeline is released: a 50,000-hour annotated egocentric video corpus, curation and pretraining code, and checkpoints, so you can reproduce human-video-to-robot-policy scaling instead of relying on a closed lab result.",
     "notes": [
       "Open-HumanWAM-50K is a 50,000-hour egocentric human video corpus densely annotated with hand motion and natural language; the authors call it the first fully open recipe at this scale.",
@@ -2483,7 +2638,7 @@
     "story_id": "s_d2886999f6a06297",
     "title": "Pointer Provenance in Rust vs. C++: Pointers Are Not Just Glorified Ints",
     "relevance": 6,
-    "score": 6.327,
+    "score": 6.236,
     "why": "If you write lock-free code or unsafe pointer tricks in Rust, using addr()/with_addr() instead of integer casts keeps Miri able to catch pointer bugs that it silently gives up on after an integer-to-pointer cast.",
     "notes": [
       "Provenance is the compiler's 'derived from' relation tracking which allocation each pointer may touch; it is purely a compiler abstraction with no runtime data field, except on hardware like CHERI that tracks it alongside the address.",
@@ -2533,7 +2688,7 @@
     "story_id": "s_321901fdc02d8a9d",
     "title": "Active Benchmarking",
     "relevance": 6,
-    "score": 6.447,
+    "score": 6.356,
     "why": "The next server, database, or language-stack decision you justify with a bar chart is probably measuring the wrong thing: this gives you a concrete test for whether a benchmark actually limits on what it claims to.",
     "notes": [
       "Core distinction: passive benchmarking collects numbers and ignores the system until the run finishes; active benchmarking analyzes every component with separate tools while the benchmark is still running, to identify the true limiter. Gregg's shorthand for the failure: 'you benchmark A, but actually measure B, and conclude you've measured C.'",
@@ -2583,7 +2738,7 @@
     "story_id": "s_b8d37ee180ddd1c6",
     "title": "Beneath the Surface: What We Overlook When We Talk About Agent Evolution",
     "relevance": 6,
-    "score": 5.584,
+    "score": 5.531,
     "why": "If you ship agents that self-improve by rewriting their harness, a higher benchmark score can silently drop tasks the agent used to pass and raise per-run cost, so the top scorer may not be the agent to deploy.",
     "notes": [
       "All 16 evolved agents gained previously uncovered tasks while losing previously covered ones; the study frames agent-harness evolution as recursive self-improvement that never touches model weights.",
@@ -2634,7 +2789,7 @@
     "story_id": "s_142c043c96fe8cb2",
     "title": "CS 2881 Fall 26: Lecture 5: Economics of AI",
     "relevance": 6,
-    "score": 4.547,
+    "score": 4.502,
     "why": "Two economists put numbers on where AI labor effects land first: entry-level hiring (22-25-year-olds in exposed jobs run ~19% below peers) and the bottom skill quintile of a support desk, while top performers gained nothing.",
     "notes": [
       "Brynjolfsson, Li, and Raymond (2025) studied 5,172 customer-support agents at a Fortune 500 software firm: AI assistance raised issues resolved per hour 15% on average, ~30% for the lowest-skill agents, and zero for the top quintile; agents with 2 months tenure plus AI matched 6-month agents without it. The tool codifies what the best agents already know, so it has little to teach them.",
@@ -2689,7 +2844,7 @@
     "story_id": "s_2095168112af2cf2",
     "title": "Herb Sutter: When a language's creator and its owners strongly disagree [pdf]",
     "relevance": 6,
-    "score": 5.012,
+    "score": 4.967,
     "why": "C++'s direction is set inside ISO WG21, and a paper from Herb Sutter airing a creator-versus-owners split is the kind of governance fight that decides which features and safety proposals actually ship into the standard engineers have to live with.",
     "notes": [
       "The document is a formal ISO C++ standards-committee paper, P4454R0, hosted on isocpp.org, not a blog post or press release.",
@@ -2738,7 +2893,7 @@
     "story_id": "s_e6284f5f7d87c6a8",
     "title": "Declarative Dragging",
     "relevance": 6,
-    "score": 5.229,
+    "score": 5.192,
     "why": "For interactive-diagram and tool builders, this replaces hand-written geometry, feedback, and animation code with a spec of which future application states a drag can reach, with a working SVG library (Dragology) to try it.",
     "notes": [
       "Core idea (called D2): an author makes an element draggable by naming which future model states dragging should reach; an engine speculatively renders those states to view trees, extracts the dragged element's position in each, and synthesizes the drag interaction without per-interaction geometry code.",
@@ -2787,7 +2942,7 @@
     "story_id": "s_e705503d3361945c",
     "title": "CS 2881 Fall 26: Lecture 6: Grading, Reward Hacking, and Alignment",
     "relevance": 6,
-    "score": 4.997,
+    "score": 4.952,
     "why": "If you train agents against graders, this lecture names the exact failure modes you will hit and the compute cost of defending against them: grader architectures that consume 12.7% of RL compute, CoT monitors whose recall collapses once you optimize against them, and reward models that teach a brain-dump strategy because false claims cost nothing.",
     "notes": [
       "Reward-model overoptimization (Gao, Schulman, Hilton 2023): with a fixed 6B 'gold' model labeling smaller proxies, gold score rises then falls as the policy's KL from the initial model grows, while proxy score keeps climbing; gold score follows functional forms in sqrt(KL), and larger reward models overoptimize more slowly. KL penalty in their RL runs behaved like early stopping, not a gain at fixed KL.",
@@ -2844,7 +2999,7 @@
     "story_id": "s_5362cded69ec10a8",
     "title": "Rubio Warned Officials About Nvidia Chief’s Entanglement With Chinese Spy",
     "relevance": 6,
-    "score": 8.066,
+    "score": 7.964,
     "why": "If the US Secretary of State is privately flagging Nvidia's CEO over a counterintelligence concern, the political ceiling on Nvidia's China business, and on who signs off its export carve-outs, just got lower.",
     "notes": [
       "Per the NYT headline, Secretary of State Marco Rubio warned other officials that Nvidia's chief executive is entangled with a person described as a Chinese spy; the specific nature of the entanglement is not stated in the available snippet.",
@@ -2920,7 +3075,7 @@
     "story_id": "s_c976c9b2fcf9a800",
     "title": "How I Fight AI Brain Fry",
     "relevance": 6,
-    "score": 6.243,
+    "score": 6.202,
     "why": "If you run multiple Claude Code or Codex sessions at once, this is a concrete pattern for moving the state out of your head and into git, so a dead session or a context switch costs you nothing.",
     "notes": [
       "Each ticket is a markdown file committed to git next to the code it describes; the board state is a committed snapshot, so nothing load-bearing lives in a chat window or in memory. If a session dies, the queue survives.",
@@ -2969,7 +3124,7 @@
     "story_id": "s_bd6b61c32dd85374",
     "title": "I'm not a fan of Deno's security model (2024)",
     "relevance": 6,
-    "score": 5.808,
+    "score": 5.774,
     "why": "If you run untrusted code with Deno flags like --allow-run=uname expecting a sandbox, you are running fully-privileged code: PATH, LD_PRELOAD, and terminal escape codes each let it escape.",
     "notes": [
       "Runtime permission prompts are plain text on stdout read from stdin, the same channel the untrusted program controls. One patched proof-of-concept tricks the terminal into feeding an Enter keypress to auto-approve a prompt the user never sees; a color-code trick that hides the prompt was closed as won't-fix because an emoji stays 'partially visible' and AI agents legitimately change terminal colors.",
@@ -3057,157 +3212,6 @@
     "first_seen": "2026-10-26T18:14:49+00:00",
     "published_at": "2026-11-08T17:45:42.725177+00:00",
     "curated_at": "2026-11-08T17:45:42.725177+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 688458,
-    "story_id": "s_24ee347293903c62",
-    "title": "Could a modern chess engine on a Pentium have defeated Kasparov in 1996?",
-    "relevance": 6,
-    "score": 4.823,
-    "why": "A controlled port isolates how much of 30 years of chess-AI gains came from smarter code versus faster silicon: +720 of +1335 Elo is algorithms, a hint about how much headroom current language models might have in software alone.",
-    "notes": [
-      "Carlini ran a modern Stockfish 17 port on a used 200 MHz Intel Pentium Pro with 64MB RAM (single core, no SIMD, no 64-bit registers, no C++ stdlib, bitboards rewritten as pairs of 32-bit ints, the 71MB NNUE swapped for a tiny one). Tuned, it measures 3180 ± 80 Elo at 30s/move and is extrapolated to ~3300 at classical controls, versus Kasparov's sub-2800.",
-      "Attribution of the +1335 Elo gain since 1996: +720 to better algorithms, the rest to hardware. 1996 Crafty 11.13 scores 1999 ± 90 at 1s/move on the PPro and jumps to 2614 ± 97 on a modern Ryzen 7 at the same 1s/move; backporting modern techniques lifts Crafty to 2718 ± 34 on the PPro at 1s/move.",
-      "Headline match: a modern engine on the 1996 Pentium Pro beat 1996 Crafty running on modern hardware 78 wins, 17 draws, 5 losses over 100 games.",
-      "Named algorithmic additions: fail-soft search, futility and late-move pruning, late move reduction, counter-move/history move ordering, SPSA and Texel tuning, mobility terms, reverse futility pruning, correction history, and NNUE neural-net evaluation trained on self-play then distilled from a Stockfish teacher.",
-      "Caveats stated by the author: numbers come from only a few hundred games with wide error bars; the classical ~3300 figure is extrapolated (+70 Elo per tripling of time), not directly measured; and Elo is relative, so CCRL engine ratings and FIDE human ratings may diverge, though the 3200-3300 vs 2800 gap is argued to absorb it.",
-      "All code was LLM-written (Fable 5.1, Opus 5.5, GPT-6); the custom boot floppy puts the PPro into 32-bit protected mode, initializes a Realtek RTL8139C NIC, and runs an HTTP server that takes a FEN and a time budget. Deep Blue by contrast used 30 P2SC CPUs plus 480 custom VLSI chess chips at ~200M positions/sec."
-    ],
-    "summary": "Nicholas Carlini tests whether a modern chess engine on commodity 1996 hardware could have beaten Kasparov, who was rated just under 2800 Elo. He ports Stockfish 17 to a 200 MHz Intel Pentium Pro with 64MB RAM (dropping threading, tablebases, SIMD, 64-bit arithmetic, and the large NNUE) and, after tuning, measures 3180 ± 80 Elo at 30s/move, extrapolating to roughly 3300 at classical time controls. In a parallel experiment he backports 30 years of techniques (fail-soft, LMR, correction history, NNUE, SPSA/Texel tuning) onto the 1996 Crafty 11.13 source, raising it from 1999 to 2718 Elo on the same old CPU at 1s/move. He concludes +720 of the total +1335 Elo gain since 1996 is attributable to algorithms rather than hardware, and that a modern engine on a Pentium Pro beats 1996 Crafty on a modern Ryzen 7 by 78-17-5 over 100 games. The piece notes all code was LLM-generated, relies on only a few hundred games with wide error bars and an extrapolated classical rating, and offers the result as a loose analogy for untapped algorithmic headroom in today's language models.",
-    "channels": [
-      "ml-research",
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "quantifies algorithmic vs hardware gains by actually porting Stockfish to 1996 Pentium Pro",
-    "audience": "engineers/researchers interested in algorithmic progress vs compute scaling",
-    "source_url": "https://nicholas.carlini.com/writing/2026/algorithmic-improvements-chess.html",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50349276",
-        "points": 304,
-        "comments": 139,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://nicholas.carlini.com/writing/2026/algorithmic-improvements-chess.html",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-03T07:56:21+00:00",
-    "published_at": "2026-11-08T17:45:25.531916+00:00",
-    "curated_at": "2026-11-08T17:45:25.531916+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 601946,
-    "story_id": "s_6679d2da34a87f80",
-    "title": "RepRapMicron",
-    "relevance": 6,
-    "score": 4.824,
-    "why": "An open-source, self-hosted path to micron-scale fabrication: a printed macro machine that already positions to ~1μm and deposits sub-15μm UV-resin features using hardware a hobbyist can assemble, with the stated goal of eventually copying itself at smaller scale.",
-    "notes": [
-      "PIKA V0.02 (the current recommended build, completed ~May 2026) is self-reported to give ~1μm repeatable positioning and 10μm-or-better accuracy in an ~8mm cubic volume; the earlier MAUS C V0.04 flexure testbed hit ~5μm best-case over a 4mm square with non-linear motion.",
-      "Deposition is additive by capillary action: the probe picks up smeared 'Top Coat' UV nail gel resin and forms droplets; droplets as small as 4μm deposited and 9μm resin lines cured via a 125/9 optical fibre carrying a 3W UV LED. A demo 0.5mm 'Benchy' was printed at 4μm layer height. Numbers are project self-reported, no external validation.",
-      "Caveat stated in the text: thin UV-resin layers do not set in air because oxygen neutralises the activated photoinitiator; a UV LED in the print bed cures the resin, and deposited substances must have a solvent that does not evaporate during deposition.",
-      "Hardware is deliberately low-cost and off-the-shelf: 400-step NEMA17 steppers (200-step gets close to 1μm), driving/firmware left to the user with Arduino GRBL over a serial GCODE connection, plus two 8Mpixel+ USB microscopes for Z and XY setup and a 100x-200x bench scope for inspection.",
-      "The probe triples as Z touch sensor, engraving tool, and deposition head; a 0.5mm hypodermic or 0.25mm acupuncture needle works for subtractive testing, and electrochemically etched wire points are used for fine work. The project claims the PIKA can etch its own probes. Gold leaf and other materials adhering to partially-cured resin can be added.",
-      "Framing: inspired by The OpenFlexure Project's sub-micron microscope platforms; aims to do for micro/MEMS fabrication what RepRap did for 3D printing, breaking micro-fab's dependence on silicon, with the stated intent that the system eventually self-replicate at a smaller scale. The Intel 4004's 10μm feature size is cited as a reference point. Still early: what can be printed, in what materials, and how to build tall or overhanging structures is explicitly unresolved."
-    ],
-    "summary": "μRepRap (RepRapMicron) is an open-source project applying the RepRap self-replicating-fabricator model to micron-scale manufacturing, building a macro-scale, 3D-printed precision CNC machine with the longer-term intent of reproducing a similar system at micron scale. The current recommended build, PIKA V0.02 (~May 2026), is self-reported to achieve roughly 1μm repeatable positioning and 10μm-or-better accuracy within an ~8mm cubic volume; an earlier MAUS C flexure testbed reached ~5μm best-case over a 4mm square with non-linear motion. Fabrication is both subtractive (needle/etched-wire probe engraving resist such as Sharpie on glass) and additive, transferring 'Top Coat' UV nail-gel resin by capillary action to form sub-15μm droplets, with reported 4μm droplets and 9μm cured lines using a 125/9 optical fibre fed by a 3W UV LED. The machine uses NEMA17 steppers, GRBL/GCODE over serial, USB microscopes for setup, and a bench microscope for inspection, all left to user preference. It draws on The OpenFlexure Project's sub-micron microscopes and positions itself as a way to break micro-fabrication away from silicon and expensive cleanroom tooling. All performance figures are project self-reported, and the documentation states that what can be printed, in which materials, and how to build tall or overhanging 3D structures remains open.",
-    "channels": [
-      "hardware",
-      "science"
-    ],
-    "category": "hardware",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "open-source RepRap-style micron-scale fabrication/CNC system",
-    "audience": "hobbyist/maker engineers interested in open hardware, micro-manufacturing, MEMS",
-    "source_url": "https://github.com/VikOlliver/RepRapMicron/wiki",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50141076",
-        "points": 432,
-        "comments": 68,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/VikOlliver/RepRapMicron/wiki",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-18T13:48:48+00:00",
-    "published_at": "2026-11-08T17:30:33.938517+00:00",
-    "curated_at": "2026-11-08T17:30:33.938517+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 593146,
-    "story_id": "s_0d897d24ec17f8cc",
-    "title": "JevAgentHarness: Benchmarking, Deploying and Training Decision Models That Share Control with LLMs",
-    "relevance": 6,
-    "score": 4.825,
-    "why": "Most LLM-agent steps are just a multiple-choice tool pick, and this work claims a 4B decision model plus a confidence gate handles them at 81-89% lower cost and up to 2.5x faster while staying within 3 points of the full-LLM success rate.",
-    "notes": [
-      "The structural insight: agent harnesses call a large LLM at every step, but most of those calls resolve to a multiple-choice decision (which tool next); a small decision model can answer those directly at a fraction of an LLM call's time and price.",
-      "Naive delegation fails: the decision model most accurate on isolated questions solved only 69.5% of full agent tasks, and delegating tool choice without a fitted confidence threshold cut success by 19.0 points.",
-      "JevAgentHarness fits a per-choice confidence threshold on the agent's own trajectories and routes decisions below that threshold back to the LLM.",
-      "AgentDecision-4B, an open 4B model, is trained on the post-mistake states an agent actually reaches (states existing decision models never see), using the Jev decision model's answers as labels.",
-      "Self-reported results: on out-of-distribution tasks the agent solved 91.5% with AgentDecision-4B vs 82.0% with Jev; on in-distribution tasks, 4B models made agents 81.1-89.0% cheaper and up to 2.5x faster with under 3 points of success loss.",
-      "Introduces two evaluation setups, AgentDecisionBench and the DecisionGym environment; models, data, and harness are promised as a release but results are authors' own, with no external benchmark methodology verified here."
-    ],
-    "summary": "JevAgentHarness targets the cost and latency of LLM agents by replacing per-step LLM calls, most of which are multiple-choice tool decisions, with a cheaper decision model, falling back to the LLM when the decision model is not confident. The authors introduce AgentDecisionBench, which tests decision models from isolated questions up to control of a running agent, plus a DecisionGym environment. They find the model best at isolated questions solved only 69.5% of agent tasks, and that naive delegation of tool choice without a fitted confidence threshold dropped success by 19.0 points. Their harness fits a per-choice threshold on the agent's own trajectories, and they train an open 4B model (AgentDecision-4B) on post-mistake agent states labeled by the Jev decision model's answers. Reported results: 91.5% task success with AgentDecision-4B versus 82.0% with Jev on out-of-distribution tasks, and 81.1-89.0% cost reduction with up to 2.5x speedup on in-distribution tasks while staying within 3 points of baseline success. All numbers are self-reported, and models, data, and harness are stated to be released.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "agents",
-      "evals"
-    ],
-    "state": "confident",
-    "novelty": "trained small decision model + confidence threshold cuts LLM agent calls",
-    "audience": "engineers building/optimizing cost-sensitive LLM agent harnesses",
-    "source_url": "https://arxiv.org/abs/2610.21412",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2610.21412",
-        "points": 12,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2610.21412",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.AI"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-16T04:00:00+00:00",
-    "published_at": "2026-11-08T17:30:06.941849+00:00",
-    "curated_at": "2026-11-08T17:30:06.941849+00:00",
     "model": "claude-opus-4-8"
   }
 ]
