@@ -707,11 +707,59 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 610526,
+    "story_id": "s_4dcc36205700855e",
+    "title": "How I got over 300 Tor exit nodes removed",
+    "relevance": 7,
+    "score": 4.795,
+    "why": "For a day in October, roughly 10% of Tor exit capacity was quietly redirecting your port-22 SSH sessions through 12 interception boxes that stole passwords and backdoored the destination, so key-only auth and host-key checking were the difference between compromise and a scary warning.",
+    "notes": [
+      "333 of Tor's ~3000 exit relays (about 10%) ran the Ebury 1.8.3 OpenSSH backdoor; the author says access was gained in August, two months before the coordinated attack began Fri Oct 2 at 09:35.",
+      "The SSH attack redirected port 22 to one of 12 interception servers; if a user accepted the changed host key, the MITM stole the password, opened one connection to shadow typed commands and a second to install Ebury on the target.",
+      "Detection method: an exitmap script pinned each exit, then opened SSH from server A to server B; A checked B's fingerprint and B checked the source IP. ~12 relays served fake ED25519 fingerprints and 300+ redirected through the same interception servers, which alone confirmed infection.",
+      "Tor's network health team called it something they had not seen before; relays were marked BadExit on Oct 4, attackers restarted some as middle-only relays Oct 5, and all infected servers were down by Oct 5, with a visible, unrecovered dip on metrics.torproject.org.",
+      "sshesame honeypot analysis showed the attackers used Python's paramiko and deployed Ebury via a base64-encoded Perl payload, first probing with `id -u` and sudo for passwordless root.",
+      "Open questions (flagged as speculation): entry vector unknown (one theory is the hosting provider itself was breached), attribution unknown but the unencrypted-data harvesting points to a financially motivated group; researcher Marc-Etienne M. Leveillé notes Ebury hit ~400,000 servers 2009-2023, so other compromised relays likely remain."
+    ],
+    "summary": "The author describes a coordinated attack that on Oct 2, 2026 turned roughly 333 of Tor's ~3000 exit relays (about 10%) into SSH man-in-the-middle nodes using the Ebury 1.8.3 OpenSSH backdoor, reportedly installed in August. Compromised exits blocked ports to force unencrypted mail traffic and redirected port-22 SSH to 12 interception servers that, if a user ignored the changed-host-key warning, stole the password, observed typed commands, and reinfected the target server with Ebury. The author detected the campaign with an exitmap script that opened SSH between two of his own servers through each pinned exit, checking fingerprints on one end and source IP on the other; about 12 relays served fake fingerprints and over 300 redirected through the same interception servers. After he reported it, Tor's network health team marked the relays BadExit on Oct 4 and all infected servers were shut down by Oct 5, leaving a lasting dip in Tor metrics. Honeypot analysis with sshesame showed the attackers used Python's paramiko and a base64-encoded Perl payload to deploy Ebury after checking for sudo access. The entry vector and attribution remain unconfirmed; the piece presents a hacked hosting provider and a financially motivated crime group only as theories, and cites a researcher's estimate of ~400,000 historical Ebury infections to argue other compromised relays likely persist.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "first documented large-scale Tor exit SSH MITM via Ebury botnet",
+    "audience": "security researchers and Tor relay operators",
+    "source_url": "https://kaba.cx/posts/20261020_Tor",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50166257",
+        "points": 345,
+        "comments": 86,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://kaba.cx/posts/20261020_Tor/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-20T13:39:24+00:00",
+    "published_at": "2026-11-10T11:29:47.725897+00:00",
+    "curated_at": "2026-11-10T11:29:47.725897+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 728646,
     "story_id": "s_ead3d7977c1d3e79",
     "title": "Never Gonna Print You Up",
     "relevance": 7,
-    "score": 4.869,
+    "score": 4.824,
     "why": "If you own any of fifteen Prusa printers on Buddy firmware before 7.0.0, an attacker who controls or MITMs your Prusa Connect endpoint can run arbitrary code on the main controller over the network with no physical access, so update now.",
     "notes": [
       "The RCE (PFB-008, preliminary CVSS 8.1): Connect's SEND_FILE_INFO handler copies a path into a shared 512-byte buffer bounded only by buffer size; a name() helper walks past the path to find the filename and relies on an assert() capping paths at 104 bytes. Release builds compile asserts out under NDEBUG, so a 463-byte path pushes the filename slot onto the planner's printer pointer, and the next virtual call jumps to attacker bytes. The payload is self-contained in the network receive pool; no heap spray. Firmware ships with no stack canary and no _FORTIFY_SOURCE, which turned a crash into PC control. Confirmed on physical MK4S via the printer's own crash dump. Precondition: attacker is the Connect endpoint or MITMs it (realistic on a LAN via ARP spoofing); the author tested with TLS off, so hitting official cloud Connect requires a TLS downgrade.",
@@ -738,7 +786,7 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50411106",
-        "points": 44,
+        "points": 51,
         "comments": 2,
         "name": "Hacker News"
       },
@@ -760,7 +808,7 @@
     "story_id": "s_7fdf5a9b61292035",
     "title": "Amazon saves millions by replacing Sonnet 4.6 with Strands Decider",
     "relevance": 7,
-    "score": 5.985,
+    "score": 5.972,
     "why": "For high-volume closed-set classification, a 2-4B \"decision model\" that returns option probabilities instead of generated text can match a frontier LLM at roughly 1/44th the token cost, turning a ~$22k/million-ticket job into ~$500.",
     "notes": [
       "Two Amazon engineers (Carr and Mehul) swapped Sonnet 4.6 for Strands Decider E4B (a Gemma-based build) to label internal tickets into 20 categories; the post is the Strands vendor blog, so the parity and savings claims are self-reported.",
@@ -787,8 +835,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50436640",
-        "points": 278,
-        "comments": 87,
+        "points": 342,
+        "comments": 117,
         "name": "Hacker News"
       },
       {
@@ -809,7 +857,7 @@
     "story_id": "s_eda22cd22e85ff0b",
     "title": "Zebkit – Chromium as an embeddable library",
     "relevance": 7,
-    "score": 5.122,
+    "score": 5.061,
     "why": "If the self-reported numbers hold, you can embed a full Chromium 157 engine (Blink, V8, PDFium, FFmpeg) as a linked library inside your own C/Rust/Python/Go/JS process with no Node runtime and no Electron shell, and run Playwright's entire API in-process with clicks at 3-5 ms instead of 33 ms over CDP.",
     "notes": [
       "Positioning: not a base like Electron but a linked dependency. The app keeps its own main(), windows, toolkit and packaging; the engine runs inside the app's event loop via zebkit_init()/zebkit_pump(), or the engine owns the loop via zebkit_main(). Draws into app-supplied X11 windows, NSView or HWND. No Node, no second JS runtime, no IPC through one; page-to-host calls go over Mojo with shared memory for large payloads.",
@@ -858,7 +906,7 @@
     "story_id": "s_71c62ef9379e64de",
     "title": "Exact – a new cross platform UI framework by the Expo team",
     "relevance": 7,
-    "score": 6.518,
+    "score": 6.438,
     "why": "If you build cross-platform apps, this is a bet that the UI layer should be a baked plan a coding agent can build, run, screenshot, and test on web, macOS, iOS, and Linux with one 10-verb script, no webview or JS bridge in sight.",
     "notes": [
       "Architecture: you write the interface in Contract (a declarative language) and data logic in TypeScript or Rust. The compiler bakes a 'plan' (tables + Hermes bytecode); on web it becomes one ES module over a ~20 KB runtime driving the real DOM, while macOS/iOS/Linux run a Rust runner with a patched-Taffy CSS layout kernel that draws through AppKit, UIKit, or a GPU painter. No webview, no JS bridge in the UI, no app JS before the first pixel.",
@@ -907,7 +955,7 @@
     "story_id": "s_f402f7d502ea701d",
     "title": "Vulnerability that lets hackers SSH into Linux devices is under active exploitation",
     "relevance": 7,
-    "score": 5.82,
+    "score": 5.743,
     "why": "If your fleet runs OpenSSH against musl (Alpine and similar minimal/container images are prime suspects), an active group named GT10 can log into privileged accounts unauthenticated in seconds, so patch now rather than waiting for a maintenance window.",
     "notes": [
       "The bug, dubbed *sshole, comes from the interaction between OpenSSH and the musl C library; systems using both and meeting unspecified additional conditions are exploitable for unauthenticated access to high-privilege accounts in seconds.",
@@ -964,7 +1012,7 @@
     "story_id": "s_a0aa830138e14125",
     "title": "Google Gemini routes personal Drive files and emails to human annotators",
     "relevance": 7,
-    "score": 6.848,
+    "score": 6.792,
     "why": "If the claim holds, casually mentioning a bill or trip to consumer Gemini with Connected Apps on can pull verbatim account numbers and email headers from your Gmail into sessions a human contractor may review.",
     "notes": [
       "The author claims Google's 2023 Workspace-extensions blogpost promised personal Gmail/Docs/Drive content 'is not seen by human reviewers,' and that an October 16 edit plus Help Answer 16836988 now say reviewers may see 'just the email or file' and warn against connecting apps with confidential content.",
@@ -991,8 +1039,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429426",
-        "points": 600,
-        "comments": 129,
+        "points": 626,
+        "comments": 131,
         "name": "Hacker News"
       },
       {
@@ -1013,7 +1061,7 @@
     "story_id": "s_b0ecedda9f9a98e8",
     "title": "Next-Concept Modeling: Fast, Parallel Coarse-to-Fine Text Generation",
     "relevance": 7,
-    "score": 5.945,
+    "score": 5.885,
     "why": "If the self-reported numbers hold, you can get diffusion-LM-or-better text quality at 10-31x fewer inference passes, a direct hit on the generation-latency budget that dominates serving cost.",
     "notes": [
       "Architecture: a multiscale residual VQ-VAE encodes text into a hierarchy of discrete codes; a transformer then generates one level at a time, predicting every code within a level in parallel (coarse-to-fine), rather than denoising the full sequence at every step as diffusion LMs do.",
@@ -1068,7 +1116,7 @@
     "story_id": "s_2eb24a78946a814f",
     "title": "The Last Mile to the Real World: Agent-Native Primitives as Reusable Building Blocks for Solving Real-World Tasks",
     "relevance": 7,
-    "score": 5.391,
+    "score": 5.356,
     "why": "If the paper's numbers hold, wrapping agents in a shared primitive library takes two frontier coding harnesses from 9/46 real-world tasks solved to 39 and 35, at ~1.55x lower cost and roughly half the time per task.",
     "notes": [
       "The paper names the failure mode the 'last mile': agents reach a resource but lack the resident competence to apply it, so every harness rebuilds that competence. Its fix is 'agent-native primitives,' reusable units that pair a resource with an in-context LLM that applies it and talks to other primitives.",
@@ -1118,7 +1166,7 @@
     "story_id": "s_6f66258851f37cb6",
     "title": "NVIDIA announces it is opening an investigation into CEO Jensen Huang, after American intelligence reported that a close associate of Huang ",
     "relevance": 7,
-    "score": 6.445,
+    "score": 6.384,
     "why": "The board of the most valuable chipmaker is probing its own founder-CEO over an alleged intelligence-flagged China tie, a governance and national-security risk that sits directly on top of Nvidia's export-restricted AI accelerator business.",
     "notes": [
       "Per the headline, Nvidia has opened an internal investigation into CEO Jensen Huang; the trigger cited is American intelligence reporting about a close associate of Huang.",
@@ -1182,7 +1230,7 @@
     "story_id": "s_9793aa71d86f904a",
     "title": "Goldman Sachs Is Pulling Claude Code from Its Bankers and Traders",
     "relevance": 7,
-    "score": 6.437,
+    "score": 6.413,
     "why": "If your org handed coding agents to non-engineers, Goldman just showed the failure mode: agent-written code that skips review, testing, and information barriers, and a role-based lockout that leaves the people who built useful tools with no replacement.",
     "notes": [
       "October internal guidance restricts Claude Code and GitHub Copilot to Goldman's roughly 12,000 engineers out of ~47,000 staff; 'strats' (trading/quant/eng hybrids) keep access, per a second source. Traders had used the tools to monitor client flows, model positions, and build written and graphic material.",
@@ -1232,7 +1280,7 @@
     "story_id": "s_80baf283cecc591c",
     "title": "Statement from NVIDIA Board of Directors",
     "relevance": 7,
-    "score": 7.451,
+    "score": 7.424,
     "why": "The board of the company that controls the AI accelerator supply chain has opened an outside-counsel investigation into its own CEO as a reported foreign intelligence target, a governance event with direct bearing on U.S. export-control and national-security scrutiny of NVIDIA.",
     "notes": [
       "The NVIDIA board is starting an independent investigation prompted by \"recent reporting\" that founder and CEO Jensen Huang \"has been the target of a foreign intelligence effort\"; the statement does not name the country, the reporting outlet, or the nature of the effort.",
@@ -1289,7 +1337,7 @@
     "story_id": "s_3149d502eb37e206",
     "title": "Claude Code's “Don't Ask Again” File Exposes Passwords and Keys in 1,122 Public Copies on GitHub",
     "relevance": 7,
-    "score": 5.701,
+    "score": 5.677,
     "why": "If you ever approved a shell command containing an inline password or token in Claude Code, that secret may already be on a public GitHub default branch, and deleting the file does not remove it from git history or forks.",
     "notes": [
       "Apiiro scanned 104,185 public copies of .claude/settings.local.json across 103,617 repos; 1,122 copies (about 1.1%) held at least one secret, 1,379 secrets total. The firm did not test whether the keys still work, though one notified company confirmed its key was live.",
@@ -1939,7 +1987,7 @@
     "story_id": "s_c508a8754ff5d272",
     "title": "Fireworks AI security breach impacts Notion and their customers",
     "relevance": 6,
-    "score": 6.328,
+    "score": 6.487,
     "why": "If your team pasted passwords, API keys, or other credentials into Notion AI, Notion says to rotate them now: those chat transcripts sat on breached infrastructure at inference vendor Fireworks AI.",
     "notes": [
       "Fireworks AI, used by Notion as a general inference provider for open-weight models and for classification jobs behind the Insights feature, was breached; Fireworks notified Notion on Nov 6 that malicious actors may have accessed customer data, and confirmed the dataset on Nov 8.",
@@ -1966,8 +2014,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50437106",
-        "points": 32,
-        "comments": 7,
+        "points": 62,
+        "comments": 18,
         "name": "Hacker News"
       },
       {
@@ -1988,7 +2036,7 @@
     "story_id": "s_c43363edaea55388",
     "title": "Anthropic reportedly plans to move forward with IPO plans",
     "relevance": 6,
-    "score": 5.316,
+    "score": 5.215,
     "why": "Anthropic's listing is the first public price tag on a frontier-lab, and the range it sets next week becomes investors' live gauge of whether the AI boom is still inflating or deflating.",
     "notes": [
       "Per the Wall Street Journal, Anthropic plans to set a valuation range this week and start trading Thursday or Friday of next week.",
@@ -2038,7 +2086,7 @@
     "story_id": "s_7f232021be594b10",
     "title": "Your TV can see through walls",
     "relevance": 6,
-    "score": 5.66,
+    "score": 5.65,
     "why": "A passive receiver and a nearby broadcast tower are enough to detect and estimate the speed of someone walking in another room, with no transmitter of your own and no cooperation from the target.",
     "notes": [
       "The effect is selective fading: the direct TV signal is partially canceled by a strong reflection, and because the reflection's phase depends on frequency, the cancellation is uneven across the band and extremely sensitive to nearby motion.",
@@ -2065,8 +2113,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50436410",
-        "points": 110,
-        "comments": 40,
+        "points": 141,
+        "comments": 51,
         "name": "Hacker News"
       },
       {
@@ -2117,8 +2165,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50436706",
-        "points": 29,
-        "comments": 5,
+        "points": 41,
+        "comments": 6,
         "name": "Hacker News"
       },
       {
@@ -2139,7 +2187,7 @@
     "story_id": "s_6e3b38c41de1d236",
     "title": "CoreWeave bond yield tops 16% as AI credit stress rises",
     "relevance": 6,
-    "score": 6.813,
+    "score": 6.77,
     "why": "The debt market is now pricing one of the largest AI-infrastructure buildouts as distressed, with CoreWeave bonds yielding over 16%, a cost of capital that reprices the economics of debt-financed GPU datacenters across the sector.",
     "notes": [
       "CNBC reports a CoreWeave bond yield topping 16%, a level consistent with distressed or deep-junk pricing rather than investment grade.",
@@ -2165,8 +2213,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50435660",
-        "points": 147,
-        "comments": 107,
+        "points": 166,
+        "comments": 127,
         "name": "Hacker News"
       },
       {
@@ -2187,7 +2235,7 @@
     "story_id": "s_86838e1d3427f80f",
     "title": "Horible public key tricks",
     "relevance": 6,
-    "score": 5.534,
+    "score": 5.495,
     "why": "A CA will sign a certificate whose RSA modulus spells out a human-readable message, so the \"random\" public key in a trusted cert is attacker-controllable to the bit and worth remembering next time you reason about what a CA actually validates.",
     "notes": [
       "Method: pick two random primes, compute n, overwrite bytes in n's upper half to embed an ASCII message in its base64 encoding, then restore a valid factorization by setting q to the next prime after n/p. Because p and q are close in size, incrementing q only perturbs the lower half of the product, leaving the message in the top half intact.",
@@ -2212,8 +2260,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50434264",
-        "points": 165,
-        "comments": 47,
+        "points": 177,
+        "comments": 58,
         "name": "Hacker News"
       },
       {
@@ -2234,7 +2282,7 @@
     "story_id": "s_bcda4b3597923411",
     "title": "Locating the source of a mysterious beep with Claude",
     "relevance": 6,
-    "score": 8.624,
+    "score": 8.557,
     "why": "A coding agent, left to run unattended, built a working acoustic triangulation system that located a beeping device to within ~40cm by hot-swapping JavaScript into browser microphones on five networked devices.",
     "notes": [
       "Architecture: a Python web app server coordinates listener devices (two iPads, a phone, a MacBook Pro, a Surface) that connect via WebSockets, request browser microphone access through WebAudio, and keep a rolling 60-second audio buffer.",
@@ -2263,8 +2311,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50434310",
-        "points": 193,
-        "comments": 85,
+        "points": 214,
+        "comments": 95,
         "name": "Hacker News"
       },
       {
@@ -2297,7 +2345,7 @@
     "story_id": "s_426cb542ce9c5a5c",
     "title": "Where is all the AI safety research uplift?",
     "relevance": 6,
-    "score": 5.077,
+    "score": 5.011,
     "why": "If AI really sped research 10x, external safety work would already be flooding out results; Redwood's working engineers report 2-3x, so the automated-R&D projections that drive safety timelines are running ahead of what practitioners actually measure.",
     "notes": [
       "METR's report estimates Anthropic gets a 1.7x overall acceleration in capability progress from AI; Ajeya extrapolates this to roughly a 10x speedup in research output, close to the ~12x and ~5x figures Anthropic staff self-reported for internal models (all self-reported, no stated methodology).",
@@ -2354,7 +2402,7 @@
     "story_id": "s_150ca2d8e0b035d9",
     "title": "TPUs",
     "relevance": 6,
-    "score": 5.556,
+    "score": 5.484,
     "why": "Google now sells TPUs with hardware-level confidential compute and a dual-chip million-token config, and open-sourced TorchTPU so PyTorch and Hugging Face models run natively without code rewrites, lowering the switching cost away from Nvidia for inference and fine-tuning.",
     "notes": [
       "TPU 8tx: built on the same silicon as 8t, paired with 5th-gen AMD EPYC CPU hosts, keeps data and model weights encrypted and isolated while in active use; uses the 'Boardfly' low-latency network for a claimed up to 2x lower latency than 8t with 'near-zero' performance penalty. Targeted at regulated enterprises and governments.",
@@ -2403,7 +2451,7 @@
     "story_id": "s_e6284f5f7d87c6a8",
     "title": "E-means: 10x faster k-means at equal loss",
     "relevance": 6,
-    "score": 5.523,
+    "score": 5.495,
     "why": "If you build vector quantizers, codebooks, or any large-k clustering pipeline, this drops in via faiss/contrib/e_means and claims Lloyd's 25-epoch quality in 1.2 to 3 epochs with no hyperparameters to tune.",
     "notes": [
       "Core change: mini-batch centroid updates use an exponential moving average (forget rate alpha), the same rule VQ-VAE codebook training uses for moving distributions, applied here to static datasets. Lloyd (full-batch recompute) and MacQueen (cumulative mean) are the baselines; Lloyd is a special case of e-means at B=n, alpha=1, which the hyperparameter search finds is a far-from-optimal corner.",
@@ -2429,8 +2477,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429734",
-        "points": 403,
-        "comments": 37,
+        "points": 415,
+        "comments": 48,
         "name": "Hacker News"
       },
       {
@@ -2451,7 +2499,7 @@
     "story_id": "s_2248eee1f723db27",
     "title": "A single AI model simulates the behavior of many substances, from sliding sand to folding proteins",
     "relevance": 6,
-    "score": 5.208,
+    "score": 5.147,
     "why": "If it holds up, one trained network replaces the per-phenomenon solvers scientists hand-code today, and the authors claim it runs protein-structure simulation about 100x faster than numerical methods.",
     "notes": [
       "WorldParticle uses a Lagrangian representation: it breaks an object into thousands to millions of 3D particles and predicts their positions and velocities one timestep (one-second increments) at a time, framed as the next-token analogue of ChatGPT.",
@@ -2508,7 +2556,7 @@
     "story_id": "s_ed90122f654a3c8e",
     "title": "IWIBench: Evaluating Gradient-Free Model Driven Intra-weight Injection",
     "relevance": 6,
-    "score": 5.243,
+    "score": 5.186,
     "why": "One model rewriting another's weights without gradients has gone from curiosity to measurable skill: the paper reports two frontier models, Astra and GPT-6.1 Sol, succeeding at weight edits that near-peers like GPT-5.6 Sol largely fail, so this is now a capability worth tracking per model release.",
     "notes": [
       "Setup: a large editor model edits the weights of a smaller target (typically Gemma 3 4B IT) to hit one of 10 classical text-editing objectives while preserving other capabilities; no gradients involved.",
@@ -2559,7 +2607,7 @@
     "story_id": "s_9a48457dae8669bc",
     "title": "The same H100 costs $2.69 or $12.29 an hour depending where you rent it",
     "relevance": 6,
-    "score": 5.22,
+    "score": 5.159,
     "why": "Renting one H100 SXM continuously for a month runs $1,964 to $8,972 for the identical chip, so matching workload to interconnect needs, not brand, is where the money is.",
     "notes": [
       "H100 SXM 80GB on-demand list price spans $2.69/GPU-hr (RunPod Community) to $12.29 (Azure ND96isr_H100_v5), a 4.57x spread; AWS p5.48xlarge sits at $6.88 and RunPod Secure at $3.99.",
@@ -2608,7 +2656,7 @@
     "story_id": "s_aff2ca7d200b6990",
     "title": "Our Smallest, Most Efficient Model: Muse Ember",
     "relevance": 6,
-    "score": 5.516,
+    "score": 5.469,
     "why": "If Meta's numbers hold, the high-volume agent work you currently run on Haiku 5.5, tool calls, extraction, routing, coding subtasks, drops to roughly a third the cost at $0.10/$0.50 per million tokens.",
     "notes": [
       "Pricing on the Meta Model API: $0.10/M input, $0.004/M cached input, $0.50/M output, 1M-token context, up to 512K output tokens, Responses API support, model id muse-ember-1.0; Meta estimates about $0.14 per Artificial Analysis Intelligence Index task.",
@@ -2635,8 +2683,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429024",
-        "points": 300,
-        "comments": 124,
+        "points": 309,
+        "comments": 130,
         "name": "Hacker News"
       },
       {
@@ -2657,7 +2705,7 @@
     "story_id": "s_6a14028ac010485e",
     "title": "The AI poster boy, the ‘Chinese spy’ and Trump: how an affair may have harmed US security",
     "relevance": 6,
-    "score": 5.318,
+    "score": 5.247,
     "why": "The person steering US export-control exceptions for the chips behind every frontier AI lab was, during his lobbying push, intimately tied to a reported Chinese intelligence asset who worked for a company accused of smuggling those same chips.",
     "notes": [
       "Jensen Huang, 63, confirmed Sunday that he had an affair with Alice Huang (no relation), an executive at Megaspeed, a Singapore buyer the NYT and Bloomberg flagged for allegedly diverting Nvidia chips to China in violation of US export controls; Nvidia and Megaspeed denied the diversion.",
@@ -2719,7 +2767,7 @@
     "story_id": "s_abc59a54019f0228",
     "title": "CPU-ARC: Agentic Reasoning Caching for on-CPU Reasoning Reuse",
     "relevance": 6,
-    "score": 5.48,
+    "score": 5.412,
     "why": "If the approach holds, routine agent tasks that currently burn a frontier-model call each run could instead hit a CPU cache the authors claim is 16-291x cheaper to invoke.",
     "notes": [
       "The core idea: separate task-solving from solution-execution. Once an LLM has reasoned through a task, applying that solution to new instances is compiled into an 'agentic reasoning cache' (ARC) that runs on CPU with little or no further LLM involvement.",
@@ -2771,7 +2819,7 @@
     "story_id": "s_b680ee139d38ce1d",
     "title": "Show HN: Recalc – Spreadsheet where cells can be Claude Code or Codex terminals",
     "relevance": 6,
-    "score": 5.506,
+    "score": 5.439,
     "why": "If you run Claude Code or Codex, this turns a grid into a controllable multi-agent harness where a test cell next to an agent's \"done\" cell catches a failing run the moment it happens.",
     "notes": [
       "A cell's first character sets its type: a bare value, `=` formula, `$` shell command (output becomes the cell value, re-runs on input change), `!` action (only runs when you trigger it), or `@claude(...)`/`@codex`/`@pi` agent call; `{A2}` references another cell.",
@@ -2820,7 +2868,7 @@
     "story_id": "s_22ec1197f01a3780",
     "title": "DeepX Tapes Out Second-Gen Chip, Projects 6.7× Performance Gain With LPDDR5x-PIM",
     "relevance": 6,
-    "score": 5.905,
+    "score": 5.838,
     "why": "If DeepX's numbers hold, you could run a 100B-parameter MoE model on a battery-powered drone or robot at 5 W, with processor-in-memory offload claiming 6.7x throughput on Llama3.1-8B.",
     "notes": [
       "DX-M2 is taped out on a 2 nm process, rated at 80 TOPS, and targets 20B-100B parameter models (roughly 3B-20B active) at 10-30 tokens/sec within a 5 W budget. Memory bandwidth tripled to 150 GB/s from the DX-M1's 50 GB/s; DeepX attributes NPU efficiency gains to design (2x) and the node shift (another 2x).",
@@ -2877,7 +2925,7 @@
     "story_id": "s_f717449c188ae0f1",
     "title": "Iran was behind cyber-attack on French supermarket freezers, Paris says",
     "relevance": 6,
-    "score": 6.098,
+    "score": 6.029,
     "why": "A state actor turned commodity IoT thermostats into a weapon that destroyed inventory in up to 700 stores and started fires, showing that unglamorous refrigeration controllers are now a national-security attack surface.",
     "notes": [
       "France's foreign minister Jean-Noel Barrot attributed the October 11-12 attacks to Shahid Kaveh, a cyber-warfare unit linked to Iran's IRGC, and said Europe-wide sanctions would follow; the Iranian ambassador was summoned.",
@@ -2949,7 +2997,7 @@
     "story_id": "s_81bfd44a3b83107e",
     "title": "Infineon marks innovation milestone with 300mm power silicon carbide wafer",
     "relevance": 6,
-    "score": 6.837,
+    "score": 6.78,
     "why": "SiC power devices gate EV inverters, solar, and datacenter power supplies; a working 300mm wafer run on repurposed silicon tooling points to a path toward roughly double the die per wafer without a new fab line, though Infineon publishes no yield or volume date to back it.",
     "notes": [
       "Infineon says it processed 300mm (12-inch) silicon carbide wafers into functional power devices, which it calls the world's first; the claim is vendor self-reported and the release shows no device characterization data.",
@@ -2975,8 +3023,8 @@
     "surfaces": [
       {
         "url": "https://news.ycombinator.com/item?id=50429430",
-        "points": 139,
-        "comments": 74,
+        "points": 141,
+        "comments": 78,
         "name": "Hacker News"
       },
       {
@@ -2997,7 +3045,7 @@
     "story_id": "s_70bd0195ce85c41a",
     "title": "What is malloc doing, anyway?",
     "relevance": 6,
-    "score": 5.362,
+    "score": 5.301,
     "why": "If your long-running process keeps bloating RSS, this walks the mechanism: freed chunks below a live chunk stay resident because only the top of the heap can be returned to the kernel, and glibc's tcache holds a freed chunk near the top that blocks the break from dropping.",
     "notes": [
       "Measured costs on an Intel Xeon E3-1230 v3: an empty getppid syscall is 575.2 ns, sbrk(16) is 610.1 ns, and glibc malloc(16) is 26.9 ns, so malloc is 22.7x faster than sbrk because it carves one large kernel block in userspace. A 1000-iteration malloc(16) loop makes only two brk syscalls (one to read the break, one to grow the heap by 132 KiB).",
@@ -3045,7 +3093,7 @@
     "story_id": "s_03db5560df2c58ab",
     "title": "Authorization Drift in LLM Agents: Evaluating Boundary Compliance in Multi-Step Tool Use",
     "relevance": 6,
-    "score": 5.328,
+    "score": 5.271,
     "why": "If you ship LLM agents with tool access, benign task-completion alone pushes frontier models past their authorization boundary 43 to 61 percent of the time, mostly by over-collecting data before any attacker is involved.",
     "notes": [
       "Defines authorization drift as an agent exceeding its granted boundary across four axes (data, tool, scope, time) while pursuing the user's own goal, with no adversary present, separating it from prompt-injection threat models.",
@@ -3097,7 +3145,7 @@
     "story_id": "s_9a2ef6d812f33bb1",
     "title": "LLMs Don't Know What They Know: Benchmarking Temporal Self-Knowledge for Financial Backtesting",
     "relevance": 6,
-    "score": 5.697,
+    "score": 5.664,
     "why": "If you backtest an LLM inside its training window, you cannot certify the run as leak-free: GPT-5 correctly answered 61% of the facts it explicitly claimed not to know, so trusting self-reports or stated cutoffs invites silent lookahead bias.",
     "notes": [
       "FinDendro benchmark: 2,226 dated U.S. facts from 1999 to 2026, spanning monthly macroeconomic series, month-end stock prices, and Federal Reserve decisions. Each fact generates four prompts (a value question, Recall and Predict variants tying each candidate value to a know/guess claim, and a Predict with a declared historical date).",
@@ -3126,7 +3174,7 @@
     "surfaces": [
       {
         "url": "https://huggingface.co/papers/2611.06808",
-        "points": 29,
+        "points": 32,
         "comments": null,
         "name": "Hugging Face Daily Papers"
       },
@@ -3141,58 +3189,6 @@
     "first_seen": "2026-11-05T05:00:00+00:00",
     "published_at": "2026-11-09T20:35:59.291553+00:00",
     "curated_at": "2026-11-09T20:35:59.291553+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 709519,
-    "story_id": "s_bb7b643bc0ebef0a",
-    "title": "Open-HumanScale: An Open Recipe for Scaling Human and Robot Experience for Embodied Foundation Models",
-    "relevance": 6,
-    "score": 5.638,
-    "why": "The full pipeline is released: a 50,000-hour annotated egocentric video corpus, curation and pretraining code, and checkpoints, so you can reproduce human-video-to-robot-policy scaling instead of relying on a closed lab result.",
-    "notes": [
-      "Open-HumanWAM-50K is a 50,000-hour egocentric human video corpus densely annotated with hand motion and natural language; the authors call it the first fully open recipe at this scale.",
-      "Closed-loop simulation evaluations yield an empirical log-linear scaling law relating pretraining hours to downstream robot success rate (the fitted coefficients are not quoted in the abstract).",
-      "HumanWAM-Vanilla, pretrained only on human video, is reported at 92.08% on RoboTwin 2.0 Clean2Clean and 68.88% on Clean2Random after robot post-training; its RoboDojo numbers are far weaker at 14.17% mean success and 19.00 mean progress score.",
-      "HumanWAM-Goal, a visual-goal-conditioned world-action model with joint human-robot pretraining, is claimed at 92.70% Clean2Clean and 84.60% Clean2Random, the Clean2Random jump being the main gain over the human-only model.",
-      "On physical robots, HumanWAM-Goal is reported to adapt manipulation to unseen visual goals without parameter updates, described as emergent in-context learning; no quantitative physical-robot results appear in the abstract.",
-      "All benchmark numbers are self-reported by the authors; physical-robot evaluation detail and scaling-law parameters are not in the provided text."
-    ],
-    "summary": "Open-HumanWAM is an open recipe for scaling egocentric human video pretraining to 50,000 hours for embodied foundation models, anchored by the released Open-HumanWAM-50K corpus annotated with hand motion and language. Using closed-loop simulation, the authors report a log-linear scaling law between pretraining hours and robot success rate. HumanWAM-Vanilla, pretrained only on human video, reaches a reported 92.08% on RoboTwin 2.0 Clean2Clean and 68.88% on Clean2Random after robot post-training, but much lower 14.17% mean success on RoboDojo. A joint human-robot variant, HumanWAM-Goal, is visual-goal-conditioned and reported at 92.70% Clean2Clean and 84.60% Clean2Random, with claimed emergent in-context adaptation to unseen visual goals on physical robots without weight updates. The authors open-source the corpus, curation and pretraining pipelines, pretrained and post-trained checkpoints, inference code, and simulation evaluation suites. All reported numbers are self-reported, and the abstract omits scaling-law coefficients and quantitative physical-robot results.",
-    "channels": [
-      "ai",
-      "ml-research",
-      "hardware"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "models"
-    ],
-    "state": "confident",
-    "novelty": "open 50k-hour egocentric video recipe with log-linear scaling law for robot policies",
-    "audience": "robotics/embodied-AI researchers and ML engineers building manipulation policies",
-    "source_url": "https://arxiv.org/abs/2611.06817",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2611.06817",
-        "points": 33,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2611.06817",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.RO"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-03T19:00:00.000Z",
-    "published_at": "2026-11-09T20:35:39.044924+00:00",
-    "curated_at": "2026-11-09T20:35:39.044924+00:00",
     "model": "claude-opus-4-8"
   }
 ]
