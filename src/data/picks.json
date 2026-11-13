@@ -105,7 +105,7 @@
     "story_id": "s_feafea98c4a3b998",
     "title": "AlphaProof Code",
     "relevance": 8,
-    "score": 6.266,
+    "score": 6.245,
     "why": "DeepMind claims it closed the design-to-implementation gap for the Signal protocol in four weeks, so the security proofs now bind the actual compiled code running on devices rather than an idealized spec.",
     "notes": [
       "AlphaProof Code is described as a multi-LLM agentic framework that splits the job: humans and models translate Signal's security goals into formal specifications (every spec human-reviewed), then agents powered by a model called Gemini Carbon generate the proofs.",
@@ -431,238 +431,6 @@
     "first_seen": "2026-10-27T20:25:55+00:00",
     "published_at": "2026-11-06T14:15:54.337124+00:00",
     "curated_at": "2026-11-06T14:15:54.337124+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 658550,
-    "story_id": "s_b10b52c7bc7b9255",
-    "title": "Qwenputer: A functioning, deterministic RISC-V CPU inside Qwen3.5",
-    "relevance": 8,
-    "score": 6.001,
-    "why": "An exact, addressable RAM compiled into a linear-RNN attention layer means you can plant deterministic machinery, arithmetic today, tamper-proof monitors or hidden reasoning tomorrow, inside a production model's weights with no training and no external runtime.",
-    "notes": [
-      "Mechanism: on Qwen3.5 4B, 3 of every 4 attention layers use Gated DeltaNet (a linear RNN). Setting the forget gate to 1 (no decay), write strength beta to 1 (full overwrite), and one-hot keys turns each GDN head's fixed-size state matrix into exact addressable RAM, cheaper than KV-cache-as-RAM because state size is constant regardless of context length.",
-      "No training: a compiler sets weights directly to encode a 32-bit RV32IM RISC-V core (plus Zba extension and a bignum unit), occupying 11 of Qwen's 32 layers. Each instruction emits a few tokens (ADDR, VAL, STEP) that form the CPU's execution trace as the model decodes.",
-      "Self-reported correctness: passes official riscv-tests, matches QEMU, ran 18M instructions free-running with zero errors; replaying ~230,000 output positions against a reference machine found zero mismatches; normal text output stays within noise of base Qwen (KL 6e-4 vs 5e-4 floor).",
-      "Arithmetic benchmarks (author-reported): mul_big 97.5% vs 55% base Qwen and 100% with a Python tool; div_big 97.5% vs 72.5% base and 95% with Python tool; NUPA long-integer goes 48.6% to 100%, matching the Python-tool baseline. No external tool call or sandbox; instructions ride on the tool-call format via an RvChat driver.",
-      "An experimental in-weights filesystem hashes names into 1,024 directory slots in DeltaNet state, holds ~512 files (~53,000 tokens), and persists across conversations; changed-fact recall hit 90% vs 30% for pasting old chats. Code on the rv-store branch.",
-      "Caveats: checkpoint is 18.8 GB (roughly double base Qwen, mostly zero padding), runs on one 24 GB GPU, needs the RvChat driver (no plain generate() yet), and is slow, a few decoded tokens per instruction, ~3,200 CPU tokens/sec on an L4. Author flags safety follow-ups: hiding reasoning in RNN state to evade CoT monitoring, or using compiled weights as a monitor the model cannot disable."
-    ],
-    "summary": "Qwenputer is an experimental modification of stock Qwen3.5 4B that compiles a 32-bit RV32IM RISC-V CPU directly into the model's weights with no training. The author exploits the model's Gated DeltaNet (linear RNN) attention layers: by fixing the forget gate to 1, write strength beta to 1, and using one-hot keys, each head's fixed-size state matrix becomes exact, addressable RAM. A compiler lays out the CPU across 11 of Qwen's 32 layers, and each instruction executes as the model decodes tokens (ADDR/VAL/STEP trace), with no external tool, sandbox, or runtime. The author reports the CPU passes official riscv-tests, matches QEMU, ran 18M instructions free-running without error, and showed zero mismatches across ~230,000 replayed output positions, while leaving normal text generation within noise (KL 6e-4). On reported arithmetic benchmarks it beats base Qwen substantially and roughly matches a Python-tool-equipped Qwen (e.g., NUPA long-integer 48.6% to 100%), and an experimental in-weights filesystem persists files across conversations. Limitations include an 18.8 GB checkpoint, dependence on an RvChat driver rather than plain generate(), and slow execution (~3,200 CPU tokens/sec on an L4); the work builds on Schlag et al. 2021's delta-rule-as-fast-weights result and is pitched partly as an AI-safety testbed. All numbers and correctness claims are the author's own.",
-    "channels": [
-      "ai",
-      "ml-research"
-    ],
-    "category": "hardware",
-    "subcategories": [
-      "silicon"
-    ],
-    "state": "confident",
-    "novelty": "compiled RISC-V CPU running inside LLM forward passes via GDN as RAM",
-    "audience": "ML researchers/engineers interested in interpretability, model internals, and mechanistic circuits",
-    "source_url": "https://divagr.com/blog/qwenputer",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50282838",
-        "points": 163,
-        "comments": 35,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://divagr.com/blog/qwenputer",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-29T00:25:45+00:00",
-    "published_at": "2026-11-06T13:43:54.771257+00:00",
-    "curated_at": "2026-11-06T13:43:54.771257+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 702222,
-    "story_id": "s_d331e378ee31fd6e",
-    "title": "sshole",
-    "relevance": 8,
-    "score": 5.998,
-    "why": "On musl-based systems (Alpine) running sshd without PAM, pasting an overlong or malformed string into a password prompt can log you into an account that was deliberately locked with \"*\" in /etc/shadow, because crypt() failure and an intentionally locked account produce the exact same sentinel.",
-    "notes": [
-      "The root cause is one overloaded character: Bill Joy put '*' in 3BSD's /etc/passwd in 1980 as a hash that can never match (locking the 'daemon' account); musl later reused '*' for a second, unrelated meaning.",
-      "Since musl commit b3c4cc12 (Aug 2012), crypt() returns the single character '*' on failure instead of NULL, so programs that never checked for NULL stop crashing but now see a failed hash that is byte-identical to a locked-account field.",
-      "Twenty days later, commit 88bf5a8a capped sha512crypt input at 256 bytes (sha512crypt slows with password length, a DoS vector); anything longer makes crypt() fail and return '*'. So a wrong password over 256 bytes compared against a stored '*' matches.",
-      "The bypass only triggers on musl WITHOUT PAM: PAM never calls crypt() for a '*' field, and most distros go through PAM. A fresh box with no password set is not affected; a locked '*' account needs one wrong attempt first.",
-      "Prior incidents in the same code path: CVE-2016-6210 (sshd username timing oracle, fixed by hashing against a borrowed salt for nonexistent users, which also catches real '*' users) and CVE-2019-5021 (Alpine Docker images shipped with no root password; Alpine later switched root-lock from '!' to '*' in 3.16/2022 so ssh keys still work, re-exposing this path).",
-      "Author claims the bug was found by fuzzing ~17,600 logins across glibc/musl/pam/no-pam/shadow/no-shadow sshd builds (with 'agent swarms'); every build agreed except musl-without-PAM, which accepted logins it should have rejected. Found four days after an Oct 2026 OpenSSH security review patched pick_salt() but missed this bug four lines below. Severity, CVE assignment, and real-world exploitation are self-reported and unverified in the text."
-    ],
-    "summary": "The post traces an sshd authentication bypass on musl-based systems (such as Alpine) without PAM back to a single reused sentinel character. Since 1980, Unix has used '*' in the password field to mark accounts that can never log in. In Aug 2012 musl changed crypt() to return '*' on failure rather than NULL (to avoid crashing callers that never null-checked), and three weeks later capped sha512crypt input at 256 bytes, making overlong passwords also fail and return '*'. As a result, a failed crypt() and a deliberately locked '*' account become indistinguishable, so comparing a wrong-but-crypt-failing password against a stored '*' field can succeed. The flaw hid for about a decade because PAM (used by most distros) never calls crypt() for '*' fields, musl doesn't test sshd, and a box needs both a '*'-locked account and a triggering wrong attempt. The author says it surfaced while fuzzing ~17,600 logins across build matrices (glibc/musl, PAM/no-PAM, shadow/no-shadow), with only musl-without-PAM diverging, discovered four days after an Oct 2026 OpenSSH review patched an adjacent function but missed this one. Claims about discovery method and scope are self-reported.",
-    "channels": [
-      "security",
-      "devtools"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "musl+sshd auth bypass traced to shared \"*\" sentinel for both locked accounts and crypt() failures",
-    "audience": "systems/security engineers running Alpine/musl-based containers with sshd",
-    "source_url": "https://sshhole.com/",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50378228",
-        "points": 2888,
-        "comments": 707,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://sshhole.com",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://sshhole.com/",
-        "points": null,
-        "comments": null,
-        "name": "Tildes"
-      }
-    ],
-    "sources_count": 3,
-    "first_seen": "2026-11-05T12:19:02+00:00",
-    "published_at": "2026-11-06T11:54:33.907476+00:00",
-    "curated_at": "2026-11-06T11:54:33.907476+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 656049,
-    "story_id": "s_cfdd9e4bb60d8b85",
-    "title": "The AI cost of JavaScript frameworks",
-    "relevance": 8,
-    "score": 7.498,
-    "why": "With agents now writing the code, your framework choice is a line item on the Claude bill: the same Pokémon app ran $2.67 on Hono+htmx versus $4.97 on Angular, and leaner codebases keep future edit costs down too.",
-    "notes": [
-      "Setup: one content-heavy Pokémon app (PokéAPI) built by Opus 5.5 at high effort across 12 frameworks, each offered its official MCP/skill; median of 5 runs per framework (Angular only 3 after failing to produce a working app twice). Correctness enforced by a conformance suite built on the accessibility tree, not raw DOM, so no framework was penalized for its HTML structure.",
-      "Build cost (Claude Code API pricing, not actual spend on the author's Max plan): Hono+htmx $2.67, Astro $2.76, Nuxt $2.82, up to SvelteKit $4.28, Gracile+Lit $4.65, Angular $4.97. Variance is wide: the cheapest React Router run ($2.82) beat the priciest Hono+htmx run ($3.19).",
-      "Why the losers cost more: SvelteKit agents re-read the v3 migration guide every run (too new for Opus 5.5's training data); Gracile agents cloned the repo or read node_modules source; Angular's cost tracks its larger code size. MCP/skill usage was erratic (Nuxt's MCP never used; Next.js skill read in 1/5 runs), which the author argues mirrors real vibe-coder behavior.",
-      "Quality near-saturated: Lighthouse Performance 97-100 and Accessibility 100 across the board. Separation shows in JS bytes (Astro ~0 KB to Next.js 142 KB), Total Blocking Time (Angular 103 ms, Next.js 71 ms vs 0 for several), and LCP, which rewards MPAs (Astro 810 ms) over SPAs (Next.js 2090 ms). Qwik is the SPA exception, scoring like an MPA.",
-      "Maintainability by lines of code: Hono+htmx 1370 to Angular 2009, roughly 70% of Angular's code for similar output; author ties LOC directly to future token cost for edits. 'Vanilla' (Vite, no framework) underperformed several frameworks and chose an SPA all 5 times.",
-      "Caveats the author stresses: one app type (Wikipedia-like, low interactivity), Lighthouse/Core Web Vitals are biased against SPAs, metrics are stochastic, and he suspects current MCPs/skills may hurt more than help. Benchmark (itself largely vibe-coded) is on GitHub for forks; he invites others to beat it."
-    ],
-    "summary": "Nolan Lawson built a benchmark to replace vibes with evidence on which JavaScript framework is cheapest and best for agent-written code. He had Opus 5.5 (high effort) build the same content-heavy Pokémon app in 12 frameworks/meta-frameworks, each with its official MCP or skill, taking the median of 5 runs (3 for Angular, which failed twice). Correctness was checked against an accessibility-tree conformance suite to prevent cheating, with Lighthouse used for quality. On API-priced build cost, Hono+htmx was cheapest ($2.67) and Angular most expensive ($4.97); SvelteKit, Gracile+Lit, and Angular were priciest, partly because agents had to read docs or source not in the model's training data. Lighthouse Performance and Accessibility were near-saturated everywhere, so separation appeared in JS bytes, Total Blocking Time, and LCP, where MPAs beat SPAs; maintainability measured as lines of code ranged from 1370 (Hono+htmx) to 2009 (Angular), which Lawson links to ongoing token cost for edits. He flags heavy caveats: a single low-interactivity app type, Lighthouse bias against SPAs, high stochasticity, and a suspicion that current MCPs/skills may hurt, and he published the benchmark on GitHub for others to fork.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [
-      "languages"
-    ],
-    "state": "confident",
-    "novelty": "first rigorous benchmark of JS frameworks for agentic coding cost/quality",
-    "audience": "web developers and tech leads choosing frameworks for AI-agent-driven development",
-    "source_url": "https://nolanlawson.com/2026/10/28/the-ai-cost-of-javascript-frameworks",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50323088",
-        "points": 273,
-        "comments": 211,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://nolanlawson.com/2026/10/28/the-ai-cost-of-javascript-frameworks/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://programming.dev/post/58810757",
-        "points": null,
-        "comments": null,
-        "name": "programming.dev (Lemmy)"
-      },
-      {
-        "url": "https://nolanlawson.com/2026/10/28/the-ai-cost-of-javascript-frameworks/",
-        "points": null,
-        "comments": null,
-        "name": "Nolan Lawson"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-28T14:31:03+00:00",
-    "published_at": "2026-11-06T10:50:42.163620+00:00",
-    "curated_at": "2026-11-06T10:50:42.163620+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 652585,
-    "story_id": "s_ff7978fa9d3799ee",
-    "title": "Gemini 4 Carbon: our next frontier model",
-    "relevance": 8,
-    "score": 7.879,
-    "why": "Google's second frontier model in two weeks ships to cyber defenders first, not developers, and leads with self-reported security-lifecycle benchmarks plus participation in a US government pre-release testing process, a template for how frontier capabilities now gate behind staged access.",
-    "notes": [
-      "Security benchmarks (all Google-reported, evaluated without guardrails): 88.2% on SEC-bench Pro for vulnerability detection, 54.8% on ExploitGym for exploitation, 71.0% on Collinear's CWE-bench for patching; ranks #1 on Artificial Analysis Intelligence Index v5.0 at 59.",
-      "Pricing matches Gemini 4 Argon (launched two weeks prior): $2 per million input tokens, $10 per million output, cached input at 95% off input price.",
-      "Vendor uplift claims: more than 2x success rate for generating secure code over Argon; Chrome team reports more than 10x better patch quality than 'another lab's large frontier model'; Wiz reports Carbon leading on web pen-testing benchmarks. No methodology given for the comparisons.",
-      "Alignment metrics (internal/self-reported): cheating on Terminal-Bench 4.0 driven to 0.0% (attempts down to 0.4%), high-severity misalignment alerts in internal live coding down ~80%, unsupported claims cut ~2x vs Argon, overreach down 26% and under-service down 29%, and 0.0% attack success on Gray Swan's Indirect Prompt Injection benchmark (Argon was 0.7%).",
-      "Rollout is staged and gated: available this week only to a subset of cyber defenders via the Fairwind Program, with Google 'actively engaged in the U.S. government's voluntary process for pre-release model testing'; general developer, business, and consumer access is deferred with no date.",
-      "WebDev Arena: Carbon jumps +89 elo to #4 (1768); internal teams report runs lasting 'days' on multi-step engineering tasks. No independent third-party evaluation is cited in the post."
-    ],
-    "summary": "Google DeepMind announced Gemini 4 Carbon, a frontier model positioned around the cybersecurity defense lifecycle (vulnerability detection, validation, and remediation) and long-horizon agentic coding, two weeks after releasing Gemini 4 Argon. Google reports state-of-the-art scores on SEC-bench Pro (88.2%), ExploitGym (54.8%), and CWE-bench (71.0%), a #1 ranking on Artificial Analysis Intelligence Index v5.0 at 59, and +89 elo to #4 on WebDev Arena; the security benchmarks were run without guardrails. Additional self-reported claims include more than 2x secure-code uplift over Argon, a Chrome-team claim of 10x better patch quality than an unnamed competing model, and alignment gains such as 0.0% cheating on Terminal-Bench 4.0 and 0.0% attack success on Gray Swan's prompt-injection benchmark. Pricing matches Argon at $2/M input and $10/M output tokens with 95%-off cached input. Access is staged: cyber defenders first via the Fairwind Program, with Google participating in a US government voluntary pre-release testing process, and broad availability promised later without a date. All performance and alignment figures in the post are vendor-reported, and comparison claims lack stated methodology.",
-    "channels": [
-      "ai",
-      "security"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "models"
-    ],
-    "state": "confident",
-    "novelty": "frontier model targeting cybersecurity defense lifecycle specifically",
-    "audience": "AI engineers and security researchers evaluating frontier model capabilities for vuln finding/patching",
-    "source_url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50276792",
-        "points": 835,
-        "comments": 695,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://deepmind.google/blog/gemini-4-carbon-our-next-frontier-model/",
-        "points": null,
-        "comments": null,
-        "name": "Google DeepMind Blog"
-      },
-      {
-        "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/",
-        "points": null,
-        "comments": null,
-        "name": "The Keyword"
-      },
-      {
-        "url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/introducing-gemini-4-carbon/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 4,
-    "first_seen": "2026-10-28T17:00:00+00:00",
-    "published_at": "2026-11-06T10:49:55.735019+00:00",
-    "curated_at": "2026-11-06T10:49:55.735019+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -1717,174 +1485,11 @@
     "model": "claude-opus-4-8"
   },
   {
-    "id": 702223,
-    "story_id": "s_b69e6d64da940a0f",
-    "title": "Alpine Linux Security Advisory: OpenSSH-server password authentication bypass",
-    "relevance": 7,
-    "score": 6.028,
-    "why": "If you run Alpine's default (non-PAM) openssh-server with password auth on, anyone who can reach port 22 can log in as root or any key-only account in a single connection, no password and no CVE to track yet.",
-    "notes": [
-      "The bug: sshd built without PAM hashes a login attempt with crypt() and compares it to the stored field; for accounts whose field is too short to hold a salt it borrows another account's salt. musl's crypt() returns the literal string '*' when the key exceeds 256 bytes, which is exactly what the shadow field holds for passwordless accounts, so the comparison matches and the login succeeds.",
-      "Exploit is deterministic: one connection, a single 257-to-1024-byte password, no retries. Preconditions are the name of an account whose password field is '*' (normal for key-only accounts) plus at least one local account with a $5$ or $6$ hash to supply the salt.",
-      "Affected: openssh-server (no PAM, Alpine default) or openssh-server-pam with UsePAM no, when PasswordAuthentication is yes (the OpenSSH default). root ships as root:* since ~3.16 but is shielded by PermitRootLogin prohibit-password unless an account can doas to root. Every checked release is affected: 3.16 through 3.24 and edge.",
-      "tiny-cloud images (qcow2/VHD/AMI) from 3.18.11 to 3.24.3 ship an 'alpine' user with field '*' and passwordless doas; safe at first boot but exploitable the moment any $6$ hash appears (admin console password, user-data hashed_passwd), yielding an alpine shell that doas-es to root.",
-      "Not affected: containers without sshd, PasswordAuthentication no, openssh-server-pam with UsePAM yes, accounts locked with '!' in /etc/shadow, machines with no $-style hash, and cloud-init images (which write PasswordAuthentication no). Fixed in OpenSSH 10.6p2 and backported packages (3.24: 10.3_p1-r2; 3.21: 9.9_p2-r1; down to 3.16: 9.0_p1-r6).",
-      "apk upgrade does not restart the running daemon: you must rc-service sshd restart afterward. No CVE assigned at time of writing; reported by Özgün Kültekin of Wakefield, fixed by OpenSSH's Damien Miller and Darren Tucker."
-    ],
-    "summary": "Alpine Linux disclosed an unauthenticated password-authentication bypass in openssh-server built without PAM (the Alpine default), with no CVE assigned at publication. When PasswordAuthentication is yes, an attacker who knows the name of an account whose shadow field is '*' (normal for key-only accounts, including root and the cloud 'alpine' user) can log in by sending one overlong password of 257 to 1024 bytes; the attack is deterministic and needs no retries, provided at least one other local account carries a $5$ or $6$ hash. The root cause is that musl's crypt() returns the string '*' for keys over 256 bytes while sshd, lacking a salt for the passwordless account, borrows another account's salt and compares against the stored '*', producing a match. Every Alpine release checked (3.16 through 3.24 and edge) is affected, as are official tiny-cloud images, which become exploitable once any $6$ hash exists and then allow escalation to root via passwordless doas. Fixes ship in OpenSSH 10.6p2 and backported Alpine packages per branch, but apk upgrade does not restart the daemon, so sshd must be restarted manually; setting PasswordAuthentication no or using openssh-server-pam with UsePAM yes closes the hole otherwise. Not affected are containers without sshd, systems with password auth disabled, cloud-init images, and accounts locked with '!' in /etc/shadow.",
-    "channels": [
-      "security",
-      "devtools"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "unauthenticated auth bypass via crypt() quirk on passwordless accounts",
-    "audience": "sysadmins and devops running Alpine Linux SSH servers, especially cloud/tiny-cloud images",
-    "source_url": "https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50379704",
-        "points": 595,
-        "comments": 126,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://alpinelinux.org/posts/2026-11-05-openssh-password-authentication-bypass/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-05T14:44:20+00:00",
-    "published_at": "2026-11-06T12:57:28.917867+00:00",
-    "curated_at": "2026-11-06T12:57:28.917867+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 709094,
-    "story_id": "s_06c6f6e402f3b3f2",
-    "title": "Closed AI models dominate the price-performance frontier",
-    "relevance": 7,
-    "score": 5.357,
-    "why": "If you pick models by price-per-task, the cheap open-weight option that won a third of budgets in June is now beaten almost everywhere by closed tiers like GPT-6.1 Terra and Claude Haiku 5.5, leaving open weights best only at the very bottom 3% of the price range.",
-    "notes": [
-      "Per Village's LLM Atlas (scores dated October 31, 2026), open-weight models are the best buy at 3% of budgets today, down from 41% in June; this is the lowest share measured, versus at least 6% at every quarter-end since 2024.",
-      "The 3% is held only at the cheap end by Google's Gemma 4 E4B and Xiaomi's MiMo-V2.6-Flash; DeepSeek V4 Flash alone had won nearly a third of budgets in June, and DeepSeek-V3.2-Exp hit ~50% the week it launched in September 2025 before falling by about half or more by the next quarter.",
-      "OpenAI's GPT-6 Luna (September) and GPT-6.1 Terra (October) plus Anthropic's Claude Haiku 5.5 retook the budgets open models held; the GPT-6/6.1 family (Luna, Terra, Sol, Astra) holds 11 of the frontier's 21 points.",
-      "Three proposed explanations: closed labs distill their own flagships into cheap tiers in-house (Haiku 5.5 followed Opus 5.5 by two weeks) while open labs' terms bar training on closed outputs; closed labs ship whole families covering every price; and they may serve inference more cheaply at scale, Google on its own chips.",
-      "Caveats stated: costs reflect what evaluators paid through hosted APIs, and open models can be cheaper on your own hardware; widening the budget window to 0.3x-10x GPT-5's cost raises today's open share back to 16% because tiny open models still win at the very cheapest end.",
-      "Methodology: capability scores derived from public benchmarks plus a separate cost model from evaluators' runs, costs normalized to GPT-5 at high effort, sampled across 201 budgets on a log scale from 1% to 3x GPT-5's cost; vendor-released model names and claims are self-reported."
-    ],
-    "summary": "Village's LLM Atlas, which maps the strongest model at each price point, reports that open-weight models are now the best buy at only 3% of budgets, down from 41% in June 2026 and the lowest share it has measured since 2024. The decline followed OpenAI's GPT-6 Luna and GPT-6.1 Terra and Anthropic's Claude Haiku 5.5, which undercut and out-scored the cheap DeepSeek releases (DeepSeek V4 Flash, DeepSeek-V3.2-Exp) that had periodically captured wide budget bands. The post argues open wins have always come in bursts from single releases and then halved by the next quarter as closed labs shipped cheaper tiers. It offers three explanations: closed labs can distill their own frontier models into cheap tiers in-house, release full model families (GPT-6/6.1 hold 11 of 21 frontier points), and serve inference at larger scale. Caveats: costs are hosted-API prices, open models can be cheaper self-hosted, and widening the budget range to 0.3x-10x GPT-5 cost lifts the open share back to 16%. Model names and capability claims are drawn from public benchmarks and vendor releases.",
-    "channels": [
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "open-weight share of price-performance frontier fell from 41% to 3% since June",
-    "audience": "engineers/teams choosing LLMs on cost-performance tradeoffs",
-    "source_url": "https://village.dev/blog/closed-ai-models-now-dominate-the-price-performance-frontier",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50387546",
-        "points": 66,
-        "comments": 47,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://village.dev/blog/closed-ai-models-now-dominate-the-price-performance-frontier/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-06T02:49:56+00:00",
-    "published_at": "2026-11-06T11:38:41.559067+00:00",
-    "curated_at": "2026-11-06T11:38:41.559067+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 656559,
-    "story_id": "s_1d0022857435fb6d",
-    "title": "Massive Leak Exposes 41,000 Homeland Security Workers—Including Undercover ICE Agents",
-    "relevance": 7,
-    "score": 7.44,
-    "why": "If authentic, the archive hands any adversary a supervisor-linked org chart of 41,000 DHS staff plus named access lists for undercover programs and surveillance tools, turning spearphishing and operative-unmasking from research projects into lookups.",
-    "notes": [
-      "Source and provenance: DDoSecrets published the archive as 'Icepick' on Wednesday; it and researcher maia arson crimew say a group calling itself 'Department of Peace' obtained the data from DHS's Okta login system, last updated 2026-08-19. Okta says it has no evidence its systems or data were compromised, so the breach is attributed to DHS's use of Okta, not Okta itself.",
-      "Scope (WIRED's analysis): CBP is over half the records; ICE ~10,000 (about a third in Homeland Security Investigations); USCIS 6,200; CISA ~1,000, more than half contractors. Totals cover roughly a seventh of DHS's workforce across DHS and seven component agencies.",
-      "Operational exposure: among 55,000+ permission groups, 39 HSI staff across a dozen field offices are in groups named 'CUC' (certified undercover operation); a St. Paul group references 'Keyhole,' which court filings tie to HSI surveillance of Minneapolis protest groups. Other groups name wiretap/intercept programs (Title III, CICTO, ISIP) and tools Palantir Falcon, PenLink, and the Mobile Fortify face-recognition app (200+ CBP accounts).",
-      "Access lists: identical 13-person 'Executive Leadership' and 'AI Access' groups (web-filter exceptions) include former DHS secretary Kristi Noem, ex-CIO Antoine McCord (now back at Anduril), and Philip Hegseth. Separate groups reference ChatGPT, Gemini, Copilot, and a 'Grok.com' group of eight DHS tech officials. 700+ mostly-CBP accounts tie to a Signal-referencing group.",
-      "Legal framing: FIRE's Adam Steinbaugh argues the names and work details are 'information that would be on a business card' and cannot be criminalized, pushing back on the administration's expansive reading of 18 USC 119; crimew frames the release as accountability, not doxing.",
-      "Context and caveats: Recorded Future's Alexander Leslie calls it an 'extraordinarily valuable intelligence resource' only 'if authentic and current,' most valuable when correlated with other breach data. DHS and DOJ did not comment; the leak follows ShinyHunters' claimed theft of FBI employee data. ~1,300 ICE enforcement accounts were created after the July 4, 2025 One Big Beautiful Bill Act funded 10,000 new officers."
-    ],
-    "summary": "DDoSecrets, working with researcher maia arson crimew, published 'Icepick,' an archive of more than 41,000 DHS employee and contractor records said to be drawn from the department's Okta login system and last updated August 19, 2026; a group calling itself 'Department of Peace' is credited with obtaining it. Per WIRED's analysis, the data spans DHS and seven component agencies—CBP (over half), ICE (~10,000), USCIS (6,200), and CISA (~1,000)—and includes emails, phone numbers, office addresses, supervisor links that allow reconstruction of reporting chains, and 55,000+ permission groups naming undercover operations (CUC, 'Keyhole'), intercept programs (Title III, CICTO, ISIP), and tools like Palantir Falcon, PenLink, and Mobile Fortify. Notable access groups include identical 13-person 'Executive Leadership' and 'AI Access' web-filter-exception lists (Kristi Noem, ex-CIO and now-Anduril Antoine McCord, Philip Hegseth) and groups referencing ChatGPT, Gemini, Copilot, and Grok. Okta says it has no evidence of compromise to its own systems. Recorded Future's Alexander Leslie calls the dataset highly valuable to adversaries 'if authentic and current,' while FIRE's Adam Steinbaugh argues the basic work details cannot be criminalized under 18 USC 119; DHS and DOJ did not comment, and the leak follows ShinyHunters' claimed theft of FBI employee data.",
-    "channels": [
-      "security"
-    ],
-    "category": "security",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "DHS Okta leak exposes 41K staff, undercover ops, AI tool access lists",
-    "audience": "security researchers, journalists, privacy advocates tracking government surveillance infrastructure",
-    "source_url": "https://wired.com/story/massive-leak-exposes-41000-homeland-security-workers-including-undercover-ice-agents",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50280864",
-        "points": 156,
-        "comments": 48,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.wired.com/story/massive-leak-exposes-41000-homeland-security-workers-including-undercover-ice-agents/",
-        "points": 5,
-        "comments": null,
-        "name": "Mastodon trending links"
-      },
-      {
-        "url": "https://www.wired.com/story/massive-leak-exposes-41000-homeland-security-workers-including-undercover-ice-agents/",
-        "points": null,
-        "comments": null,
-        "name": "Wired"
-      },
-      {
-        "url": "https://www.wired.com/story/massive-leak-exposes-41000-homeland-security-workers-including-undercover-ice-agents/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://lemmy.world/post/53707499",
-        "points": null,
-        "comments": null,
-        "name": "Lemmy: technology (lemmy.world)"
-      }
-    ],
-    "sources_count": 5,
-    "first_seen": "2026-10-28T20:00:00+00:00",
-    "published_at": "2026-11-06T11:07:19.703927+00:00",
-    "curated_at": "2026-11-06T11:07:19.703927+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
     "id": 704145,
     "story_id": "s_d441809d3279f7e1",
     "title": "Faster Retrieval for Better, More Efficient RAG",
     "relevance": 6,
-    "score": 7.062,
+    "score": 7.003,
     "why": "If your RAG queries come from a stable, known distribution, training a small offline network per key database cuts retrieval latency up to ~8x at 99% recall while reusing your existing FAISS/IVF index.",
     "notes": [
       "Core insight: the function mapping a query to its largest inner product over a key set is the support function from convex analysis; it is convex (approximable by input convex neural networks) and its gradient returns the best-matching key.",
@@ -1942,7 +1547,7 @@
     "story_id": "s_7f43d716ad9d3525",
     "title": "Show HN: Klad, a paint app your coding agent can drive (source-available)",
     "relevance": 6,
-    "score": 5.643,
+    "score": 5.601,
     "why": "If you build games or illustration tooling, this gives an agent a brush that outputs editable strokes instead of pixels, so you fix one bad leaf by hand instead of re-rolling the whole image.",
     "notes": [
       "No generative image model: the agent (Claude Code, Codex, anything that runs commands) decides what to paint and does it through the `klad` CLI. Every stroke and fill persists as data (path, pressure, brush, colour) you or the agent can recolour, bend, move, or delete hours later.",
@@ -1993,7 +1598,7 @@
     "story_id": "s_c75fa824797bb487",
     "title": "A false smoke alarm almost drowned Jane Street's only NYC datacenter",
     "relevance": 6,
-    "score": 6.693,
+    "score": 6.651,
     "why": "The failure chain here is a default you probably share: a smoke alarm wired to kill the CRAC units turns a dust-triggered false alarm into a thermal runaway that pre-charges the sprinklers over your racks.",
     "notes": [
       "Jane Street kept its only NYC datacenter inside 1 New York Plaza (33rd floor), next to the trading floor, for two stated reasons: IP theft fears and a last-resort physical kill switch, pull the power cords, a culture the author attributes partly to a partner with nuclear-submarine experience.",
@@ -2045,7 +1650,7 @@
     "story_id": "s_0c1280ff88339249",
     "title": "Attention to Mamba: A Recipe for Cross-Architecture Distillation",
     "relevance": 6,
-    "score": 6.275,
+    "score": 6.234,
     "why": "If you want Mamba's throughput without training from scratch, this gives a distillation path that keeps a pretrained Transformer's quality on a pure SSM, no hybrid attention blocks left in the student.",
     "notes": [
       "Two-stage recipe: distill the Transformer teacher into a linearized-attention model via an adaptation of the kernel trick, then distill that linearized model into an adapted Mamba that contains no attention blocks.",
@@ -2102,7 +1707,7 @@
     "story_id": "s_37b7a1ba77ff6aa7",
     "title": "No finite rulebook can certify every safe program: an impossibility theorem for gatekeeping AI agents",
     "relevance": 6,
-    "score": 4.156,
+    "score": 4.12,
     "why": "If you are building a gatekeeper that reads agent-written code and decides whether to run it, this paper proves the clean goal is unreachable: no finite, machine-checkable rulebook can both clear every safe program and block every unsafe one, so a static allow/deny policy will always either reject something safe or admit something it must refuse.",
     "notes": [
       "The setup: an AI assistant writes small programs and a gatekeeper must decide from the code alone whether each may run, against fixed rules — never perform a forbidden action, never let output depend on a secret, always answer eventually.",
@@ -2154,7 +1759,7 @@
     "story_id": "s_d7b61fa3ad9d4f85",
     "title": "Veritas: A Verifier Generation Harness for Agent Tasks",
     "relevance": 6,
-    "score": 4.156,
+    "score": 4.12,
     "why": "Self-improving agent loops stall on who grades each round; Veritas replaces hand-written verifiers with generated ones that, in the authors' tests, match official verdicts better than seven competing harnesses on every execution-scored benchmark.",
     "notes": [
       "Veritas is a harness that auto-generates task verifiers, aimed at self-improving systems where a verifier judges each improvement round and hand-written verifiers do not scale to tasks shipped without one.",
@@ -2206,7 +1811,7 @@
     "story_id": "s_9628a6aca312e685",
     "title": "Open research, stronger privacy: Making Firefox users harder to fingerprint",
     "relevance": 6,
-    "score": 4.504,
+    "score": 4.467,
     "why": "If you ship a browser or build anti-fraud fingerprinting, Firefox just published a measured map of which signals actually distinguish 25M users and shipped defaults that shrink CPU core counts and screen metrics to collapse those signals.",
     "notes": [
       "The study simulated the measurements collected by three commercial fingerprinting scripts: Fingerprint Pro, Signifyd, and Akamai, then analyzed how feature combinations distinguish users across nearly 25 million Firefox users.",
@@ -2257,7 +1862,7 @@
     "story_id": "s_72cfc7a5be6a2f78",
     "title": "The Surprising Effectiveness of Deleting Weights in LLM Post-Training",
     "relevance": 6,
-    "score": 4.632,
+    "score": 4.595,
     "why": "If the result holds, you can adapt a frontier-scale model by storing a binary mask hundreds to thousands of times smaller than a full checkpoint, with near-zero forgetting of prior tasks.",
     "notes": [
       "Deletion Tuning learns a binary mask over the gate projection of transformer blocks and makes no other change: it only zeros weights, fewer than 0.05% of them, and the paper claims this matches full fine-tuning (FFT) at scale.",
@@ -2306,7 +1911,7 @@
     "story_id": "s_d163887bc2331135",
     "title": "Sable: A Small-Field Sumcheck Argument for Bit-Exact Inference of Large Language Models",
     "relevance": 6,
-    "score": 4.707,
+    "score": 4.671,
     "why": "You can now get a cryptographic receipt that a specific open-weight 32B model produced a given token sequence from a given prompt, for about 6.4 cents of GPU time per 4,096-token request on a single card.",
     "notes": [
       "Sable proves that a committed, integer-quantized transformer produced an exact token sequence, bit for bit. It fixes an integer function F_O with no floating-point step: every rounding, normalization, softmax, and sampling decision is determined by inputs, and the constraint relations provably never wrap modulo the 31-bit KoalaBear prime.",
@@ -2357,7 +1962,7 @@
     "story_id": "s_6235fae090413d49",
     "title": "Atuin Threads: All your agent sessions on every machine",
     "relevance": 6,
-    "score": 7.476,
+    "score": 7.439,
     "why": "Your agent sessions, now scattered and lost across laptops and dev boxes, become a searchable, synced, end-to-end-encrypted record you can resume on any machine or hand to a different agent harness.",
     "notes": [
       "Ships in Atuin 18.24+; `atuin resume` opens a TUI to search and resume sessions, and a session can be forked across machines or from one agent to another (start in Claude Code on a dev server, finish in Codex on a laptop).",
@@ -2420,7 +2025,7 @@
     "story_id": "s_cd2a4716cf19c9d4",
     "title": "Using voltage glitching to unleash the A100 in my mining card",
     "relevance": 6,
-    "score": 4.941,
+    "score": 4.906,
     "why": "A hardware fault-injection attack claims to restore the full A100 compute that Nvidia fused off in its mining-only variant, which would turn deliberately crippled silicon back into datacenter-grade GPUs.",
     "notes": [
       "Target is an Nvidia A100 mining variant, a card segmented and restricted so it cannot be used as a general-purpose datacenter accelerator.",
@@ -2468,7 +2073,7 @@
     "story_id": "s_9d98cfaa61889145",
     "title": "AI datacentres plan on-site power stations on huge scale despite climate risks, research reveals",
     "relevance": 6,
-    "score": 5.124,
+    "score": 5.085,
     "why": "The grid queue, not chip supply, is now the binding constraint on AI buildout, and developers are answering it with 181GW of on-site gas turbines that outlast their \"temporary\" justification.",
     "notes": [
       "BloombergNEF counts 181GW of planned on-site gas-fired capacity across US, UK, and mainland European datacentres, which the report frames as almost four times Great Britain's total peak electricity demand; driven by delays connecting to national grids.",
@@ -2532,7 +2137,7 @@
     "story_id": "s_e9bd19f873090e1f",
     "title": "AI data center buildout triggers massive fiber optic cable shortage, squeezing Ukrainian drone operations",
     "relevance": 6,
-    "score": 3.942,
+    "score": 3.908,
     "why": "The same fiber optic supply feeding AI datacenter construction is reportedly making the cables Ukrainian drone units rely on 6x to 10x more expensive, a direct line from hyperscaler capex to a frontline shortage.",
     "notes": [
       "Reported cost increase: 6x to 10x for the fiber optic cabling used in Ukrainian drone operations, per Tom's Hardware.",
@@ -2686,7 +2291,7 @@
     "story_id": "s_371dd000ebd6914d",
     "title": "Google broadens its AI hardware portfolio with two new specialized chips",
     "relevance": 6,
-    "score": 4.206,
+    "score": 4.177,
     "why": "Google now ships a TPU with hardware-isolated memory for model weights, so a company can fine-tune on proprietary data without the data leaving the chip, and a double-size inference part for larger context, both as alternatives to Nvidia for Cloud customers.",
     "notes": [
       "TPU 8tx, co-designed with AMD and based on the TPU 8t, builds confidential computing into the hardware layer to keep data and model weights isolated while in active use (Google's description).",
@@ -2736,7 +2341,7 @@
     "story_id": "s_90048aca20ef47ba",
     "title": "One namespace to namespace them all (Python Language Summit 2026)",
     "relevance": 6,
-    "score": 3.848,
+    "score": 3.826,
     "why": "The flat import namespace that makes a stray math.py break random.randint is now on the table for a fix, and the same change could let Python ship stdlib modules on PyPI versioned apart from the interpreter.",
     "notes": [
       "Pablo Galindo Salgado (Steering Council, Release Manager) proposed a top-level 'std' namespace so 'import std.json' or 'from std import json' guarantees the stdlib module; 'import json' would keep working indefinitely, and 'std.json is json' stays True.",
@@ -2786,7 +2391,7 @@
     "story_id": "s_fb3ab4db29ff4e5c",
     "title": "Garbage Collection: Generational? Incremental? Both! (Python Language Summit 2026)",
     "relevance": 6,
-    "score": 3.848,
+    "score": 3.826,
     "why": "If you fine-tuned CPython's GC generations in production to dodge multi-second pauses, that tuning is a moving target: 3.14 shipped an incremental GC, reverted it, and the next default is now up for debate.",
     "notes": [
       "Python 3.14 shipped Mark Shannon's incremental, non-generational GC (single generation covering the whole heap) to cut peak pause times by ~an order of magnitude, then reverted to 3.13's generational GC after reports of significant memory pressure in production.",
@@ -2836,7 +2441,7 @@
     "story_id": "s_33ae27c04c4b06ac",
     "title": "Memory Snapshots for CPython (Python Language Summit 2026)",
     "relevance": 6,
-    "score": 3.848,
+    "score": 3.826,
     "why": "If this lands, a Python interpreter in WebAssembly/edge runtimes starts roughly 4x faster by restoring a post-init memory image instead of re-running initialization, but it requires a new language-level re-init phase to avoid freezing the hash seed.",
     "notes": [
       "In a Pyodide test, loading the interpreter from a memory snapshot ran 'Hello, world' in 0.353s versus 1.406s from scratch, about 4x faster (single reported case, no methodology given).",
@@ -2886,7 +2491,7 @@
     "story_id": "s_757618815fe17dd4",
     "title": "Free-Threaded Python Post-Era (Python Language Summit 2026)",
     "relevance": 6,
-    "score": 3.848,
+    "score": 3.826,
     "why": "Now that PEP 779 put free-threaded Python on a supported track, the stdlib concurrency API is up for grabs, and this talk is the first concrete proposal for what sits above raw threads: a deadlock-free task model you can already pip install as bocpy.",
     "notes": [
       "Behavior-Oriented Concurrency (BOC) is task-based: tasks are lightweight, run on any core, and are claimed to be unable to deadlock. Data is wrapped in data-aware mutexes called 'Cowns' (concurrent owners), and the @when(cown, ...) decorator declares which Cowns a task needs. The scheduler builds a dependency graph across tasks and data and, the presenters claim, can detect deadlocks or data races ahead of execution and raise them as exceptions.",
@@ -2937,7 +2542,7 @@
     "story_id": "s_3161c9dd3a74f747",
     "title": "Lightning Talks (Python Language Summit 2026)",
     "relevance": 6,
-    "score": 3.848,
+    "score": 3.826,
     "why": "CPython's core team signaled no objection to an AGENTS.md for agent-driven PRs and sees agent contribution volume as a real threat to the open-contribution model, while the fix for a faster GC is now blocked on free-threading becoming the sole Stable ABI.",
     "notes": [
       "Mark Shannon wants the 32 spare high bits in PyObject's ob_refcnt header (treated as a 32-bit int since PEP 683 in Python 3.12) for a better GC and faster allocations; using them breaks the Stable ABI. Thomas Wouters' resolution: wait until free-threading's abi3t becomes the only Stable ABI, since free-threaded Python never promised object-layout compatibility. No appetite to break the existing Stable ABI now.",
@@ -2988,7 +2593,7 @@
     "story_id": "s_42552c1a12d40c66",
     "title": "Modality-Aware Expert Pruning for MoE-Based Multimodal Large Language Models",
     "relevance": 6,
-    "score": 5.274,
+    "score": 5.248,
     "why": "A training-free pass drops a ~58GB MoE-MLLM (InternVL3.5-30B-A3B, Qwen3-VL-30B-A3B) onto one 40GB GPU by cutting ~27GB of expert weights, no fine-tuning required.",
     "notes": [
       "Expert parameters dominate MoE-MLLM memory: >90% of model size, e.g. 54GB of ~58GB in BF16 for InternVL3.5-30B-A3B and Qwen3-VL-30B-A3B, despite only a few experts activating per token.",
@@ -3045,7 +2650,7 @@
     "story_id": "s_1e704eb3e153d3b2",
     "title": "Homeopathic Learning: Diluting poisoned fine-tuning data can strengthen its effect",
     "relevance": 6,
-    "score": 4.051,
+    "score": 4.029,
     "why": "If the title's claim holds, a standard defense against training-data poisoning, diluting bad examples with clean ones, can make the attack stronger rather than weaker, inverting how safety teams reason about contamination thresholds in fine-tuning sets.",
     "notes": [
       "Central claim from the title: diluting poisoned fine-tuning data can strengthen, not weaken, its effect, named by analogy to homeopathic dilution.",
@@ -3097,7 +2702,7 @@
     "story_id": "s_81ac0c7fdbde180f",
     "title": "Dana’s talk on OpenAI’s proof of the Unique Games Conjecture, now on YouTube!",
     "relevance": 6,
-    "score": 4.117,
+    "score": 4.095,
     "why": "If the proof holds, a 20-year-old open problem in complexity theory moves toward resolution via an error-correcting code an AI found, not a human, which is a concrete test of whether frontier models can produce original mathematics that experts still have to reverse-engineer.",
     "notes": [
       "The post is Scott Aaronson announcing a roughly three-hour YouTube talk by Dana Moshkovitz; the title attributes the underlying proof to OpenAI's model and frames it as a proof of NP-hardness related to the Unique Games Conjecture.",
@@ -3155,7 +2760,7 @@
     "story_id": "s_4e23eb0de9669773",
     "title": "What's new in the .NET 11 runtime",
     "relevance": 6,
-    "score": 4.834,
+    "score": 4.817,
     "why": "If you ship .NET apps, .NET 11 will refuse to start on pre-2013 x86/x64 CPUs (baseline jumps to x86-64-v2) and introduces a preview async model that moves state machines out of the compiler and into the runtime, changing what your stack traces and allocations look like.",
     "notes": [
       "x86/x64 JIT/AOT minimum rises from x86-64-v1 to x86-64-v2 on all OSes, now guaranteeing CX16, POPCNT, SSE3, SSSE3, SSE4.1, SSE4.2; ReadyToRun targets x86-64-v3 (adds AVX, AVX2, BMI1/2, F16C, FMA, LZCNT, MOVBE) on Windows/Linux but not Apple. Older CPUs fail to launch with a 'current CPU is missing one or more of the baseline instruction sets' message.",
@@ -3198,6 +2803,392 @@
     "first_seen": "2026-11-10T12:20:07+00:00",
     "published_at": "2026-11-11T02:06:14.691005+00:00",
     "curated_at": "2026-11-11T02:06:14.691005+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 735868,
+    "story_id": "s_83ed5a44b978cb70",
+    "title": "Grok Build coding agent leaks oodles of confidential info, some belonging to SpaceXSI",
+    "relevance": 6,
+    "score": 5.509,
+    "why": "If you ship code through a hosted coding agent, this is a live example of one spilling customer confidential data, including material tied to SpaceX, so treat agent sandboxes as a data-exfiltration surface, not a convenience.",
+    "notes": [
+      "A vulnerability was reported in xAI's Grok Build coding agent; the headline describes it leaking large amounts of confidential information.",
+      "Some of the exposed material is reported to belong to SpaceX, per the Ars Technica headline.",
+      "Caveat: no article body was available at the time of writing. The leak scope, root cause, affected-user count, and whether xAI has patched or confirmed it are all unreported here.",
+      "Severity, exploitability, and whether the exposure was actively abused cannot be assessed from the headline alone; treat 'oodles' as the reporter's characterization, not a measured figure.",
+      "Sourcing is Ars Technica security coverage, surfaced via Mastodon trending links; verify specifics against the full article before citing."
+    ],
+    "summary": "Ars Technica reports that xAI's Grok Build coding agent exposed a large volume of confidential information, with some of the leaked material reportedly belonging to SpaceX. The headline frames it as a security vulnerability in the hosted coding-agent product. No article text was available for this writeup, so the mechanism of the leak, the number and identity of affected parties, the exact data exposed, and any vendor response or fix are not established here. The SpaceX connection and the scale implied by the headline are claims from the reporting that should be confirmed against the primary article. The item is relevant as a concrete case of a commercial AI coding agent mishandling private data, a recurring risk for teams routing source and secrets through third-party agents.",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "Grok's coding agent exposed confidential data including SpaceX info",
+    "audience": "AI security researchers and engineers evaluating coding-agent tool risk",
+    "source_url": "https://arstechnica.com/security/2026/11/grok-build-coding-agent-leaks-oodles-of-confidential-info-some-belonging-to-spacexsi",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arstechnica.com/security/2026/11/grok-build-coding-agent-leaks-oodles-of-confidential-info-some-belonging-to-spacexsi/",
+        "points": 0,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/11/grok-build-coding-agent-leaks-oodles-of-confidential-info-some-belonging-to-spacexsi/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://programming.dev/post/59263304",
+        "points": null,
+        "comments": null,
+        "name": "programming.dev (Lemmy)"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/11/grok-build-coding-agent-leaks-oodles-of-confidential-info-some-belonging-to-spacexsi/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-11-10T21:12:59+00:00",
+    "published_at": "2026-11-11T00:47:15.002693+00:00",
+    "curated_at": "2026-11-11T00:47:15.002693+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 734902,
+    "story_id": "s_af7669d9e8497db7",
+    "title": "AMD's Zen 6 Family: Feeding the Beast",
+    "relevance": 6,
+    "score": 5.517,
+    "why": "Memory bandwidth, not core count, increasingly gates real multithreaded throughput, and Chips and Cheese's die-level reads of Zen 6 are the kind of primary analysis engineers cite when sizing servers and workstations.",
+    "notes": [
+      "Subject is AMD's Zen 6 family, with the analysis framed around 'feeding the beast': the memory and interconnect bandwidth needed to keep the cores fed rather than core microarchitecture in isolation.",
+      "Author is Chips and Cheese, a site known for deep CPU microarchitecture teardowns and bandwidth/latency measurement rather than vendor-supplied slides.",
+      "Surfaced on Hacker News at 131 points and 46 comments, signaling engaged technical discussion.",
+      "No article text was available for this extraction; specific numbers, test methodology, and conclusions could not be verified and should be read from the source directly.",
+      "Treat any figures or claims as attributable to Chips and Cheese's own testing until confirmed against the full piece."
+    ],
+    "summary": "A Chips and Cheese piece titled \\\"AMD's Zen 6 Family: Feeding the Beast\\\" examines AMD's Zen 6 CPUs with emphasis on the memory and interconnect bandwidth required to keep the cores supplied, the recurring bottleneck in bandwidth-bound workloads. Chips and Cheese is known for low-level microarchitecture and bandwidth/latency analysis based on its own measurements rather than vendor marketing. The article drew 131 points and 46 comments on Hacker News, indicating real interest from the hardware-focused technical community. No article text was available for this summary, so the specific architectural details, test methodology, and quantitative findings could not be extracted and should be read directly from the source. Any performance numbers in the piece should be treated as the author's own measurements until independently confirmed.",
+    "channels": [
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Zen 6 microarchitecture/memory bandwidth analysis from Chips and Cheese",
+    "audience": "hardware engineers and CPU microarchitecture enthusiasts",
+    "source_url": "https://chipsandcheese.com/p/amds-zen-6-family-feeding-the-beast",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50443090",
+        "points": 248,
+        "comments": 102,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://chipsandcheese.com/p/amds-zen-6-family-feeding-the-beast",
+        "points": null,
+        "comments": null,
+        "name": "Chips and Cheese"
+      },
+      {
+        "url": "https://chipsandcheese.com/p/amds-zen-6-family-feeding-the-beast",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-10T17:02:32+00:00",
+    "published_at": "2026-11-10T23:58:44.742772+00:00",
+    "curated_at": "2026-11-10T23:58:44.742772+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 734058,
+    "story_id": "s_46b9f9ab6b2490d6",
+    "title": "Anthropic targets valuation of up to $1.4tn in stock market flotation",
+    "relevance": 6,
+    "score": 5.221,
+    "why": "If Anthropic lists near $1.4tn, it would reset the private-to-public funding math for every other AI lab weighing whether to stay private or chase the same public-market capital.",
+    "notes": [
+      "The Guardian reports Anthropic is targeting a valuation of up to $1.4tn in a stock market flotation; the figure is a reported target, not a priced offering or confirmed filing.",
+      "No listing venue, timing, share count, or offering size is given in the available material, and the report is attributed to The Guardian rather than an Anthropic announcement or SEC/regulatory document.",
+      "The story surfaced across The Guardian's technology and world news sections and was picked up on Lemmy (technology, lemmy.world).",
+      "No financials (revenue, losses, run-rate) or underwriter details appear in the provided text, so the $1.4tn figure stands on reporting alone with no methodology to assess it.",
+      "Editor assigns relevance 6/10; the deterministic score is 6.6/10 across 5 surfaces, and no full article text was available for verification."
+    ],
+    "summary": "The Guardian reports that AI developer Anthropic is targeting a valuation of up to $1.4tn in a stock market flotation. The report gives the headline valuation but, in the material available here, does not specify a listing venue, timing, offering size, or supporting financials, and it is sourced to Guardian reporting rather than to an Anthropic statement or a regulatory filing. The item circulated across the Guardian's technology and world news sections and on Lemmy's technology community. If accurate, a flotation at this scale would place Anthropic among the largest public technology debuts and signal a shift for a leading AI lab from private rounds toward public markets. The claim should be treated as a reported target pending a formal filing or company confirmation.",
+    "channels": [
+      "ai",
+      "startups"
+    ],
+    "category": "industry",
+    "subcategories": [
+      "funding"
+    ],
+    "state": "confident",
+    "novelty": "Anthropic eyes IPO at up to $1.4tn valuation",
+    "audience": "investors and AI industry watchers tracking frontier lab financing",
+    "source_url": "https://theguardian.com/technology/2026/nov/10/anthropic-valuation-stock-market-flotation-ipo-wall-street-ai",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.theguardian.com/technology/2026/nov/10/anthropic-valuation-stock-market-flotation-ipo-wall-street-ai",
+        "points": null,
+        "comments": null,
+        "name": "The Guardian"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/nov/10/anthropic-valuation-stock-market-flotation-ipo-wall-street-ai",
+        "points": null,
+        "comments": null,
+        "name": "Guardian Technology"
+      },
+      {
+        "url": "https://lemmy.world/post/54250941",
+        "points": null,
+        "comments": null,
+        "name": "Lemmy: technology (lemmy.world)"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/nov/10/anthropic-valuation-stock-market-flotation-ipo-wall-street-ai",
+        "points": null,
+        "comments": null,
+        "name": "World news | The Guardian"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/nov/10/anthropic-valuation-stock-market-flotation-ipo-wall-street-ai",
+        "points": null,
+        "comments": null,
+        "name": "The Guardian"
+      }
+    ],
+    "sources_count": 5,
+    "first_seen": "2026-11-10T16:13:13+00:00",
+    "published_at": "2026-11-10T22:01:48.735752+00:00",
+    "curated_at": "2026-11-10T22:01:48.735752+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 732397,
+    "story_id": "s_34e2682f3fefd1b0",
+    "title": "When Coding Agents Get Arms: Safety Risks Across the Digital-Physical Boundary",
+    "relevance": 6,
+    "score": 3.978,
+    "why": "An indirect prompt injection hidden in a web page or email can now move from text into a physical robot arm's motion, and this paper offers the first benchmark to measure how often frontier-model coding agents fall for it.",
+    "notes": [
+      "ArmedAgent is described as the first systematic benchmark covering 36 tasks across 5 scenarios, split into three risk categories: robustness, malicious use, and indirect prompt injection.",
+      "The threat model: coding agents controlling a robot arm zero-shot and end-to-end (no task-specific demonstrations or retraining) can also read digital resources like web pages and emails, so injected instructions carry over into physical actions.",
+      "A distinct subset of tasks targets harmful behaviors the authors say earlier VLA (vision-language-action) and WAM paradigms could not perform, attributed to frontier models' broader knowledge.",
+      "Evaluation runs in simulation and is validated on a physical robot arm; frontier models, including one named 'GPT-6-Astra,' are tested under common agent frameworks.",
+      "The paper reports 'substantial safety risks' across current systems but, per this abstract, gives no per-model success/failure rates or quantified injection-attack rates; those numbers are not in the provided text.",
+      "Claims are self-reported by the authors; the abstract alone does not detail task construction, scoring methodology, or which agent frameworks were used."
+    ],
+    "summary": "The paper introduces ArmedAgent, described as the first systematic benchmark for evaluating safety risks when frontier-model coding agents control a real robot arm zero-shot and end-to-end. It argues two new risks emerge at the digital-physical boundary: frontier models' broad knowledge lets agents perform harmful tasks that earlier VLA and WAM robot-control paradigms could not, and digital threats such as indirect prompt injection from web pages and emails can translate into physical robot actions. The benchmark spans 36 tasks across 5 scenarios, grouped into robustness, malicious use, and indirect injection, with a dedicated subset targeting the newly possible harmful behaviors. Tasks are evaluated in simulation and validated on a physical robot arm. Testing several frontier models, including one named GPT-6-Astra, under widely used agent frameworks, the authors report substantial safety risks. The abstract states findings qualitatively and does not provide quantified attack-success rates or methodology detail.",
+    "channels": [
+      "ai",
+      "security",
+      "hardware"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "first benchmark for prompt-injection/misuse risk in zero-shot LLM-controlled robot arms",
+    "audience": "AI safety/security researchers and robotics engineers building agentic robot control",
+    "source_url": "https://arxiv.org/abs/2611.11438",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arxiv.org/abs/2611.11438",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CR"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.11438",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.RO"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-10T05:00:00+00:00",
+    "published_at": "2026-11-10T18:42:42.700038+00:00",
+    "curated_at": "2026-11-10T18:42:42.700038+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 733614,
+    "story_id": "s_ddddc014021d8429",
+    "title": "The Hardest Tarball?",
+    "relevance": 6,
+    "score": 4.446,
+    "why": "One crafted pax tarball makes 20-plus mainstream tar implementations disagree, so any system that unpacks untrusted archives has a parser-differential attack surface you can test against today.",
+    "notes": [
+      "The archive is built with a single GNU tar call: pax format, delete the ?time and size fields, rename a hard link to 'café' (forcing a UTF-8 pax header), then set size=512 on that hard link whose default size is 0. 512 is exactly one tar header block, so the ambiguous bytes are the header of the following empty file.",
+      "Eight distinct extraction outcomes result. GNU tar, BusyBox, Python, Go, and Perl ignore the size and extract file, café, and empty correctly. bsdtar (macOS system tar) writes the 512 bytes into the hard link, so file ends up containing empty's tar header.",
+      "7-Zip, node-tar, tar-fs, Rust's tar, and astral-tokio-tar treat the 512 bytes as hard-link data but skip them, dropping empty. Java Commons Compress writes empty's header into a separate file; PHP PharData makes café an empty file and still extracts empty; RubyGems drops café and creates a stray PaxHeaders directory; R applies the size to empty, filling it with 512 null bytes from the end-of-archive marker.",
+      "Haskell's tar matches GNU behavior but has a string-decoding bug that writes 'cafÃ©' to disk. .NET, Julia, and uv's tar-codec reject the archive outright; the author argues rejection is the safest response even though it is not strictly POSIX-compliant.",
+      "The root ambiguity: POSIX says data blocks for a hard link 'may be included' in pax archives, leaving undefined whether a hard link can carry size and contents distinct from its original.",
+      "This is one of 134 cases in the author's haampie/tar-minefield test suite; results across implementations are tabulated at stoppels.ch/tar."
+    ],
+    "summary": "A crafted tarball, buildable with a single GNU tar invocation, extracts eight different ways across well-known tar tools because it puts a pax size=512 record (one header block) on a hard-link entry whose size should be 0, exploiting undefined POSIX behavior about whether a hard link's data blocks 'may be included.' GNU tar, BusyBox, Python, Go, and Perl ignore the size and extract correctly; bsdtar writes the bytes into the hard link, corrupting its contents; 7-Zip, node-tar, tar-fs, and Rust's tar skip the data and drop the empty file; Java Commons Compress, PHP PharData, RubyGems, and R each produce their own divergent or corrupted output; Haskell's tar additionally mangles the UTF-8 filename. .NET, Julia, and uv's tar-codec reject the archive, which the author considers the safest behavior despite not being strictly POSIX-compliant. The tarball is one of 134 cases in the author's haampie/tar-minefield test suite, with a per-implementation comparison table published at stoppels.ch/tar.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "crafted pax tarball extracts 8 different ways across tools",
+    "audience": "systems/devtools engineers dealing with archive format edge cases and security implications",
+    "source_url": "https://stoppels.ch/2026/11/07/the-hardest-tarball.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50441338",
+        "points": 137,
+        "comments": 30,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://stoppels.ch/2026/11/07/the-hardest-tarball.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-10T15:00:39+00:00",
+    "published_at": "2026-11-10T18:26:43.328612+00:00",
+    "curated_at": "2026-11-10T18:26:43.328612+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 730846,
+    "story_id": "s_1c8cb37cdb6d6b0a",
+    "title": "DistDebug-Bench: Can LLM Agents Diagnose Bugs in Distributed Systems?",
+    "relevance": 6,
+    "score": 3.978,
+    "why": "If you build or debug distributed systems, this is the first benchmark that measures whether coding agents can actually find the root cause across 120 real multi-service failures, and the reported answer is: not yet.",
+    "notes": [
+      "DistDebug-Bench curates 120 real-world bugs from 11 widely used distributed systems, spanning 5 programming languages and 10 failure patterns.",
+      "The target is code-level diagnosis of complex-system failures, not the small self-contained Python modules that existing agent benchmarks (competitive programming, code synthesis) mostly cover.",
+      "Evaluating current SOTA LLMs and agents, the authors report substantial gaps versus real debugging tasks; these are self-reported benchmark results, not externally validated.",
+      "Two recurring failure modes named: 'tunnel vision' from a lack of explicit reasoning structure, and run-to-run nondeterminism traced to inconsistent tool-use scope across agent runs.",
+      "Benchmark, evaluator, agent traces, and a leaderboard are released publicly (links in the paper).",
+      "The abstract gives no per-model scores, no breakdown of which systems or failure patterns, and no detail on how bugs were curated or scored."
+    ],
+    "summary": "DistDebug-Bench is a benchmark for evaluating whether LLM agents can diagnose failures in distributed systems at the code level, a class of production software the authors argue existing agent benchmarks neglect in favor of self-contained modules. It comprises 120 real-world bugs drawn from 11 widely used distributed systems, covering 5 programming languages and 10 failure patterns. In an evaluation of state-of-the-art LLMs and agents, the authors report substantial gaps between current agents and real debugging tasks, attributing recurring errors to 'tunnel vision' from a lack of explicit reasoning structure and to nondeterminism arising from inconsistent tool-use scope across runs. The benchmark, evaluator, agent traces, and a leaderboard are released publicly. The abstract provides no per-model numbers, curation methodology, or scoring detail, so the magnitude of the claimed gaps cannot be assessed from the text alone.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "first real-world benchmark for LLM distributed-systems debugging",
+    "audience": "AI agent researchers and SRE/devtools engineers evaluating LLM debugging capability",
+    "source_url": "https://arxiv.org/abs/2611.03523",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arxiv.org/abs/2611.03523",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.SE"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.03523",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.DC"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-10T05:00:00+00:00",
+    "published_at": "2026-11-10T16:17:45.406396+00:00",
+    "curated_at": "2026-11-10T16:17:45.406396+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 730842,
+    "story_id": "s_1d6da731d0001b51",
+    "title": "DDBench: A Benchmark for Agentic Debugging on Distributed Systems",
+    "relevance": 6,
+    "score": 3.978,
+    "why": "Coding agents cluster in the high-70s on SWE-bench Verified but have had no distributed-systems repair benchmark; DDBench shows that handing an agent bounded logs and traces moves aggregate pass rate by +19.0 pp, and that the same evidence can steer a strong model to the wrong layer.",
+    "notes": [
+      "60 historical bugs mined from 13 open-source distributed systems, partitioned into three reasoning-scope tiers; each case run under two matched conditions, symptom-only (symptom plus repo) versus context-augmented (adds bounded logs, traces, runtime state, and targeted code-investigation notes) to isolate debugging context from raw model capability.",
+      "10 LLMs evaluated; pass rates span 45 percentage points, and pairwise bootstrap separates 6 of 15 top-tier model pairs at p<0.05 on the hardest case-set, which the authors read as a reasoning dimension single-process benchmarks do not surface.",
+      "Bounded debugging context lifts aggregate pass rate by +19.0 pp, with an asymmetric effect: weaker models gain more in pass rate, stronger models gain more in efficiency.",
+      "Reported failure mode: even faithful debugging context can anchor a strong model on the wrong layer of the system when the supplied observation sits far from the actual fault, so context needs careful curation.",
+      "Framing claim: distributed bugs span processes, nodes, and protocol interactions, with root causes rarely recoverable from source alone and brute-force exploration intractable across non-deterministic interleavings.",
+      "Abstract-only; no per-model scores, bug-selection or context-generation methodology, or dataset/code links are given in the provided text, and the arXiv ID (2608.14863) is implausible for a Nov 2026 posting."
+    ],
+    "summary": "DDBench is a code-repair benchmark of 60 historical bugs drawn from 13 open-source distributed systems and split into three reasoning-scope tiers, built to test LLM coding agents on bugs that span processes, nodes, and protocol interactions rather than single-process repos. Each case is evaluated under two matched conditions: symptom-only (bug symptom plus repository) and context-augmented (additionally supplied with bounded logs, traces, runtime state, and targeted code-investigation notes), isolating the effect of debugging context from model capability. Across 10 evaluated LLMs, the authors report pass rates spanning 45 percentage points, with 6 of 15 top-tier model pairs separated at p<0.05 on the hardest case-set, arguing distributed debugging exercises reasoning that single-process benchmarks miss. Bounded context lifts aggregate pass rate by +19.0 pp, asymmetrically: weaker models gain more pass rate, stronger models gain more efficiency. The authors also report that faithful context can anchor a strong model on the wrong system layer when the observation is far from the fault. All figures are from the paper's abstract; per-model results and construction methodology are not in the provided text.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents",
+      "evals"
+    ],
+    "state": "confident",
+    "novelty": "first benchmark isolating debugging-context effect on agentic distributed-system bug repair",
+    "audience": "engineers building/evaluating coding agents for infra and distributed systems",
+    "source_url": "https://arxiv.org/abs/2608.14863",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arxiv.org/abs/2608.14863",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.SE"
+      },
+      {
+        "url": "https://arxiv.org/abs/2608.14863",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.DC"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-10T05:00:00+00:00",
+    "published_at": "2026-11-10T16:17:24.279167+00:00",
+    "curated_at": "2026-11-10T16:17:24.279167+00:00",
     "model": "claude-opus-4-8"
   }
 ]
