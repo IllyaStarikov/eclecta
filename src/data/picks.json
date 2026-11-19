@@ -55,6 +55,116 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 553120,
+    "story_id": "s_ce536cb0d05bb96c",
+    "title": "[$] Beyond the &",
+    "relevance": 6,
+    "score": 4.741,
+    "why": "If this lands, wrapping a struct in a MutexGuard or custom smart pointer stops breaking disjoint-field borrows, removing a class of `&mut *guard` reborrow workarounds that trip up Rust code today.",
+    "notes": [
+      "The failing case: `state.cache.entry(...).or_insert_with(|| ...state.template...)` compiles through a `&mut RenderState` because the borrow checker tracks `cache` and `template` as disjoint fields, but fails through a `MutexGuard<RenderState>`, which it sees as an opaque access that might alias. Current workaround is to reborrow via `let state: &mut RenderState = &mut *state.lock().unwrap();`.",
+      "Mechanism: expose the compiler's internal 'place' concept (Rust's lvalue, an abstract compile-time location like `state.cache`) to user code. Each smart pointer gets a handle type, often a wrapper around an unsafe pointer, and the compiler auto-creates handles for referenced places.",
+      "Four named traits carry the semantics: ReadPlace, WritePlace, ProjectPlace (turn a place for a struct into a place for one of its fields, e.g. `MutexGuard<RenderState>` to `MutexGuard<String>`), and BorrowPlace (create a new borrowing smart pointer, the role `&` plays for built-ins). Mandry cited six to eight operations total per handle, including a VariantPlace trait for destructive pattern matching.",
+      "Trait impls are `unsafe` because a wrong impl can make the borrow checker unsound; `WritePlace::SAFE = false` tells the checker to treat writes as unsafe. The same mechanism can redefine built-in behavior: a `RefHandle` impl of `BorrowPlace<&'a T>` sets `ACCESS = AccessKind::Shared`, `Timing = Lifetime<'a>`, `SAFE = true`.",
+      "Status and caveats: still a prototype, not stable; Mandry is requesting weird-smart-pointer examples against the design docs. Open questions include borrow syntax (`&` risks confusing type inference, proposed `@` is also unpopular) and diagnostics (the new traits should stay hidden from error messages). Side benefits claimed: pattern matching through smart pointers, and possibly field projection through enums like `Option` (left unresolved)."
+    ],
+    "summary": "At RustConf 2026, Rust language team lead Tyler Mandry presented \"Beyond the &,\" a 2026 effort to make user-defined smart pointers as flexible as built-in references. The motivating problem: the borrow checker can track disjoint field accesses through a `&mut T` but not through opaque wrappers like `MutexGuard`, forcing unintuitive reborrow workarounds. The design, based on work by Nadrieril and Benno Lossin, exposes the compiler's internal \"place\" concept (an abstract compile-time lvalue, distinct from a runtime pointer) to user code via per-pointer handle types and a set of unsafe traits: ReadPlace, WritePlace, ProjectPlace, and BorrowPlace (plus VariantPlace for destructive matching), roughly six to eight operations in all. Implementing these teaches the borrow checker a pointer type's semantics with more flexibility than Deref/DerefMut, and can even re-express built-in reference behavior. With a MutexGuard handle impl, the broken caching example compiles; Mandry also noted it would enable pattern matching through smart pointers. The work remains a prototype with unresolved syntax (`&` vs `@`), diagnostics, and enum-projection questions, and Mandry asked for community examples of unusual smart pointers to stress-test it.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "place-based trait system to generalize borrow checking to custom smart pointers",
+    "audience": "Rust language designers and library authors writing custom smart pointer types",
+    "source_url": "https://lwn.net/Articles/1096028",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50166590",
+        "points": 24,
+        "comments": 0,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lwn.net/Articles/1096028/",
+        "points": null,
+        "comments": null,
+        "name": "LWN.net"
+      },
+      {
+        "url": "https://lwn.net/Articles/1096028/",
+        "points": null,
+        "comments": null,
+        "name": "LWN.net"
+      },
+      {
+        "url": "https://lwn.net/Articles/1096028/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 4,
+    "first_seen": "2026-10-02T15:11:11+00:00",
+    "published_at": "2026-11-19T14:50:09.259517+00:00",
+    "curated_at": "2026-11-19T14:50:09.259517+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 741666,
+    "story_id": "s_fd499db799e59d87",
+    "title": "Show HN: Yogurt – Free, private, open-source alternative to Granola",
+    "relevance": 6,
+    "score": 4.763,
+    "why": "A fully local meeting notetaker that captures mic and system audio directly, so there is no bot in the call and no transcripts or audio leave the machine, with an MIT license you can audit.",
+    "notes": [
+      "Transcription runs on whisper.cpp (large-v3-turbo or a smaller model by hardware); on supported Macs Apple SpeechAnalyzer supplies live words while Whisper writes the saved transcript. Summaries and Q&A run through llama.cpp on a local open-weight model from the Gemma 4, gpt-oss, or Qwen3 families.",
+      "No bot joins the meeting: it records the microphone plus system audio, so it works with any call app, with call detection for Zoom, Teams, and Meet. Minimum 8 GB RAM; macOS 14.4+ Apple Silicon, Windows 10 2004+, or Ubuntu 22.04+.",
+      "Setup downloads a ~5 GB notes model first, then the best model the machine can run (14 GB or more); after that transcription and summaries run offline. The app only goes online for model downloads and update checks.",
+      "Ships a local MCP server, read-only and off by default, giving assistant apps access to meetings/notes/transcripts. Caveat from the docs: there is no per-app token, so any app running under your user account can read while access is on, and that assistant app may send what it reads to its own online model.",
+      "Speaker identification (naming who said what via Zoom/Teams/Meet, requiring Accessibility permission) and local calendar integration are Mac-only for now. Multi-language mode transcribes 99 languages; English only is the default.",
+      "Built on Electron, needs no account, made by Frigade. Windows build is unsigned, so it triggers a 'Windows protected your PC' warning. All performance and model-quality claims are the project's own; no benchmarks or accuracy numbers are provided."
+    ],
+    "summary": "Yogurt is an MIT-licensed, open-source meeting notetaker from Frigade that records calls locally without adding a bot, capturing microphone and system audio instead. Transcription uses whisper.cpp (large-v3-turbo or smaller by hardware), with Apple SpeechAnalyzer providing live words on supported Macs, while summaries and cross-meeting Q&A run through llama.cpp on a local open-weight model from the Gemma 4, gpt-oss, or Qwen3 families, selected for the machine. Audio, transcripts, and AI processing stay on the device; the app goes online only for a one-time model download (roughly 5 GB for the notes model, 14 GB or more for the best quality) and update checks. It exposes a read-only local MCP server, off by default, so an assistant app can read notes and transcripts, though the docs note there is no per-app token and that the assistant may forward what it reads to its own online model. It runs on macOS 14.4+ (Apple Silicon), Windows 10 2004+, and Ubuntu 22.04+ with at least 8 GB RAM; speaker identification for Zoom, Teams, and Meet plus calendar integration are currently Mac-only. The project surfaced on Hacker News at 191 points with 86 comments; all quality and performance claims are the project's own.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "fully local, no-bot meeting transcription/summarization app, MIT licensed",
+    "audience": "engineers wanting private, offline meeting notes without SaaS lock-in",
+    "source_url": "https://github.com/FrigadeHQ/yogurt",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50454625",
+        "points": 191,
+        "comments": 86,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/FrigadeHQ/yogurt",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-11T15:33:06+00:00",
+    "published_at": "2026-11-19T14:01:40.074499+00:00",
+    "curated_at": "2026-11-19T14:01:40.074499+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 743160,
     "story_id": "s_677795b33495be98",
     "title": "A general purpose Apple Silicon layer for x86-64 PCs",
