@@ -1,5 +1,260 @@
 [
   {
+    "id": 743157,
+    "story_id": "s_dd06a942a01e31fd",
+    "title": "AWS emulator",
+    "relevance": 7,
+    "score": 5.94,
+    "why": "An official AWS-built local emulator means you can run integration tests against emulated AWS APIs with no account, no fees, and an embedded mode that wires directly into your SDK client, replacing third-party stand-ins like LocalStack with first-party fidelity scores per service.",
+    "notes": [
+      "Written in Rust, one crate per AWS service, with each service's wire protocol driven by a Smithy model (services/service-<name>/smithy-model/<name>.json); build.rs generates the service declaration from the model.",
+      "Runs as a local HTTPS endpoint on 127.0.0.1:9297 with a self-signed cert, no GUI; you point the AWS CLI (version 2.35.0+ for the agent-skill setup path) or an SDK at it via environment variables.",
+      "Embedded mode compiles the emulator into your test binary and injects its HTTP client straight into the SDK, so there is no endpoint URL, cert, or env var; one isolated instance per test.",
+      "Build cost is heavy: building from source (and embedded mode's first cargo test) needs a Rust toolchain, a C compiler, and at least 100 GB of free disk for target/, since every service is its own crate; source builds supported on Linux x86_64/aarch64, with Windows/macOS using Docker.",
+      "Per-service fidelity is published as scores on each release; unsupported behaviors live under issues/things-that-do-not-work/ and fixed ones move to issues/things-that-now-work/. AWS explicitly says not to use it for production or security testing, and the repo does not accept PRs.",
+      "Telemetry is on by default (AWS says data-minimized: no request/response contents, code, credentials, or personal data, not shared with third parties) and can be disabled via --telemetry off, EMULATOR_TELEMETRY=off, config.toml, or the embedded options. Licensed CC0-1.0 except vendor/ (Apache 2.0)."
+    ],
+    "summary": "AWS Emulator is an AWS-published local emulator of the AWS APIs for building and testing without an AWS account, written in Rust as a Cargo workspace with one crate per service, each driven by a Smithy model. It serves an HTTPS endpoint on 127.0.0.1:9297 with a self-signed cert and no GUI; you redirect the AWS CLI or an SDK via environment variables, or use embedded mode, which compiles the emulator into your test binary and injects its HTTP client into the SDK with no endpoint or env var. Fidelity is tracked per service with published scores and issues/ directories splitting what does not work from what now works; AWS states it is not for production or security testing. Building from source or using embedded mode is expensive: it requires a Rust toolchain, a C compiler, and at least 100 GB for target/, with slow cold builds and fast incremental ones; source builds run on Linux, while Windows and macOS use Docker. Telemetry is on by default, described as data-minimized with no request/response bodies, code, or credentials collected, and can be turned off via flag, env var, or config.toml. The project is licensed CC0-1.0 (vendor/ is Apache 2.0) and does not accept pull requests.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "AWS's own local emulator for AWS APIs, built in Rust",
+    "audience": "backend engineers testing AWS-dependent code locally or in CI",
+    "source_url": "https://github.com/aws/aws-emulator",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50456631",
+        "points": 731,
+        "comments": 222,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://simonwillison.net/2026/Nov/11/aws-emulator/",
+        "points": null,
+        "comments": null,
+        "name": "Simon Willison"
+      },
+      {
+        "url": "https://github.com/aws/aws-emulator",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-11T18:21:38+00:00",
+    "published_at": "2026-11-19T12:40:51.649729+00:00",
+    "curated_at": "2026-11-19T12:40:51.649729+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 743160,
+    "story_id": "s_677795b33495be98",
+    "title": "A general purpose Apple Silicon layer for x86-64 PCs",
+    "relevance": 6,
+    "score": 5.433,
+    "why": "The inverse of the usual port: this boots macOS on commodity Intel/AMD PCs with NVIDIA GPUs by translating arm64 to x86-64 and compiling Metal shaders to Mesa's IR, though at v0.1.0 it mostly doesn't boot yet.",
+    "notes": [
+      "The translator is a combined AOT/JIT compiler covering 3,000+ AArch64 instruction encodings; it maps guest registers to host registers and caches translated code, running on any x86-64-v2 CPU (Intel or AMD, roughly 2011 or newer).",
+      "The GPU path is a Metal driver that compiles AIR (Metal's shader IR) directly to NIR (Mesa's IR), supporting the Metal3 and Apple7 GPU families; it requires an NVIDIA GTX 16 or RTX 20 series card or newer.",
+      "It ships as a UEFI boot program (Secure Boot off) that models a Mac mini (M2) and boots macOS 27; the installer needs an 8 GB+ USB stick, a 60 GB+ empty GPT partition, 8 GB RAM, and network access to download macOS.",
+      "Self-described status at v0.1.0: macOS and most apps start but it is slow, booting chances are 'low,' and major hardware support and fixes are still pending.",
+      "Built in Rust with LLVM/Clang 21+; the first `cargo xtask dist` build fetches and compiles Linux, Mesa, and LLVM sources. The project bundles no Apple software, leaving license compliance to the user."
+    ],
+    "summary": "Stela is a UEFI boot program that runs macOS on x86-64 PCs by translating Apple Silicon (arm64e) code to x86-64 and emulating Apple hardware. Its AOT/JIT compiler covers more than 3,000 AArch64 instruction encodings, maps guest to host registers, caches translations, and runs on any x86-64-v2 CPU from Intel or AMD. A companion Metal driver compiles AIR shader IR directly to Mesa's NIR, targeting NVIDIA GTX 16/RTX 20 series GPUs and newer and supporting the Metal3 and Apple7 GPU families. As of v0.1.0 it models the Mac mini (M2) and boots macOS 27, but the author describes it as slow, unreliable, and still needing major hardware support; most apps start but boot success is low. It is written in Rust with LLVM/Clang 21+, bundles Linux/Mesa/LLVM sources at build time, and ships no Apple software, leaving license compliance to the user.",
+    "channels": [
+      "devtools",
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "macOS-on-x86 via arm64 JIT translation and Metal-to-NIR shader compiler",
+    "audience": "systems/devtools engineers interested in emulation, binary translation, GPU driver internals",
+    "source_url": "https://github.com/tylertms/Stela",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50460154",
+        "points": 70,
+        "comments": 27,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/tylertms/Stela",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-11T23:02:38+00:00",
+    "published_at": "2026-11-19T13:29:30.101517+00:00",
+    "curated_at": "2026-11-19T13:29:30.101517+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 742808,
+    "story_id": "s_48d49404ce3918bd",
+    "title": "Critical RCE Vulnerability in Apache HTTP Server: Everything You Need To Know",
+    "relevance": 6,
+    "score": 5.524,
+    "why": "If you run Apache httpd 2.4.55 through 2.4.70 with HTTP/2 enabled, you are one unauthenticated request away from remote heap-corruption RCE: upgrade to 2.4.71 or set Protocols to http/1.1 now.",
+    "notes": [
+      "CVE-2026-119618 is a race condition in the assign_headers() function of mod_http2: improper synchronization across concurrent threads sharing resources lets a remote, unauthenticated attacker corrupt heap memory and execute code with the web server process's privileges.",
+      "Affected: Apache HTTP Server 2.4.55 through 2.4.70 (patched in 2.4.71); standalone mod_h2 module from GitHub 2.0.8 through 2.0.42 (patched in 2.0.24).",
+      "Credited to independent discovery by Anthropic and Google Cloud's Vulnerability Research Team. As of publication the article reports no public exploit and no in-the-wild exploitation.",
+      "Interim mitigation if you cannot patch: disable HTTP/2 by removing h2 and h2c from the Protocols directive in httpd.conf, leaving Protocols http/1.1, which removes the attack surface entirely.",
+      "Wiz, the vendor publishing this advisory, self-reports that 64% of cloud environments have vulnerable resources and 51% have publicly exposed instances; it notes these figures do not account for configuration, and no methodology is given.",
+      "The article's own text is inconsistent: a section heading references CVE-2026-111497 while the body and title use CVE-2026-119618; treat the CVE ID as the one to confirm against the upstream Apache advisory."
+    ],
+    "summary": "Wiz Research describes CVE-2026-119618, a critical race condition in Apache HTTP Server's HTTP/2 module (mod_http2). The flaw lives in the assign_headers() function, where improper synchronization of concurrent threads sharing resources lets a remote, unauthenticated attacker corrupt the heap and achieve arbitrary code execution at the web server process's privilege level. It affects Apache HTTP Server 2.4.55 through 2.4.70 (fixed in 2.4.71) and the standalone GitHub mod_h2 module 2.0.8 through 2.0.42 (fixed in 2.0.24). The bug was independently found by Anthropic and Google Cloud's Vulnerability Research Team, and at publication time the article reports no public exploit and no observed exploitation. Remediation is to upgrade, or temporarily disable HTTP/2 by restricting the Protocols directive to http/1.1. Wiz self-reports that 64% of cloud environments contain vulnerable resources and 51% have publicly exposed instances, figures stated without methodology and not accounting for configuration.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "unauthenticated RCE race condition in Apache HTTP/2 module",
+    "audience": "security/infra engineers running Apache HTTP Server with HTTP/2",
+    "source_url": "https://wiz.io/blog/cve-2026-119618-rce-apache-http-server-vulnerability",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50462177",
+        "points": 23,
+        "comments": 13,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.wiz.io/blog/cve-2026-119618-rce-apache-http-server-vulnerability",
+        "points": null,
+        "comments": null,
+        "name": "Wiz Research Blog"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-11T19:49:10+00:00",
+    "published_at": "2026-11-19T13:13:55.330297+00:00",
+    "curated_at": "2026-11-19T13:13:55.330297+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 743158,
+    "story_id": "s_4fd2f51c8a0da342",
+    "title": "Lock Your GitHub Actions",
+    "relevance": 6,
+    "score": 5.652,
+    "why": "GitHub Actions now ships a lockfile mechanism that lets you keep readable version tags in workflows while still pinning to exact commits, replacing the hard-to-read full-SHA convention for supply-chain safety.",
+    "notes": [
+      "Workflows can reference actions by vX.Y.Z tags again; a machine-generated .github/workflows/actions.lock records the resolved ref, commit SHA, owner_id, and repo_id for each action, so the readable tag still maps to one exact commit.",
+      "Setup: 'gh extension install github/gh-actions-lock', then 'gh actions-lock' rewrites SHA pins to tags and generates the lockfile; 'gh actions-lock --verify' in CI fails when the lockfile is out of sync with workflows or a locked pin no longer verifies upstream.",
+      "Renovate and Dependabot already update the lockfile during periodic updates; the author notes using cooldowns.",
+      "zizmor v1.32.0 is the first version to support lockfiles; earlier versions instead told you to hash-pin actions. Config via zizmor-pre-commit rev v1.32.0.",
+      "The verify job itself pins the extension (gh extension install ... --pin v0.4.1) and runs on the lightweight ubuntu-slim runner; the author flags that this pin will need manual or automated updating later.",
+      "Lockfile format is version v0.0.3; this is a how-to from an individual developer, not vendor documentation, and includes no adoption or security-efficacy data."
+    ],
+    "summary": "GitHub Actions now supports workflow lockfiles, which let workflow files reference actions by readable vX.Y.Z tags while a generated .github/workflows/actions.lock file pins each to an exact commit (ref, SHA, owner_id, repo_id). This addresses the supply-chain risk of mutable tags that previously forced the full-SHA pinning convention. The post walks through installing the gh-actions-lock CLI extension, running 'gh actions-lock' to convert pins and create the lockfile, and adding a CI job that runs 'gh actions-lock --verify' on an ubuntu-slim runner to catch out-of-sync or tampered lockfiles. Renovate and Dependabot already update lockfiles during automated dependency updates. The zizmor security linter added lockfile support in v1.32.0, its first version to recommend lockfiles over hash-pinning. The author notes the verify job pins the extension to v0.4.1 and that keeping that pin current is still unsolved.",
+    "channels": [
+      "devtools",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "GitHub Actions workflow lockfiles replace SHA-pinning convention",
+    "audience": "engineers maintaining CI/CD pipelines and supply-chain security",
+    "source_url": "https://hugovk.dev/blog/2026/lock-github-actions",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50459485",
+        "points": 165,
+        "comments": 28,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://hugovk.dev/blog/2026/lock-github-actions/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-11T22:16:41+00:00",
+    "published_at": "2026-11-19T12:57:42.435209+00:00",
+    "curated_at": "2026-11-19T12:57:42.435209+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 743165,
+    "story_id": "s_ee8b5fa5301f7a18",
+    "title": "Huawei releases MACaQ, its internal quantizer for local inference",
+    "relevance": 6,
+    "score": 5.843,
+    "why": "A single Apache-2.0 toolchain now quantizes text, image, video, and audio models to 4-bit for llama.cpp, vLLM, Diffusers, and PyTorch, with a refinement mode that outputs standard llama.cpp GGUFs you can run without custom runtimes.",
+    "notes": [
+      "Huawei's Computing Systems Lab released MACaQ (Model Agnostic Calibrated Quantization) under Apache 2.0, with the accompanying paper at arXiv:2611.10649 (Muller et al., 2026). Default inference mode is W4A4.",
+      "Self-reported speed claims: quantizes a 122B-parameter model in 64 minutes using 32.5 GB of device memory, and matches MR-GPTQ/DuQuant++ best Llama-3-8B perplexity with 11x less quantization time, or beats their perplexity. No hardware spec or calibration methodology is given for these numbers.",
+      "On Qwen3.8-27B in vLLM, W4A4 is reported at 2.33x prefill and 2.58x decode vs BF16, with perplexity rising from 2.8463 to 2.8994; the BF16 baseline is treated as 1x.",
+      "MACaQ-R refines weight codes in an existing quantized GGUF while keeping native formats and block scales. On Qwen3.6-35B-A3B it reports KL divergence to FP16 of 0.013367 vs Unsloth UD-Q4_K_XL's 0.015731 at the same 22.36 GB file size; resulting GGUFs run on stock llama.cpp.",
+      "Backends split by modality: Diffusers (image/video/audio, W4A4), llama.cpp (2/3/4-bit GGUF, CPU-capable), vLLM (W4A4 or weight-only serving), PyTorch (speech, W4A4). Each needs a separate Python 3.12 environment.",
+      "W4A4 kernels ship as pull requests to Huawei's CANN stack (ops-nn #12568, ops-tilelang #44) for Ascend NPUs; full-model execution requires integration with an Ascend inference runtime, tying the fast-path hardware to Huawei's ecosystem."
+    ],
+    "summary": "MACaQ is an Apache-2.0 quantization toolkit from Huawei's Computing Systems Lab that applies model-agnostic calibrated quantization to text, image, video, and audio models, with W4A4 as the default inference precision. It targets four backends: llama.cpp (2/3/4-bit GGUF, CPU-capable), vLLM (W4A4 or weight-only serving), Diffusers (image/video/audio), and PyTorch (speech). Self-reported results claim a 122B model quantized in 64 minutes using 32.5 GB of memory, perplexity beating or matching MR-GPTQ and DuQuant++ on Llama-3-8B at 11x less quantization time, and 2.33x/2.58x prefill/decode speedups on Qwen3.8-27B in vLLM for a small perplexity increase (2.85 to 2.90 vs BF16). A refinement mode, MACaQ-R, improves weight codes in existing GGUFs while preserving native formats so the output runs on standard llama.cpp, reporting lower KL divergence to FP16 than Unsloth's UD-Q4_K_XL at equal file size. Fast W4A4 kernels are shipped as CANN pull requests for Huawei Ascend NPUs, and full-model execution on that path requires an Ascend inference runtime; the benchmark claims lack hardware specs and calibration methodology.",
+    "channels": [
+      "ai",
+      "devtools",
+      "hardware"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "apps"
+    ],
+    "state": "confident",
+    "novelty": "Huawei open-sources model-agnostic W4A4 quantizer spanning text/image/video/audio",
+    "audience": "ML engineers deploying quantized local inference across modalities and backends",
+    "source_url": "https://github.com/huawei-csl/MACaQ",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50458166",
+        "points": 67,
+        "comments": 21,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/huawei-csl/MACaQ",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-11T20:23:57+00:00",
+    "published_at": "2026-11-19T12:41:26.274576+00:00",
+    "curated_at": "2026-11-19T12:41:26.274576+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 743167,
     "story_id": "s_3586e7d691479d20",
     "title": "Nvidia is preparing to oust Jensen Huang",
