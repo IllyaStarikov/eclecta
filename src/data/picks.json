@@ -1,5 +1,54 @@
 [
   {
+    "id": 610514,
+    "story_id": "s_0cf9da451bdf205f",
+    "title": "SlopCodeBench 10/2026 – Opus 5.5, Astra wins overall, xhigh considered harmful",
+    "relevance": 7,
+    "score": 4.715,
+    "why": "Paying 2.11x-4.22x for XHigh reasoning effort bought zero reliable gain in strict coding passes here, and on Opus 5.5 it dropped from 28 to 25, so cranking effort settings is not a free win for agentic coding.",
+    "notes": [
+      "Strict pass rate (every test category passes, including regression, with no earlier checkpoint broken) sat at 12.2-16.3% across the frontier set; GPT-6 Astra XHigh led at 16.33% (32/196), only two checkpoints ahead of GPT-6.1 SOL Medium and GPT-6 Astra Medium at 14.80% (29/196).",
+      "Higher effort did not reliably help: strict Medium->XHigh went 28->25 for Opus 5.5 (4.22x cost), 30->26 for GPT-6 SOL (2.11x), and only improved for Astra at 29->32 (2.91x). Author stresses these are single runs that can't isolate effort from run-to-run variance.",
+      "Core pass rate (all tests in a nonempty Core category pass, ignoring broken earlier checkpoints) ran 65.8-74.0%, far above strict; Opus 5.5 Medium led core at 145/196 but only 28 strict. The gap is the point: models get main behavior right far more often than they keep all behavior working as requirements change.",
+      "Cost estimates spanned $178.51 (GPT-6.1 SOL Medium, same strict count as Astra Medium) to $1,550.07 (Fable 5.1 XHigh, three fewer strict passes, ~8.68x the cheapest). Astra XHigh cost $758.62.",
+      "Slop-presence (share of source lines flagged by 200+ linters) was high across the board; Opus Medium hit 94.25% versus Opus XHigh at 77.75% (~5x cleaner) despite Medium's higher strict count. Author cautions the linters were hand-curated from pre-March-2026 agent PRs and may miss newer anti-patterns.",
+      "Methodology/caveats: v1.0 catalog, stock just-solve prompt, seed 42, any-case runner, Docker Python 3.12 + uv, one run per setting. Now 36 problems / 196 equally weighted checkpoints, not comparable to earlier 3-6 problem subsets. Slop metrics cover only 28 of 36 problems (scanner couldn't fully measure files in eight). This is Part I; Gabe Orlanski's qualitative Part II is pending."
+    ],
+    "summary": "Dex Horthy's October 2026 SlopCodeBench update runs ten frontier model/effort campaigns through a staged coding benchmark where an agent builds a program, receives new requirements, and must keep old behavior working across 36 problems and 196 checkpoints. On the headline strict pass rate (pass every test category including regression), scores clustered at 12.2-16.3%: GPT-6 Astra XHigh led at 16.33% (32/196), narrowly ahead of GPT-6.1 SOL Medium and GPT-6 Astra Medium at 14.80%. The less strict core pass rate ranged 65.8-74.0%, illustrating that models get main behavior right much more often than they preserve all tested behavior under changing requirements. XHigh reasoning effort cost 2.11x-4.22x more than Medium but raised strict passes only for Astra; Opus 5.5 and GPT-6 SOL both scored lower on XHigh, though single runs per setting cannot separate effort from variance. Costs spanned $178.51 to $1,550.07 with no clear correlation to strict score, and slop-presence metrics (94.25% for Opus Medium vs 77.75% XHigh) suggest cleaner code did not track higher pass rates, with the author noting the linter battery predates these models. This is Part I; a qualitative deep dive from Gabe Orlanski is promised in Part II.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "higher reasoning effort doesn't reliably improve strict coding pass rates",
+    "audience": "engineers evaluating which LLM/effort setting to use for autonomous coding agents",
+    "source_url": "https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/benchmarking-new-models-on-slop-code-bench.md",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50108717",
+        "points": 244,
+        "comments": 92,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/humanlayer/advanced-context-engineering-for-coding-agents/blob/main/benchmarking-new-models-on-slop-code-bench.md",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-15T19:09:34+00:00",
+    "published_at": "2026-11-19T16:39:07.746985+00:00",
+    "curated_at": "2026-11-19T16:39:07.746985+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 619124,
     "story_id": "s_4d0198d6d3218b7c",
     "title": "Postgres recovery_prefetch can cause outages",
@@ -153,6 +202,108 @@
     "first_seen": "2026-11-11T18:21:38+00:00",
     "published_at": "2026-11-19T12:40:51.649729+00:00",
     "curated_at": "2026-11-19T12:40:51.649729+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 610669,
+    "story_id": "s_fdc7a15ea3295c00",
+    "title": "More Memory, Worse Agents: Error Reproduction and Anti-Persistence in LLM Agents",
+    "relevance": 6,
+    "score": 4.702,
+    "why": "If you build agents that store distilled \"lessons\" in memory, this paper argues that practice regenerates its own mistakes, and that keeping only raw trajectories plus on-demand, disposable guidance beat it on both held-out success and LLM-call cost.",
+    "notes": [
+      "Names a failure mode, 'error reproduction': a faulty stored abstraction shapes execution trajectories, which get re-abstracted into new guidance that reproduces the original error, so the mistake persists even after the original faulty note is gone.",
+      "The distinction is what agents retain from self-generated experience: observed trajectories and outcomes only, versus also the inferred rules, summaries, and skills. Persisting abstractions saves re-derivation cost but gives errors a feedback path through retrieval and reuse.",
+      "'Anti-Persistence' keeps raw trajectories and outcomes but reconstructs task-specific guidance on demand, then discards it after execution so it is never stored as a reusable object; the authors concede indirect feedback through retained trajectories still remains possible.",
+      "An adaptive selector uses prior outcomes to decide whether and how to synthesize guidance per task.",
+      "Self-reported results: across unspecified benchmarks and backbones, Anti-Persistence gets the highest overall held-out success and the lowest average LLM-call cost among the memory designs compared; the abstract names no baselines, datasets, or numbers.",
+      "Takeaway as stated: separate experience accumulation from abstraction persistence in memory-based self-improvement. Evidence is an arXiv abstract only; methodology and absolute figures are not in the provided text."
+    ],
+    "summary": "The paper studies memory-based self-improvement in LLM agents, where agents store experience from their own runs in external memory and reuse it without updating weights. It argues that retaining inferred abstractions (rules, summaries, skills), not just raw trajectories and outcomes, creates a feedback loop the authors call error reproduction: a faulty abstraction biases execution, those trajectories are re-abstracted, and the error regenerates beyond any direct reuse of the original note. The proposed design, Anti-Persistence, accumulates trajectories and outcomes but reconstructs task-specific guidance on demand and discards it after execution, using an adaptive selector that decides whether and how to synthesize guidance from prior outcomes; the authors note indirect feedback through retained trajectories can still occur. They report that across multiple benchmarks and backbones Anti-Persistence achieves the highest overall held-out success and the lowest average LLM-call cost among evaluated memory designs. The abstract provides no specific benchmarks, baselines, backbones, or numeric results.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "names feedback loop where stored agent \"lessons\" regenerate their own errors",
+    "audience": "engineers building long-running LLM agent memory/self-improvement systems",
+    "source_url": "https://arxiv.org/abs/2610.27406",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.27406",
+        "points": 7,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.27406",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-18T20:00:00.000Z",
+    "published_at": "2026-11-19T17:58:39.744646+00:00",
+    "curated_at": "2026-11-19T17:58:39.744646+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 652605,
+    "story_id": "s_ef9ffc04c3e3e3f0",
+    "title": "Your Policy Is Secretly a Harness: The Decision Geometry of Agent Interfaces",
+    "relevance": 6,
+    "score": 4.714,
+    "why": "If you benchmark agent harnesses by swapping prompts, tools, and control logic around a fixed trained model, you are measuring how well that model fits each harness, not which harness is actually better, and the paper shows you can reject the harness that would win after retraining.",
+    "notes": [
+      "The authors define the harness as the prompts, tools, and control logic wrapping a model, and decompose deployed return into two terms: the harness ceiling (best return the harness offers) minus policy mismatch (return lost to the policy's own suboptimal decisions). Training only lowers mismatch; changing the harness moves both terms.",
+      "Under KL-regularized control they argue the log odds of an optimal policy recover how strongly the harness favors each action, so a trained policy encodes its harness's preferences, not just the task.",
+      "In MiniWoB++, reversing the order of observation fields left every optimal decision unchanged yet dropped a trained model's success from 85.0% to 19.2%, evidence that post-training bakes in harness-specific preferences.",
+      "Harnesses that a fixed-model comparison rejects but that raise the ceiling beat the original agent after further training under them; ceiling and mismatch measured beforehand are claimed to predict these gains.",
+      "On Terminal-Bench Lite coding-agent harnesses, ceiling-minus-mismatch (using a stronger model as a stand-in for the optimum) reproduces the accuracy ranking, while either term alone does not.",
+      "Claims rest on one web-navigation benchmark and one coding benchmark, use a stronger model as an optimum proxy rather than a true optimum, and are self-reported; code is linked but no external replication is cited."
+    ],
+    "summary": "The paper argues that an agent's harness (prompts, tools, control logic) is not a neutral wrapper but something the policy learns to fit, so comparing harnesses with one fixed trained model conflates what each harness offers with how well that specific model uses it. Using KL-regularized control, the authors show an optimal policy's log odds recover its harness's action preferences, and they decompose deployed return into a harness ceiling minus policy mismatch, where training reduces only mismatch. In MiniWoB++, reversing observation-field order leaves optimal decisions unchanged but cuts a trained model's success from 85.0% to 19.2%. They further show that harnesses rejected under fixed-model comparison but with higher ceilings beat the original agent once retrained, and that measured ceiling and mismatch predict these gains. On Terminal-Bench Lite, ceiling-minus-mismatch (with a stronger model as optimum proxy) reproduces the accuracy ranking of coding-agent harnesses while neither term alone does. Code is released; evidence spans two benchmarks and relies on a stronger-model proxy for the optimum.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "harness design dominates agent performance more than training",
+    "audience": "researchers/engineers building and evaluating LLM agent harnesses",
+    "source_url": "https://arxiv.org/abs/2610.37255",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.37255",
+        "points": 7,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.37255",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CL"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-26T20:00:00.000Z",
+    "published_at": "2026-11-19T16:54:22.433047+00:00",
+    "curated_at": "2026-11-19T16:54:22.433047+00:00",
     "model": "claude-opus-4-8"
   },
   {
