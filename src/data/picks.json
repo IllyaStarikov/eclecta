@@ -1,5 +1,54 @@
 [
   {
+    "id": 667738,
+    "story_id": "s_2d41d145a4b66e2b",
+    "title": "It's the Memory Latency, Stupid",
+    "relevance": 7,
+    "score": 4.682,
+    "why": "A GROUP BY that pegs a core at 100% can be spending half its cycles idling on DRAM, so the fix is cache locality, not more CPU, and perf counters will tell you which one you're hitting.",
+    "notes": [
+      "Baseline: naive hashtable GROUP BY on ClickBench 'hits' (99M rows, ~17M unique UserIDs), single core on an AMD EPYC 9124 Genoa bare-metal box, ran 3.9s first and 3.6s warm (page-cache hot). perf stat reported 50.1% backend_bound_memory (stalled on memory) and only 16.1% retiring micro-ops.",
+      "Rough latency budget the author cites: ~4-8 instructions/ns on a modern CPU vs 50-100ns per RAM access, so 400-800 instructions per DRAM load; L1 ~1ns and ~64KB, far caches up to a few hundred MB.",
+      "Radix partitioning fix: hash each key, use the top 12 bits (hash >> 52) to bucket rows into 4096 partitions first, then aggregate each small partition with its own HashMap so the working set fits in cache. More total work but less cold memory.",
+      "Measured result of the rewrite: warm time 2.7s, backend_bound_memory down to 23.5%, retiring up to 32.2%, and on-demand DRAM pulled dropped from 4.5GB to 1.5GB (ls_dmnd_fills_from_sys.dram_io_near * 64-byte cache lines).",
+      "Author's own Pivot engine (the vendor here) is claimed at 1848ms single-core (954MB DRAM) and 171.773ms across 16 cores on the same query; these are self-reported and the full Pivot algorithm is not shown.",
+      "Methodology caveat the author flags: used CherryServers bare metal, not AWS/GCP, because cloud VMs don't expose the DRAM-controller perf counters for security reasons; naive version is single-core because it can't parallelize."
+    ],
+    "summary": "A Pivot engine blog post uses hardware perf counters to show that a naive hashtable GROUP BY is bound by memory latency rather than compute. On a 99M-row ClickBench query producing ~17M groups, a single-core AMD EPYC 9124 run took 3.6-3.9s with perf stat showing 50.1% of slots stalled on memory and only 16.1% retiring operations, pulling 4.5GB from DRAM. Rewriting the aggregation with radix partitioning (bucketing keys into 4096 partitions via the top 12 bits of the hash, then aggregating each small partition separately so it fits in cache) cut warm runtime to 2.7s, memory stalls to 23.5%, and DRAM traffic to 1.5GB, while doing more total instructions. The author argues trading cold DRAM accesses for extra CPU instructions is almost always worth it, and teases prefetching and throughput-oriented tricks for a later post on JOIN probing. The piece closes with vendor self-reported numbers for the full Pivot engine: 1848ms single-core and 171.773ms across 16 cores on the same query.",
+    "channels": [
+      "devtools",
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "perf-counter proof that naive GROUP BY is memory-stall bound, not CPU bound",
+    "audience": "database/systems engineers doing low-level performance engineering",
+    "source_url": "https://pivotlake.io/blog/its-the-memory-latency-stupid",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50318720",
+        "points": 229,
+        "comments": 75,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://pivotlake.io/blog/its-the-memory-latency-stupid/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-31T18:38:16+00:00",
+    "published_at": "2026-11-20T09:20:26.942095+00:00",
+    "curated_at": "2026-11-20T09:20:26.942095+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 646950,
     "story_id": "s_0bf28a84749c9363",
     "title": "Can Agentic Code Review Catch Vulnerabilities Before They Are Merged?",
@@ -260,6 +309,216 @@
     "first_seen": "2026-11-11T18:21:38+00:00",
     "published_at": "2026-11-19T12:40:51.649729+00:00",
     "curated_at": "2026-11-19T12:40:51.649729+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 595497,
+    "story_id": "s_6d937d05ec1440f1",
+    "title": "Superoptimizing an FPU emulator",
+    "relevance": 6,
+    "score": 4.662,
+    "why": "An exhaustive instruction-sequence search found a branchless bit-twiddling formula a human could not, removing a mispredictable branch from a hot float routine, and it did so without a theorem prover or an LLM.",
+    "notes": [
+      "The target routine extracts the lowest set bit of a float; the obvious bit-twiddling version breaks on powers of two, forcing an if branch the author wanted gone to avoid misprediction and slowing the common case.",
+      "The search enumerates loop-free formulas inductively by operation count, builds n-op expressions from pairs of smaller ones (a_ops + b_ops = n-1) across a fixed OPS set, and deduplicates identical value-vectors to prune the space.",
+      "Correctness is checked by evaluating candidates against a hand-picked set of representative bit patterns rather than a theorem prover; any counterexample found later is added to the test set and the search re-run.",
+      "The winning formula rewrites x & MANTISSA_MASK as x - (x & MANTISSA_MASK) and folds the negation into the subexpression a - x.to_bits() (equal to -(x & MANTISSA_MASK)), reusing a precomputed value to save one operation.",
+      "Caveat: the discovered formula flips the sign bit on powers of two, which the author deems acceptable for the use case; correctness rests on test coverage, not proof.",
+      "Code is destined for the author's work-in-progress FPU emulator; shared cost figures (op count, memory) are only partially quoted in the excerpt."
+    ],
+    "summary": "The author needed a branchless way to extract the lowest set bit of a float, since the straightforward bit-twiddling version breaks on powers of two and required an if branch. Instead of hand-deriving a formula or using an LLM, they built a brute-force superoptimizer that inductively enumerates loop-free instruction sequences by operation count, deduplicating equivalent expressions as it grows them. Candidates are validated against a set of representative bit patterns rather than a theorem prover, with any counterexample fed back into the test set and the search repeated. The search found a branchless formula that saves one operation by rewriting x & MANTISSA_MASK as x - (x & MANTISSA_MASK) and merging the negation into the subexpression a - x.to_bits(), reusing an already-computed value. The result flips the sign bit on powers of two, which the author considers acceptable, and the code is intended for their work-in-progress FPU emulator.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "brute-force superoptimizer discovers non-obvious bit-twiddling formula for FPU lowest-bit extraction",
+    "audience": "low-level systems programmers and FPU/compiler implementers",
+    "source_url": "https://purplesyringa.moe/blog/./superoptimizing-an-fpu-emulator",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50117935",
+        "points": 39,
+        "comments": 6,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://purplesyringa.moe/blog/superoptimizing-an-fpu-emulator/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://purplesyringa.moe/blog/./superoptimizing-an-fpu-emulator/",
+        "points": null,
+        "comments": null,
+        "name": "purplesyringa"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-16T00:00:00+00:00",
+    "published_at": "2026-11-20T10:25:16.653431+00:00",
+    "curated_at": "2026-11-20T10:25:16.653431+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 576644,
+    "story_id": "s_32e8100c0bae1755",
+    "title": "More Methods, Better Agents? A Reality Check on Self-Distillation in Agentic Reinforcement Learning",
+    "relevance": 6,
+    "score": 4.668,
+    "why": "Before spending thousands of GPU-hours on the latest self-distillation RL method, this study finds none of ten contenders reliably beats plain GRPO on agent tasks.",
+    "notes": [
+      "Ten representative self-distillation methods were compared head-to-head against a GRPO baseline on four agent benchmarks (ALFWorld, ScienceWorld, Search-QA, WebShop) across three model sizes.",
+      "Scale of the study: 132 training runs, 12,124.4 recorded H800 GPU-hours, with repeated evaluation over eight rollout seeds for both pretrained backbones and all eleven trained methods.",
+      "Finding 1: gains over GRPO are limited in scope, with no method consistently winning across settings.",
+      "Finding 2: strong final task scores can hide unstable training dynamics.",
+      "Finding 3: more training compute does not reliably buy better performance.",
+      "The authors frame the motivation as a methodological critique: prior evaluations reuse published baseline scores under differing conditions, rarely compare contemporaneous methods directly, and underreport stability and cost. Scope is self-distillation agentic RL on these four benchmarks; results are not claimed to generalize beyond them."
+    ],
+    "summary": "This paper is a controlled benchmark of self-distillation methods in agentic reinforcement learning, motivated by the observation that existing evaluations reuse published baseline scores under inconsistent conditions, rarely compare current methods directly, and neglect training stability and compute cost. The authors run ten representative methods plus a GRPO baseline on ALFWorld, ScienceWorld, Search-QA, and WebShop across three model sizes, totaling 132 training runs and 12,124.4 recorded H800 GPU-hours, with evaluation repeated over eight rollout seeds. They report three findings: gains over GRPO are limited with no method consistently ahead, strong final performance can mask unstable training, and additional training cost does not consistently yield better results. The work is positioned as a shared basis for fair comparison to steer future research toward reliable and cost-effective agent training. Results are confined to the tested self-distillation methods and benchmarks; the paper does not claim broader generalization.",
+    "channels": [
+      "ai",
+      "ml-research"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "rigorous benchmark showing self-distillation RL methods rarely beat plain GRPO",
+    "audience": "ML researchers/engineers training agentic RL systems",
+    "source_url": "https://arxiv.org/abs/2610.19789",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.19789",
+        "points": 6,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.19789",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CL"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-13T20:00:00.000Z",
+    "published_at": "2026-11-20T10:09:26.052478+00:00",
+    "curated_at": "2026-11-20T10:09:26.052478+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 613586,
+    "story_id": "s_30593ca2591980c6",
+    "title": "Training the Whole Agent, Not Just the Model",
+    "relevance": 6,
+    "score": 4.67,
+    "why": "If you train coding agents with RL against a fixed scaffold, you leave points on the table: co-evolving the harness added up to 12.6 pass@1 points over GRPO with a 9B model, and freezing tools at deployment costs up to 7.7.",
+    "notes": [
+      "HarnessAdapt-RL updates the policy and the harness together during RL: a frozen teacher emits task-specific mechanism-level skills to fix flawed repair strategies, while a separate teacher evolves tools and hooks to address interaction problems recurring across tasks.",
+      "Each harness edit is accepted only if it raises the observed pass rate or the observed trainable rate without lowering either, so changes are gated on measured effect rather than heuristics.",
+      "Self-reported gains with a 9B base model: pass@1 over GRPO up 9.8 points on SWE-bench Verified, 12.6 on Multilingual, and 6.4 on Pro; the method also beats GRPO using the human-designed OpenHands harness.",
+      "Mechanism-level skill gains persist after the skills are removed at evaluation, suggesting the policy internalizes them; evolved tools and hooks are the opposite, and removing them at deployment costs up to 7.7 points.",
+      "Re-evolving tools and hooks as the policy changes beat freezing early harness versions; the trained artifact is a model-harness pair (policy plus evolved tools/hooks), with skills dropped at deployment.",
+      "Numbers are author-reported from the abstract; no training cost, teacher model identities, methodology detail, or baselines beyond GRPO and OpenHands are given in the provided text."
+    ],
+    "summary": "The paper introduces HarnessAdapt-RL, which trains a coding-agent policy while simultaneously adapting the agent's harness during reinforcement learning, rather than keeping the harness fixed. A frozen teacher generates task-specific mechanism-level skills to correct flawed repair strategies, and a separate teacher evolves tools and hooks to fix recurring interaction problems, accepting a change only if it improves the observed pass rate or trainable rate without lowering either. New trajectories from the updated policy then guide further harness adaptation. With a 9B base model, the authors report pass@1 improvements over GRPO of 9.8, 12.6, and 6.4 percentage points on SWE-bench Verified, Multilingual, and Pro, and claim it beats GRPO using the human-designed OpenHands harness. Skill gains persist after removal at evaluation, but removing evolved tools and hooks at deployment costs up to 7.7 points, so the trained output is a model-harness pair: the policy plus evolved tools and hooks, with skills removed at deployment. All figures are author-reported from the abstract, with no cost or detailed methodology in the provided text.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "co-evolves agent harness (tools/hooks) alongside RL policy training",
+    "audience": "researchers/engineers building coding agents and RL training pipelines",
+    "source_url": "https://arxiv.org/abs/2610.28069",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.28069",
+        "points": 6,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.28069",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.SE"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-21T04:00:00+00:00",
+    "published_at": "2026-11-20T10:09:09.360965+00:00",
+    "curated_at": "2026-11-20T10:09:09.360965+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 591414,
+    "story_id": "s_310687e22964a544",
+    "title": "Matthew Garrett: Epic's EAC2 v2 seems fairly easily bypassable",
+    "relevance": 6,
+    "score": 4.675,
+    "why": "Epic's EAC2 anti-cheat stack ties your ability to play to secure boot plus TPM attestation, and Garrett shows a ~$20 part defeats it, so the kernel-level requirement buys game security almost nothing on consumer hardware.",
+    "notes": [
+      "EAC2 v2 (Linux) chains three things: an eBPF security-module monitor, required secure boot plus measured boot to prove a trusted kernel, and TPM remote attestation where the TPM signs boot measurements that a server verifies came from a real, vendor-certified TPM (via the Endorsement Key and vendor-signed EK certificate).",
+      "Attack 1: many desktop boards expose the TPM on a plugin module with a standard pinout including a reset pin; shorting it to ground briefly resets the TPM to its initial state, after which userland can write any measurements it wants and replay a known-good secure-boot log to produce a legitimately signed quote.",
+      "Attack 2 (for soldered/in-CPU/chipset TPMs): the quote only needs to come from *a* TPM, not the motherboard's. A Microchip USB-to-SPI bridge with a Linux driver lets you attach a cheap off-the-shelf TPM module, repoint /dev/tpmrm0 at it, and feed it trusted measurements. A modified kernel simply lies to the eBPF code about which TPM is in use.",
+      "Root cause Garrett names: remote attestation on PCs breaks wherever the verifier can't bind a specific TPM to a specific system, which is essentially all consumer machines (unlike managed enterprise fleets).",
+      "Caveat from the author: server-side detection could blocklist a flagged TPM, forcing a cheater to buy another, so the scheme may be practically good enough even though it is technically weak; whether $20-per-ban deters cheaters is left open."
+    ],
+    "summary": "Matthew Garrett analyzes Epic's announced EAC2 v2 anti-cheat for Linux, which combines an eBPF-based security-module monitor with required secure boot, measured boot, and TPM remote attestation: the TPM signs boot measurements, and a server checks the quote came from a genuine vendor-certified TPM with the right secure-boot keys before admitting the player. He argues the measurement chain is trivially forgeable on consumer hardware. Discrete TPMs on standard plugin modules can be reset at runtime by shorting the reset pin to ground, letting userland write fabricated measurements and replay a legitimate secure-boot log to a modified kernel. Where the TPM is soldered or inside the CPU/chipset, a ~$20 Microchip USB-to-SPI bridge (with a Linux driver) lets an attacker attach an external TPM module, repoint /dev/tpmrm0 to it, and have a modified kernel lie to the eBPF code about which TPM is active. Garrett's underlying point is that PC remote attestation fails whenever the verifier cannot bind a specific TPM to a specific system, which holds for nearly all non-enterprise machines. He concedes the scheme may still be practically sufficient, since server-side detection can blocklist a compromised TPM and force cheaters to buy replacements, but he judges it technically weak.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "TPM reset/swap defeats remote attestation anti-cheat",
+    "audience": "security researchers and Linux kernel/anti-cheat engineers",
+    "source_url": "https://codon.org.uk/~mjg59/blog/p/epics-eac2-v2-seems-fairly-easily-bypassable",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/1iin5o/epic_s_eac2_v2_seems_fairly_easily",
+        "points": 36,
+        "comments": 20,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://codon.org.uk/~mjg59/blog/p/epics-eac2-v2-seems-fairly-easily-bypassable/",
+        "points": null,
+        "comments": null,
+        "name": "Kernel Planet"
+      },
+      {
+        "url": "https://codon.org.uk/~mjg59/blog/p/epics-eac2-v2-seems-fairly-easily-bypassable/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-15T20:23:59+00:00",
+    "published_at": "2026-11-20T09:35:26.952186+00:00",
+    "curated_at": "2026-11-20T09:35:26.952186+00:00",
     "model": "claude-opus-4-8"
   },
   {
