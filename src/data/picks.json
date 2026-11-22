@@ -409,6 +409,109 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 585669,
+    "story_id": "s_aa464e3040b304a7",
+    "title": "Beyond Maliciousness: Static and Runtime Attack-Surface Profiling of Agent Skills",
+    "relevance": 6,
+    "score": 4.526,
+    "why": "Install an agent skill and you grant it your session's privileges: across 6,309 marketplace listings, 70% carry at least one elevated capability and half can run a shell, almost none of it visible at install time.",
+    "notes": [
+      "Methodology: two-phase profiling of 6,309 listings from two marketplaces (ClawHub, skillsmp), combining whole-bundle static analysis and dependency provenance checks with instrumented sandbox execution plus model-based assessment of traces; listings were selected for execution without conditioning on any prior threat signal.",
+      "Capability prevalence (static+runtime measured): 50% show shell-execution capability, 35% filesystem read, 31% filesystem write, 31% network egress, 13% credential access; 7 in 10 carry at least one elevated capability.",
+      "Skills are Markdown instruction documents that run with the authority of the session that loaded them; installing grants standing to direct the agent rather than new OS privilege, and that grant is what the paper quantifies.",
+      "The permission model is described as 'close to inert': frontmatter only pre-approves tools to suppress confirmation prompts, it does not restrict reach; its vocabulary cannot even express credential or environment access, and nothing checks declarations against the bundle.",
+      "Declaration gap: of 6,061 parseable listings only 770 declare anything, and 59% of declaring listings understate actual capability; ClawHub declares roughly 2x as often as skillsmp yet under-declares on 88% of its declarations vs 31% for skillsmp.",
+      "Conclusion: marketplace triage cannot rest on declared permissions and must rest on what the bundle can do; capability-oriented attack-surface profiling is framed as a complement to maliciousness detection, not a replacement."
+    ],
+    "summary": "This preprint audits the attack surface of \"agent skills,\" Markdown instruction documents that a tool-using agent reads and then acts on with the privileges of the loading session. Using a two-phase methodology (whole-bundle static analysis and dependency provenance plus instrumented sandbox execution with model-based trace assessment), the authors profile 6,309 listings from two marketplaces, ClawHub and skillsmp, choosing listings for execution without conditioning on prior risk signals. They report that 50% show shell-execution capability, 35% filesystem read, 31% each filesystem write and network egress, and 13% credential access, with 70% carrying at least one elevated capability, none of which is visible at install time. The existing permission model only suppresses confirmation prompts rather than restricting reach: of 6,061 parseable listings only 770 declare anything, the frontmatter vocabulary cannot express credential or environment access, and 59% of declaring listings understate what their bundle can do (ClawHub under-declares on 88% of declarations vs 31% for skillsmp). The authors argue marketplace triage must rest on measured bundle capability rather than self-declaration, positioning capability-oriented profiling as a complement to maliciousness detection. Numbers are self-reported by the authors; the abstract does not describe false-positive rates or validation of the capability-detection pipeline.",
+    "channels": [
+      "security",
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "agents"
+    ],
+    "state": "confident",
+    "novelty": "first large-scale capability audit of agent-skill marketplaces vs self-declared permissions",
+    "audience": "engineers building or securing agentic coding tools and skill marketplaces",
+    "source_url": "https://arxiv.org/abs/2610.19264",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2610.19264",
+        "points": 3,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2610.19264",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.CR"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-15T04:00:00+00:00",
+    "published_at": "2026-11-22T08:56:56.255847+00:00",
+    "curated_at": "2026-11-22T08:56:56.255847+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 599944,
+    "story_id": "s_b86139485479461e",
+    "title": "Show HN: Esp32sim – Run ESP32 firmware in the browser",
+    "relevance": 6,
+    "score": 4.53,
+    "why": "You can boot an unmodified ESP-IDF firmware image through the real mask ROM into FreeRTOS in a browser tab, debug it with trace/break/watch, and even hit the real network over a virtual WPA2 AP, with no board, no cloud, and no patched firmware.",
+    "notes": [
+      "Covers four SoCs: classic ESP32 (dual Xtensa LX6), ESP32-S3 (dual LX7 @240MHz), ESP32-C3 (RISC-V RV32IMC @160MHz), and ESP32-C6 (RISC-V RV32IMAC @160MHz). Each boots real mask ROM to 2nd-stage bootloader to FreeRTOS to app with no stubs or patched firmware.",
+      "Speed differs by target: S3 uses a block interpreter plus AArch64 JIT at a reported ~150-240 Minsn/s (roughly 30x real time on hello_world); C3 and C6 use a plain interpreter with no block cache or JIT yet. S3 and C3/C6 are labeled 'mature' and 'draft' respectively.",
+      "Hardware validation is explicitly not cycle-exact: S3 checked in JTAG lock-step (reportedly 3000-8000 steps, 0 PC divergence after masking window exceptions and resyncing CCOUNT delay loops); C3 and C6 validated by console diff (205/208 and 203/204 lines identical over three boot cycles, the differences being the ROM 'Saved PC:' line). The author says these comparisons each found five emulator bugs, including a device-command race and a reset-time cycle counter bug.",
+      "A virtual WiFi AP lets the unmodified Espressif WiFi blob do scan, auth, association and the WPA2-PSK four-way handshake; a virtual network behind it provides DHCP/ARP/ICMP/DNS/SNTP, and --net nat relays guest TCP/UDP over host sockets for real HTTPS. In-browser WASM builds have no NAT since the browser has no sockets. Reported decoder checks: 977k/161k/126k instructions with 0 mismatches, from earlier manual runs excluded from CI.",
+      "Architecture shares most of the SoC across chips: C3 and C6 reuse the S3's UART, USB-Serial/JTAG, timers, GPIO, SPI flash controller, GDMA and SHA/AES/RSA models; only the CPU crates are genuinely separate. The C6 adds an 802.15.4 MAC that answers energy scans and, via --cooja, drives as an external Cooja-NG mote in lock-step with emulated MSP430 nodes.",
+      "MIT licensed (copyright Joakim Eriksson, Alice, Mattia Fiumara), written from ESP-IDF register headers, the RISC-V spec and the C3/C6 TRMs; QEMU was consulted for instruction semantics only, no code copied. Live demos run Linux 6.11 on the S3, a SID player, and a '4-bit transformer' fish-steering demo."
+    ],
+    "summary": "esp32sim is an MIT-licensed, instruction-level emulator for four Espressif SoCs across both of its CPU architectures: the classic ESP32 and S3 (Xtensa) and the C3 and C6 (RISC-V). Each target boots the real mask ROM, real 2nd-stage bootloader, and an unmodified ESP-IDF application image through FreeRTOS, with enough of the SoC modeled (GPIO, UART, timers, SPI flash, DMA, crypto, displays, WiFi/802.15.4 MACs) to run full projects end to end, and the whole thing compiles to WebAssembly to run client-side in a browser with no accounts. The S3 path is the most mature, using a block interpreter plus AArch64 JIT at a reported ~150-240 Minsn/s; the C3 and C6 are labeled draft and use a plain interpreter. A virtual WiFi access point with WPA2, DHCP/DNS/NTP and host NAT lets unmodified firmware reach the real network over HTTPS without root or a tun device. The author validates against physical boards by different methods (S3 via JTAG lock-step, C3/C6 via console diffs of 205/208 and 203/204 identical lines) and is explicit that this is not cycle-exact: comparisons normalize window exceptions and resync delay loops, and found five emulator bugs each. Most peripheral models are shared across chips, with only the CPU crates genuinely separate.",
+    "channels": [
+      "devtools",
+      "hardware"
+    ],
+    "category": "software",
+    "subcategories": [
+      "web"
+    ],
+    "state": "confident",
+    "novelty": "full-system ESP32 emulation booting real unmodified firmware in-browser via WASM",
+    "audience": "embedded/firmware engineers working with ESP32 who want CI/testing without hardware",
+    "source_url": "https://github.com/mikroverk/esp32sim",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50131189",
+        "points": 183,
+        "comments": 34,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/mikroverk/esp32sim",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-17T13:51:08+00:00",
+    "published_at": "2026-11-22T08:24:20.322607+00:00",
+    "curated_at": "2026-11-22T08:24:20.322607+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 688465,
     "story_id": "s_0454ff8e50e04b4d",
     "title": "Mac at Any Scale",
