@@ -1,5 +1,53 @@
 [
   {
+    "id": 610523,
+    "story_id": "s_f61ea5945d4bf932",
+    "title": "PingCap TiDB Leaks",
+    "relevance": 8,
+    "score": 4.6,
+    "why": "If you run production workloads on TiDB Cloud, the attackers claim they hold four years of your connection logs, your VPC CIDRs, and any credentials your support engineers pasted into tickets, with a second release promised.",
+    "notes": [
+      "The attackers (via fulcrumsec.vg) claim 10.6 TB total exfiltration; the stage-one release is 128.3 GiB compressed / ~200 GB uncompressed across five archives, including 413 private repos with full git history, the BigQuery analytics estate (83 datasets, 533.8M rows), and four years of Data Gateway logs (102,003,766 connections, 5,036,738 unique client IPs). All figures are the attackers' self-reported claims; PingCAP has not confirmed them in the text.",
+      "Claimed persistence mechanism: GCP service-account keys and an Azure service principal committed in PingCAP's own repos let the attackers stand up a replication feed of the control-plane DB, re-exporting every table every 6 hours for 22 days (8–30 Sept 2026), 88 consecutive exports with zero detection events; last run 06:02 UTC on 30 Sept.",
+      "A 2022 internal ticket (SECURITY-22, dated 2022-08) documented that any organization role, including billing-only, could unconditionally reset the root password of every cluster in the org and take it over as root; the post asserts it was unresolved when the breach ran through Sept 2026.",
+      "Live third-party credentials were allegedly pasted into Jira: an IAM user with AdministratorAccess + S3FullAccess over 258 non-PingCAP buckets (APID-11182), and a 314 MB customer slow-query log (APID-12036) containing 8,027 distinct values — 7,485 AWS STS session sets, 345 GitHub tokens, 192 AI-platform keys (OpenAI, Anthropic, Gemini, ElevenLabs, xAI, OpenRouter), plus a GitHub PAT with 24 admin scopes over 1,701 repos.",
+      "Named customers mapped to tenant IDs via PingCAP's own ops audit trail include Booking.com, Shopee, CAPCOM, Pinterest, Airbnb, Databricks, Square Enix, LINE, SBI, Mercari and PayPay; finance fixtures expose figures like a Cygames $2.4M net-fee order and a claimed FY25 cloud quota of $29,438,510.37.",
+      "The disclosure is an attacker communication with a contact address and torrent/onion download links; it is one-sided, offers no PingCAP response, and the operators state two credential-exposed companies 'will be hearing from us soon,' signaling extortion intent."
+    ],
+    "summary": "An entity publishing as fulcrumsec.vg released a forensic disclosure claiming it exfiltrated 10.6 TB from PingCAP and its TiDB Cloud managed database service, covering the control plane, billing and finance data, AWS/GCP cost estates, Jira, CRM, source code, and four years of customer connection logs. The attackers say they achieved persistence using GCP service-account keys and an Azure service principal committed in PingCAP's own repositories, running an undetected control-plane replication feed every six hours for 22 days in September 2026 (88 exports, no detections). They highlight a 2022 internal ticket (SECURITY-22) stating that any org member, including a billing-only role, could unconditionally reset root on every cluster, and allege engineers routinely pasted live production credentials into support tickets, including AWS admin keys over 258 unrelated buckets and a 314 MB log carrying 8,027 live third-party secrets. A tenant-to-customer table names 42+ companies such as Booking.com, Shopee, CAPCOM, Pinterest, Airbnb, Databricks and LINE, with VPC CIDRs, cluster versions and some credentials included. The stage-one release is 128.3 GiB compressed across five archives distributed via torrent and onion links, with more promised and an explicit threat toward two credential-exposed customers. All claims and figures are attacker-supplied and self-reported; the post contains no response or confirmation from PingCAP.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "attacker-published full forensic breach disclosure of a major DBaaS",
+    "audience": "security engineers, SREs, and anyone evaluating managed-database/cloud vendor risk",
+    "source_url": "https://fulcrumsec.vg/pingcap",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50173716",
+        "points": 243,
+        "comments": 35,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://fulcrumsec.vg/pingcap/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-20T22:45:39+00:00",
+    "published_at": "2026-11-22T06:48:19.926378+00:00",
+    "curated_at": "2026-11-22T06:48:19.926378+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 702234,
     "story_id": "s_22041097bb03e678",
     "title": "Baidu released ERNIE 5.5 Flash Base",
@@ -358,6 +406,105 @@
     "first_seen": "2026-11-11T18:21:38+00:00",
     "published_at": "2026-11-19T12:40:51.649729+00:00",
     "curated_at": "2026-11-19T12:40:51.649729+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 688465,
+    "story_id": "s_0454ff8e50e04b4d",
+    "title": "Mac at Any Scale",
+    "relevance": 6,
+    "score": 4.54,
+    "why": "If you run iOS CI or coding agents that need a Mac, this is the operational playbook for renting macOS at scale: 4 Gbps guest networking, two-VM-per-host limits, and multi-hundred-GB Xcode images distributed BitTorrent-style.",
+    "notes": [
+      "Namespace racks MacBook Pros, not Mac Minis, because Mac Minis ordered in January 2026 arrived in July and lag on CPU updates (Mini skipped M5 for 10 months, then jumped to M6 first); each laptop gets an IP KVM, an external 10G NIC, and four cables, totaling 48 cables plus 12 Ethernet plus KVM wiring per shelf.",
+      "Unexpected failure modes: HDMI cables (not MagSafe) were the least reliable connector, to the point they bought out Amazon's entire supply of a good one; FileVault reboot prompts expire after 5 minutes on both KVM screen and Tahoe's SSH remote unlock, forcing a physical reboot-and-race, with `fdesetup authrestart` offered as a workaround that keeps the disk unlocked.",
+      "Built on Apple's Virtualization framework (compared to Firecracker), not the lower-level Hypervisor framework, which cannot run macOS; Apple caps macOS to two VMs per physical host regardless of hardware, so even a 24-core/192GB machine is sliced only in half (e.g. 6/12-core instances on 14-core Minis).",
+      "Guest networking is routed through a gVisor userspace TCP/IP stack to enforce per-customer policies on untrusted code; every packet crosses an IPC boundary between the VMM and host processes, capping throughput at a claimed 4 Gbps upstream (measured via Fast.com), below line rate.",
+      "VM images reach 2 TB across macOS versions, iOS runtimes, and Xcode betas; Namespace stores them sparse and as layered shallow copies in its OCI registry, distributes blocks peer-to-peer (BitTorrent-inspired, but among trusted peers), and materializes them to each node's local SSD using APFS holes and clonefile/`cp -c` rather than slower NBD-backed disks.",
+      "A caveat flagged in the text: installing an Xcode beta bumps global CoreDevice/CoreSimulator versions and breaks stable Xcode on the same system, forcing separate image variants with and without pre-release Xcode."
+    ],
+    "summary": "Namespace, a cloud infrastructure provider, describes how it runs macOS at scale for customers building and testing iOS apps, which require a Mac, the iOS Simulator, and a recent Xcode to ship to the App Store. Because Mac Mini supply chains were delayed (ordered January, delivered July 2026) and lagged on CPU updates, the company racked MacBook Pros instead, wiring each with an IP KVM, an external 10G NIC, and custom heat-wicking holders, and solving surprise problems like unreliable HDMI cables and FileVault unlock prompts that expire after 5 minutes. macOS instances run as VMs on Apple's Virtualization framework (akin to Firecracker), which caps hosts at two macOS VMs each, so machines are sliced in half. Untrusted guest traffic is processed through a gVisor userspace network stack, which incurs IPC roundtrips and limits throughput to a self-reported 4 Gbps upstream. Multi-terabyte VM images (driven by large iOS runtimes and multiple Xcode versions) are stored sparse and layered in an OCI registry, distributed peer-to-peer in BitTorrent fashion, and materialized to local SSDs using APFS sparse files and clonefile. The post notes incoming M5/M6 Minis and Studios are far simpler to manage (built-in 10G, auto power-on, full MDM) and teases custom single-cable USB-C hardware and possibly racking phones next.",
+    "channels": [
+      "devtools",
+      "hardware",
+      "startups"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "operational details of racking MacBooks (not Minis) as cloud CI infra",
+    "audience": "infra/devops engineers running CI fleets and iOS build pipelines",
+    "source_url": "https://namespace.so/blog/mac-at-any-scale",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50352758",
+        "points": 144,
+        "comments": 63,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://namespace.so/blog/mac-at-any-scale",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-03T14:53:42+00:00",
+    "published_at": "2026-11-22T07:34:36.865961+00:00",
+    "curated_at": "2026-11-22T07:34:36.865961+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 651452,
+    "story_id": "s_4707924967b41d14",
+    "title": "Decompiling Fast Food Tycoon 2: Drawing the World",
+    "relevance": 6,
+    "score": 4.545,
+    "why": "An LLM agent, given Ghidra output, live process memory, and a patched message handler, reconstructed a 2001 game's entire rendering and simulation logic without ever editing the executable on disk, a concrete template for agent-driven reverse engineering.",
+    "notes": [
+      "Toolchain: Ghidra decompiled fastfood2.exe's 4,046 functions into ~9.5MB of C-like text (addresses, field offsets, constants, calls), loaded into SQLite and wrapped with a decomp_index.py script for grep, callers, and string queries; the author drove a self-described GPT-6.1 Sol Medium agentic loop.",
+      "Live inspection: the agent used Windows ReadProcessMemory to read running values (cash, camera position, selected building) and traced the decompiled functions that wrote those addresses; it patched the Windows message handler to inject clicks and camera moves on the game's own UI thread, leaving the on-disk binary untouched. A UI crawler mapped the remaining unknown controls.",
+      "Renderer: dirty-region repainting limits redraws, cells are visited diagonally/isometrically across multiple passes, and hidden characters are kept visible by marking their shape with a temporary pixel value, then outlining covered body parts (yellow) and thought icons (white). Each pixel stores a 16-bit color plus a separate lighting byte, combined with a dither pattern only at final draw.",
+      "Lighting: a 25-entry hourly table ranges from 70 at night to 251 at day; lamp on/off thresholds stagger via `light <= 160 + (lamp.id & 7)`, so default standard lamps switch on ~18:25-18:30 and off ~05:35-05:40. Pizzerias use paired sprite files, a light mask (.m.spr) kept per-pixel as the brighter of two values and night window colors (.l.spr), so signs and windows stay lit while the building darkens.",
+      "Simulation details (author claims from decompiled code): citizen schedules persist across days rather than resetting; walker speeds differ (errand boy 27px/s, tourist 16.2px/s, celebrity 13.8px/s); pizza scoring splits each pie into 24 regions, checks topping symmetry and ingredient pairings per customer group, and runs a plagiarism check on ingredient weights that flags copied recipes as 'not original', costing +30 taste points for yuppies/goths/tourists and +5 for big shots.",
+      "Provenance notes: internal strings and animation names are mostly German; a config file labels the game 'Pizza3' (Init-File fuer Pizza3-Stadt); the title is Fast Food Tycoon 2, known in Europe as Pizza Connection 2. The post's generated images reuse the game's own decompiled fonts."
+    ],
+    "summary": "A developer describes decompiling the 2001 isometric business sim Fast Food Tycoon 2 (European name Pizza Connection 2) by running an LLM agentic loop over Ghidra output. Ghidra turned the executable's 4,046 functions into ~9.5MB of C-like text, stored in SQLite and queried through a custom index script; the agent correlated live memory read via ReadProcessMemory with the code that modified those values, and controlled the game by patching the Windows message handler to post commands to its UI thread without altering the binary on disk. The write-up reconstructs the renderer in detail: dirty-region repainting, diagonal multi-pass draw order, a temporary-pixel trick that outlines characters hidden behind walls, and a per-pixel 16-bit color plus separate lighting byte combined with dithering at final output. Lighting runs off a 25-entry hourly brightness table (70 night to 251 day) with lamps staggered by object-ID bitmasking and pizzerias using paired light-mask and night-color sprite files that keep windows and signs lit. The author also documents simulation quirks drawn from the code: persistent daily citizen schedules with stereotyped allocations, differing walker speeds, and a pizza scoring system that divides each pizza into 24 regions, checks symmetry and ingredient pairings, and runs a plagiarism check by ingredient weight. All technical specifics are the author's reading of the decompiled code and self-reported; no external verification or full methodology for the agent loop is provided.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "agentic LLM-driven decompilation reverse-engineering a 2001 game's renderer",
+    "audience": "systems/graphics programmers and reverse-engineering enthusiasts",
+    "source_url": "https://healeycodes.com/decompiling-fast-food-tycoon-2-drawing-the-world",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50223739",
+        "points": 181,
+        "comments": 37,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://healeycodes.com/decompiling-fast-food-tycoon-2-drawing-the-world",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-24T18:17:57+00:00",
+    "published_at": "2026-11-22T06:48:48.907488+00:00",
+    "curated_at": "2026-11-22T06:48:48.907488+00:00",
     "model": "claude-opus-4-8"
   },
   {
