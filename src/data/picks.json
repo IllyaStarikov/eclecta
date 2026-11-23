@@ -466,6 +466,55 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 565692,
+    "story_id": "s_aa232bf767b57ce5",
+    "title": "OpenSSH 10.6",
+    "relevance": 6,
+    "score": 4.477,
+    "why": "If you run sshd on Linux built with PAM disabled, 10.6p2 closes a password-authentication bypass; separately, OpenSSH has switched to shipping fixes in more frequent releases rather than batching them, so patch cadence just changed.",
+    "notes": [
+      "10.6p2 (2026-11-05): fixes a password authentication bypass exploitable via sshd(8) on Linux systems built and run with PAM support disabled (noted as affecting musl libc setups); the team says the root cause is outside sshd but is avoidable there. Reported by Özgün Kültekin of Wakefield.",
+      "Release-policy change: OpenSSH reports that AI-identified security bugs are repeatedly rediscovered independently by other researchers, which it reads as evidence adversaries can find them too; for now it is making more frequent releases instead of batching fixes until the next planned one. Several fixes credit work 'in collaboration with Claude and Anthropic Research.'",
+      "10.6 Security: disables the LZ77 dictionary coder to mitigate the 'Crossing the Streams' chosen-plaintext side channel (Bäumer/Brinkmann, arXiv:2609.07709) that recovers secrets across multiplexed channels sharing one compression dictionary; compression is now less effective, and app-level compression is recommended instead. Also disallows '$' and '\\\\' in command-line usernames to block shell injection via ProxyCommand/Match exec.",
+      "Post-quantum: enables the hybrid ssh-mldsa44-ed25519 signature algorithm (dropping the prior experimental '@openssh.com' suffix, so old keys must be regenerated) and, in 10.6p2, allows it as a CA signature algorithm. WarnWeakCrypto is now on by default server-side and logs non-PQ-safe key agreement.",
+      "Deprecations: scp(1) -R (remote-to-remote copy) now emits a warning and will later be ignored, citing shell-quoting injection risk; support for platforms needing root for PTY allocation without fd-passing (QNX 6, SCO OpenServer 5) is slated for removal, and GatewayPorts/StreamLocalForwarding are forcibly disabled there now. The --disable-fd-passing configure option was removed.",
+      "Other 10.6 items: FIDO resident keys preserve credProtect PIN/biometric policy; ssh-add -P skips PIN where not required; new PubkeyAuthOptions max-pk-ok (default 6) separates key-probe tests from MaxAuthTries; default KDF rounds raised 24 to 32 with a 1M-round cap; fallback ed25519 switched from SUPERCOP to libsodium."
+    ],
+    "summary": "OpenSSH 10.6 (2026-10-06) and the follow-up 10.6p2 (2026-11-05) ship security fixes alongside a stated change in release practice: because AI-found bugs are being independently rediscovered by other researchers, the team now releases bugfixes more frequently rather than batching them. 10.6p2's headline fix is a password-authentication bypass exploitable through sshd on Linux built with PAM disabled (musl setups), with the root cause described as outside sshd. 10.6 disables the LZ77 dictionary coder to mitigate the 'Crossing the Streams' compression side channel (arXiv:2609.07709), tightens command-line username parsing against shell injection, and enables the hybrid post-quantum signature ssh-mldsa44-ed25519 (requiring regeneration of experimentally-generated keys). It begins deprecating scp -R and support for platforms that need root for PTY allocation without fd-passing (QNX 6, SCO OpenServer 5), forcibly disabling GatewayPorts and StreamLocalForwarding on those platforms now. Several fixes credit collaboration with Claude and Anthropic Research. All vendor and reporter claims here are self-reported in the release notes; no independent verification is provided.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "AI-found bug reports now shaping OpenSSH release cadence",
+    "audience": "sysadmins and security engineers maintaining SSH infrastructure",
+    "source_url": "https://openssh.org/releasenotes.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=49983791",
+        "points": 243,
+        "comments": 12,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.openssh.org/releasenotes.html#10.6p2",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-06T20:41:39+00:00",
+    "published_at": "2026-11-23T13:27:33.368939+00:00",
+    "curated_at": "2026-11-23T13:27:33.368939+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 689389,
     "story_id": "s_012f464fbd189790",
     "title": "Hackers behind $6.3bn Binance heist ‘used malware and bogus job interviews’",
