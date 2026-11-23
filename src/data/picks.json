@@ -409,6 +409,161 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 569012,
+    "story_id": "s_cf8cb668153b6146",
+    "title": "Updates: Sharing AI progress on mathematics (amazing!); and my lecture plans",
+    "relevance": 6,
+    "score": 4.494,
+    "why": "An internal OpenAI model has reportedly produced 722 manuscripts (372 families) claiming proofs or counterexamples for decades-old open problems, including the Unique Games Conjecture and the Mahler conjectures, giving working researchers a concrete, if unverified, test of whether AI can now do frontier mathematics rather than compete on benchmarks.",
+    "notes": [
+      "OpenAI released 722 manuscripts grouped into 372 families, attributed to an internal AI model; Kalai maps 26 of them to problems he has written about over two decades.",
+      "Headline claims include proofs of both the symmetric and general Mahler conjectures in every dimension, a 9-dimensional compact set violating Borsuk's conjecture (not coverable by 10 smaller-diameter sets), counterexamples to Hadwiger's conjecture even among graphs with independence number at most two, and raising the chromatic-number-of-the-plane lower bound from five to six.",
+      "Also claimed: the 3D Kakeya maximal conjecture and 4D Hausdorff-dimension case, the Unique Games Conjecture and 2-to-1 Games with perfect completeness, Barnette's Hamiltonian-cycle conjecture, a 35-vertex/66-edge counterexample to Sidorenko's conjecture, Erdos's arithmetic-progression conjecture for every length, and nonamenability of Thompson's group F.",
+      "Kalai, who is quoting the release rather than verifying it, states three caveats: the collection mixes results at different verification stages, proofs still need human checking and digestion over months, and even Lean formal verification can have issues.",
+      "Separate AI-based results outside this collection are name-checked but not catalogued: irrationality of an unspecified constant, Navier-Stokes, the Komlos, Chvatal, and KLS conjectures.",
+      "All claims are OpenAI self-reported via a release; the article provides no methodology, no model name, and no independent confirmation, and points to third-party analyses (Persiflage, Stack Overflow/'SO') as early reactions."
+    ],
+    "summary": "Mathematician Gil Kalai reports that OpenAI released 722 manuscripts, grouped into 372 families, of mathematical results produced by an internal AI model, and he connects 26 of them to open problems he has discussed on his blog over the past twenty years. The claimed results span combinatorics, geometry, number theory, and theoretical computer science, including proofs of the symmetric and general Mahler conjectures, a dimension-9 counterexample to Borsuk's conjecture, counterexamples to Hadwiger's conjecture, a lower bound of six for the chromatic number of the plane, the 3D Kakeya maximal conjecture, the Unique Games and 2-to-1 Games conjectures, and nonamenability of Thompson's group F. Kalai calls it an amazing milestone but attaches explicit disclaimers: the results sit at different verification stages, must be checked by the community over the coming months, and even Lean formal verification can have flaws. He separately notes AI-based claims on Navier-Stokes, the Komlos, Chvatal, and KLS conjectures, and an irrationality result that fall outside this collection. The post mixes this news with Kalai's personal lecture-tour and blogging notes, and the AI claims are self-reported by OpenAI without methodology given in the text.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "science"
+    ],
+    "category": "research",
+    "subcategories": [
+      "math"
+    ],
+    "state": "confident",
+    "novelty": "OpenAI claims AI-generated proofs/counterexamples for dozens of open math conjectures",
+    "audience": "researchers tracking AI-for-math progress and formal verification",
+    "source_url": "https://gilkalai.wordpress.com/2026/10/07/updates-sharing-ai-progress-on-mathematics-amazing-and-my-lecture-plans",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://gilkalai.wordpress.com/2026/10/07/updates-sharing-ai-progress-on-mathematics-amazing-and-my-lecture-plans/",
+        "points": null,
+        "comments": null,
+        "name": "Combinatorics and more (Gil Kalai)"
+      },
+      {
+        "url": "https://gilkalai.wordpress.com/2026/10/07/updates-sharing-ai-progress-on-mathematics-amazing-and-my-lecture-plans/",
+        "points": null,
+        "comments": null,
+        "name": "Mathblogging.org"
+      },
+      {
+        "url": "https://gilkalai.wordpress.com/2026/10/07/updates-sharing-ai-progress-on-mathematics-amazing-and-my-lecture-plans/",
+        "points": null,
+        "comments": null,
+        "name": "theory.report — Theory of Computing Blog Aggregator"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-07T02:35:52+00:00",
+    "published_at": "2026-11-23T09:13:55.364496+00:00",
+    "curated_at": "2026-11-23T09:13:55.364496+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 603363,
+    "story_id": "s_de20e89b95ef1975",
+    "title": "Superlite: A Faster Alternatie to Superpowers",
+    "relevance": 6,
+    "score": 4.507,
+    "why": "If your Claude Code builds crawl, the bottleneck is usually serial dispatch and per-step approval prompts, not model latency: this plugin cut a 177-test benchmark build to 16.1 minutes with zero human stops by parallelizing tasks and gating rules in hook code.",
+    "notes": [
+      "superlite is a Claude Code plugin (iha2/superlite) forked from 'superpowers', reusing its plugin layout, session-start hook, and lifecycle skills; the author warns against enabling both in one session because they share skill names and both inject startup context.",
+      "It collapses the author's measured 8-12 human gates per feature into one batch of up to four questions plus a single design-and-plan sign-off; after that it only halts for destructive, outward-facing, or security-sensitive actions (e.g., it won't push to main unprompted), and never pushes or merges without you.",
+      "Work is a task graph keyed on file ownership and declared input/output interfaces; independent tasks run concurrently, peaking at 18 agents at once (21 total) on the benchmark, with first agents building ~3 minutes in.",
+      "Model tiers: Opus orchestrates and does a final review-only pass (barred from editing code), Sonnet implements and reviews, Haiku handles small fully-specified off-critical-path tasks, and tiered fix-only agents apply findings.",
+      "Rules are enforced by hooks, not prompts: one blocks the coordinator from editing project code, another converts foreground pytest/npm test into background runs so tests never block, plans must pass `lint --stable` before work starts, and hooks log per-agent tokens/cost/time with a soft budget alert at 70% of cap.",
+      "Self-reported benchmark (static site generator plus spreadsheet engine, 177 hidden tests, run on Opus): 16.1 min and 177/177, versus superpowers stock 33.6 min mean and orchestrated 23.5 min mean (52% and 31% less); author concedes this is one run of the current build against earlier runs on the same machine, 'a strong hint rather than peer-reviewed science.'"
+    ],
+    "summary": "superlite is a Claude Code plugin, forked from the 'superpowers' workflow, built for autonomous rather than step-by-step collaborative development. It replaces superpowers' 8-12 per-feature human approval gates with a single batch of questions and one plan sign-off, then runs unattended except for destructive, outward-facing, or security-sensitive actions. Builds are structured as a task graph partitioned by file ownership and declared interfaces, so independent tasks execute in parallel (up to 18 concurrent agents in the benchmark), with models assigned by tier: Opus coordinates and does a final review-only pass, Sonnet implements and reviews, Haiku handles small mechanical tasks, and separate fix-only agents apply review findings. Operational constraints are enforced by hooks rather than prompts, including blocking the coordinator from editing code, forcing tests into background runs, and requiring plans to pass a lint check before work begins. On a self-run benchmark (a static site generator plus spreadsheet engine scored by 177 hidden tests), superlite completed in 16.1 minutes with all tests passing and no human stops, versus superpowers at 33.6 minutes stock and 23.5 minutes orchestrated. The author presents the numbers as a single current-build run against earlier same-machine runs, explicitly calling it a strong hint rather than rigorous evidence.",
+    "channels": [
+      "ai",
+      "devtools"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "parallel multi-model agent orchestration, single approval gate vs per-step",
+    "audience": "engineers using Claude Code / agentic coding workflows who want faster autonomous builds",
+    "source_url": "https://contextfirst.blog/superlite-hand-an-agent-a-spec",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50147492",
+        "points": 130,
+        "comments": 60,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://contextfirst.blog/superlite-hand-an-agent-a-spec/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-19T02:01:16+00:00",
+    "published_at": "2026-11-23T07:35:38.371593+00:00",
+    "curated_at": "2026-11-23T07:35:38.371593+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 600413,
+    "story_id": "s_fcf5d7917f280dab",
+    "title": "Chrome and Edge are removing XSLT: what breaks and what does not",
+    "relevance": 6,
+    "score": 4.517,
+    "why": "If you serve RSS/Atom or legacy XML that relies on the browser doing client-side XSLT, that rendering path stops working in Chrome and Edge, so you need a server-side or JavaScript fallback.",
+    "notes": [
+      "Chrome and Edge are removing built-in XSLT support; browsers drop the native client-side XSLTProcessor path for transforming XML into HTML.",
+      "The breakage hits pages that ship raw XML with an xml-stylesheet reference and expect the browser to apply the XSLT, a common pattern for human-readable RSS/Atom feeds and older XML-to-HTML pipelines.",
+      "Migration options not drawn from the article but implied by the mechanism: pre-render to HTML server-side, or use a JavaScript XSLT library; the piece's specific recommendations are not captured here.",
+      "Reached the front page with 101 points and 109 comments on Hacker News, surfacing twice.",
+      "Caveat: no article text was available for this writeup, so the removal timeline, affected Chrome/Edge versions, deprecation flags, and the exact list of what breaks versus what does not are unconfirmed here."
+    ],
+    "summary": "The piece reports that Chrome and Edge are removing built-in XSLT support, the browser feature that applies XSL transforms to XML documents client-side. The headline frames it as a sorting exercise: what breaks versus what does not. The primary affected cases are pages that depend on the browser rendering XML through an attached stylesheet, including styled RSS/Atom feeds and legacy XML-to-HTML workflows; static HTML and server-rendered output are unaffected. The item drew 101 points and 109 comments on Hacker News and surfaced twice. No article text was available for this summary, so the removal timeline, the specific browser versions and flags involved, and the exact migration guidance the article offers remain unconfirmed.",
+    "channels": [
+      "devtools",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "browsers dropping native XSLT support",
+    "audience": "web developers maintaining legacy XML/XSLT-based sites",
+    "source_url": "https://doctor-seo.net/en/blog/news/chrome-edge-removing-xslt",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50134617",
+        "points": 101,
+        "comments": 109,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://doctor-seo.net/en/blog/news/chrome-edge-removing-xslt/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-17T20:07:33+00:00",
+    "published_at": "2026-11-23T07:19:42.405062+00:00",
+    "curated_at": "2026-11-23T07:19:42.405062+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 585669,
     "story_id": "s_aa464e3040b304a7",
     "title": "Beyond Maliciousness: Static and Runtime Attack-Surface Profiling of Agent Skills",
