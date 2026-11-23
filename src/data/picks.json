@@ -466,6 +466,105 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 631256,
+    "story_id": "s_e509e616038dff0d",
+    "title": "Dream-1",
+    "relevance": 6,
+    "score": 4.471,
+    "why": "A single hosted API can now drive bimanual parallel-gripper robots it was never trained on, including an 18-year-old PR2, at a claimed $0.0013 per action and no per-robot data collection to start.",
+    "notes": [
+      "Dream Labs left stealth with $90M in seed funding and put Dream-1 behind a public API; the client code shown is a few calls (set_observation, get_action).",
+      "The method, World Action Models, predicts video and actions jointly and commands any two-arm/parallel-gripper robot through a shared end-effector pose space, with the robot's own IK solver converting poses to joints; the head and wrist cameras reduce unseen grippers to 'shapes moving through a scene.' Zero-shot quality depends on the robot's IK solver and varies by robot.",
+      "Precursor DreamZero (Feb 2026) reportedly generalized zero-shot after post-training on just 30 minutes of YAM robot data, versus the hundreds-to-thousands of hours the company says embodiment-specific transfer usually needs.",
+      "Self-reported pricing: $3/hr for Dream-1, $2/hr for Dream-1-flash; each call returns 1.6s of actions, ~2,250 calls/hour. When zero-shot falls short, Fine-tuning-as-a-Service (FaaS) adapts per robot; examples needed 5 min of data for close embodiments, 77 min for Dexmate's dexterous hands, 98 min for modified YAM end effectors. Fine-tuning raised language-following scores on 10 of 12 beta-partner robots, and one-shot still beats zero-shot (gap remains).",
+      "Benchmark claims come from Robocurve, described as a Public Benefit Corporation evaluating the model independently (RoboDojo-RC Tier 1, Oct 18 2026): Dream-1 claimed above Opus 5.5 and Gemini 4 Argon, at 16x lower cost per attempt than Gemini 4 Argon and 1.7x faster than GPT-6 Astra. Methodology beyond the tier name is not given in the text.",
+      "Hardware context cited: ~$2k bimanual arm setups, 7 semi-humanoids under $15k, and Hugging Face's $399 Microduck selling 10,000+ units within days. Dream-1 is limited to bimanual parallel-gripper manipulation; mobile manipulators and dexterous hands are stated as future, not shipped."
+    ],
+    "summary": "Dream Labs came out of stealth with $90M in seed funding and released Dream-1, a World Action Model served through a public API that the company says can control bimanual, parallel-gripper robots it never saw in training, including the 18-year-old PR2, with no per-robot fine-tuning or demonstrations. The approach predicts video and actions together and commands robots through a shared end-effector pose space, relying on head and wrist cameras so that unfamiliar grippers appear only as pixels; the robot's own inverse-kinematics solver turns predicted poses into joint commands, and the company notes zero-shot quality varies with that solver and across tasks. Dream Labs frames this as a way out of robotics' cold-start problem, pairing it with a hardware trend toward cheap bimanual arms and semi-humanoids. Self-reported running cost is $3/hr for Dream-1 and $2/hr for the lighter Dream-1-flash, roughly $0.0009-$0.0013 per action; when zero-shot is insufficient, a Fine-tuning-as-a-Service path adapts the model from minutes-to-hours of robot data and lifted language-following on 10 of 12 beta robots. Benchmark claims placing Dream-1 ahead of Opus 5.5 and Gemini 4 Argon at 16x lower cost come from Robocurve, described as an independent Public Benefit Corporation, but the post gives little methodology detail. The post is a vendor launch and states real limits: coverage is confined to bimanual parallel-gripper manipulation, and a gap between one-shot and zero-shot performance remains.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "hardware"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "zero-shot control of unseen robot embodiments via World Action Models",
+    "audience": "robotics/ML engineers tracking generalist robot policies",
+    "source_url": "https://dreamlabs.ai/research/dream-1",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50223785",
+        "points": 114,
+        "comments": 58,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://dreamlabs.ai/research/dream-1/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-24T18:23:24+00:00",
+    "published_at": "2026-11-23T15:19:04.613364+00:00",
+    "curated_at": "2026-11-23T15:19:04.613364+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 589593,
+    "story_id": "s_90d1a3d6ceb2496e",
+    "title": "Everyone is doing Git on S3 wrong",
+    "relevance": 6,
+    "score": 4.476,
+    "why": "If agents push every commit instead of batching, the single-repo write ceiling becomes the bottleneck, and Enroute's vendor benchmark claims 7,600 pushes/sec into one repo versus the ~120-300/sec Cursor reports for the S3-WAL design.",
+    "notes": [
+      "The target is the S3-backed write-ahead-log design (Cursor/SpaceX 'Continuity', August, plus open-source clones like walgit): any machine rebuilds a repo from an immutable packfile log whose entries become visible via conditional PUTs to a single WAL index object. Reads scale (Cursor claims linear to 100 replicas), but writes serialize through that one index and must land on one on-disk copy, which Cursor reports caps at ~120 pushes/sec on S3 Standard and >300 on S3 Express One Zone.",
+      "Root problem with treating Git as plain content-addressed storage on S3: Git traverses a graph (ref to commit to tree to blobs, plus delta chains) where each next key is known only after the prior read returns, so each hop is a 30-40ms round trip. The fix both designs use is data locality via packfiles; Enroute's claim is it keeps locality without pinning a full on-disk copy per replica.",
+      "Enroute architecture: stateless compute tier plus a 'ledger' tier running one replicated log per repo with CockroachDB-style MultiRaft consensus holding refs and the layer list. Pushes build immutable 'layers' lock-free in parallel; only the ref commit is ordered via compare-and-swap. Small pushes inline into the log; layers >1 MiB go straight to the bucket. Appending a log entry is cited at 1-2ms with group-commit fsyncs, versus a bucket round trip.",
+      "Storage format cuts the object graph along commit boundaries into per-commit 'segments' grouped into immutable 'layers' (LSM-like: ~once/sec flush, merge ~8 similar layers into one ~8x larger, byte copies without recompression). Serving a fetch replays segments along common ancestry rather than walking the live graph. Caveats stated: duplicate objects across segments (deduped at build), shallow clones must send boundary deltas in full, partial clones rely on same-kind object clustering.",
+      "Benchmarks are self-reported. Peak 7,600 pushes/sec on a single repo (EC2+S3, forgemark); the author frames this as ~18x Entire.io and ~1,000x GitHub while explicitly noting the numbers come from different setups and give only order-of-magnitude. Versus stock Git 2.56.0 over git http-backend/Apache on linux.git: shallow clones >2x faster, partial clones on par, full clones ~17% slower, incremental fetches ~13% slower, with the lag blamed on more expensive client-side delta decoding. Cold vs warm full clone of linux.git: 128.6s vs 126.0s.",
+      "Listed gaps: no garbage collection yet (immutable layers leave unreachable objects after force-push/branch delete), HTTP smart protocol only (no SSH), no cross-node routing so repos cache redundantly, slow cold-start fetch performance, no compute autoscaling, and a planned server-side gRPC write API for agents."
+    ],
+    "summary": "The post from Enroute argues that current S3-backed Git hosting designs, led by Cursor/SpaceX's August 'Continuity' work and its open-source imitators, scale reads well but serialize writes through a single write-ahead-log index per repository and still require every replica to hold a full on-disk copy of the repo. Enroute's alternative separates stateless compute from a storage tier whose 'ledger' runs one MultiRaft-replicated log per repo (holding refs and a layer list), with object storage for durability; pushes build immutable layers lock-free and only ref commits are ordered via compare-and-swap. A custom format cuts the object graph into per-commit segments grouped into immutable layers, letting the server answer clones/fetches by replaying segments along common ancestry instead of walking the graph, with LSM-style flush and compaction to the bucket. Self-reported benchmarks claim over 7,600 pushes/sec into one repository (framed loosely as ~18x Entire.io and ~1,000x GitHub, with the author noting differing setups), shallow clones over 2x faster than stock Git, but full clones ~17% and incremental fetches ~13% slower due to costlier client-side delta decoding. All performance numbers are vendor-produced, and the project still lacks garbage collection, SSH support, cross-node routing, and autoscaling.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "critiques S3-backed Git WAL designs, proposes locality-first alternative",
+    "audience": "infra engineers building or evaluating Git hosting at scale",
+    "source_url": "https://enroute.sh/blog/everyone-is-doing-git-on-s3-wrong",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://lobste.rs/s/ydo1wi/everyone_is_doing_git_on_s3_wrong",
+        "points": 9,
+        "comments": 3,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://enroute.sh/blog/everyone-is-doing-git-on-s3-wrong",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-15T04:07:04.765-05:00",
+    "published_at": "2026-11-23T14:14:32.876974+00:00",
+    "curated_at": "2026-11-23T14:14:32.876974+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 565692,
     "story_id": "s_aa232bf767b57ce5",
     "title": "OpenSSH 10.6",
