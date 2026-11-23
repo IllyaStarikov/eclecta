@@ -466,6 +466,234 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 576813,
+    "story_id": "s_b9db4b6fd5bd8c7f",
+    "title": "Gemini 4 Argon for Robotics",
+    "relevance": 6,
+    "score": 4.441,
+    "why": "A frontier LLM now claims to write and verify its own robot control code, build MuJoCo digital twins from video, and generate 4,500+ simulated episodes that lift a real bimanual Franka's task success from 56% to 75% — all numbers self-reported, with no paper or independent methodology.",
+    "notes": [
+      "ERQA (Embodied Reasoning) benchmark: Argon scores 87% using 'pure reasoning' and is claimed to outperform every other frontier model. This is DeepMind's own number, with no methodology, baseline comparisons, or external verification published.",
+      "Control stack is code-as-policies: Argon emits curl calls to a local HTTP server (POST /plan) invoking primitives like grasp, place_until_contact, move_until_contact, goto with explicit yaw_deg/pitch_deg, verifying against an annotated wrist-cam reticle in a closed visual-servoing loop. Demonstrated on a Boston Dynamics Spot (12-DoF legs + 6-DoF arm) and a simple 6-DoF arm.",
+      "Sim-to-real data generation claim: from one overhead RGB photo, Argon reconstructs a calibrated MuJoCo twin, defines a 77-task curriculum, and synthesizes 4,500+ domain-randomized episodes for VLA fine-tuning, reported to raise real success rate 56%->75% and cut completion time 35s->24s.",
+      "Digital-twin and physics demos impose anti-cheating constraints: objects move only via mj_step contact, no welds, no external forces, no copying logged tactile readings; teleop commands may deviate <=0.55 rad (arm) / 0.65 rad (hand). Other demos cite a 76-DoF humanoid with 22-DoF hands, 500 Hz (dt=0.002s) stepping, and a 'mujoco_warp' throw verified as 6/6 box knockdown.",
+      "Also claims steering the Gemini Omni video world model via timestamped action prompts, 4-level hindsight annotation of an ALOHA 2 origami episode (G1 goal, 6 G2 subtasks, 17 G3 primitives, QC reweighting 0.15x-0.25x for behavior cloning), and reproducing robotics papers into MuJoCo WebAssembly browser labs verified in headless Chromium.",
+      "Shipping as model ID gemini-4-argon in the Interactions API with day-one google-genai SDK support and as a selectable model in Google Antigravity. The post is a marketing blog: every capability is a vendor demo prompt, with no technical paper, ablations, or reproducibility details."
+    ],
+    "summary": "Google DeepMind introduced Gemini 4 Argon, a general-purpose physical-reasoning model aimed at the robotics stack, positioned as progress toward \"physical AGI.\" DeepMind claims Argon scores 87% on the ERQA embodied-reasoning benchmark via pure reasoning and outperforms other frontier models, but provides no methodology or independent verification. The post shows demo prompts across the robotics lifecycle: controlling a Boston Dynamics Spot quadruped and a 6-DoF arm through curl-based motion primitives and an annotated wrist-cam visual-coordinate harness; building MuJoCo digital twins from teleoperation and egocentric video under explicit no-cheating physics constraints; steering the Gemini Omni video world model; producing hierarchical hindsight annotations; and reproducing robotics papers as MuJoCo WebAssembly browser labs. The headline quantitative claim is that Argon-generated simulation data (4,500+ episodes from a single RGB photo) raised a bimanual Franka FR3's real-world success rate from 56% to 75% and cut completion time from 35s to 24s. Argon is available as gemini-4-argon in the Interactions API, the google-genai SDKs, and Google Antigravity. All figures are vendor self-reported; there is no accompanying technical paper or external benchmark audit.",
+    "channels": [
+      "ai",
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [
+      "devices"
+    ],
+    "state": "confident",
+    "novelty": "frontier model claims 87% on embodied reasoning benchmark via pure reasoning",
+    "audience": "robotics/embodied-AI engineers building VLM-driven control stacks",
+    "source_url": "https://deepmind.google/blog/gemini-4-argon-for-robotics",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://deepmind.google/blog/gemini-4-argon-for-robotics/",
+        "points": null,
+        "comments": null,
+        "name": "Google DeepMind Blog"
+      },
+      {
+        "url": "https://developers.googleblog.com/gemini-4-argon-for-robotics/",
+        "points": null,
+        "comments": null,
+        "name": "Google Developers Blog"
+      },
+      {
+        "url": "https://developers.googleblog.com/gemini-4-argon-for-robotics/",
+        "points": null,
+        "comments": null,
+        "name": "Google Developers Blog"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-13T16:01:58+00:00",
+    "published_at": "2026-11-23T18:32:10.430985+00:00",
+    "curated_at": "2026-11-23T18:32:10.430985+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 688229,
+    "story_id": "s_f664f59662c1ed6f",
+    "title": "Google dismantles botnet secretly running on 1.3 million Android TV boxes",
+    "relevance": 6,
+    "score": 4.443,
+    "why": "Google certification did not guarantee a clean Android TV box: 1.3 million certified devices shipped a post-setup backdoor that ran residential proxies and ad fraud until Google dismantled the x.cpe botnet.",
+    "notes": [
+      "x.cpe ran at its peak on more than 1.3 million Google-certified Android TV devices, mostly sold under the MECOOL brand, built by Shenzhen-based Videostrong Technology.",
+      "Certification, normally required for Google apps and branding, missed the malware; Google attributes the evasion to Videostrong's obfuscation and a backdoor that installed malware only after boxes were set up and online.",
+      "The entry point was a stub app named x.cpe or com.oemservice with no malicious code of its own, but system-level permissions to install modules on command; it also disabled Play Protect so silently installed packages were not flagged.",
+      "The malware evolved from a single-stage dropper into a modular three-stage platform whose access was sold to third parties, per Google's Threat Intelligence Group.",
+      "Observed uses were residential proxies routing high-volume traffic and ad fraud modules; Videostrong also had full device access to run terminal commands, capture the screen, and probe other devices on the local network, which Google says it watched happen in real time."
+    ],
+    "summary": "Google's Threat Intelligence Group says it has shut down x.cpe, a botnet that at its height ran on more than 1.3 million Google-certified Android TV devices, mostly MECOOL-branded boxes made by Shenzhen-based Videostrong Technology. According to Google, the devices passed certification because of obfuscation, then received malware via a backdoor after setup, bypassing screening meant to catch such threats. A stub app (x.cpe or com.oemservice) carried no malicious payload itself but held system-level permissions to install modules on demand and disabled Play Protect to hide them. The malware grew from a single-stage dropper into a modular three-stage platform whose access was sold to third parties. Google found most boxes running residential proxies or ad-fraud modules, and says Videostrong retained full device access, including running terminal commands, capturing the screen, and probing local-network devices, which Google reports observing in real time. The figures and attributions are Google's self-reported findings from its blog post.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "certified Android TV boxes used backdoor-installed malware post-sale",
+    "audience": "security researchers and engineers interested in supply-chain/device-certification attack vectors",
+    "source_url": "https://arstechnica.com/google/2026/11/google-dismantles-botnet-secretly-running-on-1-3-million-android-tv-boxes",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://arstechnica.com/google/2026/11/google-dismantles-botnet-secretly-running-on-1-3-million-android-tv-boxes/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      },
+      {
+        "url": "https://arstechnica.com/google/2026/11/google-dismantles-botnet-secretly-running-on-1-3-million-android-tv-boxes/",
+        "points": null,
+        "comments": null,
+        "name": "Tildes"
+      },
+      {
+        "url": "https://arstechnica.com/google/2026/11/google-dismantles-botnet-secretly-running-on-1-3-million-android-tv-boxes/",
+        "points": null,
+        "comments": null,
+        "name": "Ars Technica"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-11-03T17:08:21+00:00",
+    "published_at": "2026-11-23T18:16:01.269473+00:00",
+    "curated_at": "2026-11-23T18:16:01.269473+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 597936,
+    "story_id": "s_e057c2069f11a385",
+    "title": "Flux 3 Image Klein: open weights, 5.6B parameters",
+    "relevance": 6,
+    "score": 4.452,
+    "why": "An open-weight text-to-image model that fits in 8GB of VRAM (INT8) and renders a 1MP image in about 4 seconds on an RTX 5090 puts local editing and LoRA fine-tuning on consumer hardware, free for commercial use under $5M revenue.",
+    "notes": [
+      "5.6B parameters, the smallest in BFL's comparison against Qwen-Image 2.1 (7B) and Krea 2 (12.9B); BFL's internal evals claim it ranks first in text-to-image, multi-reference (up to 10 reference images) and editing, and rates above closed models Ideogram V4.5 and FLUX.2 [pro]. These are self-reported, no methodology disclosed.",
+      "Versus FLUX.2 [klein] 9B it claims +91 Elo in text-to-image and +70 in editing with 38% fewer parameters. Generator weights: 11.2GB BF16, 5.6GB FP8; INT8 build runs on RTX GPUs with 8GB VRAM via ComfyUI or Diffusers.",
+      "Distilled + INT8: ~4s per 1MP image on RTX 5090, under 9s on RTX 4070. On datacenter NVIDIA GB300 in NVFP4, under 0.6s; serving a LoRA adds ~5% latency. Trained on GB200 NVL72.",
+      "Latency comparisons are not apples-to-apples: FLUX 3 Klein was timed server-side, rivals timed client-side including polling and network. Krea 2 used its Medium tier (Large took 31.1s).",
+      "FLUX Kommunity License: free commercial use for individuals and orgs under $5M annual revenue, plus research/non-commercial; larger orgs need self-hosted licensing or API. API pricing from $0.009 per 1K images.",
+      "Ships base (for fine-tuning) and step-distilled (low-latency) checkpoints plus FP8/INT8/NVFP4 builds; day-one support in ComfyUI, Diffusers, TensorRT-LLM, SGLang Diffusion, vLLM-Omni, and NeMo AutoModel/Ostris AI Toolkit for LoRA. Red-teamed internally and by external partner Cinder, which BFL says showed fewer vulnerabilities than other open-weight models."
+    ],
+    "summary": "Black Forest Labs released FLUX 3 Image Klein, a 5.6B-parameter open-weight model for text-to-image, image editing, and multi-reference generation (up to 10 references), with native 4K output and bounding-box placement control. BFL's internal evaluations claim it ranks first among compared open-weight models and rates above closed models Ideogram V4.5 and FLUX.2 [pro], despite being smaller than Qwen-Image 2.1 (7B) and Krea 2 (12.9B); versus FLUX.2 [klein] 9B it claims +91/+70 Elo (text-to-image/editing) with 38% fewer parameters. The model targets consumer GPUs: INT8 runs on 8GB-VRAM RTX cards, generating a 1MP image in ~4s on an RTX 5090 and under 9s on an RTX 4070, with sub-0.6s on datacenter GB300 in NVFP4. It ships base and distilled checkpoints with FP8/INT8/NVFP4 builds and day-one support across ComfyUI, Diffusers, TensorRT-LLM, SGLang Diffusion, vLLM-Omni, and LoRA tooling. Weights fall under the FLUX Kommunity License (free commercial use under $5M revenue), with API pricing from $0.009 per 1K images. Quality claims come from undisclosed internal methodology, and the latency comparison measured Klein server-side while rivals were timed client-side.",
+    "channels": [
+      "ai"
+    ],
+    "category": "ai",
+    "subcategories": [
+      "models"
+    ],
+    "state": "confident",
+    "novelty": "5.6B open-weight image model beats larger rivals on quality/latency",
+    "audience": "developers building local/on-device image generation and editing tools",
+    "source_url": "https://bfl.ai/blog/flux-3-image-klein",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50123580",
+        "points": 128,
+        "comments": 37,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://bfl.ai/blog/flux-3-image-klein",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-16T19:47:13+00:00",
+    "published_at": "2026-11-23T17:45:07.796957+00:00",
+    "curated_at": "2026-11-23T17:45:07.796957+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 658001,
+    "story_id": "s_e11c1befded2af56",
+    "title": "Investors turn on Google owner Alphabet after profit miss, ad slowdown and high spending",
+    "relevance": 6,
+    "score": 4.453,
+    "why": "The market cut hundreds of billions off a $4tn company despite 25% revenue growth, signaling that investors are now punishing AI capex guidance ($195-205bn for 2026, more in 2027) even when the cloud business funding it is growing triple digits.",
+    "notes": [
+      "Net profit fell 25% YoY to $26.2bn ($2.12/share), below FactSet estimates, dragged down by an $8.7bn loss on equity investments attributed to its SpaceX stake; revenue rose 25% to $127.6bn, just under the ~$128bn consensus.",
+      "Google Cloud revenue jumped 103% to $30.7bn with operating income tripling to $11.1bn; the company credited TPU sales, and is now selling the chips externally (OpenAI reportedly plans to buy some, Anthropic has committed to up to 1 million Google AI chips), framed as a challenge to Nvidia.",
+      "Capex hit $51.4bn for the quarter, more than double the $24bn a year earlier, with 2026 guidance of $195-205bn and a promise to keep raising spend in 2027; Pichai called it 'long-range planning, not a short-term allocation exercise.'",
+      "Spending outstripped operating cash flow for a second straight quarter, leaving a $9.1bn gap covered by $28.7bn in bond sales and $12.4bn in new share issuance; the quarter also included an EU fine.",
+      "Ad revenue grew 11% to $82bn (short of expectations); search rose 12% to $63.4bn (down from 17% prior quarter); YouTube ads rose 9% to $11.2bn (down from 13%); Gemini app hit 1bn users and models now process ~32bn tokens/minute, 4x a year ago.",
+      "Other Bets posted $372m revenue against a $2bn operating loss; Waymo does 500,000+ paid rides/week across 15 US metros, targeting 1m/week by year-end."
+    ],
+    "summary": "Alphabet shares fell double digits after Q3 2026 results showed net profit down 25% YoY to $26.2bn, missing estimates, partly due to an $8.7bn loss on its SpaceX equity stake. Revenue rose 25% to $127.6bn, just below consensus, with ad growth slowing (search up 12% vs 17% prior quarter, YouTube ads up 9% vs 13%). Google Cloud was the standout, up 103% to $30.7bn with operating income tripling to $11.1bn, which the company attributed partly to sales of its in-house TPU chips, now being sold externally to challenge Nvidia (OpenAI reportedly plans purchases; Anthropic committed to up to 1 million chips). Capex reached $51.4bn for the quarter, with full-year 2026 guidance of $195-205bn and more growth promised in 2027; spending outstripped operating cash flow for a second straight quarter, a $9.1bn gap covered by $28.7bn in bonds and $12.4bn in new shares. The reaction reflects investor anxiety about escalating AI infrastructure spend. Other items: Gemini app reached 1bn users, Waymo does 500,000+ weekly paid rides, and a US judge in September declined to force divestiture of Google's ad-tech business, imposing operating restrictions instead.",
+    "channels": [
+      "ai",
+      "startups",
+      "hardware"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "capex guidance hits $195-205B as market punishes AI spend",
+    "audience": "investors and engineers tracking AI capex and cloud/TPU economics",
+    "source_url": "https://theguardian.com/technology/2026/oct/28/google-alphabet-q3-earnings-report",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/28/google-alphabet-q3-earnings-report",
+        "points": 8,
+        "comments": null,
+        "name": "Mastodon trending links"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/28/google-alphabet-q3-earnings-report",
+        "points": null,
+        "comments": null,
+        "name": "The Guardian"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/28/google-alphabet-q3-earnings-report",
+        "points": null,
+        "comments": null,
+        "name": "Guardian Technology"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/28/google-alphabet-q3-earnings-report",
+        "points": null,
+        "comments": null,
+        "name": "World news | The Guardian"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/28/google-alphabet-q3-earnings-report",
+        "points": null,
+        "comments": null,
+        "name": "The Guardian"
+      }
+    ],
+    "sources_count": 5,
+    "first_seen": "2026-10-28T23:39:12+00:00",
+    "published_at": "2026-11-23T17:28:26.376282+00:00",
+    "curated_at": "2026-11-23T17:28:26.376282+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 645620,
     "story_id": "s_fa8fddc2b8a7d3ad",
     "title": "Trust Mechanisms for Offline Generative AI at the Edge: A Connectivity-Regime Framework and an Empirical Study on a Raspberry Pi 5",
