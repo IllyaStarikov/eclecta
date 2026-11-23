@@ -48,6 +48,63 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 577333,
+    "story_id": "s_a321ebb8b264ed75",
+    "title": "Anthropic Reinvents Source Control As Claude Floods the World With Code",
+    "relevance": 7,
+    "score": 4.491,
+    "why": "If your org starts shipping AI-generated code at Anthropic's pace, Git's local-first model becomes the bottleneck, and Anthropic is betting a server-centric VCS is the fix.",
+    "notes": [
+      "Merge volume rose from ~2,500 code changes/day in May 2026 to over 30,000/day by September 2026, per Anthropic's own blog post (self-reported, no methodology given); the company says latent demand for merging is 'practically infinite.'",
+      "Scion is a custom centralized, monorepo VCS the article likens to Subversion; it took several months of model prompting plus a five-month migration.",
+      "The unit of work is a 'changeset,' an entry in a write-ahead log. Unlike a Git commit that stores a pointer to a tree, a changeset stores the files changed relative to its first parent plus content-addressed pointers to compressed file contents in blob storage.",
+      "The design is agent-oriented: the client offloads work to the server, source-control queries are exposed via API so internal tools query without a local repo, cutting synchronization but raising demands on server speed.",
+      "No open-source release is planned. Anthropic says the system isn't right for general use but published the approach, predicting similar scaling problems will reach other orgs within months, and notes it has ample funding to build custom infrastructure.",
+      "Primary claims come via The Register summarizing an Anthropic blog post; the numbers and architecture details are vendor-stated and not independently verified in the text."
+    ],
+    "summary": "Anthropic says the volume of Claude-generated code outgrew its Git-based infrastructure, with merges rising from about 2,500 per day in May 2026 to more than 30,000 per day by September 2026. In response it built Scion, a custom centralized monorepo version-control system the article compares to Subversion, after several months of model prompting and a five-month migration. Scion's unit of work is a 'changeset' recorded in a write-ahead log; rather than Git's tree pointer, it stores the list of files changed relative to its first parent plus content-addressed pointers to compressed blobs in storage. The design is built for AI agents: it pushes work server-side and exposes source-control queries via API so tools can operate without a local repo, trading synchronization for higher server-speed requirements. Anthropic will not open-source Scion and says it isn't suited for general use, but published its approach, arguing comparable scaling pressure will hit other organizations soon. All figures and design claims are self-reported via an Anthropic blog post relayed by The Register.",
+    "channels": [
+      "devtools",
+      "ai"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "Anthropic ditched Git internally for a custom centralized VCS built for AI agents",
+    "audience": "devtools engineers and infra architects anticipating AI-driven code volume",
+    "source_url": "https://developers.slashdot.org/story/26/10/14/0244248/anthropic-reinvents-source-control-as-claude-floods-the-world-with-code",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://developers.slashdot.org/story/26/10/14/0244248/anthropic-reinvents-source-control-as-claude-floods-the-world-with-code?utm_source=rss1.0mainlinkanon&utm_medium=feed",
+        "points": null,
+        "comments": null,
+        "name": "Slashdot"
+      },
+      {
+        "url": "https://www.theregister.com/devops/2026/10/13/anthropic-reinvents-source-control-as-claude-floods-the-world-with-code/5302943",
+        "points": null,
+        "comments": null,
+        "name": "The Register"
+      },
+      {
+        "url": "https://www.theregister.com/devops/2026/10/13/anthropic-reinvents-source-control-as-claude-floods-the-world-with-code/5302943",
+        "points": null,
+        "comments": null,
+        "name": "The Register"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-14T11:00:00+00:00",
+    "published_at": "2026-11-23T10:31:39.894510+00:00",
+    "curated_at": "2026-11-23T10:31:39.894510+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 702234,
     "story_id": "s_22041097bb03e678",
     "title": "Baidu released ERNIE 5.5 Flash Base",
@@ -406,6 +463,118 @@
     "first_seen": "2026-11-11T18:21:38+00:00",
     "published_at": "2026-11-19T12:40:51.649729+00:00",
     "curated_at": "2026-11-19T12:40:51.649729+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 579892,
+    "story_id": "s_791df404a831c438",
+    "title": "Python 3.15.0 (final) is here!",
+    "relevance": 6,
+    "score": 4.491,
+    "why": "If you ship Python, 3.15 flips two defaults that change your runtime: macOS binaries now install free-threading support out of the box, and Windows 64-bit binaries use the tail-calling interpreter, while explicit lazy imports (PEP 810) let you cut startup time without restructuring code.",
+    "notes": [
+      "Scope: 5,643 commits from 1,012 contributors versus 3.14. Release team is Hugo van Kemenade, Ned Deily, and Steve Dower; van Kemenade's release-manager work was funded via the Sovereign Tech Fellowship.",
+      "JIT remains experimental; self-reported geometric-mean gains are 7-8% on x86-64 Linux over the standard interpreter and 11-12% on AArch64 macOS over the tail-calling interpreter. No benchmark suite or methodology is cited in the post.",
+      "New builtins and language features: PEP 661 sentinel type, PEP 814 frozendict type, PEP 810 explicit lazy imports, PEP 686 UTF-8 as the default encoding, PEP 798 unpacking in comprehensions.",
+      "Default shifts: macOS binaries install free-threading support by default; Windows 64-bit binaries switch to the tail-calling interpreter; PEP 831 enables frame pointers by default for system-level observability. Free-threaded stable ABI lands via PEP 803/820/793.",
+      "Known breakage: on macOS 27.0, tkinter/IDLE dialogs (About IDLE, Settings, Open Module) hang, requiring Force Quit. Cause is a macOS 27.0 behavior change affecting all current Tk versions; tracked in issue #158053, with deferring the OS upgrade suggested as a workaround.",
+      "Standard library and typing: PEP 799 adds a dedicated profiling package plus 'Tachyon', a high-frequency statistical sampling profiler; typing adds PEP 728 TypedDict typed extra items, PEP 747 TypeForm, and PEP 800 disjoint bases."
+    ],
+    "summary": "Python 3.15.0 final shipped on 2026-10-09, built from 5,643 commits by 1,012 contributors since 3.14. The release adds language and builtin features (PEP 661 sentinel, PEP 814 frozendict, PEP 810 explicit lazy imports, PEP 686 UTF-8 default encoding, PEP 798 unpacking in comprehensions) and upgrades the still-experimental JIT, which the team reports at 7-8% geomean speedup on x86-64 Linux over the standard interpreter and 11-12% on AArch64 macOS over the tail-calling interpreter (no methodology given). Two packaging defaults change: macOS binaries now install free-threading support by default and Windows 64-bit binaries use the tail-calling interpreter, while PEP 831 turns on frame pointers by default. Typing gains PEP 728, PEP 747 TypeForm, and PEP 800 disjoint bases; the stdlib adds a PEP 799 profiling package and the Tachyon sampling profiler. A documented regression: tkinter/IDLE dialogs hang on macOS 27.0 due to an OS behavior change affecting all current Tk versions, tracked in issue #158053.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [
+      "languages"
+    ],
+    "state": "confident",
+    "novelty": "JIT compiler now 7-12% faster, lazy imports, frozendict builtin",
+    "audience": "Python engineers planning upgrades and library maintainers tracking C API/typing changes",
+    "source_url": "https://blog.python.org/2026/10/python-3150-final-is-here",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://blog.python.org/2026/10/python-3150-final-is-here/",
+        "points": null,
+        "comments": null,
+        "name": "Python Insider"
+      },
+      {
+        "url": "https://discuss.python.org/t/python-3-15-0-final-is-here/109415",
+        "points": null,
+        "comments": null,
+        "name": "Python Discourse (discuss.python.org)"
+      },
+      {
+        "url": "https://blog.python.org/2026/10/python-3150-final-is-here/",
+        "points": null,
+        "comments": null,
+        "name": "Python Insider"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-09T00:00:00+00:00",
+    "published_at": "2026-11-23T10:32:01.005549+00:00",
+    "curated_at": "2026-11-23T10:32:01.005549+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 638355,
+    "story_id": "s_d0beb497fc164f3f",
+    "title": "Anthropic files for listing on US stock market with valuation of more than $1.5tn",
+    "relevance": 6,
+    "score": 4.494,
+    "why": "If confirmed, a >$1.5tn IPO filing would make Anthropic one of the largest market debuts ever and force the first detailed public disclosure of a frontier AI lab's revenue, margins, and compute costs.",
+    "notes": [
+      "The Guardian reports Anthropic has filed to list on a US stock market at a valuation of more than $1.5 trillion.",
+      "The $1.5tn figure is a reported valuation attached to the filing, not an independently verified or priced market capitalization.",
+      "No article text was available beyond the headline, so the exchange, timeline, share structure, and financial disclosures are unconfirmed here.",
+      "An IPO registration would require Anthropic to publish audited financials, which have not previously been public for the company.",
+      "Treat all specifics as claims from a single secondary source until the actual filing (S-1 or equivalent) or company confirmation is available."
+    ],
+    "summary": "The Guardian reports that Anthropic, the AI lab behind the Claude models, has filed for a listing on a US stock market at a valuation reported to exceed $1.5 trillion. The piece was surfaced only by headline; no article body was available, so the exchange, offering size, share structure, lead underwriters, and financial details are not confirmed in the provided text. An IPO filing at this scale would rank among the largest ever and would compel Anthropic to disclose previously private audited financials, including revenue and the cost of model training and inference. The $1.5tn valuation should be read as a reported figure, not an independently priced market capitalization. All specifics here rest on a single secondary source and warrant verification against the primary filing.",
+    "channels": [
+      "ai",
+      "startups"
+    ],
+    "category": "industry",
+    "subcategories": [
+      "funding"
+    ],
+    "state": "confident",
+    "novelty": "Anthropic files for IPO at >$1.5tn valuation",
+    "audience": "investors and AI industry watchers",
+    "source_url": "https://theguardian.com/technology/2026/oct/26/anthropic-files-listing-stock-market",
+    "read_kind": null,
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/26/anthropic-files-listing-stock-market",
+        "points": null,
+        "comments": null,
+        "name": "The Guardian"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/26/anthropic-files-listing-stock-market",
+        "points": null,
+        "comments": null,
+        "name": "Guardian Technology"
+      },
+      {
+        "url": "https://www.theguardian.com/technology/2026/oct/26/anthropic-files-listing-stock-market",
+        "points": null,
+        "comments": null,
+        "name": "The Guardian"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-26T13:12:59+00:00",
+    "published_at": "2026-11-23T09:45:21.911991+00:00",
+    "curated_at": "2026-11-23T09:45:21.911991+00:00",
     "model": "claude-opus-4-8"
   },
   {
