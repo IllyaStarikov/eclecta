@@ -207,6 +207,12 @@ def run(cfg, kind: str = "weekly", period: Optional[str] = None,
         subdigests = []
         if kind in LOWER_TIERS:
             subdigests = _gather_subdigests(conn, kind, since, until)
+        from . import adaptive
+
+        # adaptive can only RAISE the bar above the per-kind floor, never lower it
+        min_relevance = max(min_relevance, adaptive.effective_min_relevance(
+            conn, cfg.funnel.get("adaptive", {}),
+            datetime.datetime.now(datetime.timezone.utc), base=min_relevance))
         items = _gather(conn, since, until, min_relevance, max_items, kind, key)
         if not items and not subdigests:
             print("no curated items (relevance>=%d) in %s %s — nothing to "

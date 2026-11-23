@@ -143,7 +143,9 @@ def site_repo(tmp_path, cfg, monkeypatch):
 # module constants
 # --------------------------------------------------------------------------- #
 def test_pipeline_owned_paths():
-    assert publish.PIPELINE_OWNED == ("src/data/", "src/content/digests/", "kb/")
+    assert publish.PIPELINE_OWNED == (
+        "src/data/", "src/content/digests/", "src/content/library/", "kb/")
+    assert "src/content/library/anthropic.md".startswith(publish.PIPELINE_OWNED)
     # startswith accepts the tuple directly (relied on by _clean_pipeline_dirt)
     assert "src/data/picks.json".startswith(publish.PIPELINE_OWNED)
     assert not "src/pages/index.astro".startswith(publish.PIPELINE_OWNED)

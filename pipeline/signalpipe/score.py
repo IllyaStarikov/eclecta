@@ -26,7 +26,21 @@ import time
 from typing import Dict
 
 from . import db as db_mod
+from . import momentum as momentum_mod
 from . import topics as topics_mod
+
+
+def _load_topic_multipliers(cfg) -> Dict[str, float]:
+    """Per-category momentum multipliers for the topic term. Returns {} (a
+    no-op) when momentum is disabled or kb/momentum.json is absent."""
+    import os
+
+    mcfg = momentum_mod.config(cfg)
+    if not mcfg.get("enabled"):
+        return {}
+    repo_raw = cfg.site.get("repo") if getattr(cfg, "site", None) else None
+    repo = os.path.expanduser(repo_raw) if repo_raw else "."
+    return momentum_mod.load_multipliers(repo)
 
 
 def _consensus(n_surfaces: int) -> float:
@@ -72,6 +86,7 @@ def run(cfg, show: int = 20) -> int:
     w = cfg.score_weights
     window_h = int(cfg.funnel.get("score_window_hours", 72))
     topics_data = topics_mod.build_or_load(cfg)
+    topic_mult = _load_topic_multipliers(cfg)
 
     conn = db_mod.connect_rw(cfg.db_path)
     try:
@@ -113,6 +128,9 @@ def run(cfg, show: int = 20) -> int:
                 tax = topics_mod.match_taxonomy(c["title"], sorted(channels))
                 if tax["subcategories"]:
                     topic = 1.0
+                # Opt-in: lean toward what's gaining momentum (1.0 when off).
+                topic = momentum_mod.apply_multiplier(
+                    topic, tax["category"], topic_mult)
 
             score01 = (
                 float(w.get("consensus", 0.3)) * _consensus(c["surface_count"])
@@ -172,7 +190,12 @@ def finalists(conn, cfg, limit=None):
     any LLM spend. The retry bound is a Python ISO timestamp — stored
     curated_at values use the 'T' separator, which compares wrong against
     SQLite's space-separated datetime('now')."""
-    min_score = float(cfg.funnel.get("min_score_to_curate", 3.5))
+    from . import adaptive
+
+    min_score = adaptive.effective_min_score(
+        conn, cfg.funnel.get("adaptive", {}),
+        datetime.datetime.now(datetime.timezone.utc),
+        base=float(cfg.funnel.get("min_score_to_curate", 3.5)))
     n = int(limit or cfg.funnel.get("daily_finalists", 40))
     retry_before = (
         datetime.datetime.now(datetime.timezone.utc)

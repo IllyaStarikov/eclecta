@@ -59,8 +59,8 @@ test('the footer is a colophon grid: identity plus three link columns', async ({
   }
   const mit = foot.getByRole('link', { name: 'Open source, MIT' });
   expect(await mit.getAttribute('href')).toMatch(/^https:\/\/github\.com\//);
-  // the models credit resolves to a real anchor on the about page
-  const models = foot.getByRole('link', { name: 'Written by Claude models' });
+  // the colophon credit resolves to a real anchor on the about page
+  const models = foot.getByRole('link', { name: 'Colophon' });
   const anchor = (await models.getAttribute('href'))!;
   await page.goto(u(anchor.replace(/^.*(?=\/about\/)/, '')));
   await expect(page.locator(`#${anchor.split('#')[1]}`)).toHaveCount(1);

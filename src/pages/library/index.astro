@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import { site, href } from '../../site';
+
+const entries = (await getCollection('library')).sort(
+  (a, b) => b.data.updated.valueOf() - a.data.updated.valueOf()
+);
+
+const TYPE_LABEL: Record<string, string> = {
+  company: 'Companies',
+  model: 'Models',
+  technology: 'Technologies',
+  standard: 'Standards',
+  project: 'Projects',
+  event: 'Events',
+};
+const ORDER = ['company', 'model', 'technology', 'standard', 'project', 'event'];
+
+const groups: Record<string, typeof entries> = {};
+for (const e of entries) {
+  (groups[e.data.type] ||= []).push(e);
+}
+
+const recent = entries.slice(0, 8);
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+---
+<Base
+  title={`Library | ${site.name}`}
+  description="A growing reference of the entities Eclecta tracks: companies, models, technologies, and standards, each a dated timeline built from the coverage itself."
+  jsonLd={{
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${site.name} Library`,
+    description: 'Entities tracked by Eclecta, each with a dated timeline built from coverage.',
+    url: new URL(href('/library/'), Astro.site).href,
+  }}>
+  <section class="measure measure--center">
+    <header class="article__head">
+      <h1 class="article__title">Library</h1>
+      <p class="article__standfirst">
+        A reference of what the wire keeps returning to: the companies, models,
+        technologies, and standards behind the stories. Each entry is a dated
+        timeline assembled from the editions themselves, extended a few at a time.
+      </p>
+    </header>
+
+    {entries.length === 0 ? (
+      <p class="prose">
+        The Library is still being assembled from recent coverage. In the
+        meantime, see the <a href={href('/coverage/')}>coverage page</a> and the
+        <a href={href('/archive/')}> archive</a>.
+      </p>
+    ) : (
+      <div class="prose">
+        {recent.length > 0 && (
+          <p class="label label--faint">
+            Recently updated:{' '}
+            {recent.map((e, i) => (
+              <>{i > 0 ? ' · ' : ''}<a href={href(`/library/${e.data.slug}/`)}>{e.data.name}</a></>
+            ))}
+          </p>
+        )}
+        {ORDER.filter((t) => groups[t]?.length).map((t) => (
+          <section>
+            <h2>{TYPE_LABEL[t]}</h2>
+            <ul>
+              {groups[t].map((e) => (
+                <li>
+                  <a href={href(`/library/${e.data.slug}/`)}>{e.data.name}</a>
+                  {': '}
+                  <span>{e.data.summary}</span>
+                  <span class="label label--faint"> · updated {fmt(e.data.updated)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    )}
+  </section>
+</Base>

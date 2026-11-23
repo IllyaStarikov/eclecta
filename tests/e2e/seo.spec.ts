@@ -54,6 +54,7 @@ test('sitemap: index + url set exist, list routes, and digests carry lastmod', a
   const xml = await urls.text();
   expect(xml).toContain('https://eclecta.co/');
   expect(xml).toContain('https://eclecta.co/ai/');
+  expect(xml).toContain('https://eclecta.co/library/');
   expect(xml).toContain(`https://eclecta.co/digests/daily/${latestDaily}/`);
   // the serialize() hook stamps digest URLs with a computed <lastmod>
   expect(xml).toContain('<lastmod>');

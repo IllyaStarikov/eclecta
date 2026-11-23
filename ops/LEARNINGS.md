@@ -43,6 +43,29 @@ task notes — those go in the dated journal).
   `claude-haiku-4-5-20251001`. `backend_api.PRICING` must have an entry for any
   model used or `_cost` falls back to (5.0, 25.0) and overcharges the ledger.
 
+## Self-learning layer (2026-07-18)
+- Four modules, all repo-side + opt-in: `eval.py` (gold corpus + judge replay),
+  `adaptive.py` (percentile bar), `momentum.py` (`kb/momentum.json` + multiplier),
+  `library.py` (`/library/` entity wiki). With `funnel.adaptive.enabled=false` and
+  `momentum.enabled=false` (the defaults), selection + scoring are byte-identical
+  to before — the full pipeline suite proves it. Enabling either is a staged
+  config flip (reloads per job); watch a few cycles first.
+- The dashboard server is **read-only by design** — there is NO human review
+  signal in the DB. Eval gold is therefore built repo-side from the DB read-only
+  (`published_ledger` = "featured") + committed artifacts, never via server writes.
+- `signal eval run` defaults to the **local** backend so nightly eval is $0. Only
+  `--backend api|subscription` spends.
+- New modules decouple from `Config`: they read plain config dicts
+  (`momentum.config(cfg)`, `cfg.funnel.get("adaptive", {})`) so tests pass dicts,
+  not a full Config. Cores take `now`/`date` as parameters (3.9-safe, deterministic).
+- `PIPELINE_OWNED` (publish.py) now includes `src/content/library/`; the worker's
+  dirt-guard treats Library pages as owned. New worker jobs: `momentum` (daily),
+  `library` (daily), beside `kb_trends` (weekly). Adding a worker job means
+  updating `test_worker.py`'s expected job-id set.
+- Library v1 is **non-person entities only** and **deterministic** (no LLM) — the
+  page body copies curation `why_it_matters`. `apply_multiplier`/timeline links
+  reuse `publish.no_archive` so no archive.* URL ever ships.
+
 ## Process gotchas
 - Usage: heavy multi-agent workflows burn the shared session limit fast (a
   6-dimension review spent ~2.8M subagent tokens and tripped the limit). Prefer
