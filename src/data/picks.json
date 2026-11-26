@@ -1,5 +1,53 @@
 [
   {
+    "id": 657660,
+    "story_id": "s_ff48dc7113ea9982",
+    "title": "The case of the 9 bit AES key",
+    "relevance": 8,
+    "score": 4.39,
+    "why": "AES-256-encrypted PDFs written by MuPDF, Foxit, PDFium, OpenPDF, or iText can be decrypted without any password in milliseconds to seconds, and already-published files stay crackable forever.",
+    "notes": [
+      "MuPDF before 1.28.5 seeds a 48-bit drand48 LCG with epoch seconds; each output byte comes only from state bits 17-24, and the low 16 bits are fixed to 0x330e, so just 9 timestamp bits matter. Keys repeat every 512 seconds, and brute-forcing all 512 streams took about 11ms in unoptimized Python. The plaintext document /ID, drawn from the same LCG just before the key, serves as a confirmation check.",
+      "Foxit PDF Reader 2026.1.3.36551 hashes the current timestamp plus 32 uninitialized (in practice zero-filled) bytes and a constant. The /Perms block gives known plaintext, so each candidate costs one hash plus one AES block decryption. A Rust/Rayon implementation on a Ryzen 9 7950X (32 threads) sustained 370-376M timestamps/sec: ~0.84s to cover ten years back, 4.85s to cover 1970 to present.",
+      "The Foxit key-derivation pattern appears in PDFium's May 2014 initial public commit, with the file header crediting Foxit; other editors likely inherited it through PDFium.",
+      "OpenPDF 3.0.5 and iText 9.7.1 route randomness through an ARC4-based IVGenerator seeded with a millisecond timestamp and JVM free memory; the same stream produces the file key and the plaintext /U and /O salts, which let an attacker check timestamp/free-memory guesses. The article says this has more variance than MuPDF or Foxit but is still enumerable.",
+      "Context on the scheme: Revision 6 AES-256 encrypts content with a random 32-byte file key, then wraps that key with a deliberately slow password hash; the attacks bypass the password entirely by predicting the weakly generated file key. Either the user or owner password unlocks the same file key.",
+      "Issues were disclosed to vendors and MuPDF fixed it, but previously published encrypted PDFs cannot be retroactively strengthened. The researchers published working decryptors for MuPDF and Foxit. Numbers are self-reported by the authors."
+    ],
+    "summary": "Researchers found that several PDF tools generate their random 32-byte AES-256 file keys from state spaces small enough to enumerate, enabling passwordless decryption. MuPDF before 1.28.5 seeds a 48-bit drand48 LCG with epoch seconds; because output bytes draw only from state bits 17-24 and the low word is a fixed constant, just 9 timestamp bits affect the key, so all 512 possible streams can be brute-forced in about 11ms. Foxit PDF Reader 2026.1.3.36551 hashes the current timestamp with zero-filled uninitialized bytes; using the known-plaintext /Perms block, a Ryzen 9 7950X with 32 threads tested 370-376M timestamps/sec and covered 1970 to present in 4.85s. OpenPDF 3.0.5 and iText 9.7.1 use an ARC4-based IVGenerator seeded with a millisecond timestamp and JVM free memory, also recoverable via plaintext /U and /O salts, with more variance. The Foxit-style derivation traces to PDFium's May 2014 initial commit crediting Foxit, suggesting inheritance across editors. Vendors were notified and MuPDF fixed the flaw, but already-published encrypted PDFs remain permanently vulnerable; the authors released decryptors for MuPDF and Foxit.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "AES-256 PDF encryption trivially brute-forced due to weak RNG seeding",
+    "audience": "security researchers and engineers implementing crypto/PDF libraries",
+    "source_url": "https://v12.sh/blog/the-case-of-the-9bit-aes-key",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50280722",
+        "points": 95,
+        "comments": 43,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://v12.sh/blog/the-case-of-the-9bit-aes-key",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-28T20:51:44+00:00",
+    "published_at": "2026-11-26T06:56:09.254395+00:00",
+    "curated_at": "2026-11-26T06:56:09.254395+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 610523,
     "story_id": "s_f61ea5945d4bf932",
     "title": "PingCap TiDB Leaks",
@@ -3063,58 +3111,6 @@
     "first_seen": "2026-11-11T22:16:41+00:00",
     "published_at": "2026-11-19T12:57:42.435209+00:00",
     "curated_at": "2026-11-19T12:57:42.435209+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 743165,
-    "story_id": "s_ee8b5fa5301f7a18",
-    "title": "Huawei releases MACaQ, its internal quantizer for local inference",
-    "relevance": 6,
-    "score": 5.843,
-    "why": "A single Apache-2.0 toolchain now quantizes text, image, video, and audio models to 4-bit for llama.cpp, vLLM, Diffusers, and PyTorch, with a refinement mode that outputs standard llama.cpp GGUFs you can run without custom runtimes.",
-    "notes": [
-      "Huawei's Computing Systems Lab released MACaQ (Model Agnostic Calibrated Quantization) under Apache 2.0, with the accompanying paper at arXiv:2611.10649 (Muller et al., 2026). Default inference mode is W4A4.",
-      "Self-reported speed claims: quantizes a 122B-parameter model in 64 minutes using 32.5 GB of device memory, and matches MR-GPTQ/DuQuant++ best Llama-3-8B perplexity with 11x less quantization time, or beats their perplexity. No hardware spec or calibration methodology is given for these numbers.",
-      "On Qwen3.8-27B in vLLM, W4A4 is reported at 2.33x prefill and 2.58x decode vs BF16, with perplexity rising from 2.8463 to 2.8994; the BF16 baseline is treated as 1x.",
-      "MACaQ-R refines weight codes in an existing quantized GGUF while keeping native formats and block scales. On Qwen3.6-35B-A3B it reports KL divergence to FP16 of 0.013367 vs Unsloth UD-Q4_K_XL's 0.015731 at the same 22.36 GB file size; resulting GGUFs run on stock llama.cpp.",
-      "Backends split by modality: Diffusers (image/video/audio, W4A4), llama.cpp (2/3/4-bit GGUF, CPU-capable), vLLM (W4A4 or weight-only serving), PyTorch (speech, W4A4). Each needs a separate Python 3.12 environment.",
-      "W4A4 kernels ship as pull requests to Huawei's CANN stack (ops-nn #12568, ops-tilelang #44) for Ascend NPUs; full-model execution requires integration with an Ascend inference runtime, tying the fast-path hardware to Huawei's ecosystem."
-    ],
-    "summary": "MACaQ is an Apache-2.0 quantization toolkit from Huawei's Computing Systems Lab that applies model-agnostic calibrated quantization to text, image, video, and audio models, with W4A4 as the default inference precision. It targets four backends: llama.cpp (2/3/4-bit GGUF, CPU-capable), vLLM (W4A4 or weight-only serving), Diffusers (image/video/audio), and PyTorch (speech). Self-reported results claim a 122B model quantized in 64 minutes using 32.5 GB of memory, perplexity beating or matching MR-GPTQ and DuQuant++ on Llama-3-8B at 11x less quantization time, and 2.33x/2.58x prefill/decode speedups on Qwen3.8-27B in vLLM for a small perplexity increase (2.85 to 2.90 vs BF16). A refinement mode, MACaQ-R, improves weight codes in existing GGUFs while preserving native formats so the output runs on standard llama.cpp, reporting lower KL divergence to FP16 than Unsloth's UD-Q4_K_XL at equal file size. Fast W4A4 kernels are shipped as CANN pull requests for Huawei Ascend NPUs, and full-model execution on that path requires an Ascend inference runtime; the benchmark claims lack hardware specs and calibration methodology.",
-    "channels": [
-      "ai",
-      "devtools",
-      "hardware"
-    ],
-    "category": "ai",
-    "subcategories": [
-      "apps"
-    ],
-    "state": "confident",
-    "novelty": "Huawei open-sources model-agnostic W4A4 quantizer spanning text/image/video/audio",
-    "audience": "ML engineers deploying quantized local inference across modalities and backends",
-    "source_url": "https://github.com/huawei-csl/MACaQ",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50458166",
-        "points": 67,
-        "comments": 21,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/huawei-csl/MACaQ",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-11T20:23:57+00:00",
-    "published_at": "2026-11-19T12:41:26.274576+00:00",
-    "curated_at": "2026-11-19T12:41:26.274576+00:00",
     "model": "claude-opus-4-8"
   }
 ]
