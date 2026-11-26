@@ -48,6 +48,63 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 600143,
+    "story_id": "s_869237da7a148423",
+    "title": "Ship Your Interpreter",
+    "relevance": 7,
+    "score": 4.419,
+    "why": "Formal verification's bottleneck is now writing a trustworthy language semantics, and this shows LLMs producing one proved correct against the real compiled interpreter, with CPython named as the end goal.",
+    "notes": [
+      "Method: compile the language's real interpreter to RISC-V (which has a formal Sail model translated into Lean), then have an LLM write readable semantics and prove in Lean that the binary refines them on every program; a wrong rule leaves a proof obligation that cannot close.",
+      "The experiment used an extended WHILE language (integers, strings, first-class closures, if/while/for, runtime errors) with an 1,855-line C interpreter compiled by gcc against dlmalloc and newlib into 25,336 instructions; the ~400-line semantics and proof are on GitHub.",
+      "A worked failure: the semantics passed the test suite but diverged from the binary on a 59-character function name, because the C stringify uses snprintf into a 64-byte buffer (max 63 chars); the fix cut closure rendering to 63 bytes. Other corrections: 64-bit wrapping arithmetic, for-loop initializer ignoring abrupt status, separate renderers for print vs concatenation.",
+      "Memory reasoning needed separation logic: the team proved in Lean that no fixed malloc footprint works (a hand-rolled approach stalled three weeks), then ported MachCSL to iris-lean, after which the proof closed in days. Peak proof was ~1M lines of Lean (two-thirds machine-generated across ~11,800 instructions by 35 scripts), later reduced under 200,000 lines; uses only Lean's standard axioms.",
+      "Validation: Loaded precondition proved for 10 programs, with 85,483 machine steps replayed and checked byte-for-byte. On top of the trusted semantics they built four tools in three days (~33,000 lines): a type checker, a program logic, an abstract interpreter, and a verified WHILE-to-RISC-V compiler; compiled code retired 2.7x-8.2x fewer instructions than the interpreter on the spike simulator (instruction counts, not hardware timings).",
+      "Next targets: Lua 5.4.7 and OCaml (via its bootstrap fixpoint, avoiding verifying 412,000 bytecode instructions individually), with headline theorems stated in Lean but proofs not yet closed; CPython is called the 'north star,' described as feasible given enough compute, not done. Prior context: Basis verified Linux's nftables compiler, and MIT's Kaashoek and Zeldovich verified xv6 to machine code in September."
+    ],
+    "summary": "Basis reports an experiment where LLMs wrote a formal semantics for an extended WHILE language in Lean and proved that the language's real C interpreter, compiled to RISC-V (25,336 instructions, including gcc output, newlib, and dlmalloc), refines that semantics on every program. The motivation is that formal verification's bottleneck has shifted from theorem proving to specification: a semantics can pass every test and still be wrong, illustrated by a 59-character function name that exposed a 64-byte snprintf buffer limit in the interpreter. The refinement proof, built using a MachCSL port to iris-lean for separation-logic memory reasoning, forced four semantic corrections and peaked near a million lines of Lean before reduction under 200,000, using only standard axioms. The team validated that the theorem's precondition is satisfiable by proving it for ten programs and replaying 85,483 machine steps byte-for-byte, then built a type checker, program logic, abstract interpreter, and verified compiler on the trusted semantics in three days. Compiled WHILE code retired 2.7x-8.2x fewer instructions on the spike simulator than the interpreter. The stated roadmap scales to Lua 5.4.7 and OCaml (headline theorems stated but proofs unclosed), with CPython as the eventual goal.",
+    "channels": [
+      "ai",
+      "devtools",
+      "security",
+      "ml-research"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "LLMs prove language semantics correct against RISC-V-compiled interpreters, not just write them",
+    "audience": "researchers and engineers working on formal verification and AI-assisted program correctness",
+    "source_url": "https://basis.ai/blog/ship-your-interpreters",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50160440",
+        "points": 17,
+        "comments": 4,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://lobste.rs/s/rtd5gq/ship_your_interpreter",
+        "points": 3,
+        "comments": 0,
+        "name": "Lobsters"
+      },
+      {
+        "url": "https://www.basis.ai/blog/ship-your-interpreters/",
+        "points": null,
+        "comments": null,
+        "name": "Lobsters"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-10-17T14:16:33+00:00",
+    "published_at": "2026-11-26T05:21:56.539235+00:00",
+    "curated_at": "2026-11-26T05:21:56.539235+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 577333,
     "story_id": "s_a321ebb8b264ed75",
     "title": "Anthropic Reinvents Source Control As Claude Floods the World With Code",
@@ -463,6 +520,151 @@
     "first_seen": "2026-11-11T18:21:38+00:00",
     "published_at": "2026-11-19T12:40:51.649729+00:00",
     "curated_at": "2026-11-19T12:40:51.649729+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 670693,
+    "story_id": "s_faa839a1047303e6",
+    "title": "One-minute frequency disturbances from synchronization in power systems",
+    "relevance": 6,
+    "score": 4.418,
+    "why": "If you run clocked self-tests or periodic power routines across a fleet of UPS or battery devices, you can be injecting a coherent, phase-stable load onto the grid: the authors trace a worldwide 1-min frequency oscillation back to NTP-synchronized EMS self-tests.",
+    "notes": [
+      "Fourier analysis of grid-frequency time series across five continents (from ~400,000 customers in Iceland to >400 million in the Continental European area) shows a narrow spectral peak at exactly 1 minute, phase-coherent and stable over multiple years; a weaker ~100 s peak remains unexplained.",
+      "Root cause traced on the Jülich campus grid: only buildings with battery-based UPSs showed the 1-min component. On the DC battery terminals, narrow current peaks recur every minute; the manufacturer confirmed these are periodic EMS self-tests. The signal propagates up through transformers to the public 110-kV grid.",
+      "Clock dependence shown directly: with NTP disabled the self-test signature drifts against UTC; with NTP enabled the daily phase progression sharpens to ~6 s/day, stepping at midnight, indicating internally scheduled 1-min cycles reinitialized by external time sync.",
+      "Scale: with Continental European K = 26.68 GW/Hz, a 3 mHz oscillation equals ~80 MW of coherent power swing. Amplitudes rose after 2015, peaking in 2020; Scandinavia regularly exceeded 10 mHz, causing hydropower turbine wear. In Ireland (data centres ~18% of demand in 2022) the minute-scale drop grew from ~3 mHz (2016) to ~12 mHz (2021), with recent individual drops exceeding 20 mHz.",
+      "The authors argue hydropower turbine-governor resonance (the prior ULFO explanation) can amplify but not originate the signal, since resonance without an external clock cannot produce years-long phase coherence reproducible across diverse grids. Lower system inertia amplifies the effect (Mallorca saw ~50% amplitude rise after a coal plant left service in 2019).",
+      "Mitigation: Scandinavian TSOs tightened frequency-containment-reserve prequalification in 2023 (sine tests 10-300 s, stricter damping), and >10 mHz amplitudes were not seen in 2025; Australian rules also reduced amplitude. These address the frequency response, not the source. A manufacturer software update removed strict periodicity in one UPS battery block but self-tests still fire at discrete times, so the root cause is only partially resolved."
+    ],
+    "summary": "Researchers report a persistent, phase-coherent oscillation at a period of exactly 1 minute in grid-frequency time series from power systems on five continents, previously discussed as an ultralow-frequency oscillation of unexplained origin. Through high-resolution distribution-grid measurements at Forschungszentrum Jülich, they attribute it to clock-synchronized control software in battery-based uninterruptible power supplies and energy storage systems: periodic EMS self-tests produce minute-interval DC current peaks that propagate up to the 110-kV transmission interface. The manufacturer confirmed the self-test origin, and toggling NTP synchronization showed the pattern's timing is tied to external clock sync (phase drift when disabled, ~6 s/day stepped progression when enabled). The signal's amplitude has grown in several grids (over 10 mHz in Scandinavia, 3 to 12+ mHz in Ireland), causing hydropower turbine wear and prompting stricter frequency-control rules in Scandinavia (2023) and Australia, with lower grid inertia amplifying the frequency impact. The authors argue hydropower governor resonance can amplify but not originate the signal because resonance cannot explain multi-year cross-grid phase coherence. They warn that proliferating battery storage, data-centre UPS fleets and IoT devices on synchronized clocks could worsen the effect, and recommend fixing it at the source via randomized scheduling, adaptive offsets or event-driven execution rather than only tightening frequency-response regulation.",
+    "channels": [
+      "hardware",
+      "science"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "clock-synced UPS/battery control software causes global 1-min grid frequency oscillation",
+    "audience": "power systems engineers, grid operators, datacenter/infra engineers concerned with cyber-physical systems",
+    "source_url": "https://nature.com/articles/s41560-026-02144-0",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50314617",
+        "points": 109,
+        "comments": 38,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.nature.com/articles/s41560-026-02144-0",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-31T10:14:08+00:00",
+    "published_at": "2026-11-26T05:38:46.822157+00:00",
+    "curated_at": "2026-11-26T05:38:46.822157+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 629146,
+    "story_id": "s_17876f535588b88e",
+    "title": "C vs. C#: racing VLC's Gaussian blur",
+    "relevance": 6,
+    "score": 4.418,
+    "why": "For CPU-bound media code, C# compiled with Native AOT lands within 9% of C on a hand-tuned SIMD Gaussian blur, so the choice turns on knowing what RyuJIT does with your loops, not on fear of the garbage collector.",
+    "notes": [
+      "The C# filter ships as a native VLC 4 plugin DLL via VLCLR and .NET Native AOT, produces byte-identical frames to VLC's own C filter, and allocates nothing on the managed heap per frame, so the GC has nothing to collect while running.",
+      "Line-by-line port ran ~23% slower than C; author attributes this to RyuJIT, not the GC or bounds checks (raw pointers avoid both). RyuJIT re-evaluated Math.Min on every iteration and kept the sum in memory, emitting ~2x the instructions clang did.",
+      "Two edits closed the gap to within 8% (C# ahead at sigma 4): hoist the loop bounds into locals before the loop, and use nint instead of int for indices to drop 32-to-64-bit conversions before each memory access. Clang does both automatically.",
+      "Scalar algorithmic rewrites applied to both languages, no SIMD or threads: magic-reciprocal multiply instead of division, sequential memory access in the vertical pass, exploiting bell-curve symmetry (w*a+w*b to w*(a+b)), and separate border handling. Result was ~2.5x faster than current VLC, with C# ~24% behind C.",
+      "With AVX2 intrinsics (C via immintrin.h, C# via System.Runtime.Intrinsics), both reached ~30x the current VLC code; tuned C# was on par at sigma 2/4 and 9% slower at sigma 8. At sigma 4 1080p: 8 fps (VLC C) to 240 fps tuned C vs 236 fps tuned C#.",
+      "Self-reported benchmarks on one core, 1080p, 11th-gen Intel i7 Tiger Lake, .NET 10 (8 and 11 within a few percent); no cross-machine or statistical methodology given. Claude wrote most of the code and harness. Author also found two unrelated VLC bugs (green half-frame with hardware decode, two-byte over-read past each line's right edge) and filed merge requests."
+    ],
+    "summary": "A VLC contributor ported VLC 4's integer Gaussian blur filter from C to C#, shipped it as a native plugin via VLCLR and .NET Native AOT, and raced the two with byte-identical output on 1080p video on an 11th-gen Intel i7. A naive line-by-line port ran about 23% slower, which the author traces to RyuJIT (not the garbage collector or bounds checks) recomputing Math.Min each iteration and keeping the accumulator in memory; hoisting bounds into locals and switching indices to nint closed the gap to within 8%. Applying the same scalar algorithm changes to both (reciprocal multiply instead of division, sequential memory access, Gaussian symmetry, separate border handling) made both roughly 2.5-3x faster with C# ~24% behind. With AVX2 intrinsics on one thread, both reached about 30x the current VLC code and were within 9% of each other (240 vs 236 fps at sigma 4). The takeaway: C# with Native AOT is a realistic choice for CPU-side media filters if you understand the code generator, though C still wins the last 10%, and such filters ultimately belong on the GPU. Benchmarks are self-reported on a single machine with no stated statistical methodology, and Claude wrote most of the code.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "line-by-line C vs C# VLC filter benchmark with JIT fixes",
+    "audience": "systems/perf engineers evaluating .NET Native AOT for native-speed code",
+    "source_url": "https://martinfinkel.com/blog/gaussian-blur-c-vs-csharp",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50176544",
+        "points": 115,
+        "comments": 37,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://martinfinkel.com/blog/gaussian-blur-c-vs-csharp/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-21T05:48:12+00:00",
+    "published_at": "2026-11-26T05:22:20.976643+00:00",
+    "curated_at": "2026-11-26T05:22:20.976643+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 667739,
+    "story_id": "s_1593b65e6088d479",
+    "title": "The Duty of a Scholar",
+    "relevance": 6,
+    "score": 4.432,
+    "why": "A first-person account from the person who built a working RSA-key-recovery exploit against Intel Hyper-Threading argues that disclosure is a moral duty engineers owe knowledge itself, not a favor contingent on who employs them.",
+    "notes": [
+      "Colin Percival says he noticed in 2004 that Intel's Hyper-Threading (SMT), shipped in 2002, could leak information between execution threads via shared cache state; by mid-December 2004 he had a proof-of-concept that recovered enough bits of an RSA private key to reconstruct the full key.",
+      "He spent six months on coordinated disclosure; he claims Intel, irked by the pending publication, asked Yahoo to order the paper withdrawn, and Yahoo declined because he was not a Yahoo employee (unlike many FreeBSD developers).",
+      "The paper was presented at BSDCan on May 13, 2005, with advisories from FreeBSD, NetBSD, Red Hat, SCO, and Ubuntu at or soon after.",
+      "He notes the disclosure was only feasible because he was single, child-free, living rent-free in Canada where his type-1-diabetes insulin costs were covered; in the US, needing employer insurance, he says he could not have done it.",
+      "He invokes the IEEE code's duty to 'hold paramount the safety, health, and welfare of the public' and its escalation model (report to employer first, go public if ignored), citing his own 2009 EC2 Path MTU Discovery bug report that he publicized in 2012 after Amazon didn't act.",
+      "Drawing on Fichte's 1794 The Vocation of the Scholar, he distinguishes Researchers (create knowledge) from Scholars (carry it to those who need it) and argues 'nobody asked' is not an excuse, while rejecting Fichte's philosopher-king framing and the idea the duty is a debt owed to society."
+    ],
+    "summary": "Colin Percival recounts discovering in 2004 that Intel Hyper-Threading (SMT) could leak data between threads through cache state, and building a proof-of-concept that recovered an RSA private key, which he then disclosed over six months in coordination with OS vendors, presenting at BSDCan on May 13, 2005 alongside advisories from FreeBSD, NetBSD, Red Hat, SCO, and Ubuntu. He describes Intel allegedly pressuring Yahoo to force the paper's withdrawal, a demand Yahoo rejected because he was not their employee. The essay uses this episode to argue for responsible/coordinated disclosure as an ethical duty, drawing parallels to IEEE engineering codes requiring disclosure of safety hazards regardless of personal connection and to an escalation model he applied to a 2009 Amazon EC2 Path MTU Discovery bug. Citing Fichte's 1794 lectures, he distinguishes Researchers who create knowledge from Scholars who carry it to people who can act on it, contending that the duty attaches to knowledge itself rather than to any debt to society, while conceding it is bounded and that personal circumstances (he was single, in Canada with covered insulin costs) made his own disclosure possible where a US context might not have.",
+    "channels": [
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "personal essay on ethics of disclosure, from the hyperthreading cache leak discoverer",
+    "audience": "security researchers and engineers grappling with disclosure ethics",
+    "source_url": "https://daemonology.net/blog/2026-10-31-The-Duty-of-a-Scholar.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50319061",
+        "points": 125,
+        "comments": 33,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.daemonology.net/blog/2026-10-31-The-Duty-of-a-Scholar.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-31T19:07:36+00:00",
+    "published_at": "2026-11-26T04:34:43.620207+00:00",
+    "curated_at": "2026-11-26T04:34:43.620207+00:00",
     "model": "claude-opus-4-8"
   },
   {
@@ -2913,124 +3115,6 @@
     "first_seen": "2026-11-11T20:23:57+00:00",
     "published_at": "2026-11-19T12:41:26.274576+00:00",
     "curated_at": "2026-11-19T12:41:26.274576+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 743167,
-    "story_id": "s_3586e7d691479d20",
-    "title": "Nvidia is preparing to oust Jensen Huang",
-    "relevance": 6,
-    "score": 6.791,
-    "why": "If the report holds, the person who steered Nvidia to its CUDA-plus-GPU dominance is on his way out, with no named successor or timeline, which puts the direction of the company supplying most frontier-AI compute in question.",
-    "notes": [
-      "The Wall Street Journal reports Nvidia's board is preparing to remove co-founder and CEO Jensen Huang; this is the WSJ's claim, not confirmed by Nvidia in the material provided.",
-      "The article is paywalled and no full text is available, so the reporting's sourcing, named sources, and corroboration cannot be assessed from what is given.",
-      "No successor, timeline, or stated board rationale is provided in the available material.",
-      "The story drew heavy Hacker News discussion: 648 points and 914 comments across two threads.",
-      "Treat the headline as a single-outlet report pending Nvidia confirmation or a counter-statement; nothing here independently verifies it."
-    ],
-    "summary": "The Wall Street Journal reports that Nvidia's board is preparing to oust co-founder and CEO Jensen Huang. The article is paywalled and no full text was available to verify the claim, its sourcing, or any corroborating detail. The available material gives no successor, no timeline, and no stated rationale for the board's reported move. The story generated large discussion on Hacker News, drawing 648 points and 914 comments across two threads. As presented, this is a single-outlet report that has not been confirmed by Nvidia in the provided text and should be treated as a claim pending further reporting.",
-    "channels": [
-      "ai",
-      "startups",
-      "hardware"
-    ],
-    "category": "hardware",
-    "subcategories": [
-      "silicon"
-    ],
-    "state": "confident",
-    "novelty": "reported board move to replace Nvidia's CEO",
-    "audience": "AI/semiconductor industry watchers, investors",
-    "source_url": "https://wsj.com/business/nvidia-is-preparing-to-oust-nvidia-ceo-jensen-huang-30f421ad",
-    "read_kind": "canonical-fallback",
-    "free_link": null,
-    "paywalled": true,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50459703",
-        "points": 648,
-        "comments": 914,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://www.wsj.com/business/nvidia-is-preparing-to-oust-nvidia-ceo-jensen-huang-30f421ad",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-11T22:31:06+00:00",
-    "published_at": "2026-11-19T10:33:33.189589+00:00",
-    "curated_at": "2026-11-19T10:33:33.189589+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 743159,
-    "story_id": "s_e855cb1affb95f16",
-    "title": "Gemini Decisions API",
-    "relevance": 6,
-    "score": 7.371,
-    "why": "Routing, tool selection, and policy checks that today burn generative tokens can move to a scoring endpoint Google prices at $0.10 per 1M input tokens with zero output billing and 150-250ms end-to-end latency, with the shared input billed once no matter how many questions you attach.",
-    "notes": [
-      "gemini-decision-1 scores candidate options in a single forward pass instead of decoding answer text token by token, returning per-option probabilities and a 0-1 confidence score; Google reports median model compute of 50-100ms and 150-250ms end-to-end, staying nearly flat from 1 to 100 questions per request.",
-      "Three question primitives: noul (yes/no probability), choice (2 to 255 options with normalized probabilities), and score (ordered rubric starting at 0, returning a continuous weighted score plus per-level probabilities). One request accepts one multimodal input (text, image, audio, video, PDF) up to 256K tokens and up to 1,000 independent questions.",
-      "Pricing is $0.10 per 1M input tokens, $0 output tokens, with the shared input billed once and each question adding only its instruction and criteria tokens; no separate charges for thinking, audio transcription, or OCR. Google claims it is nearly 5x cheaper than Gemini 3.5 Flash-Lite via the Interactions API on a shared benchmark suite.",
-      "Benchmark and calibration claims (leads across the suite, lowest calibration error) are Google's own; the post names no datasets, baselines beyond Flash-Lite, or methodology, so treat performance and latency figures as self-reported.",
-      "Internal Google uses cited as examples: Gemini Notebook as a real-time model-tier/thinking-level router (claimed up to 40% lower latency on everyday queries), Stitch rapid canvas wireframing, CC emoji selection from 200+ options, and a Search safety layer detecting adversarial MCP tool behavior.",
-      "Available now via the Gemini API in Google AI Studio with a no-cost prototyping tier; input uses the same Content block format as the Interactions API. Ecosystem integrations listed for OpenRouter, LangChain, Vercel, LiteLLM, Pydantic AI, Pipecat, LiveKit, and OpenCode, with Gemini in Google Cloud support coming later."
-    ],
-    "summary": "Google introduced the Gemini Decisions API, an endpoint backed by a new gemini-decision-1 model that handles closed-set decisions such as tool selection, policy checks, model routing, and context grading. Instead of generating text, the model scores candidate options in one forward pass and returns probabilities plus a 0-1 confidence score, which Google says yields 150-250ms end-to-end latency that stays roughly flat from 1 to 100 questions per request. A single multimodal input (text, image, audio, video, PDF, up to 256K tokens) can be evaluated against up to 1,000 questions across three types: yes/no, multiple choice (2-255 options), and ordered rubric scoring. Pricing is $0.10 per 1M input tokens with no output-token charges, the shared input billed once per request; Google claims it is nearly 5x cheaper than Gemini 3.5 Flash-Lite via the Interactions API and leads a shared benchmark suite with the lowest calibration error, though no benchmark methodology is disclosed. The company lists internal deployments (Gemini Notebook routing with a claimed up to 40% latency reduction, Stitch, CC emoji selection, Search adversarial detection) and integrations across OpenRouter, LangChain, Vercel, LiteLLM, Pydantic AI, Pipecat, LiveKit, and OpenCode. It is available in Google AI Studio with a no-cost prototyping tier.",
-    "channels": [
-      "ai",
-      "devtools"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "non-generative scoring API for closed-set decisions in single forward pass",
-    "audience": "engineers building agent routing, classification, or moderation pipelines who want cheap low-latency alternatives to generative LLM calls",
-    "source_url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-decisions-api",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50456791",
-        "points": 308,
-        "comments": 98,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://simonwillison.net/2026/Nov/11/gemini-decisions-api/",
-        "points": null,
-        "comments": null,
-        "name": "Simon Willison"
-      },
-      {
-        "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-decisions-api/",
-        "points": null,
-        "comments": null,
-        "name": "The Keyword"
-      },
-      {
-        "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-decisions-api/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://blog.google/innovation-and-ai/technology/developers-tools/gemini-decisions-api/",
-        "points": null,
-        "comments": null,
-        "name": "Google AI Blog (The Keyword — AI)"
-      }
-    ],
-    "sources_count": 5,
-    "first_seen": "2026-11-11T18:32:42+00:00",
-    "published_at": "2026-11-19T09:29:40.677660+00:00",
-    "curated_at": "2026-11-19T09:29:40.677660+00:00",
     "model": "claude-opus-4-8"
   }
 ]
