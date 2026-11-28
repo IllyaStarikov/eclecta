@@ -210,6 +210,106 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 651459,
+    "story_id": "s_d79f329c2f73f666",
+    "title": "Gaussian Splats part 3: There's always a bigger scene",
+    "relevance": 6,
+    "score": 4.325,
+    "why": "If you render Gaussian splats in Unreal, registering each splat as a GPU Scene instance silently caps you at ~16M per asset; this walks through the custom indirect-draw path that removes that ceiling and streams scenes larger than VRAM.",
+    "notes": [
+      "Unreal's GPU Scene imposes an undocumented ~16M-instance-per-mesh cap; crossing it causes partial visibility and corruption. The author bypasses GPU Scene entirely with a DrawIndexedInstancedIndirect path and a custom vertex factory that samples sorted splat buffers from textures, deriving the camera-facing quad procedurally in the shader (no mesh geometry in memory). Output is pixel-identical; a ~30M-splat test asset then rendered fine.",
+      "Because sort-key generation already iterates every splat per frame, GPU-side frustum culling writes only the visible count into the indirect draw buffer, making per-frame splat count variable and setting up a level-of-detail system.",
+      "Each splat costs ~32 bytes packed (position, scale, orientation, opacity, spherical-harmonic coefficients), so real photogrammetry captures exceed VRAM. LOD uses PlayCanvas's Streamed SOG format: a spatial tree of 'leaf' regions, each with decimated LOD levels, indexed by a root lod-meta.json.",
+      "LOD level is chosen via screen-space error (SSE): density gives approximate inter-splat spacing, projected to pixels and compared against a threshold tau, exposed to users as Low/Medium/High (High = default). Streaming is async, coarse-LOD-first, over HTTP leaf by leaf; chunk uploads are fenced so a chunk only becomes drawable the frame after its upload provably landed.",
+      "A second limit: splats stored in a texture laid out 4096 per row hit the RHI max texture dimension of 16384, capping a single texture at ~67M splats. Widening rows toward 16384 raises this to ~268M splats (~8.6GB VRAM); beyond that a fixed texture pool keeps a bounded working set, evicting most-distant-first under a memory budget, so on-disk scene size is unbounded.",
+      "Open items the author flags: LOD selection is slow, eviction is naive, overdraw is the main rendering-performance limiter, and 4DGS is untouched. Streamed SOG support ships in OKO Unreal and OKO Web; a single-file no-LOD scene falls out as the degenerate single-resident-chunk case on the same code path."
+    ],
+    "summary": "Part 3 of a Magnopus/OKO engineering series on rendering Gaussian splats in Unreal Engine. The author discovers that an earlier instanced-rendering approach, which registered each splat with Unreal's GPU Scene, silently capped assets at ~16M splats; the fix drops GPU Scene and issues a classic DrawIndexedInstancedIndirect call driven by a custom vertex factory that samples sorted splat data from textures, yielding pixel-identical output with no instance ceiling and GPU-side per-frame culling. VRAM then becomes the limit (~32 bytes per splat), so the renderer adopts PlayCanvas's Streamed SOG format: a spatial tree of leaf regions with decimated LOD levels, selected per frame via a screen-space-error threshold (tau, surfaced as Low/Medium/High) and streamed coarse-to-fine over disk or HTTP with async loading and fenced GPU uploads. A further texture-dimension limit (RHI max 16384) capped a single texture at ~67M splats; widening rows raises it to ~268M (~8.6GB VRAM), and a fixed texture pool with most-distant-first eviction under a memory budget lets on-disk scenes exceed GPU and machine memory. The author presents the result as effectively unlimited, notes a ~30M-splat scene now opens in seconds and sharpens over time, and lists remaining weaknesses (slow LOD selection, naive eviction, overdraw) plus shipped Streamed SOG support in OKO Unreal and OKO Web.",
+    "channels": [
+      "devtools",
+      "hardware"
+    ],
+    "category": "hardware",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Unreal GPU Scene's 16M-instance cap bypassed via custom indirect draw pipeline",
+    "audience": "graphics/rendering engineers building large-scale Gaussian splat renderers",
+    "source_url": "https://magnopus.com/blog/gaussiansplats-part-3-theres-always-a-bigger-scene",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50209269",
+        "points": 98,
+        "comments": 21,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.magnopus.com/blog/gaussiansplats-part-3-theres-always-a-bigger-scene",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-23T14:07:21+00:00",
+    "published_at": "2026-11-28T12:38:17.204086+00:00",
+    "curated_at": "2026-11-28T12:38:17.204086+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 695196,
+    "story_id": "s_8a322a98e0c9dc7e",
+    "title": "Kierston & KierstonBench: Simulation of Allentown, PA and Evaluation of Language Models in Crime Investigation and Surveillance Tasks",
+    "relevance": 6,
+    "score": 4.351,
+    "why": "If you are weighing LLMs for investigative or surveillance records work, this benchmark reports that 16 models mostly produced identifications the records did not support, and even the few that scored well still fell for deceptions and did not replace an investigator.",
+    "notes": [
+      "Kierston is a city-scale simulation engine modeling ~125,000 residents of Allentown, PA, generating daily activities plus telecom, financial, administrative, and license-plate records from a shared behavioral timeline, distributed across sources that stand in for separate providers.",
+      "Models investigate only through a restricted records interface, linking observations across sources with no access to the underlying ground-truth simulation.",
+      "KierstonBench comprises 32 task families spanning record linkage, routine reconstruction, incident investigation, and assessment of deceptive accounts.",
+      "Across 16 evaluated language models, most could not perform records investigation and submitted identifications the records did not support; a small number of frontier models solved most tasks and abstained when evidence was insufficient.",
+      "Even the strong models sometimes fell for common deceptions and assumptions, and the authors state none replaced an investigator. Specific model names, scores, and methodology detail are not given in the abstract."
+    ],
+    "summary": "The paper introduces Kierston, a city-scale simulation engine modeling roughly 125,000 residents of Allentown, PA, and KierstonBench, a benchmark testing language models on crime investigation and surveillance tasks against known simulated events. Kierston generates residents' daily activities and the telecom, financial, administrative, and license-plate records that surveillance systems collect, all derived from a shared behavioral timeline and split across sources representing separate providers; models work only through a restricted records interface without access to the underlying simulation. KierstonBench spans 32 task families covering record linkage, routine reconstruction, incident investigation, and assessment of deceptive accounts. In an evaluation of sixteen language models, the authors report most could not perform records investigation and submitted identifications the records did not support, while a small number of frontier models solved most tasks and abstained when evidence was insufficient. The authors note even those stronger models sometimes fell for common deceptions and assumptions, and that none replaced a human investigator. The abstract does not name the models, give numeric scores, or detail scoring methodology.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [
+      "privacy"
+    ],
+    "state": "confident",
+    "novelty": "city-scale simulated benchmark for LLM crime investigation/surveillance tasks",
+    "audience": "AI researchers evaluating LLM agentic reasoning and policy/security analysts on AI surveillance use",
+    "source_url": "https://arxiv.org/abs/2611.04785",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://huggingface.co/papers/2611.04785",
+        "points": 1,
+        "comments": null,
+        "name": "Hugging Face Daily Papers"
+      },
+      {
+        "url": "https://arxiv.org/abs/2611.04785",
+        "points": null,
+        "comments": null,
+        "name": "arXiv cs.AI"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-11-04T05:00:00+00:00",
+    "published_at": "2026-11-28T11:19:03.598669+00:00",
+    "curated_at": "2026-11-28T11:19:03.598669+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 662654,
     "story_id": "s_552d480d752fa66a",
     "title": "A tiny world model running games on a Raspberry Pi Pico 2 W",
