@@ -210,6 +210,257 @@
     "model": "claude-opus-4-8"
   },
   {
+    "id": 662654,
+    "story_id": "s_552d480d752fa66a",
+    "title": "A tiny world model running games on a Raspberry Pi Pico 2 W",
+    "relevance": 6,
+    "score": 4.352,
+    "why": "A full generative world model plus an RL actor fit in int8 on a $6 RP2350 microcontroller with 520 KB of SRAM, showing the floor for \"models that dream their own games\" is a few hundred KB, not a GPU.",
+    "notes": [
+      "The world model is a single transformer block (attention plus ReLU MLP) with one weight set applied 1-4 times, input re-added before each pass; this looped design reuses weights to cut memory. It is 26k-131k params, int8-quantized via QAT, at 2-8M multiply-adds per frame. The actor is a separate float32 MLP, 9k-16k params, two hidden layers.",
+      "On the Pico 2 W (RP2350, 4 MB flash, 512 KiB usable SRAM) core 1 runs both nets at 2 loops while core 0 handles USB and an ST7789 display; the actor only ever sees world-model-generated frames and the model only gets actor actions, so it runs as a closed 'dream.' Frame rate on the chip is not yet measured; the same Rust code dreams a frame in 0.7-1.5 ms on desktop CPU.",
+      "Held-out exact-frame accuracy (every cell correct) at 2 loops: Flappy Bird 100%, Breakout 99.99%, Pong 99.45%, Pac-Man 86.4%, Doom-lite 83.6%. Doom-lite's figure is depressed because its 768-cell 3D view fails the whole frame on one wrong shaded pixel; a dream-state read-back over 5,000 steps found only 1 wrong game state.",
+      "Frame decoding is three hand-written rules, not pure argmax, and mattered almost as much as the model: per-cell argmax for background, one global (cell, token) choice per singleton sprite, and sub-cell stamping for multi-cell sprites. The global-singleton rule stopped Breakout drawing two balls and lifted exact frames from 91.6% to 99.7%.",
+      "Agents use Stream AC(lambda) (Elsayed, Vasan, Mahmood, 2024): one transition at a time, no replay buffer or target network, eligibility traces plus ObGD, and can learn from scratch on-device. Agents trained only in the dream exploited model errors, scoring 210 in-dream (real max 56) and 28 real, matching Ha and Schmidhuber's World Models; collect-and-fine-tune rounds closed each exploit.",
+      "The int8 engine is no_std Rust on embassy with zero runtime allocation (static arrays), reproduces a numpy int8 spec bit-for-bit via cargo golden tests, and also compiles to WASM that dreams identical episodes frame-for-frame at the same seed. Float32 embedding tables are the largest memory cost and remain un-quantized; full builds range 361 KB flash / 299 KB SRAM (Breakout) to 600 KB / 460 KB (Pac-Man)."
+    ],
+    "summary": "A hobby project (tinyworldformer) runs a neural world model and a reinforcement-learning actor together on a Raspberry Pi Pico 2 W (RP2350). The world model maps current frame plus action to next frame and reward; the actor maps frame to action. On-chip the two only see each other's outputs, so the actor plays inside a model-generated \"dream.\" The world model is a looped transformer: one int8 transformer block applied 1-4 times (loop count trades speed for accuracy), 26k-131k params at 2-8M MACs per frame; the actor is a 9k-16k-param float32 MLP trained with Stream AC(lambda), which supports from-scratch on-device learning. Across five small games, held-out exact-frame accuracy at 2 loops runs from 83.6% (Doom-lite, penalized by its 768-cell view) to 100% (Flappy Bird), and hand-designed decoding rules for background cells, singleton sprites, and multi-cell sprites proved nearly as important as the model. The engine is no_std Rust (embassy, no runtime allocation) that reproduces a numpy int8 spec bit-for-bit and also compiles to WASM; the author notes dream-only agents exploit model errors (consistent with Ha and Schmidhuber) and that on-Pico frame rate is not yet measured.",
+    "channels": [
+      "ai",
+      "ml-research",
+      "hardware"
+    ],
+    "category": "ai",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "looped-transformer world model + RL actor co-running on a $6 microcontroller",
+    "audience": "ML engineers interested in model compression, edge inference, and world models",
+    "source_url": "https://github.com/SheepSeb/tinyworldformer",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50295450",
+        "points": 165,
+        "comments": 9,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://github.com/SheepSeb/tinyworldformer",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-29T20:32:28+00:00",
+    "published_at": "2026-11-28T10:46:44.015114+00:00",
+    "curated_at": "2026-11-28T10:46:44.015114+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 610509,
+    "story_id": "s_4a89a9b1967b7f14",
+    "title": "Muse exposes users' personal and business secrets when they share conversations",
+    "relevance": 6,
+    "score": 4.363,
+    "why": "Any \"unguessable\" share link whose hostname resolves through public DNS can be harvested wholesale from passive DNS databases, which is how researchers pulled 6,800 private Muse conversations without guessing a single token.",
+    "notes": [
+      "Claroc researchers enumerated 6,800 Muse share links via a passive DNS lookup through a commercial service, not by brute-forcing the long random tokens; a passive DNS record was created the moment an intended recipient clicked a share link and their resolver logged the DNS response.",
+      "From a few hundred opened links the researchers report finding: executive-search prep notes naming a frontier AI lab's internal contact and meeting time, a national marketing firm's internal revenue review for its CEO, a small-business loan application with the amount, a to-do list containing a bank fraud alert with a partial account number and transaction details, a real-estate investor's performance report with two property addresses and exact figures, and a full-year staff vacation calendar listing dozens of employees.",
+      "Meta CEO Mark Zuckerberg described Muse last month as 'built from the ground up for privacy and security'; the share URLs did include long, hard-to-guess tokens, so the weakness is discoverability of the URL design rather than token randomness.",
+      "Claroc CTO Asaf Aprozper says he reported via Meta's bug bounty program on October 8 and also messaged people on LinkedIn, getting no reply either way; Meta only responded and paused the sharing feature after Ars inquired.",
+      "Meta's statement confirms it has paused the artifact-sharing functionality while it reviews the report and considers changes to how the links can be discovered; exposure counts and data samples are the researchers' self-reported findings, not independently verified in the article."
+    ],
+    "summary": "Security firm Claroc reported that Meta's new general-purpose AI agent Muse exposed private user conversations shared via web links, and that the researchers enumerated 6,800 such links. The share URLs used long random tokens, but the links were discoverable through passive DNS: when an intended recipient clicked a link, the DNS resolution was logged into searchable commercial passive DNS databases, letting the researchers collect the URLs without guessing. Among a few hundred opened links, they say they found clearly private material including a loan application, a bank fraud alert with a partial account number, executive-search notes naming a frontier AI lab contact, internal revenue and real-estate reports, and a full-year staff vacation calendar. Claroc's CTO says he reported the issue through Meta's bug bounty on October 8 and received no response until Ars asked Meta about it. Meta, which marketed Muse as built for privacy and security, then said it had paused the sharing feature while it reviews the report and considers changing how links can be discovered. The data samples and link count are the researchers' self-reported findings.",
+    "channels": [
+      "ai",
+      "security"
+    ],
+    "category": "security",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "guessable share-link URLs leak via passive DNS, not brute force",
+    "audience": "AI product engineers and security researchers building/reviewing share features",
+    "source_url": "https://arstechnica.com/security/2026/10/meta-muse-exposes-users-personal-and-business-secrets-when-they-share-conversations",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50174687",
+        "points": 113,
+        "comments": 24,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://arstechnica.com/security/2026/10/meta-muse-exposes-users-personal-and-business-secrets-when-they-share-conversations/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-21T00:45:59+00:00",
+    "published_at": "2026-11-28T10:14:02.966376+00:00",
+    "curated_at": "2026-11-28T10:14:02.966376+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 618072,
+    "story_id": "s_59dcb31d428314d4",
+    "title": "PHP web runtimes (CVE-2026-109618 and CVE-2026-109619)",
+    "relevance": 6,
+    "score": 4.365,
+    "why": "If you run PHP 8.2–8.5 behind a web server, an unauthenticated attacker can send a crafted request and get code execution, so patch to 8.5.12/8.4.27/8.3.36/8.2.35 now; anything 8.1 or older gets no fix at all.",
+    "notes": [
+      "Two CVEs, both rated critical: CVE-2026-109618 and CVE-2026-109619 let an unauthenticated remote caller run arbitrary code, read process-accessible data, or trigger denial of service on a PHP worker over the internet-to-application boundary.",
+      "Fixed releases: 8.5.12, 8.4.27, 8.3.36, 8.2.35. PHP 5.4 through 8.1 are end-of-life with no upstream fix; -109618 has no fix on those branches at all, so AWS says migration to a supported branch is the only path.",
+      "AWS states its own services are not impacted; exposure is for customers running affected PHP on WorkMail, Elastic Beanstalk (updated platform v4.13.12 released 2026-10-21), Amazon Linux (packages targeted 2026-10-22), and Lightsail. Impact is bounded to the affected worker with no cross-customer propagation established to date, per AWS.",
+      "Lightsail cannot be patched in place: AWS says customers must create new instances from updated blueprints and migrate, since running instances can't be updated.",
+      "AWS WAF compensating controls (described as partial, not complete): for -109618 use the CRS SizeRestrictions_BODY rule to block request bodies over 8 KB; for -109619 add a custom 'PHP2Shell' rule matching POST requests containing PHP_SESSION_UPLOAD_PROGRESS in the body plus PHPSESSID in body or cookie. Upgrading is the only complete fix.",
+      "The -109619 mechanism points at PHP's session upload progress feature (PHP_SESSION_UPLOAD_PROGRESS with PHPSESSID); the bulletin does not disclose the underlying memory-safety or logic bug. References: GHSA-w8hw-w9fx-j79w, GHSA-6wmf-4rv5-p3rp, and the php.net archive entry for 2026-10-21."
+    ],
+    "summary": "An AWS security bulletin (2026-143-AWS, published 2026-10-21) describes two critical PHP vulnerabilities, CVE-2026-109618 and CVE-2026-109619, that allow an unauthenticated remote actor to send crafted web requests to PHP workers and achieve arbitrary code execution, read process-accessible data, or cause denial of service. Fixed versions are PHP 8.5.12, 8.4.27, 8.3.36, and 8.2.35; branches 5.4 through 8.1 are end-of-life and receive no fix (with -109618 having no fix even in interim form), so AWS recommends migrating to a supported branch. AWS states its own services are not impacted but that customers running affected PHP on WorkMail, Elastic Beanstalk, Amazon Linux, and Lightsail are exposed, with impact bounded to the affected worker and no cross-customer propagation established to date. AWS released Elastic Beanstalk platform v4.13.12 on 2026-10-21 and targeted Amazon Linux packages and other upstream fixes for 2026-10-22; Lightsail instances cannot be patched in place and require migration to new blueprints. As partial compensating controls via AWS WAF, AWS suggests blocking request bodies over 8 KB for -109618 and a custom rule matching PHP_SESSION_UPLOAD_PROGRESS plus PHPSESSID in POST requests for -109619, while stressing that upgrading is the only complete fix. The bulletin references GHSA-w8hw-w9fx-j79w, GHSA-6wmf-4rv5-p3rp, and a php.net advisory but does not detail the underlying bug.",
+    "channels": [
+      "security",
+      "devtools"
+    ],
+    "category": "security",
+    "subcategories": [
+      "vulns"
+    ],
+    "state": "confident",
+    "novelty": "unauthenticated RCE in PHP runtime, exploitable via session upload progress trick",
+    "audience": "engineers running PHP apps on AWS (Beanstalk, Lightsail, Amazon Linux, WorkMail)",
+    "source_url": "https://aws.amazon.com/security/security-bulletins/2026-143-aws",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50187708",
+        "points": 110,
+        "comments": 26,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://aws.amazon.com/security/security-bulletins/2026-143-aws/",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-21T21:12:59+00:00",
+    "published_at": "2026-11-28T09:59:25.525844+00:00",
+    "curated_at": "2026-11-28T09:59:25.525844+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 594000,
+    "story_id": "s_fa769c04b975e9aa",
+    "title": "Thank You, Deno",
+    "relevance": 6,
+    "score": 4.369,
+    "why": "Both independent JavaScript runtimes now sit inside clouds (Deno in Cloudflare, Bun in Anthropic), so the engineering pressure that pushed fetch, a permission model, and default-off install scripts into Node and npm no longer comes from venture-funded runtime competitors.",
+    "notes": [
+      "Ryan Dahl announced the Deno team is joining Cloudflare; the runtime winds down over the next year, JSR keeps running on Cloudflare infrastructure, and the team's job is merging Deno's celld into workerd. The post is written by Darcy Clarke, founder/CEO of vlt.",
+      "The announcement landed two years to the day after Deno 2 shipped (Oct 2024); Bun joined Anthropic ten months earlier. Jarred Sumner framed Bun's Anthropic relationship as analogous to Chrome and V8, with more independence.",
+      "Deno launched in 2020 rejecting npm, package.json, node_modules, and lockfiles (dependencies as URLs), then walked it back: deps.ts, lock.json integrity hashes, import maps. Deno's own docs now recommend registries over HTTPS imports because URLs 'can drift' and force you to 'trust the serving host.'",
+      "Bun 0.1 (July 2022) ran existing npm packages as a Node drop-in; ~6 weeks later Deno announced npm: specifiers and a goal to make 80-90% of npm packages work in three months. Deno 2 finished full Node/npm compatibility.",
+      "Since 2018 Node shipped global fetch, WebSocket, Web Streams, Web Crypto, a stable test runner, --watch, --env-file, single-executable builds, a permission model, type stripping on by default, node:sqlite, and require(esm). The author credits Node's (largely volunteer) contributors but argues the timeline depended on competitor pressure.",
+      "On install scripts: pnpm and Bun stopped running them by default and vlt never did; in June 2026, after supply-chain worms, GitHub announced npm 12 would stop running them by default. The author notes the idea never changed, only the number of package managers shipping it."
+    ],
+    "summary": "vlt founder Darcy Clarke marks the Deno team joining Cloudflare, where the runtime winds down over a year, JSR continues on Cloudflare infrastructure, and Deno's celld is merged into the open-source workerd. He argues that Deno never reached production critical mass against Node but supplied competitive urgency that, together with Bun (which joined Anthropic ten months earlier), drove Node to adopt web-standard APIs, a permission model, a test runner, type stripping, node:sqlite, and require(esm). He traces Deno reversing its original anti-npm, anti-lockfile stance over four years into deps.ts, lock.json, import maps, and full Node compatibility in Deno 2. He credits package-manager competition (Yarn's lockfile, pnpm's deduplication, Bun's install speed) and JSR, and cites npm 12's planned default-off install scripts in 2026 as an idea borrowed only after enough rivals shipped it. His worry: with both independent venture-backed runtimes now inside companies whose business is something else, the ecosystem loses the external pressure that forced the incumbents to move.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Deno team joins Cloudflare, runtime wound down, folded into workerd",
+    "audience": "JS/TS engineers and tooling maintainers tracking runtime ecosystem shifts",
+    "source_url": "https://vlt.io/blog/competition-keeps-javascript-moving",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50112331",
+        "points": 111,
+        "comments": 26,
+        "name": "Hacker News"
+      },
+      {
+        "url": "https://www.vlt.io/blog/competition-keeps-javascript-moving",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 2,
+    "first_seen": "2026-10-16T00:52:40+00:00",
+    "published_at": "2026-11-28T09:58:56.308035+00:00",
+    "curated_at": "2026-11-28T09:58:56.308035+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
+    "id": 456869,
+    "story_id": "s_3d19b4d67cdcfc7a",
+    "title": "Lorenz and Little: How Much Does Your Tail Cost?",
+    "relevance": 6,
+    "score": 4.382,
+    "why": "If 1-L(0.99) runs above 0.5 in your service, tail requests are eating the majority of your busy threads, so cutting tail latency, not mean latency, is what actually shrinks concurrency, capacity, and bill.",
+    "notes": [
+      "The empirical Lorenz curve answers: given percentile P, what fraction of mean latency comes from requests at or above P. From raw samples it is L = sum(sorted(x)[:k]) / sum(x) with k = p*n; the article returns 1 - L(p).",
+      "The quantile-based implementation (OneMinusL) interpolates between measured percentiles with a power law / Pareto-like tail to extrapolate beyond the top measured point; the author calls the interpolation choice 'a little bit of a sin, but good enough.'",
+      "Worked example: quantiles [1, 10, 200, 10000, 20000] at percentiles [0, 0.5, 0.9, 0.99, 0.999] yield 1-L values [1.0, 0.994, 0.931, 0.517, 0.103], so requests at or above p99 contribute about 52% of mean latency.",
+      "Via Little's law, 1-L(p) is also the fraction of in-flight concurrency: in a simple threaded system, if 1-L(p)=k then 100k% of busy threads are serving requests slower than the pth percentile. Queued and event-based systems change how concurrency maps to cost.",
+      "Stated from experience (not measured here): 1-L(0.99) above 0.5 or 0.75 is common, making tails disproportionately expensive and arguing against trimming them from analysis.",
+      "Hard caveat in code: requires tail alpha > 1 (finite mean) or the estimate is undefined; p must start at 0 and end below 1, and quantiles must be positive and strictly increasing."
+    ],
+    "summary": "Marc Brooker connects the empirical Lorenz curve to Little's law to quantify how much tail latency costs in capacity and concurrency. The Lorenz value 1-L(p) measures the fraction of mean latency contributed by requests at or above percentile p; from raw samples it is a simple sorted-sum ratio, and the post provides a Python function (OneMinusL) that estimates it from a vector of measured quantiles using a power-law interpolation and Pareto-like tail extrapolation. A worked example shows requests at or above p99 contributing about 52% of mean latency. Because Little's law ties mean latency to in-flight concurrency, Brooker argues 1-L(p) is also the share of busy threads attributable to requests slower than that percentile, so optimizing tails can cut concurrency, capacity demand, and lock contention more than expected. He notes 1-L(0.99) above 0.5 or 0.75 is common in his experience. Caveats: the estimate requires a tail alpha above 1 (finite mean), and the concurrency-to-cost mapping differs for queued or event-driven systems versus simple threaded ones.",
+    "channels": [
+      "devtools"
+    ],
+    "category": "software",
+    "subcategories": [],
+    "state": "confident",
+    "novelty": "Lorenz curve + Little's law to quantify tail latency's cost/concurrency share",
+    "audience": "backend/systems engineers doing capacity planning and latency optimization",
+    "source_url": "https://brooker.co.za/blog/2026/07/29/lorenz-and-little.html",
+    "read_kind": "publication-free",
+    "free_link": null,
+    "paywalled": false,
+    "surfaces": [
+      {
+        "url": "https://news.ycombinator.com/item?id=50098485",
+        "points": 18,
+        "comments": 2,
+        "name": "Hacker News"
+      },
+      {
+        "url": "http://brooker.co.za/blog/2026/07/29/lorenz-and-little.html",
+        "points": null,
+        "comments": null,
+        "name": "Marc Brooker (brooker.co.za)"
+      },
+      {
+        "url": "https://brooker.co.za/blog/2026/07/29/lorenz-and-little.html",
+        "points": null,
+        "comments": null,
+        "name": "Hacker News"
+      }
+    ],
+    "sources_count": 3,
+    "first_seen": "2026-07-29T00:00:00+00:00",
+    "published_at": "2026-11-28T09:10:49.598449+00:00",
+    "curated_at": "2026-11-28T09:10:49.598449+00:00",
+    "model": "claude-opus-4-8"
+  },
+  {
     "id": 670693,
     "story_id": "s_faa839a1047303e6",
     "title": "One-minute frequency disturbances from synchronization in power systems",
@@ -1513,154 +1764,6 @@
     "first_seen": "2026-10-24T18:17:57+00:00",
     "published_at": "2026-11-22T06:48:48.907488+00:00",
     "curated_at": "2026-11-22T06:48:48.907488+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 730746,
-    "story_id": "s_dfd87b74802d05d0",
-    "title": "MACaQ: Fast, Model Agnostic Calibrated Quantization for Low-Precision Weights and Activations",
-    "relevance": 6,
-    "score": 4.559,
-    "why": "If the self-reported numbers hold, you can quantize a 122B-parameter model to 4-bit weights and activations in 64 minutes on a single 32.5GB GPU, with only 2.3% inference overhead over plain MXFP4.",
-    "notes": [
-      "MACaQ is an MXFP4 W4A4 post-training quantization method that treats every linear layer independently, avoiding the cross-layer basis-transform propagation that other recent methods require.",
-      "Each layer gets a per-channel scale and a block-Hadamard transform applied to activations online at inference; the inverse transforms are folded into the weights. Keeping transforms online removes cross-layer dependencies and permits a streaming implementation holding only one layer in memory at a time.",
-      "Flip-Refinement is a Hessian-aware coordinate-descent step that greedily moves individual FP4 codes to adjacent representable values, improving over round-to-nearest.",
-      "Reported results: 2.3% end-to-end overhead over pure MXFP4 on Qwen3-32B in vLLM; lower perplexity than DuQuant++ and MR-GPTQ, matching their best perplexity on Llama-3-8B in 11x less quantization time; a 122B model quantized in 64 minutes using 32.5GB GPU RAM.",
-      "The same layer-local design is applied to an image diffusion model without architecture-specific changes, which the authors offer as evidence of generality.",
-      "All numbers are author-reported from the arXiv abstract; no independent evaluation, methodology detail, or baseline configuration is provided in the excerpt."
-    ],
-    "summary": "MACaQ is a post-training quantization method for MXFP4 W4A4 (4-bit weights and activations) that quantizes each linear layer independently, in contrast to methods that propagate basis transforms across layers. It applies a per-channel scale and a block-Hadamard transform to activations online at inference time and absorbs the inverse transforms into the weights; because transforms stay online rather than being fused across layers, quantization can stream through the model with only one layer resident in memory. A Flip-Refinement step uses Hessian-aware coordinate descent to move individual FP4 codes to adjacent representable values, improving on round-to-nearest. The authors report 2.3% end-to-end inference overhead over pure MXFP4 on Qwen3-32B in vLLM, lower perplexity than DuQuant++ and MR-GPTQ, matching their best Llama-3-8B perplexity in 11x less quantization time, and quantization of a 122B-parameter model in 64 minutes using 32.5GB of GPU RAM. The method is also applied unmodified to an image diffusion model. All figures are self-reported in the abstract and lack independent verification or methodology detail.",
-    "channels": [
-      "ml-research",
-      "ai"
-    ],
-    "category": "ai",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "layer-local online Hadamard quantization avoids cross-layer calibration",
-    "audience": "ML engineers deploying quantized LLMs/diffusion models at scale",
-    "source_url": "https://arxiv.org/abs/2611.10649",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://huggingface.co/papers/2611.10649",
-        "points": 22,
-        "comments": null,
-        "name": "Hugging Face Daily Papers"
-      },
-      {
-        "url": "https://arxiv.org/abs/2611.10649",
-        "points": null,
-        "comments": null,
-        "name": "arXiv cs.LG"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-11-10T05:00:00+00:00",
-    "published_at": "2026-11-21T09:46:01.837192+00:00",
-    "curated_at": "2026-11-21T09:46:01.837192+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 667755,
-    "story_id": "s_73e34d59ad60acf3",
-    "title": "Switch Lowering in GCC",
-    "relevance": 6,
-    "score": 4.572,
-    "why": "If you have ever profiled a hot dispatch loop and wondered why GCC emitted branches instead of a jump table, this reverse-engineers the exact thresholds that decide it, down to a ratio of 8 at -O3 versus 2 at -Os.",
-    "notes": [
-      "The jump-table heuristic compares jump-table entries against comparisons, not raw case labels: GCC merges contiguous case ranges first, so a 20-label switch spanning 0-87 (88 entries) lowers to comparisons because it reduces to 10 comparisons and 10*8 < 88 fails the ratio test.",
-      "The ratio is set by optimization goal: 8 entries-per-comparison when optimizing for speed (-O1/2/3/fast), 2 when optimizing for size (-Os). Both bitset and jump-table lowering use dynamic programming to minimize the number of clusters.",
-      "For small, non-contiguous value sets GCC emits a bitset plus the x86 bt (bit test) instruction against a constant (e.g. 2753205), where set bits are the ASCII case values each offset by 48; the author notes bitset lowering does not transfer to Clang.",
-      "GCC detects dense subsets inside sparse switches: an outlier like case 100 gets its own cmp/branch while cases 1-5 still get a jump table. Jump tables below case_values_threshold (defaults to 5 on modern x64/Arm64) are pruned as unprofitable.",
-      "Missed optimization flagged by the author: in a sparse-but-regular switch (sparse_8), GCC does not divide x by 8 before indexing, emitting a comparison tree instead. The fallback tree is built by splitting labels into equal-probability halves, using PGO or __builtin_expect_with_probability.",
-      "The work is attributed to the pass_lower_switch pass calling analyze_switch_statement, observed under GCC -O3 from disassembly; findings are the author's reverse-engineering, not GCC documentation."
-    ],
-    "summary": "A reverse-engineering walkthrough of how GCC lowers C switch statements, derived from -O3 disassembly and annotated GCC source. GCC chooses among three strategies: a jump table (indirect jump through an address array), a bitset test using the bt instruction for small non-contiguous value sets, and a binary decision tree as fallback. The jump-table decision uses dynamic programming and a ratio heuristic comparing jump-table entries to the number of comparisons after contiguous ranges are merged, with the ratio being 8 for speed and 2 for size; jump tables smaller than case_values_threshold (default 5) are rejected. GCC can isolate dense subsets within sparse switches, emitting a table for the cluster and separate branches for outliers. The author notes missed optimizations, such as failing to divide the index by a stride in a regular-but-sparse case, and that all techniques except bitset lowering carry over to Clang.",
-    "channels": [
-      "devtools"
-    ],
-    "category": "software",
-    "subcategories": [],
-    "state": "confident",
-    "novelty": "reverse-engineers GCC's switch-lowering heuristics via disassembly",
-    "audience": "systems/compiler engineers optimizing hot-path switch statements",
-    "source_url": "https://xoranth.net/gcc-switch",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50314085",
-        "points": 199,
-        "comments": 40,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://xoranth.net/gcc-switch/",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-31T08:02:26+00:00",
-    "published_at": "2026-11-21T09:14:16.634437+00:00",
-    "curated_at": "2026-11-21T09:14:16.634437+00:00",
-    "model": "claude-opus-4-8"
-  },
-  {
-    "id": 599945,
-    "story_id": "s_e6fb51593be9af55",
-    "title": "The Commodore 64 hardware simulator: break chips and pins, see the results",
-    "relevance": 6,
-    "score": 4.573,
-    "why": "If you repair vintage boards, this lets you reproduce a specific fault, lifting A7 on the color RAM, shorting a pin to +5V, pulling a chip, and read the resulting screen garbage before you desolder anything, so you touch the fewest chips in the most logical order.",
-    "notes": [
-      "Simulates the Commodore 64 ASSY 250407 motherboard pin by pin from bwack's KiCad replica netlist: 216 parts, their pads, and 249 nets (converted by tools/kicad2c.py).",
-      "Cycle-accurate 6510/VIC-II/CIA/SID cores come from floooh's chips library (via c64-llm, zlib); antirez added pin-level models for the DRAMs, ROMs, color RAM, glue logic, and the PLA with its real 82S100 equations (read out by Mark Smith and Marko Mäkelä).",
-      "Not an emulator for play: it runs at 31% of real C64 speed on an Apple M3 Max, 39% on a Ryzen AI Max+ PRO 495, and 48% on an Apple M5 Max, because every pin of every chip is simulated. Each half cycle settles in three steps: row address, /RAS falls, /CAS falls.",
-      "Electrical model: strongest drive wins a net, equal fighting drives show contention (low wins, magenta on the probe), undriven nets hold charge then drift to ~1.4V with TTL loads or toward 0V with MOS loads. A chip without GND floats its outputs high; a CMOS chip keeps running on phantom power through its pins' protection diodes. Noise is seeded so runs are reproducible.",
-      "Scriptable: CLI fault syntax REF:what or REF.PIN:what (U17:removed, U21.14:gnd, R51:open), --headless with --text reading the screen as a person would plus --shot PNG, timed --at faults, and tests/faults.sh covers 31 common faults whose expected symptoms were written down before the simulator ran. Author warns a matching symptom is a clue, not proof.",
-      "Stated limits: floating/power thresholds, drift times, and crosstalk are hand-tuned guesses in src/sim.c; video output, SID filter, PSU, and dot-clock PLL are not simulated; in-chip faults (bad DRAM cells, slow parts) and net-to-net bridges are planned but not implemented."
-    ],
-    "summary": "c64-hw-sim is a pin-level simulator of the Commodore 64 ASSY 250407 motherboard by antirez, built to diagnose faults rather than play games. It combines floooh's cycle-accurate 6510/VIC-II/CIA/SID cores (zlib) with new pin-level models of the DRAMs, ROMs, color RAM, glue logic, and the PLA's real equations, driven by bwack's KiCad replica netlist (216 parts, 249 nets). The user can lift a chip leg, short a pin to GND or +5V, pull a chip, or open a resistor, and observe the computed result on the monitor, keyboard, and an on-screen oscilloscope; the garbage shown is derived from the circuit and net-level electrical rules (drive strength, contention, charge drift to ~1.4V or 0V, phantom CMOS power via protection diodes), not hand-authored. It runs well below real time (31-48% on an M3 Max, Ryzen AI Max+ PRO 495, and M5 Max) and supports headless, scripted fault injection with text and screenshot output, plus a test suite of 31 faults with symptoms documented beforehand. The author is explicit that a matching symptom is a clue rather than proof, that floating and power thresholds are tuned guesses, and that the video output, SID filter, PSU, dot-clock PLL, in-chip faults, and net bridges are not modeled. It runs on macOS and Linux via OpenGL, sokol, and nuklear.",
-    "channels": [
-      "hardware",
-      "devtools"
-    ],
-    "category": "hardware",
-    "subcategories": [
-      "silicon"
-    ],
-    "state": "confident",
-    "novelty": "pin-level C64 motherboard simulator for fault diagnosis, not emulation",
-    "audience": "retrocomputing hobbyists and hardware repair engineers",
-    "source_url": "https://github.com/antirez/c64-hw-simulator",
-    "read_kind": "publication-free",
-    "free_link": null,
-    "paywalled": false,
-    "surfaces": [
-      {
-        "url": "https://news.ycombinator.com/item?id=50100366",
-        "points": 217,
-        "comments": 34,
-        "name": "Hacker News"
-      },
-      {
-        "url": "https://github.com/antirez/c64-hw-simulator",
-        "points": null,
-        "comments": null,
-        "name": "Hacker News"
-      }
-    ],
-    "sources_count": 2,
-    "first_seen": "2026-10-15T07:18:14+00:00",
-    "published_at": "2026-11-21T08:59:01.010412+00:00",
-    "curated_at": "2026-11-21T08:59:01.010412+00:00",
     "model": "claude-opus-4-8"
   }
 ]
